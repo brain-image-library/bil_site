@@ -1,7 +1,7 @@
 {% if latest_metadata_list %}
     <ul>
     {% for metadata in latest_metadata_list %}
-        <li><a href="/ingest/{{ metadata.id }}/">{{ metadata.organization_name }}</a></li>
+        <li><a href="{% url 'ingest:detail' metadata.id %}">{{ metadata.organization_name }}</a></li>
     {% endfor %}
     </ul>
 {% else %}
