@@ -1,3 +1,7 @@
+{% load static %}
+
+<link rel="stylesheet" type="text/css" href="{% static 'ingest/style.css' %}" />
+
 {% if latest_metadata_list %}
     <ul>
     {% for metadata in latest_metadata_list %}
