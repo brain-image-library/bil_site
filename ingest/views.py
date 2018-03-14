@@ -5,3 +5,6 @@ from django.http import HttpResponse
 
 def index(request):
     return HttpResponse("Hello, world.")
+
+def detail(request, metadata_id):
+    return HttpResponse("You're looking at metadata %s." % metadata_id)
