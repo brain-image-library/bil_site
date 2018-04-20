@@ -2,12 +2,15 @@
 
 <link rel="stylesheet" type="text/css" href="{% static 'ingest/style.css' %}" />
 
+<h1>List of Brain Image Library Metadata</h1>
+
 {% if latest_metadata_list %}
     <ul>
     {% for metadata in latest_metadata_list %}
         <li><a href="{% url 'ingest:detail' metadata.id %}">{{ metadata.organization_name }}</a></li>
     {% endfor %}
     </ul>
+    <a href="{% url 'ingest:post_new' %}">Create new metadata</a>
 {% else %}
     <p>No projects are available.</p>
 {% endif %}
