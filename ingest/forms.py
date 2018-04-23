@@ -14,7 +14,7 @@ class SignUpForm(UserCreationForm):
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', )
 
-class MIMForm(forms.ModelForm):
+class MinimalImagingMetadataForm(forms.ModelForm):
 
     class Meta:
         model = MinimalImgMetadata

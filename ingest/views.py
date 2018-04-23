@@ -8,7 +8,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 
 from .models import MinimalImgMetadata
-from .forms import MIMForm
+from .forms import MinimalImagingMetadataForm
 from .forms import SignUpForm
 
 def signup(request):
@@ -43,13 +43,13 @@ class DetailView(generic.DetailView):
 
 def post_new(request):
     if request.method == "POST":
-        form = MIMForm(request.POST)
+        form = MinimalImagingMetadataForm(request.POST)
         if form.is_valid():
             post = form.save(commit=False)
             # post.author = request.user
             # post.published_date = timezone.now()
             post.save()
-            # return redirect('post_detail', pk=post.pk)
+            return redirect('..', pk=post.pk)
     else:
-        form = MIMForm()
+        form = MinimalImagingMetadataForm()
     return render(request, 'ingest/post_edit.html', {'form': form})
