@@ -22,4 +22,7 @@ class MinimalImagingMetadataForm(forms.ModelForm):
             'project_name',
             'organization_name',
             'project_description',
+            'project_funder_id',
+            'background_strain',
+            'image_filename_pattern',
             'submitter_email')
