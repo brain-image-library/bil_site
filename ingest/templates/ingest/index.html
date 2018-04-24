@@ -14,3 +14,10 @@
 {% else %}
     <p>No projects are available.</p>
 {% endif %}
+
+</br>
+{% if request.user.username %}
+  {{ request.user.username }} <a href="{%url 'ingest:logout' %}">logout</a>
+{% else %}
+<a href="{%url 'ingest:login' %}">login</a>
+{% endif %}
