@@ -22,4 +22,3 @@ class MinimalImgMetadata(models.Model):
     project_funder_id = models.CharField(max_length=200)
     background_strain = models.CharField(max_length=200)
     image_filename_pattern = models.CharField(max_length=200)
-    submitter_email = models.EmailField()
