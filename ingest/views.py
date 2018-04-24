@@ -52,4 +52,4 @@ def post_new(request):
             return redirect('..', pk=post.pk)
     else:
         form = MinimalImagingMetadataForm()
-    return render(request, 'ingest/post_edit.html', {'form': form})
+    return render(request, 'ingest/submit_metadata.html', {'form': form})
