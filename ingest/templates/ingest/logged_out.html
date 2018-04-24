@@ -1,7 +1,8 @@
-{% load static %}
+{% extends 'ingest/base.html' %}
 
-<link rel="stylesheet" type="text/css" href="{% static 'ingest/style.css' %}" />
+  {% block content %}
 
-You have successfully logged out.
-</br>
-<a href="{%url 'ingest:login' %}">login</a>
+  You have successfully logged out.
+  </br>
+  <a href="{%url 'ingest:login' %}">login</a>
+{% endblock %}
