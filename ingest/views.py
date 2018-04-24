@@ -6,8 +6,10 @@ from django.shortcuts import redirect
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
+from django_tables2 import RequestConfig
 
 from .models import MinimalImgMetadata
+from .models import MinimalImgTable
 from .forms import MinimalImagingMetadataForm
 from .forms import SignUpForm
 
@@ -20,19 +22,16 @@ def signup(request):
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             login(request, user)
-            return redirect('..')
+            return redirect('../index')
     else:
         form = SignUpForm()
     return render(request, 'ingest/signup.html', {'form': form})
 
 
-class IndexView(generic.ListView):
-    template_name = 'ingest/index.html'
-    context_object_name = 'latest_metadata_list'
-
-    def get_queryset(self):
-        """Return the last five published metadata."""
-        return MinimalImgMetadata.objects.order_by('-organization_name')[:5]
+def index(request):
+    table = MinimalImgTable(MinimalImgMetadata.objects.all())
+    RequestConfig(request).configure(table)
+    return render(request, 'ingest/index.html', {'table': table})
 
 
 class DetailView(generic.DetailView):
@@ -49,7 +48,7 @@ def post_new(request):
             # post.author = request.user
             # post.published_date = timezone.now()
             post.save()
-            return redirect('..', pk=post.pk)
+            return redirect('../index', pk=post.pk)
     else:
         form = MinimalImagingMetadataForm()
     return render(request, 'ingest/submit_metadata.html', {'form': form})

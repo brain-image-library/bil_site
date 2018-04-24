@@ -1,4 +1,5 @@
 from django.db import models
+import django_tables2 as tables
 
 
 class MinimalImgMetadata(models.Model):
@@ -22,3 +23,10 @@ class MinimalImgMetadata(models.Model):
     project_funder_id = models.CharField(max_length=200)
     background_strain = models.CharField(max_length=200)
     image_filename_pattern = models.CharField(max_length=200)
+
+
+class MinimalImgTable(tables.Table):
+    class Meta:
+        model = MinimalImgMetadata
+        template_name = 'django_tables2/bootstrap.html'
+

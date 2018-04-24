@@ -3,15 +3,8 @@
 {% block content %}
   <h2>List of Metadata</h1>
 
-  {% if latest_metadata_list %}
-      <ul>
-      {% for metadata in latest_metadata_list %}
-          <li><a href="{% url 'ingest:detail' metadata.id %}">{{ metadata.organization_name }}</a></li>
-      {% endfor %}
-      </ul>
-  {% else %}
-      <p>No projects are available.</p>
-  {% endif %}
+  {% load render_table from django_tables2 %}
+  {% render_table table %} 
   <hr>
   <a href="{% url 'ingest:post_new' %}">Create new metadata</a>
 
