@@ -9,16 +9,10 @@
           <li><a href="{% url 'ingest:detail' metadata.id %}">{{ metadata.organization_name }}</a></li>
       {% endfor %}
       </ul>
-      <a href="{% url 'ingest:post_new' %}">Create new metadata</a>
   {% else %}
       <p>No projects are available.</p>
   {% endif %}
-
   <hr>
-  </br>
-  {% if request.user.username %}
-    {{ request.user.username }} | <a href="{%url 'ingest:logout' %}">logout</a>
-  {% else %}
-  <a href="{%url 'ingest:login' %}">login</a> | <a href="{%url 'ingest:signup' %}">signup</a>
-  {% endif %}
+  <a href="{% url 'ingest:post_new' %}">Create new metadata</a>
+
 {% endblock %}

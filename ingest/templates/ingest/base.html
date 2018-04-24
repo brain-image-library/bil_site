@@ -8,6 +8,11 @@
   <body>
     <div class="page-header">
         <h1><a href="/ingest">Brain Image Library</a></h1>
+        {% if request.user.username %}
+          {{ request.user.username }} | <a href="{%url 'ingest:logout' %}">logout</a>
+        {% else %}
+        <a href="{%url 'ingest:login' %}">login</a> | <a href="{%url 'ingest:signup' %}">signup</a>
+        {% endif %}
     </div>
     <div class="content container">
         <div class="row">
