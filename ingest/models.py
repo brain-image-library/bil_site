@@ -28,5 +28,6 @@ class MinimalImgMetadata(models.Model):
 class MinimalImgTable(tables.Table):
     class Meta:
         model = MinimalImgMetadata
-        template_name = 'django_tables2/bootstrap.html'
+        # template_name = 'django_tables2/bootstrap-responsive.html'
+        template_name = 'ingest/bootstrap_ingest.html'
 
