@@ -1,5 +1,6 @@
 from django.db import models
 import django_tables2 as tables
+from django_tables2.utils import A  # alias for Accessor
 
 
 class MinimalImgMetadata(models.Model):
@@ -27,8 +28,8 @@ class MinimalImgMetadata(models.Model):
 
 
 class MinimalImgTable(tables.Table):
+    id = tables.LinkColumn('ingest:detail', args=[A('pk')])
     class Meta:
         model = MinimalImgMetadata
-        # template_name = 'django_tables2/bootstrap-responsive.html'
         template_name = 'ingest/bootstrap_ingest.html'
 
