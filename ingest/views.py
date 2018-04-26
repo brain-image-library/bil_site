@@ -4,8 +4,11 @@ from django.urls import reverse
 from django.views import generic
 from django.shortcuts import redirect
 from django.contrib.auth import login, authenticate
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin
+
 from django_tables2 import RequestConfig
 
 from .models import MinimalImgMetadata
@@ -32,18 +35,20 @@ def index(request):
     return render(request, 'ingest/index.html')
 
 
+@login_required
 def metadata_list(request):
     table = MinimalImgTable(MinimalImgMetadata.objects.all())
     RequestConfig(request).configure(table)
     return render(request, 'ingest/metadata_list.html', {'table': table})
 
 
-class DetailView(generic.DetailView):
+class DetailView(LoginRequiredMixin, generic.DetailView):
     model = MinimalImgMetadata
     template_name = 'ingest/detail.html'
     context_object_name = 'metadata'
 
 
+@login_required
 def post_new(request):
     if request.method == "POST":
         form = MinimalImagingMetadataForm(request.POST)
