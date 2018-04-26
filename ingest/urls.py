@@ -12,4 +12,5 @@ urlpatterns = [
     url(r'^login/$', auth_views.login, {'template_name': 'ingest/login.html'}, name='login'),
     url(r'^logout/$', auth_views.logout, {'template_name': 'ingest/logged_out.html'}, name='logout'),
     url(r'^index/$', views.index, name='index'),
+    url(r'^metadata_list/$', views.metadata_list, name='metadata_list'),
 ]

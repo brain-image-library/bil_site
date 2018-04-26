@@ -29,9 +29,13 @@ def signup(request):
 
 
 def index(request):
+    return render(request, 'ingest/index.html')
+
+
+def metadata_list(request):
     table = MinimalImgTable(MinimalImgMetadata.objects.all())
     RequestConfig(request).configure(table)
-    return render(request, 'ingest/index.html', {'table': table})
+    return render(request, 'ingest/metadata_list.html', {'table': table})
 
 
 class DetailView(generic.DetailView):

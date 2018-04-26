@@ -1,11 +1,25 @@
 {% extends 'ingest/base.html' %}
 
 {% block content %}
-  <h2>List of Metadata</h1>
 
-  {% load render_table from django_tables2 %}
-  {% render_table table %} 
-  <hr>
-  <a href="{% url 'ingest:post_new' %}">Create new metadata</a>
+<h2>Overview</h2>
+
+<p>The Brain Image Library (BIL) is a national public resource enabling
+researchers to deposit, analyze, mine, share and interact with large brain
+image datasets.</p>
+
+<h2>Collections</h2>
+
+<p>Imaging datasets in the Brain Image Library have metadata associated with
+them.  This metadata includes everything from experimental information to the
+layout of the files. The combination of metadata and datasets make up what we
+call a collection. Collections are ultimately what gets submitted for
+publication in the BIL and made publically available to the research
+community.</p>
+
+<p>Please <a href="{%url 'ingest:signup' %}">sign up</a> or <a href="{%url
+'ingest:login' %}">log in</a> to begin creating collections for publication in
+the BIL.</p>
+
 
 {% endblock %}
