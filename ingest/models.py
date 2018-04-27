@@ -15,15 +15,15 @@ class MinimalImgMetadata(models.Model):
         (AI, 'Allen Institute'),
     )
     organization_name = models.CharField(
-        max_length=200,
+        max_length=256,
         choices=ORGANIZATION_CHOICES,
         default=AI,
     )
-    project_name = models.CharField(max_length=200)
-    project_description = models.CharField(max_length=200)
-    project_funder_id = models.CharField(max_length=200)
-    background_strain = models.CharField(max_length=200)
-    image_filename_pattern = models.CharField(max_length=200)
+    project_name = models.CharField(max_length=256)
+    project_description = models.CharField(max_length=256)
+    project_funder_id = models.CharField(max_length=256)
+    background_strain = models.CharField(max_length=256)
+    image_filename_pattern = models.CharField(max_length=256)
     linked_to_data = models.BooleanField(default=False)
 
 
@@ -40,3 +40,14 @@ class MinimalImgTable(tables.Table):
         model = MinimalImgMetadata
         template_name = 'ingest/bootstrap_ingest.html'
 
+
+class Collection(models.Model):
+    def __str__(self):
+        return self.name
+    name = models.CharField(max_length=256)
+    description = models.CharField(max_length=256)
+    metadata = models.ForeignKey(
+        MinimalImgMetadata,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True)
