@@ -7,7 +7,7 @@ from . import views
 app_name = 'ingest'
 urlpatterns = [
     path('<int:pk>/', views.DetailView.as_view(), name='detail'),
-    re_path(r'^new/$', views.post_new, name='post_new'),
+    re_path(r'^submit_metadata/$', views.submit_metadata, name='submit_metadata'),
     re_path(r'^signup/$', views.signup, name='signup'),
     re_path(r'^login/$', auth_views.login, {'template_name': 'ingest/login.html'}, name='login'),
     re_path(r'^logout/$', auth_views.logout, {'template_name': 'ingest/logged_out.html'}, name='logout'),

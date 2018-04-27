@@ -49,13 +49,11 @@ class DetailView(LoginRequiredMixin, generic.DetailView):
 
 
 @login_required
-def post_new(request):
+def submit_metadata(request):
     if request.method == "POST":
         form = MinimalImagingMetadataForm(request.POST)
         if form.is_valid():
             post = form.save(commit=False)
-            # post.author = request.user
-            # post.published_date = timezone.now()
             post.save()
             return redirect('../index', pk=post.pk)
     else:
