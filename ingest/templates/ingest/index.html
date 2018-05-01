@@ -23,8 +23,10 @@ log in</a> to begin creating collections for publication in the BIL.</p>
 {% if request.user.username %}
   <hr>
   <ul>
-    <li><a href="{% url 'ingest:metadata_list' %}">Your Metadata list</a></li>
-    <li><a href="{% url 'ingest:submit_metadata' %}">Create new metadata</a></li>
+    <li><a href="{% url 'ingest:metadata_list' %}">View Metadata List</a></li>
+    <li><a href="{% url 'ingest:collection_list'  %}">View Collection List</a></li>
+    <li><a href="{% url 'ingest:submit_metadata' %}">Create New Metadata</a></li>
+    <li><a href="{% url 'ingest:submit_collection' %}">Create New Collection
   </ul>
 {% endif %}
 

@@ -55,6 +55,14 @@ class Collection(models.Model):
     data_path = models.CharField(max_length=1000, default="")
 
 class CollectionTable(tables.Table):
+    id = tables.LinkColumn('ingest:detail', args=[A('pk')])
+    project_description = tables.Column()
+
+    def render_project_description(self, value):
+        limit_len=32
+        value = value if len(value) < limit_len else value[:limit_len]+"..."
+        return value
+
     class Meta:
         model = Collection
         template_name = 'ingest/bootstrap_ingest.html'

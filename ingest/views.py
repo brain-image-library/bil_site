@@ -14,6 +14,7 @@ from django_tables2 import RequestConfig
 from .models import MinimalImgMetadata
 from .models import MinimalImgTable
 from .models import Collection
+from .models import CollectionTable
 from .forms import CollectionForm
 from .forms import MinimalImagingMetadataForm
 from .forms import SignUpForm
@@ -73,3 +74,9 @@ def submit_collection(request):
     else:
         form = CollectionForm()
     return render(request, 'ingest/submit_collection.html', {'form': form})
+
+@login_required
+def collection_list(request):
+    table = CollectionTable(Collection.objects.all())
+    RequestConfig(request).configure(table)
+    return render(request, 'ingest/collection_list.html', {'table': table})

@@ -14,4 +14,5 @@ urlpatterns = [
     re_path(r'^logout/$', auth_views.logout, {'template_name': 'ingest/logged_out.html'}, name='logout'),
     re_path(r'^index/$', views.index, name='index'),
     re_path(r'^metadata_list/$', views.metadata_list, name='metadata_list'),
+    re_path(r'^collection_list/$', views.collection_list, name='collection_list')
 ]

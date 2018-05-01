@@ -1,0 +1,12 @@
+{% extends 'ingest/base.html' %}
+
+{% block content %}
+  <h2>Your Collections</h1>
+
+  {% load render_table from django_tables2 %}
+  {% render_table table %} 
+  <hr>
+  <a href="{% url 'ingest:submit_collection' %}">Create New Collection</a>
+
+{% endblock %}
+
