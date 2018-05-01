@@ -1,7 +1,7 @@
 from django.db import models
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
-
+import uuid
 
 class MinimalImgMetadata(models.Model):
     def __str__(self):
@@ -20,7 +20,7 @@ class MinimalImgMetadata(models.Model):
         default=AI,
     )
     project_name = models.CharField(max_length=256)
-    project_description = models.CharField(max_length=256)
+    project_description = models.TextField()
     project_funder_id = models.CharField(max_length=256)
     background_strain = models.CharField(max_length=256)
     image_filename_pattern = models.CharField(max_length=256)
@@ -44,10 +44,12 @@ class MinimalImgTable(tables.Table):
 class Collection(models.Model):
     def __str__(self):
         return self.name
+    uniqueid = models.UUIDField(primary_key = True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=256)
-    description = models.CharField(max_length=256)
+    description = models.TextField()
     metadata = models.ForeignKey(
         MinimalImgMetadata,
         on_delete=models.SET_NULL,
         blank=True,
         null=True)
+    data_path = models.CharField(default="")
