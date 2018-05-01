@@ -9,4 +9,5 @@
     <li>Background strain: {{metadata.background_strain}}</li>
     <li>Image filename pattern: {{metadata.image_filename_pattern}}</li>
   </ul>
+  <a href="{% url 'ingest:metadata_update' pk=metadata.pk %}">Edit metadata</a>
 {% endblock %}
