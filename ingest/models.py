@@ -52,4 +52,4 @@ class Collection(models.Model):
         on_delete=models.SET_NULL,
         blank=True,
         null=True)
-    data_path = models.CharField(default="")
+    data_path = models.CharField(max_length=1000, default="")
