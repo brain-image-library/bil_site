@@ -17,9 +17,8 @@ call a collection. Collections are ultimately what gets submitted for
 publication in the BIL and made publically available to the research
 community.</p>
 
-<p>Please <a href="{%url 'ingest:signup' %}">sign up</a> or <a href="{%url
-'ingest:login' %}">log in</a> to begin creating collections for publication in
-the BIL.</p>
+<p>Please <a href="{% url 'ingest:signup' %}">sign up</a> or <a href="{% url 'ingest:login' %}">
+log in</a> to begin creating collections for publication in the BIL.</p>
 
 {% if request.user.username %}
   <hr>
