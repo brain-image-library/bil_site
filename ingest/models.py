@@ -28,7 +28,7 @@ class MinimalImgMetadata(models.Model):
 
 
 class MinimalImgTable(tables.Table):
-    id = tables.LinkColumn('ingest:detail', args=[A('pk')])
+    id = tables.LinkColumn('ingest:metadata_detail', args=[A('pk')])
     project_description = tables.Column()
 
     def render_project_description(self, value):
@@ -55,7 +55,7 @@ class Collection(models.Model):
     data_path = models.CharField(max_length=1000, default="")
 
 class CollectionTable(tables.Table):
-    id = tables.LinkColumn('ingest:detail', args=[A('pk')])
+    id = tables.LinkColumn('ingest:metadata_detail', args=[A('pk')])
     project_description = tables.Column()
 
     def render_project_description(self, value):

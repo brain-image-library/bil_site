@@ -49,7 +49,7 @@ def metadata_list(request):
 
 class DetailView(LoginRequiredMixin, generic.DetailView):
     model = MinimalImgMetadata
-    template_name = 'ingest/detail.html'
+    template_name = 'ingest/metadata_detail.html'
     context_object_name = 'metadata'
 
 
