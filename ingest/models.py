@@ -3,7 +3,7 @@ import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
 import uuid
 
-class MinimalImgMetadata(models.Model):
+class ImageMetadata(models.Model):
     def __str__(self):
         return self.project_name
     AI = 'AI'
@@ -37,7 +37,7 @@ class MinimalImgTable(tables.Table):
         return value
 
     class Meta:
-        model = MinimalImgMetadata
+        model = ImageMetadata
         template_name = 'ingest/bootstrap_ingest.html'
 
 
@@ -48,7 +48,7 @@ class Collection(models.Model):
     name = models.CharField(max_length=256)
     description = models.TextField()
     metadata = models.ForeignKey(
-        MinimalImgMetadata,
+        ImageMetadata,
         on_delete=models.SET_NULL,
         blank=True,
         null=True)

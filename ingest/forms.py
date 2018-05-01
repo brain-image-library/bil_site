@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
-from .models import MinimalImgMetadata
+from .models import ImageMetadata
 from .models import Collection
 
 class SignUpForm(UserCreationForm):
@@ -17,7 +17,7 @@ class SignUpForm(UserCreationForm):
 class MinimalImagingMetadataForm(forms.ModelForm):
 
     class Meta:
-        model = MinimalImgMetadata
+        model = ImageMetadata
         fields = (
             'project_name',
             'organization_name',

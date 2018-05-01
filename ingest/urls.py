@@ -7,8 +7,8 @@ from . import views
 app_name = 'ingest'
 urlpatterns = [
     path('<int:pk>/', views.DetailView.as_view(), name='metadata_detail'),
-    path('metadata_update/<int:pk>/', views.MinimalImgMetadataUpdate.as_view(), name='metadata_update'),
-    path('metadata_delete/<int:pk>/', views.MinimalImgMetadataDelete.as_view(), name='metadata_delete'),
+    path('metadata_update/<int:pk>/', views.ImageMetadataUpdate.as_view(), name='metadata_update'),
+    path('metadata_delete/<int:pk>/', views.ImageMetadataDelete.as_view(), name='metadata_delete'),
     re_path(r'^submit_collection/$', views.submit_collection, name='submit_collection'),
     re_path(r'^submit_metadata/$', views.submit_metadata, name='submit_metadata'),
     re_path(r'^signup/$', views.signup, name='signup'),

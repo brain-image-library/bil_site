@@ -13,7 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from django_tables2 import RequestConfig
 
-from .models import MinimalImgMetadata
+from .models import ImageMetadata
 from .models import MinimalImgTable
 from .models import Collection
 from .models import CollectionTable
@@ -42,13 +42,13 @@ def index(request):
 
 @login_required
 def metadata_list(request):
-    table = MinimalImgTable(MinimalImgMetadata.objects.all())
+    table = MinimalImgTable(ImageMetadata.objects.all())
     RequestConfig(request).configure(table)
     return render(request, 'ingest/metadata_list.html', {'table': table})
 
 
 class DetailView(LoginRequiredMixin, generic.DetailView):
-    model = MinimalImgMetadata
+    model = ImageMetadata
     template_name = 'ingest/metadata_detail.html'
     context_object_name = 'metadata'
 
@@ -86,8 +86,8 @@ def collection_list(request):
     return render(request, 'ingest/collection_list.html', {'table': table})
 
 
-class MinimalImgMetadataUpdate(UpdateView):
-    model = MinimalImgMetadata
+class ImageMetadataUpdate(UpdateView):
+    model = ImageMetadata
     fields = [
         'project_name', 'project_description', 'project_funder_id',
         'background_strain', 'image_filename_pattern']
@@ -95,7 +95,7 @@ class MinimalImgMetadataUpdate(UpdateView):
     success_url = reverse_lazy('ingest:metadata_list')
 
 
-class MinimalImgMetadataDelete(DeleteView):
-    model = MinimalImgMetadata
+class ImageMetadataDelete(DeleteView):
+    model = ImageMetadata
     template_name = 'ingest/metadata_delete.html'
     success_url = reverse_lazy('ingest:metadata_list')
