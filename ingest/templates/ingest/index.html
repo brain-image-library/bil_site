@@ -17,18 +17,18 @@ call a collection. Collections are ultimately what gets submitted for
 publication in the BIL and made publically available to the research
 community.</p>
 
-<p>Please <a href="{% url 'ingest:signup' %}">sign up</a> or <a href="{% url 'ingest:login' %}">
-log in</a> to begin creating collections for publication in the BIL.</p>
+<hr>
 
 {% if request.user.username %}
-  <hr>
   <ul>
     <li><a href="{% url 'ingest:metadata_list' %}">View Metadata List</a></li>
     <li><a href="{% url 'ingest:collection_list'  %}">View Collection List</a></li>
     <li><a href="{% url 'ingest:submit_metadata' %}">Create New Metadata</a></li>
     <li><a href="{% url 'ingest:submit_collection' %}">Create New Collection
   </ul>
+{% else %}
+  <p>Please <a href="{% url 'ingest:signup' %}">sign up</a> or <a href="{% url 'ingest:login' %}">
+  log in</a> to begin creating collections for publication in the BIL.</p>
 {% endif %}
-
 
 {% endblock %}
