@@ -1,8 +1,9 @@
 # Brain Image Library - Django Site
 
-## Instructions
 
-To run the website locally, do the following:
+## Installation and Setup
+
+To set up the website locally for the first time, do the following:
 
     python3 -m venv bil_site_venv
     source bil_site_venv/bin/activate
@@ -10,7 +11,31 @@ To run the website locally, do the following:
     python manage.py makemigrations
     python manage.py migrate
     python manage.py createsuperuser
+
+This is a pretty standard process for any django site.  
+
+## Serving the Django Site
+
+Now you're ready to actually run the local server:
+
     python manage.py runserver
 
 If the server is successfully running, navigate your browser to
 127.0.0.1:8000/ingest/index
+
+Now that you've created your virtual environment, you should usually only have
+to run these two commands in the future:
+
+    source bil_site_venv/bin/activate
+    python manage.py runserver
+
+Note: you only have to run the `source` command again if you open a different
+terminal or explicitly `deactivate`.
+
+## Updating the Site
+
+If you ever change the models, you'll likely have to re-run the migrate
+commands:
+
+    python manage.py makemigrations
+    python manage.py migrate
