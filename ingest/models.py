@@ -53,3 +53,8 @@ class Collection(models.Model):
         blank=True,
         null=True)
     data_path = models.CharField(max_length=1000, default="")
+
+class CollectionTable(tables.Table):
+    class Meta:
+        model = Collection
+        template_name = 'ingest/bootstrap_ingest.html'

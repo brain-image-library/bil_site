@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
 from .models import MinimalImgMetadata
-
+from .models import Collection
 
 class SignUpForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, help_text='Required')
@@ -25,3 +25,12 @@ class MinimalImagingMetadataForm(forms.ModelForm):
             'project_funder_id',
             'background_strain',
             'image_filename_pattern')
+
+class CollectionForm(forms.ModelForm):
+
+    class Meta:
+        model = Collection
+        fields = (
+            'name',
+            'metadata',
+            'data_path')

@@ -13,6 +13,8 @@ from django_tables2 import RequestConfig
 
 from .models import MinimalImgMetadata
 from .models import MinimalImgTable
+from .models import Collection
+from .forms import CollectionForm
 from .forms import MinimalImagingMetadataForm
 from .forms import SignUpForm
 
@@ -59,3 +61,15 @@ def submit_metadata(request):
     else:
         form = MinimalImagingMetadataForm()
     return render(request, 'ingest/submit_metadata.html', {'form': form})
+
+@login_required
+def submit_collection(request):
+    if request.method == "POST":
+        form = CollectionForm(request.POST)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.save()
+            return redirect('../index', pk=post.pk)
+    else:
+        form = CollectionForm()
+    return render(request, 'ingest/submit_collection.html', {'form': form})
