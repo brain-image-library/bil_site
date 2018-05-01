@@ -47,7 +47,7 @@ def metadata_list(request):
     return render(request, 'ingest/metadata_list.html', {'table': table})
 
 
-class DetailView(LoginRequiredMixin, generic.DetailView):
+class MetadataDetail(LoginRequiredMixin, generic.DetailView):
     model = ImageMetadata
     template_name = 'ingest/metadata_detail.html'
     context_object_name = 'metadata'
