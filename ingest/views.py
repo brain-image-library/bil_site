@@ -3,7 +3,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.urls import reverse_lazy
 from django.views import generic
-from django.views.generic.edit import UpdateView
+from django.views.generic.edit import UpdateView, DeleteView
 from django.shortcuts import redirect
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
@@ -92,4 +92,10 @@ class MinimalImgMetadataUpdate(UpdateView):
         'project_name', 'project_description', 'project_funder_id',
         'background_strain', 'image_filename_pattern']
     template_name = 'ingest/metadata_update.html'
+    success_url = reverse_lazy('ingest:metadata_list')
+
+
+class MinimalImgMetadataDelete(DeleteView):
+    model = MinimalImgMetadata
+    template_name = 'ingest/metadata_delete.html'
     success_url = reverse_lazy('ingest:metadata_list')
