@@ -44,7 +44,6 @@ class ImageMetadataTable(tables.Table):
 class Collection(models.Model):
     def __str__(self):
         return self.name
-    uniqueid = models.UUIDField(primary_key = True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=256)
     description = models.TextField()
     metadata = models.ForeignKey(
@@ -55,7 +54,7 @@ class Collection(models.Model):
     data_path = models.CharField(max_length=1000, default="")
 
 class CollectionTable(tables.Table):
-    id = tables.LinkColumn('ingest:metadata_detail', args=[A('pk')])
+    id = tables.LinkColumn('ingest:collection_detail', args=[A('pk')])
     project_description = tables.Column()
 
     def render_project_description(self, value):

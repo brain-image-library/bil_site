@@ -99,3 +99,21 @@ class ImageMetadataDelete(DeleteView):
     model = ImageMetadata
     template_name = 'ingest/metadata_delete.html'
     success_url = reverse_lazy('ingest:metadata_list')
+
+class CollectionDetail(LoginRequiredMixin, generic.DetailView):
+    model = Collection
+    template_name = 'ingest/collection_detail.html'
+    context_object_name = 'collection'
+
+class CollectionUpdate(UpdateView):
+    model = Collection
+    fields = [
+        'name','description','metadata','data_path'
+        ]
+    template_name='ingest/collection_update.html'
+    success_url=reverse_lazy('ingest:collection_list')
+
+class CollectionDelete(DeleteView):
+    model = Collection
+    template_name = 'ingest/collection_delete.html'
+    success_url = reverse_lazy('ingest:collection_list')

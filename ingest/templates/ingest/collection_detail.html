@@ -1,0 +1,13 @@
+{% extends 'ingest/base.html' %}
+
+{% block content %}
+  <h1>{{ collection.name }}</h1>
+  <ul>
+    <li>Collection Name: {{collection.name}}</li>
+    <li>Collection Description: {{collection.description}}</li>
+    <li>Metadata: {{collection.metadata}}</li>
+    <li>Datapath: {{collection.data_path}}</li
+  </ul>
+  <a href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a></br>
+  <a href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a></br>
+{% endblock %}
