@@ -15,8 +15,14 @@ Including another URLconf
 """
 from django.urls import include, path
 from django.contrib import admin
+from django.views.generic import RedirectView
+from django.conf import settings
+from django.conf.urls.static import static
+
 
 urlpatterns = [
     path('ingest/', include('ingest.urls')),
     path('admin/', admin.site.urls),
-]
+    path('accounts/', include('django.contrib.auth.urls')),
+    path('', RedirectView.as_view(url='/ingest/')),
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
