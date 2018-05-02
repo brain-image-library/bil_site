@@ -32,5 +32,6 @@ class CollectionForm(forms.ModelForm):
         model = Collection
         fields = (
             'name',
+            'description',
             'metadata',
             'data_path')
