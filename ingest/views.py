@@ -14,11 +14,11 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django_tables2 import RequestConfig
 
 from .models import ImageMetadata
-from .models import MinimalImgTable
+from .models import ImageMetadataTable
 from .models import Collection
 from .models import CollectionTable
 from .forms import CollectionForm
-from .forms import MinimalImagingMetadataForm
+from .forms import ImageMetadataForm
 from .forms import SignUpForm
 
 def signup(request):
@@ -42,7 +42,7 @@ def index(request):
 
 @login_required
 def metadata_list(request):
-    table = MinimalImgTable(ImageMetadata.objects.all())
+    table = ImageMetadataTable(ImageMetadata.objects.all())
     RequestConfig(request).configure(table)
     return render(request, 'ingest/metadata_list.html', {'table': table})
 
@@ -56,13 +56,13 @@ class MetadataDetail(LoginRequiredMixin, generic.DetailView):
 @login_required
 def submit_metadata(request):
     if request.method == "POST":
-        form = MinimalImagingMetadataForm(request.POST)
+        form = ImageMetadataForm(request.POST)
         if form.is_valid():
             post = form.save(commit=False)
             post.save()
             return redirect('../index', pk=post.pk)
     else:
-        form = MinimalImagingMetadataForm()
+        form = ImageMetadataForm()
     return render(request, 'ingest/submit_metadata.html', {'form': form})
 
 

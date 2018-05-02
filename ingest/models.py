@@ -27,7 +27,7 @@ class ImageMetadata(models.Model):
     linked_to_data = models.BooleanField(default=False)
 
 
-class MinimalImgTable(tables.Table):
+class ImageMetadataTable(tables.Table):
     id = tables.LinkColumn('ingest:metadata_detail', args=[A('pk')])
     project_description = tables.Column()
 
