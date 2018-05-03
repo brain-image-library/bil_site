@@ -21,9 +21,9 @@ community.</p>
 
 {% if request.user.username %}
   <ul>
-    <li><a href="{% url 'ingest:metadata_list' %}">View Metadata List</a></li>
+    <li><a href="{% url 'ingest:image_metadata_list' %}">View Metadata List</a></li>
     <li><a href="{% url 'ingest:collection_list'  %}">View Collection List</a></li>
-    <li><a href="{% url 'ingest:submit_metadata' %}">Create New Metadata</a></li>
+    <li><a href="{% url 'ingest:submit_image_metadata' %}">Create New Metadata</a></li>
     <li><a href="{% url 'ingest:submit_collection' %}">Create New Collection
   </ul>
 {% else %}

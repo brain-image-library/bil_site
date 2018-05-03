@@ -22,6 +22,7 @@ from .forms import ImageMetadataForm
 from .forms import SignUpForm
 
 def signup(request):
+    """ This is how a user signs up for a new account. """
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
@@ -37,33 +38,56 @@ def signup(request):
 
 
 def index(request):
+    """ The main/home page. """
     return render(request, 'ingest/index.html')
 
+# What follows is a number of views for creating, viewing, modifying and
+# deleting image metadata.
 
 @login_required
-def metadata_list(request):
+def image_metadata_list(request):
+    """ A list of all the metadata that has been created. """
     table = ImageMetadataTable(ImageMetadata.objects.all())
     RequestConfig(request).configure(table)
-    return render(request, 'ingest/metadata_list.html', {'table': table})
+    return render(request, 'ingest/image_metadata_list.html', {'table': table})
 
 
-class MetadataDetail(LoginRequiredMixin, generic.DetailView):
+class ImageMetadataDetail(LoginRequiredMixin, generic.DetailView):
+    """ A detailed view of a single piece of metadata. """
     model = ImageMetadata
-    template_name = 'ingest/metadata_detail.html'
-    context_object_name = 'metadata'
+    template_name = 'ingest/image_metadata_detail.html'
+    context_object_name = 'image_metadata'
 
 
 @login_required
-def submit_metadata(request):
+def submit_image_metadata(request):
+    """ Create new image metadata. """
     if request.method == "POST":
         form = ImageMetadataForm(request.POST)
         if form.is_valid():
             post = form.save(commit=False)
             post.save()
-            return redirect('../index', pk=post.pk)
+            return redirect('/', pk=post.pk)
     else:
         form = ImageMetadataForm()
-    return render(request, 'ingest/submit_metadata.html', {'form': form})
+    return render(request, 'ingest/submit_image_metadata.html', {'form': form})
+
+
+class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
+    """ Modify an existing piece of image metadata. """
+    model = ImageMetadata
+    fields = [
+        'project_name', 'project_description', 'project_funder_id',
+        'background_strain', 'image_filename_pattern']
+    template_name = 'ingest/image_metadata_update.html'
+    success_url = reverse_lazy('ingest:image_metadata_list')
+
+
+class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
+    """ Delete an existing piece of image metadata. """
+    model = ImageMetadata
+    template_name = 'ingest/image_metadata_delete.html'
+    success_url = reverse_lazy('ingest:image_metadata_list')
 
 
 @login_required
@@ -73,7 +97,7 @@ def submit_collection(request):
         if form.is_valid():
             post = form.save(commit=False)
             post.save()
-            return redirect('../index', pk=post.pk)
+            return redirect('/', pk=post.pk)
     else:
         form = CollectionForm()
     return render(request, 'ingest/submit_collection.html', {'form': form})
@@ -86,24 +110,11 @@ def collection_list(request):
     return render(request, 'ingest/collection_list.html', {'table': table})
 
 
-class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
-    model = ImageMetadata
-    fields = [
-        'project_name', 'project_description', 'project_funder_id',
-        'background_strain', 'image_filename_pattern']
-    template_name = 'ingest/metadata_update.html'
-    success_url = reverse_lazy('ingest:metadata_list')
-
-
-class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
-    model = ImageMetadata
-    template_name = 'ingest/metadata_delete.html'
-    success_url = reverse_lazy('ingest:metadata_list')
-
 class CollectionDetail(LoginRequiredMixin, generic.DetailView):
     model = Collection
     template_name = 'ingest/collection_detail.html'
     context_object_name = 'collection'
+
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     model = Collection
@@ -112,6 +123,7 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
         ]
     template_name='ingest/collection_update.html'
     success_url=reverse_lazy('ingest:collection_list')
+
 
 class CollectionDelete(LoginRequiredMixin, DeleteView):
     model = Collection

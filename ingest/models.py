@@ -28,7 +28,7 @@ class ImageMetadata(models.Model):
 
 
 class ImageMetadataTable(tables.Table):
-    id = tables.LinkColumn('ingest:metadata_detail', args=[A('pk')])
+    id = tables.LinkColumn('ingest:image_metadata_detail', args=[A('pk')])
     project_description = tables.Column()
 
     def render_project_description(self, value):
