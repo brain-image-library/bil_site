@@ -86,7 +86,7 @@ def collection_list(request):
     return render(request, 'ingest/collection_list.html', {'table': table})
 
 
-class ImageMetadataUpdate(UpdateView):
+class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
     model = ImageMetadata
     fields = [
         'project_name', 'project_description', 'project_funder_id',
@@ -95,7 +95,7 @@ class ImageMetadataUpdate(UpdateView):
     success_url = reverse_lazy('ingest:metadata_list')
 
 
-class ImageMetadataDelete(DeleteView):
+class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
     model = ImageMetadata
     template_name = 'ingest/metadata_delete.html'
     success_url = reverse_lazy('ingest:metadata_list')
@@ -105,7 +105,7 @@ class CollectionDetail(LoginRequiredMixin, generic.DetailView):
     template_name = 'ingest/collection_detail.html'
     context_object_name = 'collection'
 
-class CollectionUpdate(UpdateView):
+class CollectionUpdate(LoginRequiredMixin, UpdateView):
     model = Collection
     fields = [
         'name','description','metadata','data_path'
@@ -113,7 +113,7 @@ class CollectionUpdate(UpdateView):
     template_name='ingest/collection_update.html'
     success_url=reverse_lazy('ingest:collection_list')
 
-class CollectionDelete(DeleteView):
+class CollectionDelete(LoginRequiredMixin, DeleteView):
     model = Collection
     template_name = 'ingest/collection_delete.html'
     success_url = reverse_lazy('ingest:collection_list')
