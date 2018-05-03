@@ -14,6 +14,7 @@ class SignUpForm(UserCreationForm):
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', )
 
+
 class ImageMetadataForm(forms.ModelForm):
 
     class Meta:
@@ -26,6 +27,19 @@ class ImageMetadataForm(forms.ModelForm):
             'background_strain',
             'image_filename_pattern')
 
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        return super().__init__(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        kwargs['commit']=False
+        obj = super().save(*args, **kwargs)
+        if self.request:
+            obj.user = self.request.user
+        obj.save()
+        return obj
+
+
 class CollectionForm(forms.ModelForm):
 
     class Meta:
@@ -35,3 +49,15 @@ class CollectionForm(forms.ModelForm):
             'description',
             'metadata',
             'data_path')
+
+    def __init__(self, *args, **kwargs):
+        self.request = kwargs.pop('request', None)
+        return super().__init__(*args, **kwargs)
+
+    def save(self, *args, **kwargs):
+        kwargs['commit']=False
+        obj = super().save(*args, **kwargs)
+        if self.request:
+            obj.user = self.request.user
+        obj.save()
+        return obj

@@ -31,7 +31,7 @@ def signup(request):
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             login(request, user)
-            return redirect('../index')
+            return redirect('/')
     else:
         form = SignUpForm()
     return render(request, 'ingest/signup.html', {'form': form})
@@ -46,8 +46,8 @@ def index(request):
 
 @login_required
 def image_metadata_list(request):
-    """ A list of all the metadata that has been created. """
-    table = ImageMetadataTable(ImageMetadata.objects.all())
+    """ A list of all the metadata the user has created. """
+    table = ImageMetadataTable(ImageMetadata.objects.filter(user=request.user))
     RequestConfig(request).configure(table)
     return render(request, 'ingest/image_metadata_list.html', {'table': table})
 
@@ -63,7 +63,8 @@ class ImageMetadataDetail(LoginRequiredMixin, generic.DetailView):
 def submit_image_metadata(request):
     """ Create new image metadata. """
     if request.method == "POST":
-        form = ImageMetadataForm(request.POST)
+        # We need to pass in request here, so we can use it to get the user
+        form = ImageMetadataForm(request.POST, request=request)
         if form.is_valid():
             post = form.save(commit=False)
             post.save()
@@ -93,7 +94,8 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 @login_required
 def submit_collection(request):
     if request.method == "POST":
-        form = CollectionForm(request.POST)
+        # We need to pass in request here, so we can use it to get the user
+        form = CollectionForm(request.POST, request=request)
         if form.is_valid():
             post = form.save(commit=False)
             post.save()
@@ -105,7 +107,7 @@ def submit_collection(request):
 
 @login_required
 def collection_list(request):
-    table = CollectionTable(Collection.objects.all())
+    table = CollectionTable(Collection.objects.filter(user=request.user))
     RequestConfig(request).configure(table)
     return render(request, 'ingest/collection_list.html', {'table': table})
 

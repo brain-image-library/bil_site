@@ -1,6 +1,9 @@
 from django.db import models
+from django.contrib.auth.models import User
+
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
+
 import uuid
 
 class ImageMetadata(models.Model):
@@ -25,6 +28,7 @@ class ImageMetadata(models.Model):
     background_strain = models.CharField(max_length=256)
     image_filename_pattern = models.CharField(max_length=256)
     linked_to_data = models.BooleanField(default=False)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
 
 class ImageMetadataTable(tables.Table):
@@ -52,6 +56,8 @@ class Collection(models.Model):
         blank=True,
         null=True)
     data_path = models.CharField(max_length=1000, default="")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
 
 class CollectionTable(tables.Table):
     id = tables.LinkColumn('ingest:collection_detail', args=[A('pk')], text = '⚙')
