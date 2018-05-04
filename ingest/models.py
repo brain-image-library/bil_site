@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils.html import format_html
 
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
@@ -32,7 +33,11 @@ class ImageMetadata(models.Model):
 
 
 class ImageMetadataTable(tables.Table):
-    id = tables.LinkColumn('ingest:image_metadata_detail', args=[A('pk')])
+    id = tables.LinkColumn(
+        'ingest:image_metadata_detail',
+        args=[A('pk')],
+        text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
+        attrs= {'a': {'class': "btn btn-info", 'role': "button"}})
     project_description = tables.Column()
 
     def render_project_description(self, value):
@@ -60,7 +65,11 @@ class Collection(models.Model):
 
 
 class CollectionTable(tables.Table):
-    id = tables.LinkColumn('ingest:collection_detail', args=[A('pk')], text = '⚙')
+    id = tables.LinkColumn(
+        'ingest:collection_detail',
+        args=[A('pk')],
+        text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
+        attrs= {'a': {'class': "btn btn-info", 'role': "button"}})
     description = tables.Column()
 
     def render_project_description(self, value):
