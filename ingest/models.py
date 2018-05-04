@@ -7,6 +7,16 @@ from django_tables2.utils import A  # alias for Accessor
 
 import uuid
 
+
+class ImageData(models.Model):
+    def __str__(self):
+        return self.project_name
+    data_path = models.CharField(max_length=256)
+    locked = models.BooleanField(default=False)
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True)
+
+
 class ImageMetadata(models.Model):
     def __str__(self):
         return self.project_name
@@ -28,7 +38,7 @@ class ImageMetadata(models.Model):
     project_funder_id = models.CharField(max_length=256)
     background_strain = models.CharField(max_length=256)
     image_filename_pattern = models.CharField(max_length=256)
-    linked_to_data = models.BooleanField(default=False)
+    locked = models.BooleanField(default=False)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
 
 
@@ -57,11 +67,13 @@ class Collection(models.Model):
     description = models.TextField()
     metadata = models.ForeignKey(
         ImageMetadata,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True)
-    data_path = models.CharField(max_length=1000, default="")
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+        on_delete=models.SET_NULL, blank=True, null=True)
+    data_path = models.ForeignKey(
+        ImageData,
+        on_delete=models.SET_NULL, blank=True, null=True)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL, blank=True, null=True)
 
 
 class CollectionTable(tables.Table):
@@ -74,7 +86,7 @@ class CollectionTable(tables.Table):
 
     def render_project_description(self, value):
         limit_len=32
-        value = value if len(value) < limit_len else value[:limit_len]+"..."
+        value = value if len(value) < limit_len else value[:limit_len]+"…"
         return value
 
     class Meta:
