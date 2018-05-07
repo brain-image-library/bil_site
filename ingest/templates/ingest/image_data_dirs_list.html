@@ -1,12 +1,16 @@
 {% extends 'ingest/base.html' %}
 
 {% block content %}
-  <h2>Your Image Data Directories</h1>
+  <h2>Your Image Data Storage Areas</h1>
 
   {% load render_table from django_tables2 %}
   {% render_table table %} 
   <hr>
   <!-- this is just a placeholder and doesn't do anything yet. --!>
-  <a href="{% url 'ingest:index' %}">Request New Directory for Image Data</a>
+  <form method="POST" class="post-form">{% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="save btn btn-default">Request Storage Area for Image Data</button>
+  </form>
+
 
 {% endblock %}

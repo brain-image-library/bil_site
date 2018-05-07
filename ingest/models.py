@@ -10,7 +10,7 @@ import uuid
 
 class ImageData(models.Model):
     def __str__(self):
-        return self.project_name
+        return self.data_path
     data_path = models.CharField(max_length=256)
     locked = models.BooleanField(default=False)
     user = models.ForeignKey(
