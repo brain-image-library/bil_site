@@ -17,6 +17,13 @@ class ImageData(models.Model):
         User, on_delete=models.SET_NULL, null=True, blank=True)
 
 
+class ImageDataTable(tables.Table):
+
+    class Meta:
+        model = ImageData
+        template_name = 'ingest/bootstrap_ingest.html'
+
+
 class ImageMetadata(models.Model):
     def __str__(self):
         return self.project_name

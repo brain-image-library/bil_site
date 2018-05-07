@@ -20,11 +20,16 @@ community.</p>
 <hr>
 
 {% if request.user.username %}
+<h3>Submitting to the Brain Image Library</h3>
+  <ul>
+    <li><a href="{% url 'ingest:submit_image_metadata' %}">Create New Metadata</a></li>
+    <li><a href="{% url 'ingest:create_image_upload_area' %}">Create Image Upload Area</a></li>
+    <li><a href="{% url 'ingest:submit_collection' %}">Create New Collection
+  </ul>
+  <hr>
   <ul>
     <li><a href="{% url 'ingest:image_metadata_list' %}">View Metadata List</a></li>
     <li><a href="{% url 'ingest:collection_list'  %}">View Collection List</a></li>
-    <li><a href="{% url 'ingest:submit_image_metadata' %}">Create New Metadata</a></li>
-    <li><a href="{% url 'ingest:submit_collection' %}">Create New Collection
   </ul>
 {% else %}
   <p>Please <a href="{% url 'login' %}">

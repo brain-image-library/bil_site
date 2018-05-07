@@ -13,6 +13,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 
 from django_tables2 import RequestConfig
 
+from .models import ImageData
+from .models import ImageDataTable
 from .models import ImageMetadata
 from .models import ImageMetadataTable
 from .models import Collection
@@ -42,7 +44,21 @@ def index(request):
     return render(request, 'ingest/index.html')
 
 # What follows is a number of views for creating, viewing, modifying and
-# deleting image metadata.
+# deleting IMAGE DATA.
+
+def create_image_upload_area(request):
+    """ Create new area for uploading image data. """
+    return render(request, 'ingest/create_image_upload_area.html')
+
+@login_required
+def image_data_dirs_list(request):
+    """ A list of all the metadata the user has created. """
+    table = ImageDataTable(ImageData.objects.filter(user=request.user))
+    RequestConfig(request).configure(table)
+    return render(request, 'ingest/image_data_dirs_list.html', {'table': table})
+
+# What follows is a number of views for creating, viewing, modifying and
+# deleting IMAGE METADATA.
 
 @login_required
 def image_metadata_list(request):
