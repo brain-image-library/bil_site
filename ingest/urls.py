@@ -13,6 +13,8 @@ urlpatterns = [
     # All the image data pages
     re_path(r'^create_image_upload_area/$', views.create_image_upload_area, name='create_image_upload_area'),
     re_path(r'^image_data_dirs_list/$', views.image_data_dirs_list, name='image_data_dirs_list'),
+    path('image_data/<int:pk>/', views.ImageDataDetail.as_view(), name='image_data_dirs_detail'),
+    path('image_data_delete/<int:pk>/', views.ImageDataDelete.as_view(), name='image_data_delete'),
     # All the image metadata pages
     path('metadata/<int:pk>/', views.ImageMetadataDetail.as_view(), name='image_metadata_detail'),
     path('metadata_update/<int:pk>/', views.ImageMetadataUpdate.as_view(), name='image_metadata_update'),

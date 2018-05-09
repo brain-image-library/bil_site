@@ -93,6 +93,20 @@ def image_data_dirs_list(request):
     RequestConfig(request).configure(table)
     return render(request, 'ingest/image_data_dirs_list.html', {'table': table})
 
+
+class ImageDataDetail(LoginRequiredMixin, generic.DetailView):
+    """ A detailed view of a single piece of metadata. """
+    model = ImageData
+    template_name = 'ingest/image_data_dirs_detail.html'
+    context_object_name = 'image_data'
+
+
+class ImageDataDelete(LoginRequiredMixin, DeleteView):
+    """ Delete an existing piece of image metadata. """
+    model = ImageData
+    template_name = 'ingest/image_data_delete.html'
+    success_url = reverse_lazy('ingest:image_data_dirs_list')
+
 # What follows is a number of views for creating, viewing, modifying and
 # deleting IMAGE METADATA.
 

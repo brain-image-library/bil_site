@@ -18,7 +18,12 @@ class ImageData(models.Model):
 
 
 class ImageDataTable(tables.Table):
-
+    id = tables.LinkColumn(
+        'ingest:image_data_dirs_detail',
+        verbose_name="",
+        args=[A('pk')],
+        text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
+        attrs= {'a': {'class': "btn btn-info", 'role': "button"}})
     class Meta:
         model = ImageData
         template_name = 'ingest/bootstrap_ingest.html'
