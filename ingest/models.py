@@ -52,6 +52,7 @@ class ImageMetadata(models.Model):
 class ImageMetadataTable(tables.Table):
     id = tables.LinkColumn(
         'ingest:image_metadata_detail',
+        verbose_name="",
         args=[A('pk')],
         text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
         attrs= {'a': {'class': "btn btn-info", 'role': "button"}})
@@ -86,6 +87,7 @@ class Collection(models.Model):
 class CollectionTable(tables.Table):
     id = tables.LinkColumn(
         'ingest:collection_detail',
+        verbose_name="",
         args=[A('pk')],
         text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
         attrs= {'a': {'class': "btn btn-info", 'role': "button"}})

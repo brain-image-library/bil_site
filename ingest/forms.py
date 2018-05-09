@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from .models import ImageMetadata
 from .models import Collection
 
+
 class SignUpForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, help_text='Required')
     last_name = forms.CharField(max_length=30, help_text='Required')

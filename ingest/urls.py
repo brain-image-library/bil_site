@@ -18,6 +18,7 @@ urlpatterns = [
     path('metadata_update/<int:pk>/', views.ImageMetadataUpdate.as_view(), name='image_metadata_update'),
     path('metadata_delete/<int:pk>/', views.ImageMetadataDelete.as_view(), name='image_metadata_delete'),
     re_path(r'^submit_metadata/$', views.submit_image_metadata, name='submit_image_metadata'),
+    re_path(r'^upload_metadata/$', views.upload_image_metadata, name='upload_image_metadata'),
     re_path(r'^metadata_list/$', views.image_metadata_list, name='image_metadata_list'),
     # All the collection pages.
     path('collection_update/<int:pk>', views.CollectionUpdate.as_view(), name='collection_update'),

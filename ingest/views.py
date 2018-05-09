@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.shortcuts import get_object_or_404, render
 from django.http import HttpResponseRedirect
 from django.urls import reverse
@@ -10,8 +11,10 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.files.storage import FileSystemStorage
 
 from django_tables2 import RequestConfig
+import pyexcel as pe
 
 from .models import ImageData
 from .models import ImageDataTable
@@ -24,6 +27,22 @@ from .forms import ImageMetadataForm
 from .forms import SignUpForm
 
 import uuid
+
+
+def upload_image_metadata(request):
+    if request.method == 'POST' and request.FILES['myfile']:
+        myfile = request.FILES['myfile']
+        fs = FileSystemStorage()
+        filename = fs.save(myfile.name, myfile)
+        rec = pe.iget_records(file_name=filename)
+        for r in rec:
+            print(r)
+        uploaded_file_url = fs.url(filename)
+        return render(request, 'ingest/upload_image_metadata.html', {
+            'uploaded_file_url': uploaded_file_url
+        })
+    return render(request, 'ingest/upload_image_metadata.html')
+
 
 def signup(request):
     """ This is how a user signs up for a new account. """
