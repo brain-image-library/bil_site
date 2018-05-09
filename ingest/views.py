@@ -36,11 +36,22 @@ def upload_image_metadata(request):
         filename = fs.save(myfile.name, myfile)
         rec = pe.iget_records(file_name=filename)
         for r in rec:
-            print(r)
-        uploaded_file_url = fs.url(filename)
-        return render(request, 'ingest/upload_image_metadata.html', {
-            'uploaded_file_url': uploaded_file_url
-        })
+            im = ImageMetadata(
+                project_name=r['project_name'],
+                project_description=r['project_description'],
+                project_funder_id=r['project_funder_id'],
+                background_strain=r['background_strain'],
+                image_filename_pattern=r['image_filename_pattern'],
+                user=request.user)
+            im.save()
+        # uploaded_file_url = fs.url(filename)
+        table = ImageMetadataTable(ImageMetadata.objects.filter(user=request.user))
+        RequestConfig(request).configure(table)
+        return render(request, 'ingest/image_metadata_list.html', {'table': table})
+        # return render(request, 'ingest/image_metadata_list.html')
+        # return render(request, 'ingest/upload_image_metadata.html', {
+        #     'uploaded_file_url': uploaded_file_url
+        # })
     return render(request, 'ingest/upload_image_metadata.html')
 
 

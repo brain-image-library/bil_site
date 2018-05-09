@@ -22,9 +22,9 @@ community.</p>
 {% if request.user.username %}
 <h3>Submitting to the Brain Image Library</h3>
   <ul>
-    <li><a href="{% url 'ingest:submit_image_metadata' %}">Create New Metadata</a></li>
+    <li><a href="{% url 'ingest:submit_image_metadata' %}">Create Metadata</a> or <a href="{% url 'ingest:upload_image_metadata' %}">Upload Metadata Spreadsheet</a></li>
     <li><a href="{% url 'ingest:create_image_upload_area' %}">Request Storage Area for Image Data</a></li>
-    <li><a href="{% url 'ingest:submit_collection' %}">Create New Collection
+    <li><a href="{% url 'ingest:submit_collection' %}">Create Collection
   </ul>
   <hr>
   <ul>
