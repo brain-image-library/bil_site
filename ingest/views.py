@@ -44,14 +44,7 @@ def upload_image_metadata(request):
                 image_filename_pattern=r['image_filename_pattern'],
                 user=request.user)
             im.save()
-        # uploaded_file_url = fs.url(filename)
-        table = ImageMetadataTable(ImageMetadata.objects.filter(user=request.user))
-        RequestConfig(request).configure(table)
-        return render(request, 'ingest/image_metadata_list.html', {'table': table})
-        # return render(request, 'ingest/image_metadata_list.html')
-        # return render(request, 'ingest/upload_image_metadata.html', {
-        #     'uploaded_file_url': uploaded_file_url
-        # })
+        return redirect('ingest:image_metadata_list')
     return render(request, 'ingest/upload_image_metadata.html')
 
 
@@ -127,7 +120,7 @@ def submit_image_metadata(request):
         if form.is_valid():
             post = form.save(commit=False)
             post.save()
-            return redirect('/', pk=post.pk)
+            return redirect('ingest:image_metadata_list')
     else:
         form = ImageMetadataForm()
     return render(request, 'ingest/submit_image_metadata.html', {'form': form})
@@ -158,7 +151,7 @@ def submit_collection(request):
         if form.is_valid():
             post = form.save(commit=False)
             post.save()
-            return redirect('/', pk=post.pk)
+            return redirect('ingest:collection_list')
     else:
         form = CollectionForm()
     return render(request, 'ingest/submit_collection.html', {'form': form})
