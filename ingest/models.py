@@ -52,9 +52,31 @@ class ImageMetadata(models.Model):
     image_filename_pattern = models.CharField(max_length=256)
     locked = models.BooleanField(default=False)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    date_created = models.DateTimeField(auto_now_add=True)
-    last_edited = models.DateTimeField(auto_now=True)
-
+    lab_name = models.CharField(max_length=256)
+    submitter_email = models.CharField(max_length=256)
+    project_descriptions = models.CharField(max_length=256)
+    project_funder = models.CharField(max_length=256)
+    taxonomy_name = models.CharField(max_length=256)
+    transgenic_line_name = models.CharField(max_length=256)
+    age = models.CharField(max_length=256)
+    age_unit = models.CharField(max_length=256)
+    MALE = 'MALE'
+    FEMALE = 'FEMALE'
+    SEX_CHOICES = (
+        (MALE, 'Male'),
+        (FEMALE, 'Female'),
+    )
+    sex_name = models.CharField(
+        max_length=256,
+        choices=SEX_CHOICES,
+        default=AI,
+    )
+    organ = models.CharField(max_length=256)
+    organ_substructure = models.CharField(max_length=256)
+    assay = models.CharField(max_length=256)
+    slicing_direction = models.CharField(max_length=256)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    last_edited = models.DateTimeField(auto_now=True, blank=True)
 
 class ImageMetadataTable(tables.Table):
     id = tables.LinkColumn(
@@ -89,8 +111,6 @@ class Collection(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL, blank=True, null=True)
-    date_created = models.DateTimeField(auto_now_add=True)
-    last_edited = models.DateTimeField(auto_now=True)
 
 
 class CollectionTable(tables.Table):
