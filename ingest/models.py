@@ -52,8 +52,8 @@ class ImageMetadata(models.Model):
     image_filename_pattern = models.CharField(max_length=256)
     locked = models.BooleanField(default=False)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    date_created = models.DateTimeField(auto_now=True)
-    last_edited = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_edited = models.DateTimeField(auto_now=True)
 
 
 class ImageMetadataTable(tables.Table):
@@ -89,8 +89,8 @@ class Collection(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL, blank=True, null=True)
-    date_created = models.DateTimeField(auto_now=True)
-    last_edited = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_edited = models.DateTimeField(auto_now=True)
 
 
 class CollectionTable(tables.Table):
