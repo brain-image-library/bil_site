@@ -45,14 +45,36 @@ class ImageMetadata(models.Model):
         choices=ORGANIZATION_CHOICES,
         default=AI,
     )
-    project_name = models.CharField(max_length=256)
+    project_name = models.CharField(max_length=256, default)
     project_description = models.TextField()
-    project_funder_id = models.CharField(max_length=256)
+    project_funder_id = models.CharField(max_length=256, deafult)
     background_strain = models.CharField(max_length=256)
     image_filename_pattern = models.CharField(max_length=256)
     locked = models.BooleanField(default=False)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-
+    lab_name = models.CharField(max_length=256)
+    submitter_email = models.CharField(max_length=256)
+    project_descriptions = models.CharField(max_length=256)
+    project_funder = models.CharField(max_length=256)
+    taxonomy_name = models.CharField(max_length=256)
+    transgenic_line_name = models.CharField(max_length=256)
+    age = models.CharField(max_length=256)
+    age_unit = models.CharField(max_length=256)
+    MALE = 'MALE'
+    FEMALE = 'FEMALE'
+    SEX_CHOICES = (
+        (MALE, 'Male'),
+        (FEMALE, 'Female'),
+    )
+    sex_name = models.CharField(
+        max_length=256,
+        choices=SEX_CHOICES,
+        default=AI,
+    )
+    organ = models.CharField(max_length=256)
+    organ_substructure = models.CharField(max_length=256)
+    assay = models.CharField(max_length=256)
+    slicing_direction = models.CharField(max_length=256)
 
 class ImageMetadataTable(tables.Table):
     id = tables.LinkColumn(
