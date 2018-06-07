@@ -54,27 +54,27 @@ class ImageMetadata(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     lab_name = models.CharField(max_length=256)
     submitter_email = models.CharField(max_length=256)
-    project_descriptions = models.CharField(max_length=256)
-    project_funder = models.CharField(max_length=256)
-    taxonomy_name = models.CharField(max_length=256)
-    transgenic_line_name = models.CharField(max_length=256)
-    age = models.CharField(max_length=256)
-    age_unit = models.CharField(max_length=256)
+    project_descriptions = models.CharField(max_length=256, blank=True, default="")
+    project_funder = models.CharField(max_length=256, blank=True, default="")
+    taxonomy_name = models.CharField(max_length=256, blank=True, default="")
+    transgenic_line_name = models.CharField(max_length=256, blank=True, default="")
+    age = models.CharField(max_length=256, blank=True, default="")
+    age_unit = models.CharField(max_length=256, blank=True, default="")
     MALE = 'MALE'
     FEMALE = 'FEMALE'
     SEX_CHOICES = (
         (MALE, 'Male'),
         (FEMALE, 'Female'),
     )
-    sex_name = models.CharField(
+    sex = models.CharField(
         max_length=256,
         choices=SEX_CHOICES,
-        default=AI,
+        default=FEMALE,
     )
-    organ = models.CharField(max_length=256)
-    organ_substructure = models.CharField(max_length=256)
-    assay = models.CharField(max_length=256)
-    slicing_direction = models.CharField(max_length=256)
+    organ = models.CharField(max_length=256, blank=True, default="")
+    organ_substructure = models.CharField(max_length=256, blank=True, default="")
+    assay = models.CharField(max_length=256, blank=True, default="")
+    slicing_direction = models.CharField(max_length=256, blank=True, default="")
     date_created = models.DateTimeField(auto_now_add=True, blank=True)
     last_edited = models.DateTimeField(auto_now=True, blank=True)
 

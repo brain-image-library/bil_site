@@ -34,7 +34,7 @@ class ImageMetadataForm(forms.ModelForm):
             'transgenic_line_name',
             'age',
             'age_unit',
-            'sex_name',
+            'sex',
             'organ',
             'organ_substructure',
             'assay',
