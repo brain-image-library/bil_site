@@ -38,10 +38,23 @@ def upload_image_metadata(request):
         for r in rec:
             im = ImageMetadata(
                 project_name=r['project_name'],
+                organization_name=r['organization_name'],
                 project_description=r['project_description'],
                 project_funder_id=r['project_funder_id'],
                 background_strain=r['background_strain'],
                 image_filename_pattern=r['image_filename_pattern'],
+                lab_name=r['lab_name'],
+                submitter_email=r['submitter_email'],
+                project_funder=r['project_funder'],
+                taxonomy_name=r['taxonomy_name'],
+                transgenic_line_name=r['transgenic_line_name'],
+                age=r['age'],
+                age_unit=r['age_unit'],
+                sex=r['sex'],
+                organ=r['organ'],
+                organ_substructure=r['organ_substructure'],
+                assay=r['assay'],
+                slicing_direction=r['slicing_direction'],
                 user=request.user)
             im.save()
         return redirect('ingest:image_metadata_list')

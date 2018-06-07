@@ -54,7 +54,6 @@ class ImageMetadata(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     lab_name = models.CharField(max_length=256)
     submitter_email = models.CharField(max_length=256)
-    project_descriptions = models.CharField(max_length=256, blank=True, default="")
     project_funder = models.CharField(max_length=256, blank=True, default="")
     taxonomy_name = models.CharField(max_length=256, blank=True, default="")
     transgenic_line_name = models.CharField(max_length=256, blank=True, default="")
