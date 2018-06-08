@@ -29,6 +29,7 @@ from .forms import SignUpForm
 import uuid
 
 
+@login_required
 def upload_image_metadata(request):
     if request.method == 'POST' and request.FILES['myfile']:
         myfile = request.FILES['myfile']
