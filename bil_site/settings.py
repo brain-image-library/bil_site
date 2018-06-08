@@ -11,6 +11,16 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 """
 
 import os
+import configparser
+import sys
+
+config = configparser.ConfigParser()
+if not os.path.isfile('site.cfg'):
+    print('The site.cfg file is missing. Please generate one and put it'
+          ' relative to where the Python process is starting. See example.cfg'
+          ' as a reference.')
+    sys.exit(1)
+config.read('site.cfg')
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,10 +33,17 @@ LOGIN_REDIRECT_URL= '/'
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '1o^a(52vel$c!e_$y$h0l=szw&u_h-5&8ycqlw91tt^jf+mkl%'
+# See example.cfg for reference. You can generate a new secret key like this:
+# python manage.py shell -c 'from django.core.management import utils; print(utils.get_random_secret_key())'')'
+try:
+    SECRET_KEY = config['Security']['SECRET_KEY']
+except KeyError as e:
+    print('The site.cfg file exists but is not properly configured. See '
+          'example.cfg as a reference.')
+    sys.exit(1)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config['Security'].getboolean('DEBUG')
 
 ALLOWED_HOSTS = []
 
