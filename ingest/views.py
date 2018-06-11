@@ -12,7 +12,6 @@ from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
-from pathlib import Path
 
 from django_tables2 import RequestConfig
 import pyexcel as pe
@@ -96,17 +95,13 @@ def create_image_upload_area(request):
 def image_data_dirs_list(request):
     """ A list of all the storage areas that the user has created. """
 
-    # This is just a placeholder. We need to asynchronously create a directory
-    # on BIL's storage space with the appropriate permissions (which is
-    # probably on a different machine than the django site), maybe using fabric
-    # or sth like that.
-    # home_dir = "/crucible/brain/{}/".format(request.user)
-    home_dir = str(Path.home())
+    home_dir = "/home/{}".format(request.user)
     if request.method == 'POST':
-        # data_path = "{}{}".format(home_dir, str(uuid.uuid4()))
         data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
+        # remotely create the directory on DXC using fabric and celery
         result = create_data_path(data_path)
-        image_data = ImageData(data_path=data_path)
+        host_and_path = "{}@dxc.psc.edu:{}".format(request.user, data_path)
+        image_data = ImageData(data_path=host_and_path)
         image_data.save()
     table = ImageDataTable(ImageData.objects.filter())
     RequestConfig(request).configure(table)
