@@ -12,6 +12,7 @@ from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
+from pathlib import Path
 
 from django_tables2 import RequestConfig
 import pyexcel as pe
@@ -25,6 +26,7 @@ from .models import CollectionTable
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
 from .forms import SignUpForm
+from .tasks import create_data_path
 
 import uuid
 
@@ -98,9 +100,12 @@ def image_data_dirs_list(request):
     # on BIL's storage space with the appropriate permissions (which is
     # probably on a different machine than the django site), maybe using fabric
     # or sth like that.
-    home_dir = "/crucible/brain/{}/".format(request.user)
+    # home_dir = "/crucible/brain/{}/".format(request.user)
+    home_dir = str(Path.home())
     if request.method == 'POST':
-        data_path = "{}{}".format(home_dir, str(uuid.uuid4()))
+        # data_path = "{}{}".format(home_dir, str(uuid.uuid4()))
+        data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
+        result = create_data_path(data_path)
         image_data = ImageData(data_path=data_path)
         image_data.save()
     table = ImageDataTable(ImageData.objects.filter())
