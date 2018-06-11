@@ -9,9 +9,9 @@
 
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
-    <input type="file" name="myfile">
+    <input type="button" class="btn btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
+    <input type="file" style="display:none;" id="file" name="myfile" onchange="form.submit()" />
     </br>
-    <button type="submit">Upload File</button>
   </form>
 
   </br>
