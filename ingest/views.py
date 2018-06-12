@@ -100,6 +100,7 @@ def image_data_dirs_list(request):
         host_and_path = "{}@{}:{}".format(
             settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
         image_data = ImageData(data_path=host_and_path)
+        image_data.user = request.user
         image_data.save()
     table = ImageDataTable(ImageData.objects.filter())
     RequestConfig(request).configure(table)
