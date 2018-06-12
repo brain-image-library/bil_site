@@ -9,6 +9,10 @@ import uuid
 
 
 class ImageData(models.Model):
+    # Contains information about where the actual data will be stored.
+    #
+    # The user doesn't supply any of this. It is all generated automatically at
+    # the click of a button.
     def __str__(self):
         return self.data_path
 
@@ -32,9 +36,13 @@ class ImageDataTable(tables.Table):
 
 
 class ImageMetadata(models.Model):
+    # The meat of the image metadata bookkeeping. This is all the relevant
+    # information about a given set of imaging data. Currently, it is 1:1 but
+    # eventually multiple pieces of metadata will be able to go with ImageData.
     def __str__(self):
         return self.project_name
 
+    # Required and the user should supply these
     AI = 'AI'
     CSHL = 'CSHL'
     USC = 'USC'
@@ -53,14 +61,21 @@ class ImageMetadata(models.Model):
     project_funder_id = models.CharField(max_length=256)
     background_strain = models.CharField(max_length=256)
     image_filename_pattern = models.CharField(max_length=256)
+    lab_name = models.CharField(max_length=256)
+    # XXX: thinking we should prolly just get this from the user info
+    submitter_email = models.CharField(max_length=256) 
+
+    # Required but the user shouldn't control these
     locked = models.BooleanField(default=False)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    lab_name = models.CharField(max_length=256)
-    submitter_email = models.CharField(max_length=256)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    last_edited = models.DateTimeField(auto_now=True, blank=True)
+
+    # Optional fields. The user doesn't need to supply these.
     project_funder = models.CharField(max_length=256, blank=True, default="")
     taxonomy_name = models.CharField(max_length=256, blank=True, default="")
     transgenic_line_name = models.CharField(max_length=256, blank=True, default="")
-    age = models.IntegerField(max_length=256, blank=True, default="")
+    age = models.IntegerField(blank=True)
     age_unit = models.CharField(max_length=256, blank=True, default="")
     MALE = 'MALE'
     FEMALE = 'FEMALE'
@@ -77,8 +92,6 @@ class ImageMetadata(models.Model):
     organ_substructure = models.CharField(max_length=256, blank=True, default="")
     assay = models.CharField(max_length=256, blank=True, default="")
     slicing_direction = models.CharField(max_length=256, blank=True, default="")
-    date_created = models.DateTimeField(auto_now_add=True, blank=True)
-    last_edited = models.DateTimeField(auto_now=True, blank=True)
 
 
 class ImageMetadataTable(tables.Table):
@@ -104,6 +117,7 @@ class ImageMetadataTable(tables.Table):
 
 
 class Collection(models.Model):
+    # A collection is how we tie metadata to a specific set of data.
     def __str__(self):
         return self.name
 
