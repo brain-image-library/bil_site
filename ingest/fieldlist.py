@@ -5,8 +5,6 @@ attrs = [
     'project_funder_id',
     'background_strain',
     'image_filename_pattern',
-    'locked',
-    'user',
     'lab_name',
     'submitter_email',
     'project_funder',
