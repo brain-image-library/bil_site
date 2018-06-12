@@ -146,7 +146,8 @@ CELERY_RESULT_BACKEND = 'django-db'
 CELERY_RESULT_BACKEND = 'django-cache'
 
 try:
-    DATA_HOST = config['Security']['DATA_HOST']
+    IMG_DATA_HOST = config['Security']['IMG_DATA_HOST']
+    IMG_DATA_USER = config['Security']['IMG_DATA_USER']
 except KeyError as e:
     print('The site.cfg file exists but is not properly configured. See '
           'example.cfg as a reference.')
