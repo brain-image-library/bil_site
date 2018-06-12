@@ -8,6 +8,19 @@ To set up the website locally for the first time, do the following:
     python3 -m venv bil_site_venv
     source bil_site_venv/bin/activate
     pip install -r requirements.txt
+
+You need to create a file called `site.cfg` file in the main directory, which
+will store the secret key and various other secret or server specific settings.
+You can see an example in `example.cfg`. You *must* generate a new secret key
+when using this site in production, which you can do like this:
+
+    cp example.cfg site.cfg
+    python manage.py shell -c 'from django.core.management import utils; print(utils.get_random_secret_key())'
+
+In site.cfg, replace the value associated `SECRET_KEY` with the value you
+generated from the previous command. Note: certain characters will throw off
+the config parser. The easiest thing to do is to just generate a different key.
+
     python manage.py makemigrations
     python manage.py migrate --run-syncdb
     python manage.py createsuperuser
@@ -15,15 +28,6 @@ To set up the website locally for the first time, do the following:
 You also need to install rabbitMQ, which is pretty easy if you're using Ubuntu:
 
     sudo apt-get install rabbitmq-server
-
-You'll also need to set up a a site.cfg file in the main directory, which will
-store the secret key and various other secret or server specific settings. You
-can see an example in example.cfg. You must generate a new secret key when
-using this site in production, which you can do like this:
-
-    python manage.py shell -c 'from django.core.management import utils; print(utils.get_random_secret_key())'')'
-
-Copy the value generated here into site.cfg after `SECRET_KEY = `.
 
 ## Serving the Django Site
 
