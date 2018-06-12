@@ -21,6 +21,14 @@ In site.cfg, replace the value associated `SECRET_KEY` with the value you
 generated from the previous command. Note: certain characters will throw off
 the config parser. The easiest thing to do is to just generate a different key.
 
+You'll also want to change IMG_DATA_USER to whatever PSC username you have on
+DXC. You could also change the IMG_DATA_HOST to say your local machine for
+offline testing. The way this will work in production is still being determind.
+It likely will be handled by one account that assigns the appropriate
+permissions.
+
+Next, we'lll set up the database and create a super user:
+
     python manage.py makemigrations
     python manage.py migrate --run-syncdb
     python manage.py createsuperuser
