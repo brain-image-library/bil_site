@@ -8,6 +8,19 @@
     <li>Project funder ID: {{image_metadata.project_funder_id}}</li>
     <li>Background strain: {{image_metadata.background_strain}}</li>
     <li>Image filename pattern: {{image_metadata.image_filename_pattern}}</li>
+    <li>Locked: {{image_metadata.locked}}</li>
+    <li>Lab Name: {{image_metadata.lab_name}}</li>
+    <li>Submitter Email: {{image_metadata.submitter_email}}</li>
+    <li>Project Funder: {{image_metadata.project_funder}}</li>
+    <li>Taxonomy Name: {{image_metadata.taxonomy_name}}</li>
+    <li>Transgenic Line Name: {{image_metadata.transgenic_line_name}}</li>
+    <li>Age: {{image_metadata.age}}</li>
+    <li>Age Unit: {{image_metadata.age_unit}}</li>
+    <li>Sex: {{image_metadata.sex_name}}</li>
+    <li>Organ: {{image_metadata.organ}}</li>
+    <li>Organ Substructure: {{image_metadata.organ_substructure}}</li>
+    <li>Assay: {{image_metadata.assay}}</li>
+    <li>Slicing Direction: {{image_metadata.slicing_direction}}</li>
   </ul>
   <a href="{% url 'ingest:image_metadata_update' pk=image_metadata.pk %}">Edit metadata</a></br>
   <a href="{% url 'ingest:image_metadata_delete' pk=image_metadata.pk %}">Delete metadata</a></br>
