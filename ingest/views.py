@@ -96,7 +96,7 @@ def image_data_dirs_list(request):
         data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
         # remotely create the directory on some host using fabric and celery
         # note: you should authenticate with ssh keys, not passwords
-        result = create_data_path(data_path)
+        result = create_data_path.delay(data_path)
         host_and_path = "{}@{}:{}".format(
             settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
         image_data = ImageData(data_path=host_and_path)
