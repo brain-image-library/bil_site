@@ -11,6 +11,7 @@ import uuid
 class ImageData(models.Model):
     def __str__(self):
         return self.data_path
+
     data_path = models.CharField(max_length=256)
     locked = models.BooleanField(default=False)
     user = models.ForeignKey(
@@ -23,7 +24,8 @@ class ImageDataTable(tables.Table):
         verbose_name="",
         args=[A('pk')],
         text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
-        attrs= {'a': {'class': "btn btn-info", 'role': "button"}})
+        attrs={'a': {'class': "btn btn-info", 'role': "button"}})
+
     class Meta:
         model = ImageData
         template_name = 'ingest/bootstrap_ingest.html'
@@ -32,6 +34,7 @@ class ImageDataTable(tables.Table):
 class ImageMetadata(models.Model):
     def __str__(self):
         return self.project_name
+
     AI = 'AI'
     CSHL = 'CSHL'
     USC = 'USC'
@@ -57,7 +60,7 @@ class ImageMetadata(models.Model):
     project_funder = models.CharField(max_length=256, blank=True, default="")
     taxonomy_name = models.CharField(max_length=256, blank=True, default="")
     transgenic_line_name = models.CharField(max_length=256, blank=True, default="")
-    age = models.CharField(max_length=256, blank=True, default="")
+    age = models.IntegerField(max_length=256, blank=True, default="")
     age_unit = models.CharField(max_length=256, blank=True, default="")
     MALE = 'MALE'
     FEMALE = 'FEMALE'
@@ -77,28 +80,33 @@ class ImageMetadata(models.Model):
     date_created = models.DateTimeField(auto_now_add=True, blank=True)
     last_edited = models.DateTimeField(auto_now=True, blank=True)
 
+
 class ImageMetadataTable(tables.Table):
     id = tables.LinkColumn(
         'ingest:image_metadata_detail',
         verbose_name="",
         args=[A('pk')],
         text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
-        attrs= {'a': {'class': "btn btn-info", 'role': "button"}})
+        attrs={'a': {'class': "btn btn-info", 'role': "button"}}
+    )
     project_description = tables.Column()
 
     def render_project_description(self, value):
         limit_len = 32
-        value = value if len(value) < limit_len else value[:limit_len]+"…"
+        value = value if len(value) < limit_len else value[:limit_len] + "…"
         return value
 
     class Meta:
         model = ImageMetadata
         template_name = 'ingest/bootstrap_ingest.html'
 
+    amend = tables.CheckBoxColumn(verbose_name=('Amend'), accessor='pk')
+
 
 class Collection(models.Model):
     def __str__(self):
         return self.name
+
     name = models.CharField(max_length=256)
     description = models.TextField()
     metadata = models.ForeignKey(
@@ -118,12 +126,12 @@ class CollectionTable(tables.Table):
         verbose_name="",
         args=[A('pk')],
         text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
-        attrs= {'a': {'class': "btn btn-info", 'role': "button"}})
+        attrs={'a': {'class': "btn btn-info", 'role': "button"}})
     description = tables.Column()
 
     def render_project_description(self, value):
-        limit_len=32
-        value = value if len(value) < limit_len else value[:limit_len]+"…"
+        limit_len = 32
+        value = value if len(value) < limit_len else value[:limit_len] + "…"
         return value
 
     class Meta:

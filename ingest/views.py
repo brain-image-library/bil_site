@@ -1,14 +1,8 @@
-from django.conf import settings
-from django.shortcuts import get_object_or_404, render
-from django.http import HttpResponseRedirect
-from django.urls import reverse
 from django.urls import reverse_lazy
 from django.views import generic
 from django.views.generic.edit import UpdateView, DeleteView
-from django.shortcuts import redirect
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
@@ -16,6 +10,7 @@ from django.core.files.storage import FileSystemStorage
 from django_tables2 import RequestConfig
 import pyexcel as pe
 
+from .fieldlist import attrs
 from .models import ImageData
 from .models import ImageDataTable
 from .models import ImageMetadata
@@ -157,9 +152,7 @@ def submit_image_metadata(request):
 class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
     """ Modify an existing piece of image metadata. """
     model = ImageMetadata
-    fields = [
-        'project_name', 'project_description', 'project_funder_id',
-        'background_strain', 'image_filename_pattern']
+    fields = attrs
     template_name = 'ingest/image_metadata_update.html'
     success_url = reverse_lazy('ingest:image_metadata_list')
 
