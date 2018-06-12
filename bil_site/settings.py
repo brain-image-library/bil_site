@@ -144,3 +144,10 @@ STATIC_URL = '/static/'
 
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_RESULT_BACKEND = 'django-cache'
+
+try:
+    DATA_HOST = config['Security']['DATA_HOST']
+except KeyError as e:
+    print('The site.cfg file exists but is not properly configured. See '
+          'example.cfg as a reference.')
+    sys.exit(1)

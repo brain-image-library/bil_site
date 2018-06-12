@@ -12,11 +12,18 @@ To set up the website locally for the first time, do the following:
     python manage.py migrate --run-syncdb
     python manage.py createsuperuser
 
-This is a pretty standard process for any django site.  
-
 You also need to install rabbitMQ, which is pretty easy if you're using Ubuntu:
 
     sudo apt-get install rabbitmq-server
+
+You'll also need to set up a a site.cfg file in the main directory, which will
+store the secret key and various other secret or server specific settings. You
+can see an example in example.cfg. You must generate a new secret key when
+using this site in production, which you can do like this:
+
+    python manage.py shell -c 'from django.core.management import utils; print(utils.get_random_secret_key())'')'
+
+Copy the value generated here into site.cfg after `SECRET_KEY = `.
 
 ## Serving the Django Site
 
