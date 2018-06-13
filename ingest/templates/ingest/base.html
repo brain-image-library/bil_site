@@ -15,6 +15,8 @@
   </head>
   <body>
     <div class="page-header">
+	{% load static %}
+	<img src="{% static 'images/psc_logo.png' %}"/>
         <h1><a href="/">Brain Image Library</a></h1>
         <div class="login-header">
           {% if request.user.username %}
