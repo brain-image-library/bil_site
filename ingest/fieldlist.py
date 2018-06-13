@@ -17,4 +17,3 @@ attrs = [
     'organ_substructure',
     'assay',
     'slicing_direction']
-

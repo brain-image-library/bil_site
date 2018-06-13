@@ -26,7 +26,7 @@ config.read('site.cfg')
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # LOGIN_REDIRECT_URL= '../index'
-LOGIN_REDIRECT_URL= '/'
+LOGIN_REDIRECT_URL = '/'
 
 
 # Quick-start development settings - unsuitable for production

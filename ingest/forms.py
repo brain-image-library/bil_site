@@ -5,14 +5,22 @@ from .fieldlist import attrs
 from .models import ImageMetadata
 from .models import Collection
 
+
 class SignUpForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, help_text='Required')
     last_name = forms.CharField(max_length=30, help_text='Required')
-    email = forms.EmailField(max_length=254, help_text='Required. A valid email address.')
+    email = forms.EmailField(
+        max_length=254, help_text='Required. A valid email address.')
 
     class Meta:
         model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', )
+        fields = (
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+            'password1',
+            'password2', )
 
 
 class ImageMetadataForm(forms.ModelForm):
@@ -26,7 +34,7 @@ class ImageMetadataForm(forms.ModelForm):
         return super().__init__(*args, **kwargs)
 
     def save(self, *args, **kwargs):
-        kwargs['commit']=False
+        kwargs['commit'] = False
         obj = super().save(*args, **kwargs)
         if self.request:
             obj.user = self.request.user
@@ -49,7 +57,7 @@ class CollectionForm(forms.ModelForm):
         return super().__init__(*args, **kwargs)
 
     def save(self, *args, **kwargs):
-        kwargs['commit']=False
+        kwargs['commit'] = False
         obj = super().save(*args, **kwargs)
         if self.request:
             obj.user = self.request.user

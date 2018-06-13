@@ -82,6 +82,7 @@ def index(request):
 # What follows is a number of views for creating, viewing, modifying and
 # deleting IMAGE DATA.
 
+
 def create_image_upload_area(request):
     """ Create new area for uploading image data. """
     return render(request, 'ingest/create_image_upload_area.html')
@@ -96,7 +97,7 @@ def image_data_dirs_list(request):
         data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
         # remotely create the directory on some host using fabric and celery
         # note: you should authenticate with ssh keys, not passwords
-        result = create_data_path.delay(data_path)
+        create_data_path.delay(data_path)
         host_and_path = "{}@{}:{}".format(
             settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
         image_data = ImageData(data_path=host_and_path)
@@ -104,7 +105,8 @@ def image_data_dirs_list(request):
         image_data.save()
     table = ImageDataTable(ImageData.objects.filter())
     RequestConfig(request).configure(table)
-    return render(request, 'ingest/image_data_dirs_list.html', {'table': table})
+    return render(
+        request, 'ingest/image_data_dirs_list.html', {'table': table})
 
 
 class ImageDataDetail(LoginRequiredMixin, generic.DetailView):
@@ -122,6 +124,7 @@ class ImageDataDelete(LoginRequiredMixin, DeleteView):
 
 # What follows is a number of views for creating, viewing, modifying and
 # deleting IMAGE METADATA.
+
 
 @login_required
 def image_metadata_list(request):
@@ -198,10 +201,10 @@ class CollectionDetail(LoginRequiredMixin, generic.DetailView):
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     model = Collection
     fields = [
-        'name','description','metadata','data_path'
+        'name', 'description', 'metadata', 'data_path'
         ]
-    template_name='ingest/collection_update.html'
-    success_url=reverse_lazy('ingest:collection_list')
+    template_name = 'ingest/collection_update.html'
+    success_url = reverse_lazy('ingest:collection_list')
 
 
 class CollectionDelete(LoginRequiredMixin, DeleteView):

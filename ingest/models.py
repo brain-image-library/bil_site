@@ -5,8 +5,6 @@ from django.utils.html import format_html
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
 
-import uuid
-
 
 class ImageData(models.Model):
     # Contains information about where the actual data will be stored.
@@ -56,25 +54,28 @@ class ImageMetadata(models.Model):
         choices=ORGANIZATION_CHOICES,
         default=AI,
     )
-    project_name = models.CharField(max_length=256, help_text='The name of your project')
+    project_name = models.CharField(
+        max_length=256, help_text='The name of your project')
     project_description = models.TextField()
     project_funder_id = models.CharField(max_length=256)
     background_strain = models.CharField(max_length=256)
     image_filename_pattern = models.CharField(max_length=256)
     lab_name = models.CharField(max_length=256)
     # XXX: thinking we should prolly just get this from the user info
-    submitter_email = models.CharField(max_length=256) 
+    submitter_email = models.CharField(max_length=256)
 
     # Required but the user shouldn't control these
     locked = models.BooleanField(default=False)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True, blank=True)
     last_edited = models.DateTimeField(auto_now=True, blank=True)
 
     # Optional fields. The user doesn't need to supply these.
     project_funder = models.CharField(max_length=256, blank=True, default="")
     taxonomy_name = models.CharField(max_length=256, blank=True, default="")
-    transgenic_line_name = models.CharField(max_length=256, blank=True, default="")
+    transgenic_line_name = models.CharField(
+        max_length=256, blank=True, default="")
     age = models.IntegerField(blank=True)
     age_unit = models.CharField(max_length=256, blank=True, default="")
     MALE = 'MALE'
@@ -89,9 +90,11 @@ class ImageMetadata(models.Model):
         default=FEMALE,
     )
     organ = models.CharField(max_length=256, blank=True, default="")
-    organ_substructure = models.CharField(max_length=256, blank=True, default="")
+    organ_substructure = models.CharField(
+        max_length=256, blank=True, default="")
     assay = models.CharField(max_length=256, blank=True, default="")
-    slicing_direction = models.CharField(max_length=256, blank=True, default="")
+    slicing_direction = models.CharField(
+        max_length=256, blank=True, default="")
 
 
 class ImageMetadataTable(tables.Table):
