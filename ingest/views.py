@@ -7,6 +7,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
+from django.http import HttpResponse
 
 from django_tables2 import RequestConfig
 import pyexcel as pe
@@ -21,7 +22,7 @@ from .models import CollectionTable
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
 from .forms import SignUpForm
-from .tasks import create_data_path
+from . import tasks
 
 import uuid
 
@@ -97,7 +98,7 @@ def image_data_dirs_list(request):
         data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
         # remotely create the directory on some host using fabric and celery
         # note: you should authenticate with ssh keys, not passwords
-        create_data_path.delay(data_path)
+        tasks.create_data_path.delay(data_path)
         host_and_path = "{}@{}:{}".format(
             settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
         image_data = ImageData(data_path=host_and_path)
@@ -116,11 +117,13 @@ class ImageDataDetail(LoginRequiredMixin, generic.DetailView):
     context_object_name = 'image_data'
 
 
-class ImageDataDelete(LoginRequiredMixin, DeleteView):
-    """ Delete an existing piece of image metadata. """
-    model = ImageData
-    template_name = 'ingest/image_data_delete.html'
-    success_url = reverse_lazy('ingest:image_data_dirs_list')
+@login_required
+def image_data_delete(request, pk):
+    query = ImageData.objects.get(pk=pk)
+    data_path = query.__str__()
+    tasks.delete_data_path.delay(data_path)
+    query.delete()
+    return render(request, 'ingest/image_data_delete.html')
 
 # What follows is a number of views for creating, viewing, modifying and
 # deleting IMAGE METADATA.
