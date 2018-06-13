@@ -56,7 +56,7 @@ class ImageMetadata(models.Model):
         choices=ORGANIZATION_CHOICES,
         default=AI,
     )
-    project_name = models.CharField(max_length=256)
+    project_name = models.CharField(max_length=256, help_text='The name of your project')
     project_description = models.TextField()
     project_funder_id = models.CharField(max_length=256)
     background_strain = models.CharField(max_length=256)
