@@ -49,7 +49,6 @@ class CollectionForm(forms.ModelForm):
         fields = (
             'name',
             'description',
-            'metadata',
             'data_path')
 
     def __init__(self, *args, **kwargs):

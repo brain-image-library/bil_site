@@ -33,6 +33,39 @@ class ImageDataTable(tables.Table):
         template_name = 'ingest/bootstrap_ingest.html'
 
 
+class Collection(models.Model):
+    # A collection is how we tie metadata to a specific set of data.
+    def __str__(self):
+        return self.name
+
+    name = models.CharField(max_length=256)
+    description = models.TextField()
+    data_path = models.ForeignKey(
+        ImageData,
+        on_delete=models.SET_NULL, blank=True, null=True)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL, blank=True, null=True)
+
+
+class CollectionTable(tables.Table):
+    id = tables.LinkColumn(
+        'ingest:collection_detail',
+        verbose_name="",
+        args=[A('pk')],
+        text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
+        attrs={'a': {'class': "btn btn-info", 'role': "button"}})
+    description = tables.Column()
+
+    def render_project_description(self, value):
+        limit_len = 32
+        value = value if len(value) < limit_len else value[:limit_len] + "…"
+        return value
+
+    class Meta:
+        model = Collection
+        template_name = 'ingest/bootstrap_ingest.html'
+
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
     # information about a given set of imaging data. Currently, it is 1:1 but
@@ -56,6 +89,7 @@ class ImageMetadata(models.Model):
     )
     project_name = models.CharField(
         max_length=256, help_text='The name of your project')
+    collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
     project_description = models.TextField()
     project_funder_id = models.CharField(max_length=256)
     background_strain = models.CharField(max_length=256)
@@ -118,39 +152,3 @@ class ImageMetadataTable(tables.Table):
 
     amend = tables.CheckBoxColumn(verbose_name=('Amend'), accessor='pk')
 
-
-class Collection(models.Model):
-    # A collection is how we tie metadata to a specific set of data.
-    def __str__(self):
-        return self.name
-
-    name = models.CharField(max_length=256)
-    description = models.TextField()
-    metadata = models.ForeignKey(
-        ImageMetadata,
-        on_delete=models.SET_NULL, blank=True, null=True)
-    data_path = models.ForeignKey(
-        ImageData,
-        on_delete=models.SET_NULL, blank=True, null=True)
-    user = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL, blank=True, null=True)
-
-
-class CollectionTable(tables.Table):
-    id = tables.LinkColumn(
-        'ingest:collection_detail',
-        verbose_name="",
-        args=[A('pk')],
-        text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
-        attrs={'a': {'class': "btn btn-info", 'role': "button"}})
-    description = tables.Column()
-
-    def render_project_description(self, value):
-        limit_len = 32
-        value = value if len(value) < limit_len else value[:limit_len] + "…"
-        return value
-
-    class Meta:
-        model = Collection
-        template_name = 'ingest/bootstrap_ingest.html'

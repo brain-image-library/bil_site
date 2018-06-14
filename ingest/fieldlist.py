@@ -1,6 +1,7 @@
 attrs = [
     'organization_name',
     'project_name',
+    'collection',
     'project_description',
     'project_funder_id',
     'background_strain',
