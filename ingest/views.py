@@ -204,7 +204,7 @@ class CollectionDetail(LoginRequiredMixin, generic.DetailView):
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     model = Collection
     fields = [
-        'name', 'description', 'metadata', 'data_path'
+        'name', 'description', 'data_path'
         ]
     template_name = 'ingest/collection_update.html'
     success_url = reverse_lazy('ingest:collection_list')
