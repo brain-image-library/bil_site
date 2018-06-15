@@ -194,12 +194,18 @@ def collection_list(request):
     RequestConfig(request).configure(table)
     return render(request, 'ingest/collection_list.html', {'table': table})
 
+@login_required
+def collection_detail(request, pk):
+    collection = Collection.objects.get(id=pk)
+    table = ImageMetadataTable(ImageMetadata.objects.filter(user=request.user).filter(collection=pk))
+    return render(request, 'ingest/collection_detail.html', {'table': table, 'collection':collection})
 
+'''
 class CollectionDetail(LoginRequiredMixin, generic.DetailView):
     model = Collection
     template_name = 'ingest/collection_detail.html'
     context_object_name = 'collection'
-
+'''
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     model = Collection
