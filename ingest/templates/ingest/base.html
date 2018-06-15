@@ -1,5 +1,6 @@
 {% load static %}
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
 
     <!-- Latest compiled and minified CSS -->
@@ -12,12 +13,22 @@
 
     <link href="https://fonts.googleapis.com/css?family=Lato:300" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static 'ingest/style.css' %}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
   </head>
   <body>
     <div class="page-header">
 	{% load static %}
-	<img src="{% static 'images/psc_logo.png' %}"/>
-        <h1><a href="/">Brain Image Library</a></h1>
+        <div class="container-fluid">
+          <div class="row">
+            <div class="col-sm-10">
+              <h1><a href="/">Brain Image Library</a></h1>
+            </div>
+            <div class="col-sm-2">
+              <img src="{% static 'images/psc_logo.png' %}" class="img-responsive" />
+            </div>
+          </div>
+        </div>
         <div class="login-header">
           {% if request.user.username %}
             <p>{{ request.user.username }} | <a href="{% url 'logout' %}">logout</a></p>
