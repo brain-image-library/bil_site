@@ -73,6 +73,9 @@ class ImageMetadata(models.Model):
     def __str__(self):
         return self.project_name
 
+    # This can be used for multiple drop down choices
+    UNKNOWN = 'Unknown'
+
     # Required and the user should supply these
     AI = 'AI'
     CSHL = 'CSHL'
@@ -115,10 +118,21 @@ class ImageMetadata(models.Model):
     transgenic_line_name = models.CharField(
         max_length=256, blank=True, default="")
     age = models.IntegerField(blank=True)
-    age_unit = models.CharField(max_length=256, blank=True, default="")
+    DAY = 'DAY'
+    WEEK = 'WEEK'
+    MONTH = 'MONTH'
+    AGE_UNIT_CHOICES = (
+        (DAY, 'Day'),
+        (WEEK, 'Week'),
+        (MONTH, 'Month'),
+        (UNKNOWN, 'Unknown'),
+    )
+    age_unit = models.CharField(
+        max_length=256,
+        choices=AGE_UNIT_CHOICES,
+        default=UNKNOWN)
     MALE = 'MALE'
     FEMALE = 'FEMALE'
-    UNKNOWN = 'Unknown'
     SEX_CHOICES = (
         (MALE, 'Male'),
         (FEMALE, 'Female'),
