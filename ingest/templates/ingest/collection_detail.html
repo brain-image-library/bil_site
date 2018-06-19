@@ -11,7 +11,7 @@
   <h1> Metadata: </h1>
   {% load render_table from django_tables2 %}
   {% render_table table %}
-
+  <button type = "submit" class="save btn btn-lg btn-primary">Lock Collection</button>
   <a href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a></br>
   <a href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a></br>
 
