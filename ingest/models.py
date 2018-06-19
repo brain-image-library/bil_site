@@ -86,17 +86,21 @@ class ImageMetadata(models.Model):
         max_length=256,
         choices=ORGANIZATION_CHOICES,
         default=AI,
+        help_text="The institution where the data generator/submitter or other responsible person resides."
     )
     project_name = models.CharField(
-        max_length=256, help_text='The name of your project')
+        max_length=256,
+        help_text=('If this is Minitatlas data, begin this field with '
+                   '"MINIATLAS:". The project name does not have to be the '
+                   'same as the NIH project name.'))
     collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
     project_description = models.TextField()
-    project_funder_id = models.CharField(max_length=256)
-    background_strain = models.CharField(max_length=256)
+    project_funder_id = models.CharField(max_length=256, help_text="The grant number")
+    background_strain = models.CharField(max_length=256, help_text="e.g. C57BL/6J")
     image_filename_pattern = models.CharField(max_length=256)
-    lab_name = models.CharField(max_length=256)
+    lab_name = models.CharField(max_length=256, help_text="The lab or department subgroup")
     # XXX: thinking we should prolly just get this from the user info
-    submitter_email = models.CharField(max_length=256)
+    submitter_email = models.CharField(max_length=256, help_text="The contact email for the person submitting the data")
 
     # Required but the user shouldn't control these
     locked = models.BooleanField(default=False)
@@ -114,21 +118,23 @@ class ImageMetadata(models.Model):
     age_unit = models.CharField(max_length=256, blank=True, default="")
     MALE = 'MALE'
     FEMALE = 'FEMALE'
+    UNKNOWN = 'Unknown'
     SEX_CHOICES = (
         (MALE, 'Male'),
         (FEMALE, 'Female'),
+        (UNKNOWN, 'Unknown'),
     )
     sex = models.CharField(
         max_length=256,
         choices=SEX_CHOICES,
-        default=FEMALE,
+        default=UNKNOWN,
     )
-    organ = models.CharField(max_length=256, blank=True, default="")
+    organ = models.CharField(max_length=256, blank=True, default="brain")
     organ_substructure = models.CharField(
-        max_length=256, blank=True, default="")
-    assay = models.CharField(max_length=256, blank=True, default="")
+        max_length=256, blank=True, default="whole brain", help_text="e.g. hippocampus, prefrontal cortex")
+    assay = models.CharField(max_length=256, blank=True, default="", help_text="e.g. smFISH, fMOST, MouseLight")
     slicing_direction = models.CharField(
-        max_length=256, blank=True, default="")
+        max_length=256, blank=True, default="", help_text="e.g. coronal")
 
 
 class ImageMetadataTable(tables.Table):
