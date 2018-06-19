@@ -42,7 +42,7 @@ class Collection(models.Model):
     description = models.TextField()
     data_path = models.ForeignKey(
         ImageData,
-        on_delete=models.SET_NULL, blank=True, null=True)
+        on_delete=models.SET_NULL, blank=True, null=True, unique=True)
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL, blank=True, null=True)
