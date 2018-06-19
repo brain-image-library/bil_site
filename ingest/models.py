@@ -38,7 +38,7 @@ class Collection(models.Model):
     def __str__(self):
         return self.name
 
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, unique=True)
     description = models.TextField()
     data_path = models.ForeignKey(
         ImageData,
