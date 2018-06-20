@@ -7,7 +7,6 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
-from django.http import HttpResponse
 
 from django_tables2 import RequestConfig
 import pyexcel as pe
@@ -138,7 +137,8 @@ def image_metadata_list(request):
         pks = request.POST.getlist("selection")
         selected_objects = ImageMetadata.objects.filter(pk__in=pks)
         selected_objects.delete()
-    table = ImageMetadataTable(ImageMetadata.objects.filter(user=request.user), exclude=['user'])
+    table = ImageMetadataTable(
+        ImageMetadata.objects.filter(user=request.user), exclude=['user'])
     RequestConfig(request).configure(table)
     return render(request, 'ingest/image_metadata_list.html', {'table': table})
 
@@ -200,18 +200,17 @@ def collection_list(request):
     RequestConfig(request).configure(table)
     return render(request, 'ingest/collection_list.html', {'table': table})
 
+
 @login_required
 def collection_detail(request, pk):
     collection = Collection.objects.get(id=pk)
-    table = ImageMetadataTable(ImageMetadata.objects.filter(user=request.user).filter(collection=pk))
-    return render(request, 'ingest/collection_detail.html', {'table': table, 'collection':collection})
+    table = ImageMetadataTable(
+        ImageMetadata.objects.filter(user=request.user).filter(collection=pk))
+    return render(
+        request,
+        'ingest/collection_detail.html',
+        {'table': table, 'collection': collection})
 
-'''
-class CollectionDetail(LoginRequiredMixin, generic.DetailView):
-    model = Collection
-    template_name = 'ingest/collection_detail.html'
-    context_object_name = 'collection'
-'''
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     model = Collection
