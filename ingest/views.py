@@ -123,7 +123,8 @@ def image_metadata_list(request):
     table = ImageMetadataTable(
         ImageMetadata.objects.filter(user=request.user), exclude=['user'])
     RequestConfig(request).configure(table)
-    return render(request, 'ingest/image_metadata_list.html', {'table': table})
+    image_metadata = ImageMetadata.objects.all()
+    return render(request, 'ingest/image_metadata_list.html', {'table': table, 'image_metadata': image_metadata})
 
 
 class ImageMetadataDetail(LoginRequiredMixin, generic.DetailView):
@@ -185,7 +186,8 @@ def submit_collection(request):
             return redirect('ingest:collection_list')
     else:
         form = CollectionForm()
-    return render(request, 'ingest/collection_submit.html', {'form': form})
+    collections = Collection.objects.all()
+    return render(request, 'ingest/collection_submit.html', {'form': form, 'collections': collections})
 
 
 @login_required
@@ -193,7 +195,8 @@ def collection_list(request):
     table = CollectionTable(
         Collection.objects.filter(user=request.user), exclude=['user'])
     RequestConfig(request).configure(table)
-    return render(request, 'ingest/collection_list.html', {'table': table})
+    collections = Collection.objects.all()
+    return render(request, 'ingest/collection_list.html', {'table': table, 'collections': collections})
 
 
 @login_required

@@ -4,8 +4,12 @@
 
 {% block content %}
 
-  <h1>Upload Metadata</h1>
-  <p>Choose a collection and then upload your metadata as a spreadsheet in xls or xlsx format.</p>
+  <h1>Upload Metadata Spreadsheet</h1>
+  {% if collections %}
+  <ul>
+    <li>Download and fill out this template: <a href="{% static 'ingest/metadata_template.xls' %}">metadata_template.xls</a></li>
+    <li>Choose a collection and then upload your metadata as a spreadsheet in xls or xlsx format.</li>
+  </ul>
 
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
@@ -16,14 +20,10 @@
     <input type="file" style="display:none;" id="file" name="myfile" onchange="form.submit()" />
     </br>
   </form>
-
-  </br>
-
-  {% if uploaded_file_url %}
-    <!--<p>File uploaded at: <a href="{{ uploaded_file_url }}">{{ uploaded_file_url }}</a></p>-->
-    <p>File uploaded</p>
+  {% else %}
+    <p>You need to create a collection before uploading a metadata spreadsheet</p>
   {% endif %}
 
-  <p>A template is available here for download: <a href="{% static 'ingest/metadata_template.xls' %}">metadata_template.xls</a></p>
+  </br>
 
 {% endblock %}

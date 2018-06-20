@@ -2,7 +2,7 @@
 
 {% block content %}
   <h2>Your Metadata</h1>
-  {% if table.data.list %}
+  {% if image_metadata %}
     <form action="" method="post">{% csrf_token %}
         {% load render_table from django_tables2 %}
         {% render_table table %}
