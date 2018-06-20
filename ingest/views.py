@@ -85,11 +85,6 @@ def index(request):
 # deleting IMAGE DATA.
 
 
-def create_image_upload_area(request):
-    """ Create new area for uploading image data. """
-    return render(request, 'ingest/create_image_upload_area.html')
-
-
 @login_required
 def image_data_dirs_list(request):
     """ A list of all the storage areas that the user has created. """
@@ -185,8 +180,19 @@ def submit_collection(request):
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = CollectionForm(request.POST, request=request)
-        if form.is_valid():
+        if form.is_valid() and request.method == 'POST':
+            home_dir = "/home/{}".format(settings.IMG_DATA_USER)
+            data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
+            # remotely create the directory on some host using fabric and celery
+            # note: you should authenticate with ssh keys, not passwords
+            tasks.create_data_path.delay(data_path)
+            host_and_path = "{}@{}:{}".format(
+                settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
+            image_data = ImageData(data_path=host_and_path)
+            image_data.user = request.user
+            image_data.save()
             post = form.save(commit=False)
+            post.data_path = image_data
             post.save()
             return redirect('ingest:collection_list')
     else:
@@ -196,7 +202,8 @@ def submit_collection(request):
 
 @login_required
 def collection_list(request):
-    table = CollectionTable(Collection.objects.filter(user=request.user))
+    table = CollectionTable(
+        Collection.objects.filter(user=request.user), exclude=['user'])
     RequestConfig(request).configure(table)
     return render(request, 'ingest/collection_list.html', {'table': table})
 

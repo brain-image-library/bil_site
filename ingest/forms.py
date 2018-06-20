@@ -59,8 +59,7 @@ class CollectionForm(forms.ModelForm):
             'lab_name',
             'project_funder',
             'project_funder_id',
-            'submitter_email',
-            'data_path')
+            'submitter_email')
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)

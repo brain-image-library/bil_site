@@ -11,7 +11,6 @@ urlpatterns = [
     # The signup should probably be moved somewhere else.
     re_path(r'^signup/$', views.signup, name='signup'),
     # All the image data pages
-    re_path(r'^create_image_upload_area/$', views.create_image_upload_area, name='create_image_upload_area'),
     re_path(r'^image_data_dirs_list/$', views.image_data_dirs_list, name='image_data_dirs_list'),
     path('image_data/<int:pk>/', views.ImageDataDetail.as_view(), name='image_data_dirs_detail'),
     path('image_data_delete/<int:pk>/', views.image_data_delete, name='image_data_delete'),
