@@ -58,7 +58,7 @@ def upload_image_metadata(request):
             return redirect('ingest:image_metadata_list')
     else:
         form = UploadForm()
-    return render(request, 'ingest/upload_image_metadata.html', {'form': form})
+    return render(request, 'ingest/image_metadata_upload.html', {'form': form})
 
 
 def signup(request):
@@ -191,7 +191,7 @@ def submit_collection(request):
             return redirect('ingest:collection_list')
     else:
         form = CollectionForm()
-    return render(request, 'ingest/submit_collection.html', {'form': form})
+    return render(request, 'ingest/collection_submit.html', {'form': form})
 
 
 @login_required
