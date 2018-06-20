@@ -13,7 +13,6 @@ import pyexcel as pe
 
 from .fieldlist import attrs
 from .models import ImageData
-# from .models import ImageDataTable
 from .models import ImageMetadata
 from .models import ImageMetadataTable
 from .models import Collection
@@ -176,12 +175,15 @@ def collection_list(request):
 @login_required
 def collection_detail(request, pk):
     collection = Collection.objects.get(id=pk)
-    table = ImageMetadataTable(
-        ImageMetadata.objects.filter(user=request.user).filter(collection=pk))
+    image_metadata_queryset = ImageMetadata.objects.filter(
+        user=request.user).filter(collection=pk)
+    table = ImageMetadataTable(image_metadata_queryset)
     return render(
         request,
         'ingest/collection_detail.html',
-        {'table': table, 'collection': collection})
+        {'table': table,
+         'collection': collection,
+         'image_metadata_queryset': image_metadata_queryset})
 
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):

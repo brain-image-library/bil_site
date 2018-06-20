@@ -2,17 +2,26 @@
 
 {% block content %}
 
-  <h1>{{ collection.name }}</h1>
+  <h1>Collection: {{ collection.name }}</h1>
   <ul>
-    <li>Collection Name: {{collection.name}}</li>
-    <li>Collection Description: {{collection.description}}</li>
+    <li>Description: {{collection.description}}</li>
+    <li>Organization: {{collection.organization}}</li>
+    <li>Lab: {{collection.lab_name}}</li>
+    <li>Project funder: {{collection.project_funder}}</li>
+    <li>Project funder ID: {{collection.project_funder_id}}</li>
     <li>Datapath: {{collection.data_path}}</li>
   </ul>
-  <h1> Metadata: </h1>
-  {% load render_table from django_tables2 %}
-  {% render_table table %}
-  <button type = "submit" class="save btn btn-lg btn-primary">Submit Collection</button>
-  <a href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a></br>
-  <a href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a></br>
+  {% if image_metadata_queryset %}
+    <h1> Metadata: </h1>
+    {% load render_table from django_tables2 %}
+    {% render_table table %}
+    <div class='btn-group btn-group-lg'>
+      <button type = "submit" class="save btn btn-primary">Submit Collection</button>
+      <a class="save btn btn-primary" href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a>
+      <a class="save btn btn-primary" href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a>
+    </div>
+  {% else %}
+    <p>This collection doesn't have any metadata yet.</p>
+  {% endif %}
 
 {% endblock %}
