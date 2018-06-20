@@ -88,18 +88,6 @@ def index(request):
 @login_required
 def image_data_dirs_list(request):
     """ A list of all the storage areas that the user has created. """
-
-    home_dir = "/home/{}".format(settings.IMG_DATA_USER)
-    if request.method == 'POST':
-        data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
-        # remotely create the directory on some host using fabric and celery
-        # note: you should authenticate with ssh keys, not passwords
-        tasks.create_data_path.delay(data_path)
-        host_and_path = "{}@{}:{}".format(
-            settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
-        image_data = ImageData(data_path=host_and_path)
-        image_data.user = request.user
-        image_data.save()
     table = ImageDataTable(ImageData.objects.filter())
     RequestConfig(request).configure(table)
     return render(
