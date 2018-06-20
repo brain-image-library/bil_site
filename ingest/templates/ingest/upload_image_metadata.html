@@ -5,10 +5,13 @@
 {% block content %}
 
   <h1>Upload Metadata</h1>
-  <p>Upload your metadata as a spreadsheet in xls or xlsx format.</p>
+  <p>Choose a collection and then upload your metadata as a spreadsheet in xls or xlsx format.</p>
 
   <form method="post" enctype="multipart/form-data">
     {% csrf_token %}
+    {{ form }}
+    </br>
+    </br>
     <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
     <input type="file" style="display:none;" id="file" name="myfile" onchange="form.submit()" />
     </br>

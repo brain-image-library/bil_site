@@ -23,6 +23,12 @@ class SignUpForm(UserCreationForm):
             'password2', )
 
 
+class UploadForm(forms.Form):
+    # XXX: we should only grab unlocked Collections
+    associated_collection = forms.ModelChoiceField(
+        queryset=Collection.objects.all())
+
+
 class ImageMetadataForm(forms.ModelForm):
 
     class Meta:

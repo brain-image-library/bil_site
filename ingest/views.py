@@ -22,6 +22,7 @@ from .models import CollectionTable
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
 from .forms import SignUpForm
+from .forms import UploadForm
 from . import tasks
 
 import uuid
@@ -30,34 +31,40 @@ import uuid
 @login_required
 def upload_image_metadata(request):
     if request.method == 'POST' and request.FILES['myfile']:
-        myfile = request.FILES['myfile']
-        fs = FileSystemStorage()
-        filename = fs.save(myfile.name, myfile)
-        rec = pe.iget_records(file_name=filename)
-        for r in rec:
-            im = ImageMetadata(
-                project_name=r['project_name'],
-                organization_name=r['organization_name'],
-                project_description=r['project_description'],
-                project_funder_id=r['project_funder_id'],
-                background_strain=r['background_strain'],
-                image_filename_pattern=r['image_filename_pattern'],
-                lab_name=r['lab_name'],
-                submitter_email=r['submitter_email'],
-                project_funder=r['project_funder'],
-                taxonomy_name=r['taxonomy_name'],
-                transgenic_line_name=r['transgenic_line_name'],
-                age=r['age'],
-                age_unit=r['age_unit'],
-                sex=r['sex'],
-                organ=r['organ'],
-                organ_substructure=r['organ_substructure'],
-                assay=r['assay'],
-                slicing_direction=r['slicing_direction'],
-                user=request.user)
-            im.save()
-        return redirect('ingest:image_metadata_list')
-    return render(request, 'ingest/upload_image_metadata.html')
+        form = UploadForm(request.POST)
+        if form.is_valid():
+            associated_collection = form.cleaned_data['associated_collection']
+            myfile = request.FILES['myfile']
+            fs = FileSystemStorage()
+            filename = fs.save(myfile.name, myfile)
+            rec = pe.iget_records(file_name=filename)
+            for r in rec:
+                im = ImageMetadata(
+                    collection=associated_collection,
+                    project_name=r['project_name'],
+                    organization_name=r['organization_name'],
+                    project_description=r['project_description'],
+                    project_funder_id=r['project_funder_id'],
+                    background_strain=r['background_strain'],
+                    image_filename_pattern=r['image_filename_pattern'],
+                    lab_name=r['lab_name'],
+                    submitter_email=r['submitter_email'],
+                    project_funder=r['project_funder'],
+                    taxonomy_name=r['taxonomy_name'],
+                    transgenic_line_name=r['transgenic_line_name'],
+                    age=r['age'],
+                    age_unit=r['age_unit'],
+                    sex=r['sex'],
+                    organ=r['organ'],
+                    organ_substructure=r['organ_substructure'],
+                    assay=r['assay'],
+                    slicing_direction=r['slicing_direction'],
+                    user=request.user)
+                im.save()
+            return redirect('ingest:image_metadata_list')
+    else:
+        form = UploadForm()
+    return render(request, 'ingest/upload_image_metadata.html', {'form': form})
 
 
 def signup(request):
