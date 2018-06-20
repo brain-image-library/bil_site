@@ -1,6 +1,0 @@
-{% extends 'ingest/base.html' %}
-
-{% block content %}
-  <h3>{{ image_data.data_path }}</h3>
-  <a class="btn btn-lg btn-primary" href="{% url 'ingest:image_data_delete' pk=image_data.pk %}">Delete data</a></br>
-{% endblock %}

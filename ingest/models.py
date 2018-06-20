@@ -11,8 +11,8 @@ from .fieldlist import attrs as image_metadata_fields
 class ImageData(models.Model):
     # Contains information about where the actual data will be stored.
     #
-    # The user doesn't supply any of this. It is all generated automatically at
-    # the click of a button.
+    # The user doesn't supply any of this. It is all generated automatically
+    # when a user creates a Collection
     def __str__(self):
         return self.data_path
 
@@ -20,19 +20,6 @@ class ImageData(models.Model):
     locked = models.BooleanField(default=False)
     user = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True)
-
-
-class ImageDataTable(tables.Table):
-    id = tables.LinkColumn(
-        'ingest:image_data_dirs_detail',
-        verbose_name="",
-        args=[A('pk')],
-        text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
-        attrs={'a': {'class': "btn btn-info", 'role': "button"}})
-
-    class Meta:
-        model = ImageData
-        template_name = 'ingest/bootstrap_ingest.html'
 
 
 class Collection(models.Model):

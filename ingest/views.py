@@ -13,7 +13,7 @@ import pyexcel as pe
 
 from .fieldlist import attrs
 from .models import ImageData
-from .models import ImageDataTable
+# from .models import ImageDataTable
 from .models import ImageMetadata
 from .models import ImageMetadataTable
 from .models import Collection
@@ -82,33 +82,6 @@ def index(request):
     """ The main/home page. """
     return render(request, 'ingest/index.html')
 
-# What follows is a number of views for creating, viewing, modifying and
-# deleting IMAGE DATA.
-
-
-@login_required
-def image_data_dirs_list(request):
-    """ A list of all the storage areas that the user has created. """
-    table = ImageDataTable(ImageData.objects.filter())
-    RequestConfig(request).configure(table)
-    return render(
-        request, 'ingest/image_data_dirs_list.html', {'table': table})
-
-
-class ImageDataDetail(LoginRequiredMixin, generic.DetailView):
-    """ A detailed view of a single piece of metadata. """
-    model = ImageData
-    template_name = 'ingest/image_data_dirs_detail.html'
-    context_object_name = 'image_data'
-
-
-@login_required
-def image_data_delete(request, pk):
-    query = ImageData.objects.get(pk=pk)
-    data_path = query.__str__()
-    tasks.delete_data_path.delay(data_path)
-    query.delete()
-    return render(request, 'ingest/image_data_delete.html')
 
 # What follows is a number of views for creating, viewing, modifying and
 # deleting IMAGE METADATA.
@@ -220,7 +193,13 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('ingest:collection_list')
 
 
-class CollectionDelete(LoginRequiredMixin, DeleteView):
-    model = Collection
-    template_name = 'ingest/collection_delete.html'
-    success_url = reverse_lazy('ingest:collection_list')
+@login_required
+def collection_delete(request, pk):
+    collection = Collection.objects.get(pk=pk)
+    if request.method == 'POST':
+        data_path = collection.data_path.__str__()
+        tasks.delete_data_path.delay(data_path)
+        collection.delete()
+        # XXX: this should give a useful message like "Collection deleted!"
+        return redirect('ingest:collection_list')
+    return render(request, 'ingest/collection_delete.html', {'collection': collection})
