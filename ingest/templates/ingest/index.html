@@ -12,14 +12,29 @@ Institute of Mental Health of the National Institutes
 of Health under award number R24MH114793.
 </p>
 
-<h2>Collections</h2>
+<h2>Datasets</h2>
 
-<p>Imaging datasets in the Brain Image Library have metadata associated with
-them. This metadata includes everything from experimental information to the
-layout of the files. The combination of metadata and datasets make up what we
-call a collection. Collections are ultimately what gets submitted for
-publication in the BIL and made publically available to the research
-community.</p>
+<p>
+A dataset is a stand-alone entry (e.g. an image-volume) with metadata. 
+A dataset can contain many 2d image files that may be assembled to 
+form a more complex two or three-dimensional volume. Datasets are 
+defined on disk by their “root” directory in which all the image files 
+for the dataset are contained (the root directory can contain 
+recursive subdirectories that contain image files).
+</p>
+
+<h2>Collections</h2>
+<p>
+A collection bundle is an ingestion wrapper that contains one or more 
+related datasets and metadata.  Collections are tagged with 
+identifying metadata (such as the NIH project that the data is 
+associated with) that upon submission will be propagated to each item 
+in the collection. This important tagging information will allow BIL 
+to report to NIH on data that has begun, but has not yet completed the 
+submission process. In general, smaller collection bundles are 
+recommended because all datasets within a collection must pass the 
+validation process for the collection bundle to be accepted. 
+</p>
 
 <hr>
 
