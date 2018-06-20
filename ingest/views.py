@@ -138,7 +138,7 @@ def image_metadata_list(request):
         pks = request.POST.getlist("selection")
         selected_objects = ImageMetadata.objects.filter(pk__in=pks)
         selected_objects.delete()
-    table = ImageMetadataTable(ImageMetadata.objects.filter(user=request.user))
+    table = ImageMetadataTable(ImageMetadata.objects.filter(user=request.user), exclude=['user'])
     RequestConfig(request).configure(table)
     return render(request, 'ingest/image_metadata_list.html', {'table': table})
 

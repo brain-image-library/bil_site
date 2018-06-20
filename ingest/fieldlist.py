@@ -1,9 +1,8 @@
 attrs = [
-    'project_name',
     'collection',
+    'project_name',
     'project_description',
     'background_strain',
-    'image_filename_pattern',
     'taxonomy_name',
     'transgenic_line_name',
     'age',
@@ -12,4 +11,6 @@ attrs = [
     'organ',
     'organ_substructure',
     'assay',
-    'slicing_direction']
+    'slicing_direction',
+    'image_filename_pattern',
+]

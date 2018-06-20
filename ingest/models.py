@@ -5,6 +5,8 @@ from django.utils.html import format_html
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
 
+from .fieldlist import attrs as image_metadata_fields
+
 
 class ImageData(models.Model):
     # Contains information about where the actual data will be stored.
@@ -173,6 +175,7 @@ class ImageMetadataTable(tables.Table):
     class Meta:
         model = ImageMetadata
         template_name = 'ingest/bootstrap_ingest.html'
+        sequence = ['id'] + image_metadata_fields
 
     selection = tables.CheckBoxColumn(accessor='pk')
 
