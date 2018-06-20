@@ -41,13 +41,13 @@ validation process for the collection bundle to be accepted.
 {% if request.user.username %}
 <h3>Submitting to the Brain Image Library</h3>
   <ul>
-    <li><a href="{% url 'ingest:create_image_upload_area' %}">Request Storage Area for Image Data</a></li>
+    <li><a href="{% url 'ingest:create_image_upload_area' %}">Request Staging Area for Image Data</a></li>
     <li><a href="{% url 'ingest:submit_collection' %}">Create Collection
     <li><a href="{% url 'ingest:submit_image_metadata' %}">Create Metadata</a> or <a href="{% url 'ingest:upload_image_metadata' %}">Upload Metadata Spreadsheet</a></li>
   </ul>
   <hr>
   <ul>
-    <li><a href="{% url 'ingest:image_data_dirs_list' %}">View Requested Storage Areas</a></li>
+    <li><a href="{% url 'ingest:image_data_dirs_list' %}">View Requested Staging Areas</a></li>
     <li><a href="{% url 'ingest:collection_list'  %}">View Collection List</a></li>
     <li><a href="{% url 'ingest:image_metadata_list' %}">View Metadata List</a></li>
   </ul>
