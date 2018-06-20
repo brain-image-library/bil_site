@@ -157,7 +157,7 @@ def submit_image_metadata(request):
             return redirect('ingest:image_metadata_list')
     else:
         form = ImageMetadataForm()
-    return render(request, 'ingest/submit_image_metadata.html', {'form': form})
+    return render(request, 'ingest/image_metadata_submit.html', {'form': form})
 
 
 class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
