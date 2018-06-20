@@ -153,8 +153,20 @@ class ImageMetadata(models.Model):
     organ_substructure = models.CharField(
         max_length=256, blank=True, default="whole brain", help_text="e.g. hippocampus, prefrontal cortex")
     assay = models.CharField(max_length=256, blank=True, default="", help_text="e.g. smFISH, fMOST, MouseLight")
+    CORONAL = 'CORONAL'
+    SAGITTAL = 'SAGITTAL'
+    AXIAL = 'AXIAL'
+    SLICING_DIRECTION_CHOICES = (
+        (CORONAL, 'Coronal'),
+        (SAGITTAL, 'Sagittal'),
+        (AXIAL, 'Axial'),
+        (UNKNOWN, 'Unknown'),
+    )
     slicing_direction = models.CharField(
-        max_length=256, blank=True, default="", help_text="e.g. coronal")
+        max_length=256,
+        choices=SLICING_DIRECTION_CHOICES,
+        default=UNKNOWN,
+    )
 
 
 class ImageMetadataTable(tables.Table):
