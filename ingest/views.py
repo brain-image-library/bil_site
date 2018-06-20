@@ -58,7 +58,8 @@ def upload_image_metadata(request):
             return redirect('ingest:image_metadata_list')
     else:
         form = UploadForm()
-    return render(request, 'ingest/image_metadata_upload.html', {'form': form})
+    collections = Collection.objects.all()
+    return render(request, 'ingest/image_metadata_upload.html', {'form': form, 'collections': collections})
 
 
 def signup(request):
