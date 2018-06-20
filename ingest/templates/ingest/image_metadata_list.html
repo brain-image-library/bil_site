@@ -2,9 +2,11 @@
 
 {% block content %}
   <h2>Your Metadata</h1>
-
-  {% load render_table from django_tables2 %}
-  {% render_table table %} 
+  <form action="" method="post">{% csrf_token %}
+      {% load render_table from django_tables2 %}
+      {% render_table table %}
+      <input type="submit" value="Delete selected"/>
+  </form>
   <hr>
   <a href="{% url 'ingest:submit_image_metadata' %}">Create New Metadata</a>
 
