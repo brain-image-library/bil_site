@@ -133,7 +133,7 @@ def image_data_delete(request, pk):
 def image_metadata_list(request):
     """ A list of all the metadata the user has created. """
     if request.method == "POST":
-        pks = request.POST.getlist("amend")
+        pks = request.POST.getlist("selection")
         selected_objects = ImageMetadata.objects.filter(pk__in=pks)
         selected_objects.delete()
     table = ImageMetadataTable(ImageMetadata.objects.filter(user=request.user))

@@ -170,5 +170,5 @@ class ImageMetadataTable(tables.Table):
         model = ImageMetadata
         template_name = 'ingest/bootstrap_ingest.html'
 
-    amend = tables.CheckBoxColumn(verbose_name=('Amend'), accessor='pk')
+    selection = tables.CheckBoxColumn(accessor='pk')
 
