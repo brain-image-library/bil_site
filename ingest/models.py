@@ -40,6 +40,30 @@ class Collection(models.Model):
 
     name = models.CharField(max_length=256, unique=True)
     description = models.TextField()
+    AI = 'AI'
+    CSHL = 'CSHL'
+    USC = 'USC'
+    ORGANIZATION_CHOICES = (
+        (CSHL, 'Cold Spring Harbor Laboratory'),
+        (USC, 'University of Southern California'),
+        (AI, 'Allen Institute'),
+    )
+    organization_name = models.CharField(
+        max_length=256,
+        choices=ORGANIZATION_CHOICES,
+        default=AI,
+        help_text="The institution where the data generator/submitter or other responsible person resides."
+    )
+    lab_name = models.CharField(
+        max_length=256, help_text="The lab or department subgroup")
+    project_funder = models.CharField(
+        max_length=256, blank=True, default="NIH")
+    project_funder_id = models.CharField(
+        max_length=256, help_text="The grant number")
+    # XXX: thinking we should prolly just get this from the user info
+    submitter_email = models.CharField(
+        max_length=256,
+        help_text="The contact email for the person submitting the data")
     data_path = models.ForeignKey(
         ImageData,
         on_delete=models.SET_NULL, blank=True, null=True, unique=True)
@@ -76,20 +100,6 @@ class ImageMetadata(models.Model):
     UNKNOWN = 'Unknown'
 
     # Required and the user should supply these
-    AI = 'AI'
-    CSHL = 'CSHL'
-    USC = 'USC'
-    ORGANIZATION_CHOICES = (
-        (CSHL, 'Cold Spring Harbor Laboratory'),
-        (USC, 'University of Southern California'),
-        (AI, 'Allen Institute'),
-    )
-    organization_name = models.CharField(
-        max_length=256,
-        choices=ORGANIZATION_CHOICES,
-        default=AI,
-        help_text="The institution where the data generator/submitter or other responsible person resides."
-    )
     project_name = models.CharField(
         max_length=256,
         help_text=('If this is Minitatlas data, begin this field with '
@@ -97,12 +107,8 @@ class ImageMetadata(models.Model):
                    'same as the NIH project name.'))
     collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
     project_description = models.TextField()
-    project_funder_id = models.CharField(max_length=256, help_text="The grant number")
     background_strain = models.CharField(max_length=256, help_text="e.g. C57BL/6J")
     image_filename_pattern = models.CharField(max_length=256)
-    lab_name = models.CharField(max_length=256, help_text="The lab or department subgroup")
-    # XXX: thinking we should prolly just get this from the user info
-    submitter_email = models.CharField(max_length=256, help_text="The contact email for the person submitting the data")
 
     # Required but the user shouldn't control these
     locked = models.BooleanField(default=False)
@@ -112,11 +118,10 @@ class ImageMetadata(models.Model):
     last_edited = models.DateTimeField(auto_now=True, blank=True)
 
     # Optional fields. The user doesn't need to supply these.
-    project_funder = models.CharField(max_length=256, blank=True, default="")
     taxonomy_name = models.CharField(max_length=256, blank=True, default="")
     transgenic_line_name = models.CharField(
         max_length=256, blank=True, default="")
-    age = models.IntegerField(blank=True)
+    age = models.IntegerField(blank=True, null=True)
     DAY = 'DAY'
     WEEK = 'WEEK'
     MONTH = 'MONTH'

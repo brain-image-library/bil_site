@@ -55,6 +55,11 @@ class CollectionForm(forms.ModelForm):
         fields = (
             'name',
             'description',
+            'organization_name',
+            'lab_name',
+            'project_funder',
+            'project_funder_id',
+            'submitter_email',
             'data_path')
 
     def __init__(self, *args, **kwargs):

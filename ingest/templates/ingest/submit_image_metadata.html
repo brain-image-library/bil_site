@@ -1,7 +1,7 @@
 {% extends 'ingest/base.html' %}
 
 {% block content %}
-    <h1>Submit Metadata</h1>
+    <h1>Create Metadata</h1>
     <form method="POST" class="post-form">
     {% csrf_token %}
         {% for field in form  %}
