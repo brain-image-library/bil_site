@@ -8,3 +8,4 @@ site.cfg
 bil_sit/settings_secret.py
 ingest/settings_secret.py
 tags
+.~lock*.xls#
