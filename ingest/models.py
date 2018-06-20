@@ -68,8 +68,7 @@ class CollectionTable(tables.Table):
 
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
-    # information about a given set of imaging data. Currently, it is 1:1 but
-    # eventually multiple pieces of metadata will be able to go with ImageData.
+    # information about a given set of imaging data. 
     def __str__(self):
         return self.project_name
 
