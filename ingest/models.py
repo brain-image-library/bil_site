@@ -185,5 +185,9 @@ class ImageMetadataTable(tables.Table):
         template_name = 'ingest/bootstrap_ingest.html'
         sequence = ['id'] + image_metadata_fields
 
-    selection = tables.CheckBoxColumn(accessor='pk')
+    # selection = tables.CheckBoxColumn(accessor='pk')
+    selection = tables.CheckBoxColumn(
+        accessor="pk",
+        attrs = { "th__input": {"onclick": "toggle(this)"}},
+        orderable=False)
 

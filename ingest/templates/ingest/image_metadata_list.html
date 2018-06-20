@@ -1,6 +1,15 @@
 {% extends 'ingest/base.html' %}
 
 {% block content %}
+
+  <script language="JavaScript">
+  function toggle(source) {
+      checkboxes = document.getElementsByName('selection');
+      for(var i in checkboxes)
+          checkboxes[i].checked = source.checked;
+  }
+  </script>
+
   <h2>Your Metadata</h1>
   {% if image_metadata %}
     <form action="" method="post">{% csrf_token %}
