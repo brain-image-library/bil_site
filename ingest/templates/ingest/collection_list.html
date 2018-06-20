@@ -3,8 +3,12 @@
 {% block content %}
   <h2>Your Collections</h1>
 
-  {% load render_table from django_tables2 %}
-  {% render_table table %} 
+  {% if table.data.list %}
+    {% load render_table from django_tables2 %}
+    {% render_table table %} 
+  {% else %}
+    <p>You haven't created any collections yet.</p>
+  {% endif %}
   <hr>
   <a href="{% url 'ingest:collection_submit' %}">Create New Collection</a>
 
