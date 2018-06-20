@@ -62,10 +62,6 @@ class Collection(models.Model):
         max_length=256, blank=True, default="NIH")
     project_funder_id = models.CharField(
         max_length=256, help_text="The grant number")
-    # XXX: thinking we should prolly just get this from the user info
-    submitter_email = models.CharField(
-        max_length=256,
-        help_text="The contact email for the person submitting the data")
     data_path = models.ForeignKey(
         ImageData,
         on_delete=models.SET_NULL, blank=True, null=True, unique=True)
