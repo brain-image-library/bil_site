@@ -3,16 +3,16 @@
 {% block content %}
     <h1>Submit Metadata</h1>
     <form method="POST" class="post-form">
-	{% csrf_token %}
+    {% csrf_token %}
         {% for field in form  %}
-		<p data-toggle="tooltip" title="{{field.help_text}}">
-			{{ field.label_tag }} {% if field.field.required %} * {% endif %}<br>
-			{{ field }}
-			{% for error in field.errors %}
-				<p style="color: red">{{ error }}</p>
-			{% endfor %}
-		</p>
-	{% endfor %}
+            <p data-toggle="tooltip" title="{{field.help_text}}">
+                {{ field.label_tag }} {% if field.field.required %} * {% endif %}<br>
+                {{ field }}
+                {% for error in field.errors %}
+                    <p style="color: red">{{ error }}</p>
+                {% endfor %}
+            </p>
+        {% endfor %}
         <p>Required fields are marked with an *.
         <button type="submit" class="save btn btn-lg btn-primary">Save</button>
     </form>
