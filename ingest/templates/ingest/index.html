@@ -1,8 +1,8 @@
 {% extends 'ingest/base.html' %}
-
+{% load static %}
 {% block content %}
 
-<h2>Overview</h2>
+<h2>Overview <img src="{% static 'images/BIL_logo.png' %}"/></h2>
 
 <p>The Brain Image Library (BIL) is a national public resource enabling
 researchers to deposit, analyze, mine, share and interact with large brain
@@ -40,6 +40,7 @@ validation process for the collection bundle to be accepted.
 
 {% if request.user.username %}
 <h3>Submitting to the Brain Image Library</h3>
+  <img src="{% static 'images/workflow.png' %}" class="img-responsive"/>
   <ul>
     <li><a href="{% url 'ingest:collection_submit' %}">Create Collection
     <li><a href="{% url 'ingest:image_metadata_submit' %}">Create Metadata</a> or <a href="{% url 'ingest:image_metadata_upload' %}">Upload Metadata Spreadsheet</a></li>
