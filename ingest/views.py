@@ -26,8 +26,34 @@ from . import tasks
 import uuid
 
 
+def signup(request):
+    """ This is how a user signs up for a new account. """
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=raw_password)
+            login(request, user)
+            return redirect('/')
+    else:
+        form = SignUpForm()
+    return render(request, 'ingest/signup.html', {'form': form})
+
+
+def index(request):
+    """ The main/home page. """
+    return render(request, 'ingest/index.html')
+
+
+# What follows is a number of views for uploading, creating, viewing, modifying
+# and deleting IMAGE METADATA.
+
+
 @login_required
 def upload_image_metadata(request):
+    """ Upload a spreadsheet containing image metadata information. """
     if request.method == 'POST' and request.FILES['myfile']:
         form = UploadForm(request.POST)
         if form.is_valid():
@@ -59,31 +85,6 @@ def upload_image_metadata(request):
         form = UploadForm()
     collections = Collection.objects.all()
     return render(request, 'ingest/image_metadata_upload.html', {'form': form, 'collections': collections})
-
-
-def signup(request):
-    """ This is how a user signs up for a new account. """
-    if request.method == 'POST':
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            form.save()
-            username = form.cleaned_data.get('username')
-            raw_password = form.cleaned_data.get('password1')
-            user = authenticate(username=username, password=raw_password)
-            login(request, user)
-            return redirect('/')
-    else:
-        form = SignUpForm()
-    return render(request, 'ingest/signup.html', {'form': form})
-
-
-def index(request):
-    """ The main/home page. """
-    return render(request, 'ingest/index.html')
-
-
-# What follows is a number of views for creating, viewing, modifying and
-# deleting IMAGE METADATA.
 
 
 @login_required
@@ -136,9 +137,12 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
     template_name = 'ingest/image_metadata_delete.html'
     success_url = reverse_lazy('ingest:image_metadata_list')
 
+# What follows is a number of views for uploading, creating, viewing, modifying
+# and deleting COLLECTIONS.
 
 @login_required
 def submit_collection(request):
+    """ Create a collection. """
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = CollectionForm(request.POST, request=request)
@@ -165,6 +169,7 @@ def submit_collection(request):
 
 @login_required
 def collection_list(request):
+    """ Show a table of all the collections. """
     table = CollectionTable(
         Collection.objects.filter(user=request.user), exclude=['user'])
     RequestConfig(request).configure(table)
@@ -174,13 +179,12 @@ def collection_list(request):
 
 @login_required
 def collection_detail(request, pk):
+    """ View, edit, delete, submit a particular collection. """
     collection = Collection.objects.get(id=pk)
     image_metadata_queryset = ImageMetadata.objects.filter(
         user=request.user).filter(collection=pk)
     if request.method == 'POST' and image_metadata_queryset:
-        print(collection.locked)
         collection.locked = True
-        print(collection.locked)
         collection.save()
         for i in image_metadata_queryset:
             i.locked = True
@@ -195,6 +199,7 @@ def collection_detail(request, pk):
 
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
+    """ Edit an existing collection ."""
     model = Collection
     fields = [
         'name', 'description', 'data_path'
@@ -205,6 +210,12 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
 
 @login_required
 def collection_delete(request, pk):
+    """ Delete a collection.
+
+    Implicit in this is the deletion of the storage area (both the database
+    entry and the actual remote storage area).
+    """
+
     collection = Collection.objects.get(pk=pk)
     if request.method == 'POST':
         data_path = collection.data_path.__str__()
