@@ -2,6 +2,7 @@
 
 {% block content %}
 
+
   <script language="JavaScript">
   function toggle(source) {
       checkboxes = document.getElementsByName('selection');
@@ -15,10 +16,10 @@
     <form action="" method="post">{% csrf_token %}
         {% load render_table from django_tables2 %}
         {% render_table table %}
-        <input type="submit" value="Delete selected"/>
+        <button type="submit" class="save btn btn-lg btn-primary">Delete Selected</button>
     </form>
   {% else %}
-    <p>You haven't created any metadata yet.</p>
+  <p>You haven't created any metadata yet.</p>
   {% endif %}
   <hr>
   <a href="{% url 'ingest:image_metadata_submit' %}">Create New Metadata</a>
