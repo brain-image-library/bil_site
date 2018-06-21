@@ -52,6 +52,7 @@ class Collection(models.Model):
     data_path = models.ForeignKey(
         ImageData,
         on_delete=models.SET_NULL, blank=True, null=True, unique=True)
+    locked = models.BooleanField(default=False)
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL, blank=True, null=True)

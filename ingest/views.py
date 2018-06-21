@@ -177,6 +177,14 @@ def collection_detail(request, pk):
     collection = Collection.objects.get(id=pk)
     image_metadata_queryset = ImageMetadata.objects.filter(
         user=request.user).filter(collection=pk)
+    if request.method == 'POST' and image_metadata_queryset:
+        print(collection.locked)
+        collection.locked = True
+        print(collection.locked)
+        collection.save()
+        for i in image_metadata_queryset:
+            i.locked = True
+            i.save()
     table = ImageMetadataTable(image_metadata_queryset)
     return render(
         request,

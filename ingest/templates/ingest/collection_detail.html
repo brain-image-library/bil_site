@@ -10,17 +10,25 @@
     <li>Project funder: {{collection.project_funder}}</li>
     <li>Project funder ID: {{collection.project_funder_id}}</li>
     <li>Datapath: {{collection.data_path}}</li>
+    <li>Locked: {{collection.locked}}</li>
   </ul>
   {% if image_metadata_queryset %}
     <h1> Metadata: </h1>
-    {% load render_table from django_tables2 %}
-    {% render_table table %}
+    <form action="" method="post">{% csrf_token %}
+        {% load render_table from django_tables2 %}
+        {% render_table table %}
+        <p>If you are done editing metadata and your data is finished uploading, hit submit at this time</p>
+        <div class='btn-group btn-group-lg'>
+          <input class="save btn btn-primary" type="submit" value="Submit collection"/>
+          <a class="save btn btn-primary" href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a>
+          <a class="save btn btn-primary" href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a>
+        </div>
+    </form>
+  {% else %}
     <div class='btn-group btn-group-lg'>
-      <button type = "submit" class="save btn btn-primary">Submit Collection</button>
       <a class="save btn btn-primary" href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a>
       <a class="save btn btn-primary" href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a>
     </div>
-  {% else %}
     <p>This collection doesn't have any metadata yet.</p>
   {% endif %}
 
