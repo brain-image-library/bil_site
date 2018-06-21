@@ -202,8 +202,9 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
     """ Edit an existing collection ."""
     model = Collection
     fields = [
-        'name', 'description', 'data_path'
-        ]
+        'name', 'description', 'organization_name', 'lab_name',
+        'project_funder', 'project_funder_id'
+    ]
     template_name = 'ingest/collection_update.html'
     success_url = reverse_lazy('ingest:collection_list')
 
