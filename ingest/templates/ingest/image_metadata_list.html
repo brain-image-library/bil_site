@@ -16,7 +16,9 @@
     <form action="" method="post">{% csrf_token %}
         {% load render_table from django_tables2 %}
         {% render_table table %}
+        <div class='btn-group btn-group-lg'>
         <button type="submit" class="save btn btn-lg btn-primary">Delete Selected</button>
+        </div>
     </form>
   {% else %}
   <p>You haven't created any metadata yet.</p>

@@ -17,6 +17,8 @@
     <li>Assay: {{image_metadata.assay}}</li>
     <li>Slicing Direction: {{image_metadata.slicing_direction}}</li>
   </ul>
-  <a href="{% url 'ingest:image_metadata_update' pk=image_metadata.pk %}">Edit metadata</a></br>
-  <a href="{% url 'ingest:image_metadata_delete' pk=image_metadata.pk %}">Delete metadata</a></br>
+<div class='btn-group btn-group-lg'>
+    <a class="save btn btn-primary" href="{% url 'ingest:image_metadata_update' pk=image_metadata.pk %}">Edit Metadata</a>
+    <a class="save btn btn-primary" href="{% url 'ingest:image_metadata_delete' pk=image_metadata.pk %}">Delete Metadata</a>
+</div>
 {% endblock %}
