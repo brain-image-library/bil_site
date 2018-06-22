@@ -1,6 +1,6 @@
-{% extends 'ingest/base.html' %}
+{% extends 'ingest/wide.html' %}
 
-{% block content %}
+{% block wide %}
 
   <h1>Collection: {{ collection.name }}</h1>
   <ul>
@@ -13,16 +13,29 @@
     <li>Locked: {{collection.locked}}</li>
   </ul>
   {% if image_metadata_queryset %}
-    <h1> Metadata: </h1>
     <form action="" method="post">{% csrf_token %}
-        {% load render_table from django_tables2 %}
-        {% render_table table %}
-        <p>If you are done editing metadata and your data is finished uploading, hit submit at this time</p>
-        <div class='btn-group btn-group-lg'>
-          <input class="save btn btn-primary" type="submit" value="Submit collection"/>
-          <a class="save btn btn-primary" href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a>
-          <a class="save btn btn-primary" href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a>
+      <div class="panel-group" id="accordion">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h4 class="panel-title">
+              <a data-toggle="collapse" data-parent="#accordion" href="#collapse1">Metadata</a>
+            </h4>
+          </div>
+          <div id="collapse1" class="panel-collapse collapse">
+            <div class="panel-body">
+              {% load render_table from django_tables2 %}
+              {% render_table table %}
+            </div>
+          </div>
         </div>
+      </div
+
+      <p>If you are done editing metadata and your data is finished uploading, hit submit at this time</p>
+      <div class='btn-group btn-group-lg'>
+        <input class="save btn btn-primary" type="submit" value="Submit collection"/>
+        <a class="save btn btn-primary" href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a>
+        <a class="save btn btn-primary" href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a>
+      </div>
     </form>
   {% else %}
     <div class='btn-group btn-group-lg'>

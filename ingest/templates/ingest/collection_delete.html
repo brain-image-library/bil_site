@@ -1,6 +1,6 @@
-{% extends 'ingest/base.html' %}
+{% extends 'ingest/wide.html' %}
 
-{% block content %}
+{% block wide %}
 <form action="" method="post">{% csrf_token %}
     <p>Are you sure you want to delete "{{ collection }}"?</p>
     <input type="submit" value="Confirm" />

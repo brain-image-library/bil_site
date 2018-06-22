@@ -3,47 +3,41 @@
 <html lang="en">
   <head>
 
-    <!-- Latest compiled and minified CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
-    <!-- Latest theme -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-    <!-- Latest compiled and minified JavaScript -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
-    <link rel="shortcut icon" type = "image/ico" href = "{% static 'images/favicon.ico'%}"/>
-    <link href="https://fonts.googleapis.com/css?family=Lato:300" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{% static 'ingest/style.css' %}" />
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Latest compiled and minified CSS -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  <!-- Latest theme -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+  <!-- Latest compiled and minified JavaScript -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  <link rel="shortcut icon" type = "image/ico" href = "{% static 'images/favicon.ico'%}"/>
+  <link href="https://fonts.googleapis.com/css?family=Lato:300" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="{% static 'ingest/style.css' %}" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   </head>
   <body>
     <div class="page-header">
-	{% load static %}
-        <div class="container-fluid">
-          <div class="row">
-            <div class="col-sm-10">
-              <h1><a href="/">Brain Image Library  <img src="{% static 'images/brainicon.png' %}" style="height:40px"/></a></h1>
-            </div>
-            <div class="col-sm-2">
-            </div>
+      {% load static %}
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-sm-10">
+            <h1><a href="/">Brain Image Library  <img src="{% static 'images/brainicon.png' %}" style="height:40px"/></a></h1>
+          </div>
+          <div class="col-sm-2">
           </div>
         </div>
-        <div class="login-header">
-          {% if request.user.username %}
-            <p>{{ request.user.username }} | <a href="{% url 'logout' %}">logout</a></p>
-          {% else %}
-            <p><a href="{%url 'login' %}">login</a> | <a href="{%url 'ingest:signup' %}">signup</a></p>
-          {% endif %}
-        </div>
+      </div>
+      <div class="login-header">
+        {% if request.user.username %}
+          <p>{{ request.user.username }} | <a href="{% url 'logout' %}">logout</a></p>
+        {% else %}
+          <p><a href="{%url 'login' %}">login</a> | <a href="{%url 'ingest:signup' %}">signup</a></p>
+        {% endif %}
+      </div>
     </div>
-    <div class="content container-fluid">
-        <div class="row">
-            <div class="col-md-6">
-            {% block content %}
-            {% endblock %}
-            </div>
-        </div>
-    </div>
+    {% block content %}
+    {% endblock %}
   <script>
   $(document).ready(function(){
       $('[data-toggle="popover"]').popover();   
