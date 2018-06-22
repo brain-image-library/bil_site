@@ -10,6 +10,7 @@ from django.conf import settings
 
 from django_tables2 import RequestConfig
 import pyexcel as pe
+from django_celery_results.models import TaskResult
 
 from .fieldlist import attrs
 from .models import ImageData
@@ -151,7 +152,8 @@ def submit_collection(request):
             data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
             # remotely create the directory on some host using fabric and celery
             # note: you should authenticate with ssh keys, not passwords
-            tasks.create_data_path.delay(data_path)
+            if not settings.FAKE_STORAGE_AREA:
+                tasks.create_data_path.delay(data_path)
             host_and_path = "{}@{}:{}".format(
                 settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
             image_data = ImageData(data_path=host_and_path)
@@ -189,6 +191,13 @@ def collection_detail(request, pk):
         for i in image_metadata_queryset:
             i.locked = True
             i.save()
+            data_path = collection.data_path.__str__()
+            # This is just a test, which will be replaced with some real
+            # validation and analysis in the future
+        if not settings.FAKE_STORAGE_AREA:
+            task = tasks.get_directory_size.delay(data_path)
+            task_result = TaskResult(task_id=task.task_id)
+            task_result.save()
     table = ImageMetadataTable(image_metadata_queryset)
     return render(
         request,
@@ -220,7 +229,8 @@ def collection_delete(request, pk):
     collection = Collection.objects.get(pk=pk)
     if request.method == 'POST':
         data_path = collection.data_path.__str__()
-        tasks.delete_data_path.delay(data_path)
+        if not settings.FAKE_STORAGE_AREA:
+            tasks.delete_data_path.delay(data_path)
         collection.delete()
         # XXX: this should give a useful message like "Collection deleted!"
         return redirect('ingest:collection_list')

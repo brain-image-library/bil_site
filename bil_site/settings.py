@@ -45,6 +45,10 @@ except KeyError as e:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config['Security'].getboolean('DEBUG')
 
+# This will look like it is creating remote storage areas, but really does
+# nothing. It's just for testing purposes.
+FAKE_STORAGE_AREA = config['Security'].getboolean('FAKE_STORAGE_AREA')
+
 ALLOWED_HOSTS = []
 
 
