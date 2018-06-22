@@ -78,9 +78,10 @@ class CollectionTable(tables.Table):
         model = Collection
         template_name = 'ingest/bootstrap_ingest.html'
 
+
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
-    # information about a given set of imaging data. 
+    # information about a given set of imaging data.
     def __str__(self):
         return self.project_name
 
@@ -175,9 +176,7 @@ class ImageMetadataTable(tables.Table):
         template_name = 'ingest/bootstrap_ingest.html'
         sequence = ['id'] + image_metadata_fields
 
-    # selection = tables.CheckBoxColumn(accessor='pk')
     selection = tables.CheckBoxColumn(
         accessor="pk",
-        attrs = { "th__input": {"onclick": "toggle(this)"}},
+        attrs={"th__input": {"onclick": "toggle(this)"}},
         orderable=False)
-
