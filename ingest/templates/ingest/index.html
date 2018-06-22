@@ -38,18 +38,61 @@ validation process for the collection bundle to be accepted.
 
 <hr>
 
-{% if request.user.username %}
-<h3>Submitting to the Brain Image Library</h3>
   <img src="{% static 'images/workflow.png' %}" class="img-responsive"/>
-  <ul>
-    <li><a href="{% url 'ingest:collection_submit' %}">Create Collection
-    <li><a href="{% url 'ingest:image_metadata_submit' %}">Create Metadata</a> or <a href="{% url 'ingest:image_metadata_upload' %}">Upload Metadata Spreadsheet</a></li>
-  </ul>
-  <hr>
-  <ul>
-    <li><a href="{% url 'ingest:collection_list'  %}">View Collection List</a></li>
-    <li><a href="{% url 'ingest:image_metadata_list' %}">View Metadata List</a></li>
-  </ul>
+
+<hr>
+
+{% if request.user.username %}
+
+  <div class="row">
+    <div class="text-center col-sm-4">
+        <h3>Create Collection</h3>
+        <div class="bg-info">
+          <a href="{% url 'ingest:collection_submit' %}">
+            <span style="padding:50px 0px" class="glyphicon glyphicon-plus gi-5x"></span>
+          </a>
+        </div>
+    </div>
+    <div class="text-center col-sm-4">
+        <h3>Create Metadata</h3>
+        <div class="bg-info">
+          <a href="{% url 'ingest:image_metadata_submit' %}">
+            <span style="padding:50px 0px" class="glyphicon glyphicon-plus gi-5x"></span>
+          </a>
+        </div>
+    </div>
+    <div class="text-center col-sm-4">
+        <h3>Upload Metadata</h3>
+        <div class="bg-info">
+          <a href="{% url 'ingest:image_metadata_upload' %}">
+            <span style="padding:50px 0px" class="glyphicon glyphicon-upload gi-5x"></span>
+          </a>
+        </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="text-center col-sm-1"></div>
+    <div class="text-center col-sm-4">
+        <h3>View Collections</h3>
+        <div class="bg-info">
+          <a href="{% url 'ingest:collection_list' %}">
+            <span style="padding:50px 0px" class="glyphicon glyphicon-list gi-5x"></span>
+          </a>
+        </div>
+    </div>
+    <div class="text-center col-sm-1"></div>
+    <div class="text-center col-sm-4">
+        <h3>View Metadata</h3>
+        <div class="bg-info">
+          <a href="{% url 'ingest:image_metadata_list' %}">
+            <span style="padding:50px 0px" class="glyphicon glyphicon-list gi-5x"></span>
+          </a>
+        </div>
+    </div>
+    <div class="text-center col-sm-1"></div>
+  </div>
+
 {% else %}
   <p>Please <a href="{% url 'login' %}">
   log in</a> to begin creating collections for publication in the BIL.</p>
