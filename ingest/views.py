@@ -198,7 +198,8 @@ def collection_detail(request, pk):
             task = tasks.get_directory_size.delay(data_path)
             task_result = TaskResult(task_id=task.task_id)
             task_result.save()
-    table = ImageMetadataTable(image_metadata_queryset)
+    table = ImageMetadataTable(
+        ImageMetadata.objects.filter(user=request.user), exclude=['user', 'selection'])
     return render(
         request,
         'ingest/collection_detail.html',
