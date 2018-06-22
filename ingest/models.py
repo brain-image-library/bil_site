@@ -32,10 +32,12 @@ class Collection(models.Model):
     AI = 'AI'
     CSHL = 'CSHL'
     USC = 'USC'
+    PITT = 'PITT'
     ORGANIZATION_CHOICES = (
         (CSHL, 'Cold Spring Harbor Laboratory'),
         (USC, 'University of Southern California'),
         (AI, 'Allen Institute'),
+        (PITT, 'University of Pittsburgh'),
     )
     organization_name = models.CharField(
         max_length=256,
