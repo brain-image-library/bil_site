@@ -17,8 +17,15 @@
     <li class="list-group-item">Assay: {{image_metadata.assay}}</li>
     <li class="list-group-item">Slicing Direction: {{image_metadata.slicing_direction}}</li>
   </ul>
-<div class='btn-group btn-group-lg'>
-    <a class="save btn btn-primary" href="{% url 'ingest:image_metadata_update' pk=image_metadata.pk %}">Edit Metadata</a>
-    <a class="save btn btn-primary" href="{% url 'ingest:image_metadata_delete' pk=image_metadata.pk %}">Delete Metadata</a>
-</div>
+{% if image_metadata.locked %}
+  <p></p>
+  <div class="alert alert-info">
+      <strong>Submitted metadata cannot be modified or deleted.</strong>
+  </div>
+{% else %}
+  <div class='btn-group btn-group-lg'>
+      <a class="save btn btn-primary" href="{% url 'ingest:image_metadata_update' pk=image_metadata.pk %}">Edit Metadata</a>
+      <a class="save btn btn-primary" href="{% url 'ingest:image_metadata_delete' pk=image_metadata.pk %}">Delete Metadata</a>
+  </div>
+{% endif %}
 {% endblock %}
