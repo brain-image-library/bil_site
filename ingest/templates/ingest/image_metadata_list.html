@@ -24,6 +24,8 @@
   <p>You haven't created any metadata yet.</p>
   {% endif %}
   <hr>
-  <a href="{% url 'ingest:image_metadata_submit' %}">Create New Metadata</a>
+  <a href="{% url 'ingest:image_metadata_submit' %}" class="btn btn-primary">
+    <span class="glyphicon glyphicon-plus"></span> Create Metadata
+  </a>
 
 {% endblock %}

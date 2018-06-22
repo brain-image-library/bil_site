@@ -10,7 +10,9 @@
     <p>You haven't created any collections yet.</p>
   {% endif %}
   <hr>
-  <a href="{% url 'ingest:collection_submit' %}">Create New Collection</a>
+  <a href="{% url 'ingest:collection_submit' %}" class="btn btn-primary">
+    <span class="glyphicon glyphicon-plus"></span> Create Collection
+  </a>
 
 {% endblock %}
 
