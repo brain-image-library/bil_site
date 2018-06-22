@@ -1,21 +1,21 @@
 {% extends 'ingest/narrow.html' %}
 
 {% block narrow %}
-  <h1>{{ image_metadata.project_name }}</h1>
-  <ul>
-    <li>Project description: {{image_metadata.project_description}}</li>
-    <li>Background strain: {{image_metadata.background_strain}}</li>
-    <li>Image filename pattern: {{image_metadata.image_filename_pattern}}</li>
-    <li>Locked: {{image_metadata.locked}}</li>
-    <li>Taxonomy Name: {{image_metadata.taxonomy_name}}</li>
-    <li>Transgenic Line Name: {{image_metadata.transgenic_line_name}}</li>
-    <li>Age: {{image_metadata.age}}</li>
-    <li>Age Unit: {{image_metadata.age_unit}}</li>
-    <li>Sex: {{image_metadata.sex_name}}</li>
-    <li>Organ: {{image_metadata.organ}}</li>
-    <li>Organ Substructure: {{image_metadata.organ_substructure}}</li>
-    <li>Assay: {{image_metadata.assay}}</li>
-    <li>Slicing Direction: {{image_metadata.slicing_direction}}</li>
+  <h1>Image Metadata: {{ image_metadata.project_name }}</h1>
+  <ul class="list-group">
+    <li class="list-group-item">Project description: {{image_metadata.project_description}}</li>
+    <li class="list-group-item">Background strain: {{image_metadata.background_strain}}</li>
+    <li class="list-group-item">Image filename pattern: {{image_metadata.image_filename_pattern}}</li>
+    <li class="list-group-item">Locked: {{image_metadata.locked}}</li>
+    <li class="list-group-item">Taxonomy Name: {{image_metadata.taxonomy_name}}</li>
+    <li class="list-group-item">Transgenic Line Name: {{image_metadata.transgenic_line_name}}</li>
+    <li class="list-group-item">Age: {{image_metadata.age}}</li>
+    <li class="list-group-item">Age Unit: {{image_metadata.age_unit}}</li>
+    <li class="list-group-item">Sex: {{image_metadata.sex_name}}</li>
+    <li class="list-group-item">Organ: {{image_metadata.organ}}</li>
+    <li class="list-group-item">Organ Substructure: {{image_metadata.organ_substructure}}</li>
+    <li class="list-group-item">Assay: {{image_metadata.assay}}</li>
+    <li class="list-group-item">Slicing Direction: {{image_metadata.slicing_direction}}</li>
   </ul>
 <div class='btn-group btn-group-lg'>
     <a class="save btn btn-primary" href="{% url 'ingest:image_metadata_update' pk=image_metadata.pk %}">Edit Metadata</a>
