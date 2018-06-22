@@ -91,7 +91,7 @@ class ImageMetadata(models.Model):
         help_text=('If this is Minitatlas data, begin this field with '
                    '"MINIATLAS:". The project name does not have to be the '
                    'same as the NIH project name.'))
-    collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
+    collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True)
     project_description = models.TextField()
     background_strain = models.CharField(max_length=256, help_text="e.g. C57BL/6J")
     image_filename_pattern = models.CharField(max_length=256)
