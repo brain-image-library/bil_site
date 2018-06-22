@@ -143,19 +143,19 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 
 @login_required
 def submit_collection(request):
-    """ Create a collection. """
+    """ Create a collection. """  
+    home_dir = "/home/{}".format(settings.IMG_DATA_USER)
+    data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
+    host_and_path = "{}@{}:{}".format(
+                settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = CollectionForm(request.POST, request=request)
         if form.is_valid() and request.method == 'POST':
-            home_dir = "/home/{}".format(settings.IMG_DATA_USER)
-            data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
             # remotely create the directory on some host using fabric and celery
             # note: you should authenticate with ssh keys, not passwords
             if not settings.FAKE_STORAGE_AREA:
                 tasks.create_data_path.delay(data_path)
-            host_and_path = "{}@{}:{}".format(
-                settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
             image_data = ImageData(data_path=host_and_path)
             image_data.user = request.user
             image_data.save()
@@ -166,7 +166,7 @@ def submit_collection(request):
     else:
         form = CollectionForm()
     collections = Collection.objects.all()
-    return render(request, 'ingest/collection_submit.html', {'form': form, 'collections': collections})
+    return render(request, 'ingest/collection_submit.html', {'form':form, 'collections': collections, 'host_and_path':host_and_path})
 
 
 @login_required
