@@ -96,13 +96,16 @@ def image_metadata_list(request):
     """ A list of all the metadata the user has created. """
     if request.method == "POST":
         pks = request.POST.getlist("selection")
-        selected_objects = ImageMetadata.objects.filter(pk__in=pks)
+        selected_objects = ImageMetadata.objects.filter(pk__in=pks, locked=False)
         selected_objects.delete()
     table = ImageMetadataTable(
         ImageMetadata.objects.filter(user=request.user), exclude=['user'])
     RequestConfig(request).configure(table)
     image_metadata = ImageMetadata.objects.all()
-    return render(request, 'ingest/image_metadata_list.html', {'table': table, 'image_metadata': image_metadata})
+    return render(
+        request,
+        'ingest/image_metadata_list.html',
+        {'table': table, 'image_metadata': image_metadata})
 
 
 class ImageMetadataDetail(LoginRequiredMixin, generic.DetailView):
