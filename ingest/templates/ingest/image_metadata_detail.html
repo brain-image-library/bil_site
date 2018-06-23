@@ -1,22 +1,22 @@
 {% extends 'ingest/narrow.html' %}
 
 {% block narrow %}
-  <h1>Image Metadata: {{ image_metadata.project_name }}</h1>
-  <ul class="list-group">
-    <li class="list-group-item">Project description: {{image_metadata.project_description}}</li>
-    <li class="list-group-item">Background strain: {{image_metadata.background_strain}}</li>
-    <li class="list-group-item">Image filename pattern: {{image_metadata.image_filename_pattern}}</li>
-    <li class="list-group-item">Locked: {{image_metadata.locked}}</li>
-    <li class="list-group-item">Taxonomy Name: {{image_metadata.taxonomy_name}}</li>
-    <li class="list-group-item">Transgenic Line Name: {{image_metadata.transgenic_line_name}}</li>
-    <li class="list-group-item">Age: {{image_metadata.age}}</li>
-    <li class="list-group-item">Age Unit: {{image_metadata.age_unit}}</li>
-    <li class="list-group-item">Sex: {{image_metadata.sex_name}}</li>
-    <li class="list-group-item">Organ: {{image_metadata.organ}}</li>
-    <li class="list-group-item">Organ Substructure: {{image_metadata.organ_substructure}}</li>
-    <li class="list-group-item">Assay: {{image_metadata.assay}}</li>
-    <li class="list-group-item">Slicing Direction: {{image_metadata.slicing_direction}}</li>
-  </ul>
+<h1><b>Image Metadata</b> {{ image_metadata.project_name }}</h1>
+  <div class="list-group">
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Project description</h4> {{image_metadata.project_description}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Background strain</h4> {{image_metadata.background_strain}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Image filename pattern</h4> {{image_metadata.image_filename_pattern}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Locked</h4> {{image_metadata.locked}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Taxonomy Name</h4> {{image_metadata.taxonomy_name}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Transgenic Line Name</h4> {{image_metadata.transgenic_line_name}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Age</h4> {{image_metadata.age}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Age Unit</h4> {{image_metadata.age_unit}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Sex</h4> {{image_metadata.sex_name}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Organ</h4> {{image_metadata.organ}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Organ Substructure</h4> {{image_metadata.organ_substructure}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Assay</h4> {{image_metadata.assay}}</a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Slicing Direction</h4> {{image_metadata.slicing_direction}}</a>
+  </div>
 {% if image_metadata.locked %}
   <p></p>
   <div class="alert alert-info">
