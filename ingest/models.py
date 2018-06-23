@@ -79,7 +79,15 @@ class CollectionTable(tables.Table):
         model = Collection
         template_name = 'ingest/bootstrap_ingest.html'
 
+
 class CollectionFilter(django_filters.FilterSet):
+    choices = (('', ('Locked & unlocked')),
+               ('true', ('Locked')),
+               ('false', ('Unlocked')))
+    bw=django_filters.widgets.BooleanWidget()
+    bw.choices = choices
+    locked = django_filters.BooleanFilter(widget=bw)
+
 
     class Meta:
         model = Collection
