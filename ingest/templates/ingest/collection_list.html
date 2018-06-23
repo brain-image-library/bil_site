@@ -1,4 +1,5 @@
 {% extends 'ingest/wide.html' %}
+{% load bootstrap4 %} 
 
 {% block wide %}
   <h2>Your Collections</h1>
@@ -6,6 +7,12 @@
   {% if collections %}
     {% load render_table from django_tables2 %}
     {% render_table table %} 
+    {% if filter %}
+      <form action="" method="get" class="form form-inline">
+          {% bootstrap_form filter.form layout='inline' %}
+          {% bootstrap_button 'filter' %}
+      </form>
+    {% endif %}
   {% else %}
     <p>You haven't created any collections yet.</p>
   {% endif %}

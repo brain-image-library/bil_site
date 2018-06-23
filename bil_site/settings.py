@@ -64,6 +64,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_tables2',
     'django_celery_results',
+    'django_filters',
+    'bootstrap4',
 ]
 
 MIDDLEWARE = [

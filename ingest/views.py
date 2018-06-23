@@ -8,6 +8,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 
+from django_filters.views import FilterView
+from django_tables2.views import SingleTableMixin
 from django_tables2 import RequestConfig
 import pyexcel as pe
 from django_celery_results.models import TaskResult
@@ -18,6 +20,7 @@ from .models import ImageMetadata
 from .models import ImageMetadataTable
 from .models import Collection
 from .models import CollectionTable
+from .models import CollectionFilter
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
 from .forms import SignUpForm
@@ -169,14 +172,22 @@ def submit_collection(request):
     return render(request, 'ingest/collection_submit.html', {'form':form, 'collections': collections, 'host_and_path':host_and_path})
 
 
-@login_required
-def collection_list(request):
-    """ Show a table of all the collections. """
-    table = CollectionTable(
-        Collection.objects.filter(user=request.user), exclude=['user'])
-    RequestConfig(request).configure(table)
-    collections = Collection.objects.all()
-    return render(request, 'ingest/collection_list.html', {'table': table, 'collections': collections})
+class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
+
+    table_class = CollectionTable
+    model = Collection
+    template_name = 'ingest/collection_list.html'
+    filterset_class = CollectionFilter
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        # Add in a QuerySet of all the books
+        table_class = CollectionTable(
+            Collection.objects.filter(user=self.request.user), exclude=['user'])
+        context['table_class'] = table_class
+        context['collections'] = Collection.objects.all()
+        return context
 
 
 @login_required

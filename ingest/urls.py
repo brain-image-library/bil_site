@@ -22,5 +22,5 @@ urlpatterns = [
     path('collection_delete/<int:pk>', views.collection_delete, name='collection_delete'),
     path('collection/<int:pk>', views.collection_detail, name='collection_detail'),
     re_path(r'^collection_submit/$', views.submit_collection, name='collection_submit'),
-    re_path(r'^collection_list/$', views.collection_list, name='collection_list')
+    re_path(r'^collection_list/$', views.CollectionList.as_view(), name='collection_list')
 ]

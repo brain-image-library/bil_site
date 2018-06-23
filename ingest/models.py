@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.html import format_html
 
+import django_filters
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
 
@@ -77,6 +78,12 @@ class CollectionTable(tables.Table):
     class Meta:
         model = Collection
         template_name = 'ingest/bootstrap_ingest.html'
+
+class CollectionFilter(django_filters.FilterSet):
+
+    class Meta:
+        model = Collection
+        fields = ['locked']
 
 
 class ImageMetadata(models.Model):
