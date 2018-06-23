@@ -87,7 +87,7 @@ def upload_image_metadata(request):
             return redirect('ingest:image_metadata_list')
     else:
         form = UploadForm()
-    collections = Collection.objects.all()
+    collections = Collection.objects.filter(locked=False)
     return render(request, 'ingest/image_metadata_upload.html', {'form': form, 'collections': collections})
 
 

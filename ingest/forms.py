@@ -24,9 +24,8 @@ class SignUpForm(UserCreationForm):
 
 
 class UploadForm(forms.Form):
-    # XXX: we should only grab unlocked Collections
     associated_collection = forms.ModelChoiceField(
-        queryset=Collection.objects.all())
+        queryset=Collection.objects.filter(locked=False))
 
 
 class ImageMetadataForm(forms.ModelForm):

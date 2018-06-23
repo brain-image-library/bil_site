@@ -6,20 +6,22 @@
 
   <h1>Upload Metadata Spreadsheet</h1>
   {% if collections %}
-  <ul>
-    <li>Download and fill out this template: <a href="{% static 'ingest/metadata_template.xls' %}">metadata_template.xls</a></li>
-    <li>Choose a collection and then upload your metadata as a spreadsheet in xls or xlsx format.</li>
+  <ul class="list-group">
+    <li class="list-group-item">Download and fill out this template: <a href="{% static 'ingest/metadata_template.xls' %}">metadata_template.xls</a></li>
+    <li class="list-group-item">Choose a collection and upload your metadata.</li>
   </ul>
 
-  <form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form }}
-    </br>
-    </br>
-    <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
-    <input type="file" style="display:none;" id="file" name="myfile" onchange="form.submit()" />
-    </br>
-  </form>
+    <hr>
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {{ form }}
+      </br>
+      </br>
+      <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
+      <input type="file" style="display:none;" id="file" name="myfile" onchange="form.submit()" />
+      </br>
+    </form>
   {% else %}
     <p>You need to create a collection before uploading a metadata spreadsheet</p>
   {% endif %}
