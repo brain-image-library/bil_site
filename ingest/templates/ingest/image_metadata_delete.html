@@ -3,6 +3,6 @@
 {% block narrow %}
 <form action="" method="post">{% csrf_token %}
     <p>Are you sure you want to delete "{{ object }}"?</p>
-    <input type="submit" value="Confirm" />
+    <input class="confirm btn btn-primary" type="submit" value="Confirm"/>
 </form>
 {% endblock %}
