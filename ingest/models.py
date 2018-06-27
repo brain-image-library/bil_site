@@ -190,6 +190,27 @@ class ImageMetadata(models.Model):
         choices=MAP_CHOICES,
         default=UNKNOWN,
     )
+
+    PROC1 = 'ORIGINAL_CAPTURE_UNPROCESSED'
+    PROC2 = 'ORIGINAL_CAPTURE_AUTOSTITCHED'
+    PROC3 = 'FULL_CAPTURE_REFORMATED'
+    PROC4 = 'FULL_CAPTURE_STITCHED_REFORMATTED'
+    PROC5 = 'PROCESSED'
+    PROCESSING_CHOICES = (
+        (PROC1,'Original Capture Unprocessed'),
+        (PROC2,'Original Capture Autostitched'),
+        (PROC3,'Full Capture Reformatted'),
+        (PROC4,'Full Capture Stitched Reformatted'),
+        (PROC5,'Processed'),
+    )
+
+    processing_level = models.CharField(
+        max_length=256,
+        choices=PROCESSING_CHOICES,
+        default=UNKNOWN,
+    )
+
+
 class ImageMetadataTable(tables.Table):
     id = tables.LinkColumn(
         'ingest:image_metadata_detail',
