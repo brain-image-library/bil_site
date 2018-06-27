@@ -2,7 +2,7 @@
 {% load bootstrap4 %} 
 
 {% block wide %}
-  <h2>Your Collections</h1>
+  <br>Your Collections</h1>
 
   {% if collections %}
     {% load render_table from django_tables2 %}
@@ -20,6 +20,10 @@
   <a href="{% url 'ingest:collection_submit' %}" class="btn btn-primary">
     <span class="glyphicon glyphicon-plus"></span> Create Collection
   </a>
-
+  </br>
+  </br>
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
 {% endblock %}
 

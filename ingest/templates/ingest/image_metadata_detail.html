@@ -27,5 +27,12 @@
       <a class="save btn btn-primary" href="{% url 'ingest:image_metadata_update' pk=image_metadata.pk %}">Edit Metadata</a>
       <a class="save btn btn-primary" href="{% url 'ingest:image_metadata_delete' pk=image_metadata.pk %}">Delete Metadata</a>
   </div>
+
+  </br>
+  </br>
+    <a href="{% url 'ingest:image_metadata_list' %}">
+      <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+    </a>
+
 {% endif %}
 {% endblock %}

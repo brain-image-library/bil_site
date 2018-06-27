@@ -13,7 +13,10 @@
                 {% endfor %}
             </p>
         {% endfor %}
-        <p>Required fields are marked with an *.
+        <p>Required fields are marked with an *.</p>
         <button type="submit" class="save btn btn-lg btn-primary">Save</button>
     </form>
+<a href="{% url 'ingest:index' %}">
+    <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
 {% endblock %}
