@@ -14,5 +14,5 @@ attrs = [
     'slicing_direction',
     'processing_level',
     'image_filename_pattern',
-    'map',
+    'image_map_style',
 ]
