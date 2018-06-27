@@ -35,6 +35,23 @@
           <p><a href="{%url 'login' %}">login</a> | <a href="{%url 'ingest:signup' %}">signup</a></p>
         {% endif %}
       </div>
+	<div>
+	<a href="{% url 'ingest:collection_submit' %}">
+	<span style="padding:15px 0px 0px 0px" class="glyphicon glyphicon-plus gi-1x">Create Collection</span>
+	</a>
+	<a href="{% url 'ingest:image_metadata_submit' %}">
+	<span style="padding:15px 0px 0px 0px" class="glyphicon glyphicon-plus gi-1x">Create Metadata</span>
+	</a>
+	<a href="{% url 'ingest:image_metadata_upload' %}">
+	<span style="padding:15px 0px 0px 0px" class="glyphicon glyphicon-upload gi-1x">Upload Metadata</span>
+	</a>
+	<a href="{% url 'ingest:collection_list' %}">
+	<span style="padding:15px 0px 0px 0px" class="glyphicon glyphicon-list gi-1x">View Collections</span>
+	</a>
+	<a href="{% url 'ingest:image_metadata_list' %}">
+	<span style="padding:15px 0px 0px 0px" class="glyphicon glyphicon-list gi-1x">View Metadata</span>
+	</a>
+	</div>
     </div>
     {% block content %}
     {% endblock %}
