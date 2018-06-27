@@ -5,5 +5,9 @@
     <p>Are you sure you want to delete "{{ collection }}"?</p>
     <input class="confirm btn btn-primary" type="submit" value="Confirm"/>
 </form>
+</br>
+<a href="{% url 'ingest:collection_list' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
 {% endblock %}
 
