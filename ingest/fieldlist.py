@@ -12,5 +12,6 @@ attrs = [
     'organ_substructure',
     'assay',
     'slicing_direction',
+    'processing_level',
     'image_filename_pattern',
 ]
