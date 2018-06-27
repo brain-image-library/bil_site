@@ -67,6 +67,11 @@ def upload_image_metadata(request):
             filename = fs.save(myfile.name, myfile)
             rec = pe.iget_records(file_name=filename)
             for r in rec:
+                # XXX: ods format doesn't seem to stop reading after end of
+                # last entry. Should add some better error handling in here to
+                # deal with this.
+                if not (r['project_name']):
+                    break
                 im = ImageMetadata(
                     collection=associated_collection,
                     project_name=r['project_name'],
