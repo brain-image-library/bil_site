@@ -37,21 +37,22 @@
       </div>
         {% if request.user.username %}
 	<div>
-	<a href="{% url 'ingest:collection_submit' %}">
-	<span style="padding:0px 15px 0px 0px" class="glyphicon glyphicon-plus gi-1x">Create Collection</span>
-	</a>
-	<a href="{% url 'ingest:image_metadata_submit' %}">
-	<span style="padding:0px 15px 0px 0px" class="glyphicon glyphicon-plus gi-1x">Create Metadata</span>
-	</a>
-	<a href="{% url 'ingest:image_metadata_upload' %}">
-	<span style="padding:0px 15px 0px 0px" class="glyphicon glyphicon-upload gi-1x">Upload Metadata</span>
-	</a>
-	<a href="{% url 'ingest:collection_list' %}">
-	<span style="padding:0px 15px 0px 0px" class="glyphicon glyphicon-list gi-1x">View Collections</span>
-	</a>
-	<a href="{% url 'ingest:image_metadata_list' %}">
-	<span style="padding:0px 15px 0px 0px" class="glyphicon glyphicon-list gi-1x">View Metadata</span>
-	</a>
+	<a href="{% url 'ingest:collection_submit' %}" style="padding:0px 10px 0px 0px">
+    <span class="glyphicon glyphicon-plus"></span>Create Collection 
+  </a>
+	<a href="{% url 'ingest:image_metadata_submit' %}" style="padding:0px 10px 0px 0px">
+    <span class="glyphicon glyphicon-plus"></span>Create Metadata 
+  </a>
+	<a href="{% url 'ingest:image_metadata_upload' %}" style="padding:0px 10px 0px 0px">
+    <span class="glyphicon glyphicon-upload"></span>Upload Metadata 
+  </a>
+	<a href="{% url 'ingest:collection_list' %}" style="padding:0px 10px 0px 0px">
+    <span class="glyphicon glyphicon-list"></span>View Collections 
+  </a>
+	<a href="{% url 'ingest:image_metadata_list' %}" style="padding:0px 10px 0px 0px">
+    <span class="glyphicon glyphicon-list"></span>View Metadata 
+  </a>
+
 	</div>
         {% endif %}
     </div>
