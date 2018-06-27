@@ -13,4 +13,5 @@ attrs = [
     'assay',
     'slicing_direction',
     'image_filename_pattern',
+    'map',
 ]

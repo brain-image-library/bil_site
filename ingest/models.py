@@ -169,8 +169,27 @@ class ImageMetadata(models.Model):
         choices=SLICING_DIRECTION_CHOICES,
         default=UNKNOWN,
     )
-
-
+    MAPZ = 'MAPZ'
+    MAPXY = 'MAPXY'
+    MAPYX = 'MAPYX'
+    MAPXYZ = 'MAPXYZ'
+    MAPYXZ = 'MAPYXZ'
+    MAPZXY = 'MAPZXY'
+    MAPZYX = 'MAPZYX'
+    MAP_CHOICES = (
+        (MAPZ, 'Map Z'),
+        (MAPXY, 'Map XY'),
+        (MAPYX, 'Map YX'),
+        (MAPXYZ, 'Map XYZ'),
+        (MAPYXZ, 'Map YXZ'),
+        (MAPZXY, 'Map ZXY'),
+        (MAPZYX, 'Map ZYX'),
+    )
+    map = models.CharField(
+        max_length=256,
+        choices=MAP_CHOICES,
+        default=UNKNOWN,
+    )
 class ImageMetadataTable(tables.Table):
     id = tables.LinkColumn(
         'ingest:image_metadata_detail',
