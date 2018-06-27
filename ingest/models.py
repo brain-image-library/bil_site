@@ -185,7 +185,7 @@ class ImageMetadata(models.Model):
         (MAPZXY, 'Map ZXY'),
         (MAPZYX, 'Map ZYX'),
     )
-    map = models.CharField(
+    image_map_style = models.CharField(
         max_length=256,
         choices=MAP_CHOICES,
         default=UNKNOWN,
