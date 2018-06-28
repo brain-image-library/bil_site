@@ -14,7 +14,9 @@
       </form>
     {% endif %}
   {% else %}
-    <p>You haven't created any collections yet.</p>
+    <div class="alert alert-info">
+      <p>You haven't created any collections yet.</p>
+    </div>
   {% endif %}
   <hr>
   <a href="{% url 'ingest:collection_submit' %}" class="btn btn-primary">

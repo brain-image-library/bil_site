@@ -21,7 +21,9 @@
         </div>
     </form>
   {% else %}
-  <p>You haven't created any metadata yet.</p>
+    <div class="alert alert-info">
+      <p>You haven't created any metadata yet.</p>
+    </div>
   {% endif %}
   <hr>
   <a href="{% url 'ingest:image_metadata_submit' %}" class="btn btn-primary">
