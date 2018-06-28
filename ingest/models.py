@@ -60,7 +60,6 @@ class Collection(models.Model):
         User,
         on_delete=models.SET_NULL, blank=True, null=True)
 
-
 class CollectionTable(tables.Table):
     id = tables.LinkColumn(
         'ingest:collection_detail',
@@ -109,7 +108,7 @@ class ImageMetadata(models.Model):
         help_text=('If this is Minitatlas data, begin this field with '
                    '"MINIATLAS:". The project name does not have to be the '
                    'same as the NIH project name.'))
-    collection = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True)
+    collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
     project_description = models.TextField()
     background_strain = models.CharField(max_length=256, help_text="e.g. C57BL/6J")
     image_filename_pattern = models.CharField(max_length=256)
