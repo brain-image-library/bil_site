@@ -73,3 +73,8 @@ commands:
 
     python manage.py makemigrations
     python manage.py migrate --run-syncdb
+
+## Notes
+Currently, when a collection is created, a fake staging area is 
+created for the collection. In the future, this will be changed to 
+reflect where the collection will actually be stored. 
