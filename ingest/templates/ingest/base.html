@@ -17,45 +17,49 @@
 
   </head>
   <body>
-    <div class="page-header">
-      {% load static %}
-      <div>
-        <h1><a href="/">Brain Image Library  <img src="{% static 'images/brainicon.png' %}" style="height:40px"/></a></h1>
+    <nav class="navbar navbar-inverse header">
+      <div class="container-fluid header">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>                        
+            <span class="icon-bar"></span>                        
+          </button>
+          <a href="/"><div class="navbar-brand">Brain Image Library </div><img src="{% static 'images/brainicon.png' %}" style="padding-top:10px;height:40px"/></a>
+        </div>
+        <div class="collapse navbar-collapse" id="myNavbar">
+          <ul class="nav navbar-nav">
+            <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Collections <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="{% url 'ingest:collection_submit' %}">Create Collection</a></li>
+                <li><a href="{% url 'ingest:collection_list' %}">View Collections</a></li>
+              </ul>
+            </li>
+            <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Metadata <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="{% url 'ingest:image_metadata_submit' %}">Create Metadata</a></li>
+                <li><a href="{% url 'ingest:image_metadata_upload' %}">Upload Metadata</a></li>
+                <li><a href="{% url 'ingest:image_metadata_list' %}">View Metadata</a></li>
+              </ul>
+            </li>
+          </ul>
+          {% if request.user.username %}
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="#"><span class="glyphicon glyphicon-user"></span> {{ request.user.username }}</a></li>
+            <li><a href="{%url 'logout' %}"><span class="glyphicon glyphicon-log-out"></span> Log out</a></li>
+          </ul>
+          {% else %}
+          <ul class="nav navbar-nav navbar-right">
+            <li><a href="{%url 'ingest:signup' %}"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
+            <li><a href="{%url 'login' %}"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
+          </ul>
+          {% endif %}
+        </div>
       </div>
-      <div class="login-header">
-        {% if request.user.username %}
-          <p>{{ request.user.username }} | <a href="{% url 'logout' %}">logout</a></p>
-        {% else %}
-          <p><a href="{%url 'login' %}">login</a> | <a href="{%url 'ingest:signup' %}">signup</a></p>
-        {% endif %}
-      </div>
-      {% if request.user.username %}
-      <div>
-        <a href="{% url 'ingest:collection_submit' %}" style="padding:0px 10px 0px 0px">
-          <span class="glyphicon glyphicon-plus"></span>Create Collection 
-        </a>
-        <a href="{% url 'ingest:image_metadata_submit' %}" style="padding:0px 10px 0px 0px">
-          <span class="glyphicon glyphicon-plus"></span>Create Metadata 
-        </a>
-        <a href="{% url 'ingest:image_metadata_upload' %}" style="padding:0px 10px 0px 0px">
-          <span class="glyphicon glyphicon-upload"></span>Upload Metadata 
-        </a>
-        <a href="{% url 'ingest:collection_list' %}" style="padding:0px 10px 0px 0px">
-          <span class="glyphicon glyphicon-list"></span>View Collections 
-        </a>
-        <a href="{% url 'ingest:image_metadata_list' %}" style="padding:0px 10px 0px 0px">
-          <span class="glyphicon glyphicon-list"></span>View Metadata 
-        </a>
-
-      </div>
-      {% endif %}
-    </div>
+    </nav> 
     {% block content %}
     {% endblock %}
-  <script>
-  $(document).ready(function(){
-      $('[data-toggle="popover"]').popover();   
-  });
-  </script>
   </body>
 </html>
