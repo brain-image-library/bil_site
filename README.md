@@ -76,5 +76,8 @@ commands:
 
 ## Notes
 Currently, when a collection is created, a fake staging area is 
-created for the collection. In the future, this will be changed to 
-reflect where the collection will actually be stored. 
+created for the collection. This option can be changed in site.cfg 
+(FAKE_STORAGE_AREA) when hosting the server. Once the website is 
+deployed, this option will be 
+changed so that the path reflects where the collection will actually 
+be stored. 
