@@ -4,6 +4,11 @@
 
 
   <script language="JavaScript">
+    function toggle(source) {
+        checkboxes = document.getElementsByName('selection');
+        for(var i in checkboxes)
+            checkboxes[i].checked = source.checked;
+    }
     $(document).ready(function(){
       $(".selection").click(function(){
         if($(":checkbox").is(":checked"))
@@ -14,14 +19,14 @@
     });
   </script>
 
-  <h2>Your Metadata</h1>
+  <h2>Your Metadata</h2>
   {% if image_metadata %}
     <form action="" method="post">{% csrf_token %}
         {% load render_table from django_tables2 %}
         {% render_table table %}
-        <div class='btn-group btn-group-lg'>
-        <button type="submit" class="save btn btn-lg btn-primary" id="delete_selected" style="display:none">Delete Selected</button>
-        </div>
+        <button type="submit" class="submit btn btn-primary" id="delete_selected" style="display:none">
+          <span class="glyphicon glyphicon-trash"></span> Delete Selected
+        </button>
     </form>
   {% else %}
     <div class="alert alert-info">
@@ -32,9 +37,7 @@
   <a href="{% url 'ingest:image_metadata_submit' %}" class="btn btn-primary">
     <span class="glyphicon glyphicon-plus"></span> Create Metadata
   </a>
-  </br>
-  </br>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+  <a href="{% url 'ingest:index' %}">
+    <button class="cancel btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+  </a>
 {% endblock %}
