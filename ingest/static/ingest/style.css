@@ -31,3 +31,10 @@ h1, h2, h3, h4 {
 .gi-3x{font-size: 3em;}
 .gi-4x{font-size: 4em;}
 .gi-5x{font-size: 5em;}
+
+.panel-heading .chevron:after {
+    content: "\f078";   
+}
+.panel-heading.collapsed .chevron:after {
+    content: "\f054"; 
+}  
