@@ -32,14 +32,14 @@
             <li class="dropdown">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#">Collections <span class="caret"></span></a>
               <ul class="dropdown-menu">
-                <li><a href="{% url 'ingest:collection_submit' %}">Create Collection</a></li>
+                <li><a href="{% url 'ingest:collection_create' %}">Create Collection</a></li>
                 <li><a href="{% url 'ingest:collection_list' %}">View Collections</a></li>
               </ul>
             </li>
             <li class="dropdown">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#">Metadata <span class="caret"></span></a>
               <ul class="dropdown-menu">
-                <li><a href="{% url 'ingest:image_metadata_submit' %}">Create Metadata</a></li>
+                <li><a href="{% url 'ingest:image_metadata_create' %}">Create Metadata</a></li>
                 <li><a href="{% url 'ingest:image_metadata_upload' %}">Upload Metadata</a></li>
                 <li><a href="{% url 'ingest:image_metadata_list' %}">View Metadata</a></li>
               </ul>

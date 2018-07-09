@@ -56,7 +56,7 @@ def index(request):
 
 
 @login_required
-def upload_image_metadata(request):
+def image_metadata_upload(request):
     """ Upload a spreadsheet containing image metadata information. """
     if request.method == 'POST' and request.FILES['myfile']:
         form = UploadForm(request.POST)
@@ -121,7 +121,7 @@ class ImageMetadataDetail(LoginRequiredMixin, generic.DetailView):
 
 
 @login_required
-def submit_image_metadata(request):
+def image_metadata_create(request):
     """ Create new image metadata. """
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
@@ -132,7 +132,7 @@ def submit_image_metadata(request):
             return redirect('ingest:image_metadata_list')
     else:
         form = ImageMetadataForm()
-    return render(request, 'ingest/image_metadata_submit.html', {'form': form})
+    return render(request, 'ingest/image_metadata_create.html', {'form': form})
 
 
 class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
@@ -153,7 +153,7 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 # and deleting COLLECTIONS.
 
 @login_required
-def submit_collection(request):
+def collection_create(request):
     """ Create a collection. """  
     home_dir = "/home/{}".format(settings.IMG_DATA_USER)
     data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
@@ -177,7 +177,7 @@ def submit_collection(request):
     else:
         form = CollectionForm()
     collections = Collection.objects.all()
-    return render(request, 'ingest/collection_submit.html', {'form':form, 'collections': collections, 'host_and_path':host_and_path})
+    return render(request, 'ingest/collection_create.html', {'form':form, 'collections': collections, 'host_and_path':host_and_path})
 
 
 class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
@@ -200,7 +200,7 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
 
 @login_required
 def collection_detail(request, pk):
-    """ View, edit, delete, submit a particular collection. """
+    """ View, edit, delete, create a particular collection. """
     collection = Collection.objects.get(id=pk)
     image_metadata_queryset = ImageMetadata.objects.filter(
         user=request.user).filter(collection=pk)
