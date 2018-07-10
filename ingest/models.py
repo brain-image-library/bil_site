@@ -44,7 +44,9 @@ class Collection(models.Model):
         max_length=256,
         choices=ORGANIZATION_CHOICES,
         default=AI,
-        help_text="The institution where the data generator/submitter or other responsible person resides."
+        help_text=(
+            "The institution where the data generator/submitter or other "
+            "responsible person resides.")
     )
     lab_name = models.CharField(
         max_length=256, help_text="The lab or department subgroup")
@@ -59,6 +61,7 @@ class Collection(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL, blank=True, null=True)
+
 
 class CollectionTable(tables.Table):
     id = tables.LinkColumn(
@@ -83,10 +86,9 @@ class CollectionFilter(django_filters.FilterSet):
     choices = (('', ('Locked & unlocked')),
                ('true', ('Locked')),
                ('false', ('Unlocked')))
-    bw=django_filters.widgets.BooleanWidget()
+    bw = django_filters.widgets.BooleanWidget()
     bw.choices = choices
     locked = django_filters.BooleanFilter(widget=bw)
-
 
     class Meta:
         model = Collection
@@ -110,7 +112,8 @@ class ImageMetadata(models.Model):
                    'same as the NIH project name.'))
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
     project_description = models.TextField()
-    background_strain = models.CharField(max_length=256, help_text="e.g. C57BL/6J")
+    background_strain = models.CharField(
+        max_length=256, help_text="e.g. C57BL/6J")
     image_filename_pattern = models.CharField(max_length=256)
 
     # Required but the user shouldn't control these
@@ -152,8 +155,15 @@ class ImageMetadata(models.Model):
     )
     organ = models.CharField(max_length=256, blank=True, default="brain")
     organ_substructure = models.CharField(
-        max_length=256, blank=True, default="whole brain", help_text="e.g. hippocampus, prefrontal cortex")
-    assay = models.CharField(max_length=256, blank=True, default="", help_text="e.g. smFISH, fMOST, MouseLight")
+        max_length=256,
+        blank=True,
+        default="whole brain",
+        help_text="e.g. hippocampus, prefrontal cortex")
+    assay = models.CharField(
+        max_length=256,
+        blank=True,
+        default="",
+        help_text="e.g. smFISH, fMOST, MouseLight")
     CORONAL = 'CORONAL'
     SAGITTAL = 'SAGITTAL'
     AXIAL = 'AXIAL'
@@ -196,11 +206,11 @@ class ImageMetadata(models.Model):
     PROC4 = 'FULL_CAPTURE_STITCHED_REFORMATTED'
     PROC5 = 'PROCESSED'
     PROCESSING_CHOICES = (
-        (PROC1,'Original Capture Unprocessed'),
-        (PROC2,'Original Capture Autostitched'),
-        (PROC3,'Full Capture Reformatted'),
-        (PROC4,'Full Capture Stitched Reformatted'),
-        (PROC5,'Processed'),
+        (PROC1, 'Original Capture Unprocessed'),
+        (PROC2, 'Original Capture Autostitched'),
+        (PROC3, 'Full Capture Reformatted'),
+        (PROC4, 'Full Capture Stitched Reformatted'),
+        (PROC5, 'Processed'),
     )
 
     processing_level = models.CharField(
