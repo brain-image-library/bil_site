@@ -7,6 +7,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
 from django.conf import settings
+from django.contrib import messages
 
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
@@ -173,6 +174,7 @@ def collection_create(request):
             post = form.save(commit=False)
             post.data_path = image_data
             post.save()
+            messages.success(request, 'Collection successfully created')
             return redirect('ingest:collection_list')
     else:
         form = CollectionForm()

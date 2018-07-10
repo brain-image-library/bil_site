@@ -2,30 +2,38 @@
 {% load bootstrap4 %} 
 
 {% block wide %}
-  <h1>Your Collections</h1>
 
-  {% if collections %}
-    {% load render_table from django_tables2 %}
-    {% render_table table %} 
-    {% if filter %}
-      <form action="" method="get" class="form form-inline">
-          {% bootstrap_form filter.form layout='inline' %}
-          {% bootstrap_button 'Filter' %}
-      </form>
-    {% endif %}
-  {% else %}
-    <div class="alert alert-info">
-      <p>You haven't created any collections yet.</p>
-    </div>
+<h1>Your Collections</h1>
+
+{% if collections %}
+  {% load render_table from django_tables2 %}
+  {% render_table table %} 
+  {% if filter %}
+    <form action="" method="get" class="form form-inline">
+        {% bootstrap_form filter.form layout='inline' %}
+        {% bootstrap_button 'Filter' %}
+    </form>
   {% endif %}
-  <hr>
-  <a href="{% url 'ingest:collection_create' %}" class="btn btn-primary">
-    <span class="glyphicon glyphicon-plus"></span> Create Collection
-  </a>
-  </br>
-  </br>
+{% else %}
+  <div class="alert alert-info">
+    <p>You haven't created any collections yet.</p>
+  </div>
+{% endif %}
+
+<hr>
+
+<a href="{% url 'ingest:collection_create' %}" class="btn btn-primary">
+  <span class="glyphicon glyphicon-plus"></span> Create Collection
+</a>
+
+</br> </br>
+
 <a href="{% url 'ingest:index' %}">
   <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
 </a>
+
+</br></br>
+{% include 'ingest/messages.html' %}
+
 {% endblock %}
 
