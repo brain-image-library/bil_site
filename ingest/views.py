@@ -215,6 +215,12 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
         context['collections'] = Collection.objects.all()
         return context
 
+    def get_filterset_kwargs(self, filterset_class):
+        kwargs = super().get_filterset_kwargs(filterset_class)
+        if kwargs["data"] is None:
+            kwargs["data"] = {"locked": False}
+        return kwargs
+
 
 @login_required
 def collection_detail(request, pk):
