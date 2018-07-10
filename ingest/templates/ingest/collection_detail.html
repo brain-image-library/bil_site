@@ -41,7 +41,11 @@
       <a class="save btn btn-primary" href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a>
       <a class="save btn btn-primary" href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a>
     </div>
-    <p>This collection doesn't have any metadata yet.</p>
+    </br>
+    </br>
+    <div class="alert alert-info">
+      <strong>This collection doesn't have any metadata yet.</strong>
+    </div>
   {% endif %}
 </br>
 <a href="{% url 'ingest:collection_list' %}">
