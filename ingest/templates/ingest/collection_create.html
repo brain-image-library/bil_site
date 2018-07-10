@@ -1,29 +1,29 @@
 {% extends 'ingest/narrow.html' %}
 
 {% block narrow %}
-    <h1>Create collection</h1>
-    <form method="POST" class="post-form">
-    {% csrf_token %}
-        {% for field in form  %}
-            <p data-toggle="tooltip" title="{{field.help_text}}">
-                {{ field.label_tag }} {% if field.field.required %} * {% endif %}<br>
-                {{ field }}
-                {% for error in field.errors %}
-                    <p style="color: red">{{ error }}</p>
-                {% endfor %}
-            </p>
+  <h1>Create collection</h1>
+  <form method="POST" class="post-form">
+  {% csrf_token %}
+    {% for field in form  %}
+      <p data-toggle="tooltip" title="{{field.help_text}}">
+        {{ field.label_tag }} {% if field.field.required %} * {% endif %}<br>
+        {{ field }}
+        {% for error in field.errors %}
+          <p style="color: red">{{ error }}</p>
         {% endfor %}
-        <p>
-	</br>
-	A staging area for the collection will be created at:
-	</br>
-	{{host_and_path}}
-	</p>
-        <p>Required fields are marked with an *.</p>
-        <button type="submit" class="save btn btn-lg btn-primary">Save</button>
+      </p>
+    {% endfor %}
+    <p>
+  </br>
+  A staging area for the collection will be created at:
+  </br>
+  {{host_and_path}}
+  </p>
+    <p>Required fields are marked with an *.</p>
+    <button type="submit" class="save btn btn-lg btn-primary">Save</button>
 
-    </form>
+  </form>
 <a href="{% url 'ingest:index' %}">
-     <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
+   <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
 </a>
 {% endblock %}

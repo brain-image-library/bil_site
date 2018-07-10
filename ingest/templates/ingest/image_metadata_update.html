@@ -4,19 +4,19 @@
   <h1>Edit Metadata</h1>
     <form method="POST" class="post-form">
     {% csrf_token %}
-        {% for field in form  %}
-            <p data-toggle="tooltip" title="{{field.help_text}}">
-                {{ field.label_tag }} {% if field.field.required %} * {% endif %}<br>
-                {{ field }}
-                {% for error in field.errors %}
-                    <p style="color: red">{{ error }}</p>
-                {% endfor %}
-            </p>
-        {% endfor %}
-        <p>Required fields are marked with an *.</p>
-        <button type="submit" class="save btn btn-lg btn-primary">Save</button>
+      {% for field in form  %}
+        <p data-toggle="tooltip" title="{{field.help_text}}">
+          {{ field.label_tag }} {% if field.field.required %} * {% endif %}<br>
+          {{ field }}
+          {% for error in field.errors %}
+            <p style="color: red">{{ error }}</p>
+          {% endfor %}
+        </p>
+      {% endfor %}
+      <p>Required fields are marked with an *.</p>
+      <button type="submit" class="save btn btn-lg btn-primary">Save</button>
     </form>
 <a href="{% url 'ingest:image_metadata_list' %}">
-      <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
-    </a>
+  <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
 {% endblock %}
