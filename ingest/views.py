@@ -90,6 +90,7 @@ def image_metadata_upload(request):
                     slicing_direction=r['slicing_direction'],
                     user=request.user)
                 im.save()
+            messages.success(request, 'Metadata successfully uploaded')
             return redirect('ingest:image_metadata_list')
     else:
         form = UploadForm()
@@ -104,14 +105,17 @@ def image_metadata_list(request):
         pks = request.POST.getlist("selection")
         selected_objects = ImageMetadata.objects.filter(pk__in=pks, locked=False)
         selected_objects.delete()
-    table = ImageMetadataTable(
-        ImageMetadata.objects.filter(user=request.user), exclude=['user'])
-    RequestConfig(request).configure(table)
-    image_metadata = ImageMetadata.objects.all()
-    return render(
-        request,
-        'ingest/image_metadata_list.html',
-        {'table': table, 'image_metadata': image_metadata})
+        messages.success(request, 'Metadata successfully deleted')
+        return redirect('ingest:image_metadata_list')
+    else:
+        table = ImageMetadataTable(
+            ImageMetadata.objects.filter(user=request.user), exclude=['user'])
+        RequestConfig(request).configure(table)
+        image_metadata = ImageMetadata.objects.all()
+        return render(
+            request,
+            'ingest/image_metadata_list.html',
+            {'table': table, 'image_metadata': image_metadata})
 
 
 class ImageMetadataDetail(LoginRequiredMixin, generic.DetailView):
@@ -130,6 +134,7 @@ def image_metadata_create(request):
         if form.is_valid():
             post = form.save(commit=False)
             post.save()
+            messages.success(request, 'Metadata successfully created')
             return redirect('ingest:image_metadata_list')
     else:
         form = ImageMetadataForm()
@@ -254,6 +259,6 @@ def collection_delete(request, pk):
         if not settings.FAKE_STORAGE_AREA:
             tasks.delete_data_path.delay(data_path)
         collection.delete()
-        # XXX: this should give a useful message like "Collection deleted!"
+        messages.success(request, 'Collection successfully deleted')
         return redirect('ingest:collection_list')
     return render(request, 'ingest/collection_delete.html', {'collection': collection})
