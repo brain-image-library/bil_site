@@ -1,13 +1,13 @@
-from django.urls import reverse_lazy
-from django.views import generic
-from django.views.generic.edit import UpdateView, DeleteView
-from django.contrib.auth import login, authenticate
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 from django.contrib import messages
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.files.storage import FileSystemStorage
+from django.shortcuts import render, redirect
+from django.urls import reverse_lazy
+from django.views.generic import DetailView
+from django.views.generic.edit import UpdateView, DeleteView
 
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
@@ -15,18 +15,18 @@ from django_tables2 import RequestConfig
 import pyexcel as pe
 from django_celery_results.models import TaskResult
 
+from . import tasks
 from .fieldlist import attrs
-from .models import ImageData
-from .models import ImageMetadata
-from .models import ImageMetadataTable
-from .models import Collection
-from .models import CollectionTable
-from .models import CollectionFilter
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
 from .forms import SignUpForm
 from .forms import UploadForm
-from . import tasks
+from .models import Collection
+from .models import CollectionFilter
+from .models import CollectionTable
+from .models import ImageData
+from .models import ImageMetadata
+from .models import ImageMetadataTable
 
 import uuid
 
@@ -95,7 +95,10 @@ def image_metadata_upload(request):
     else:
         form = UploadForm()
     collections = Collection.objects.filter(locked=False)
-    return render(request, 'ingest/image_metadata_upload.html', {'form': form, 'collections': collections})
+    return render(
+        request,
+        'ingest/image_metadata_upload.html',
+        {'form': form, 'collections': collections})
 
 
 @login_required
@@ -103,7 +106,8 @@ def image_metadata_list(request):
     """ A list of all the metadata the user has created. """
     if request.method == "POST":
         pks = request.POST.getlist("selection")
-        selected_objects = ImageMetadata.objects.filter(pk__in=pks, locked=False)
+        selected_objects = ImageMetadata.objects.filter(
+            pk__in=pks, locked=False)
         selected_objects.delete()
         messages.success(request, 'Metadata successfully deleted')
         return redirect('ingest:image_metadata_list')
@@ -118,7 +122,7 @@ def image_metadata_list(request):
             {'table': table, 'image_metadata': image_metadata})
 
 
-class ImageMetadataDetail(LoginRequiredMixin, generic.DetailView):
+class ImageMetadataDetail(LoginRequiredMixin, DetailView):
     """ A detailed view of a single piece of metadata. """
     model = ImageMetadata
     template_name = 'ingest/image_metadata_detail.html'
@@ -158,18 +162,20 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 # What follows is a number of views for uploading, creating, viewing, modifying
 # and deleting COLLECTIONS.
 
+
 @login_required
 def collection_create(request):
-    """ Create a collection. """  
+    """ Create a collection. """
     home_dir = "/home/{}".format(settings.IMG_DATA_USER)
     data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
     host_and_path = "{}@{}:{}".format(
-                settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
+        settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = CollectionForm(request.POST, request=request)
         if form.is_valid() and request.method == 'POST':
-            # remotely create the directory on some host using fabric and celery
+            # remotely create the directory on some host using fabric and
+            # celery
             # note: you should authenticate with ssh keys, not passwords
             if not settings.FAKE_STORAGE_AREA:
                 tasks.create_data_path.delay(data_path)
@@ -184,7 +190,12 @@ def collection_create(request):
     else:
         form = CollectionForm()
     collections = Collection.objects.all()
-    return render(request, 'ingest/collection_create.html', {'form':form, 'collections': collections, 'host_and_path':host_and_path})
+    return render(
+        request,
+        'ingest/collection_create.html',
+        {'form': form,
+         'collections': collections,
+         'host_and_path': host_and_path})
 
 
 class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
@@ -197,9 +208,9 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
-        # Add in a QuerySet of all the books
         table_class = CollectionTable(
-            Collection.objects.filter(user=self.request.user), exclude=['user'])
+            Collection.objects.filter(user=self.request.user),
+            exclude=['user'])
         context['table_class'] = table_class
         context['collections'] = Collection.objects.all()
         return context
@@ -225,7 +236,8 @@ def collection_detail(request, pk):
             task_result = TaskResult(task_id=task.task_id)
             task_result.save()
     table = ImageMetadataTable(
-        ImageMetadata.objects.filter(user=request.user), exclude=['user', 'selection'])
+        ImageMetadata.objects.filter(user=request.user),
+        exclude=['user', 'selection'])
     return render(
         request,
         'ingest/collection_detail.html',
@@ -261,4 +273,5 @@ def collection_delete(request, pk):
         collection.delete()
         messages.success(request, 'Collection successfully deleted')
         return redirect('ingest:collection_list')
-    return render(request, 'ingest/collection_delete.html', {'collection': collection})
+    return render(
+        request, 'ingest/collection_delete.html', {'collection': collection})
