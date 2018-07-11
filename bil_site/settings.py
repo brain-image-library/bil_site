@@ -185,6 +185,7 @@ CELERY_RESULT_BACKEND = 'django-cache'
 try:
     IMG_DATA_HOST = config['Security']['IMG_DATA_HOST']
     IMG_DATA_USER = config['Security']['IMG_DATA_USER']
+    STAGING_AREA_ROOT = config['Security']['STAGING_AREA_ROOT']
 except KeyError as e:
     print(site_cfg_misconfigured)
     sys.exit(1)

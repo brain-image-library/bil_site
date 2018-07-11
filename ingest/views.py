@@ -167,10 +167,14 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 @login_required
 def collection_create(request):
     """ Create a collection. """
-    home_dir = "/home/{}".format(settings.IMG_DATA_USER)
-    data_path = "{}/bil_data/{}/{:02d}/{}".format(home_dir, str(datetime.datetime.now().year), datetime.datetime.now().month, str(uuid.uuid4()))
+    top_level_dir = settings.STAGING_AREA_ROOT
+    data_path = "{}/bil_data/{}/{:02d}/{}".format(
+        top_level_dir,
+        datetime.datetime.now().year,
+        datetime.datetime.now().month,
+        str(uuid.uuid4()))
     host_and_path = "{}@{}:{}".format(
-        settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
+        request.user, settings.IMG_DATA_HOST, data_path)
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = CollectionForm(request.POST, request=request)
