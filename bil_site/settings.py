@@ -14,6 +14,10 @@ import os
 import configparser
 import sys
 
+site_cfg_misconfigured = (
+    "The site.cfg file exists but is not properly "
+    "configured. See ' 'example.cfg as a reference.")
+
 config = configparser.ConfigParser()
 if not os.path.isfile('site.cfg'):
     print('The site.cfg file is missing. Please generate one and put it'
@@ -38,8 +42,7 @@ LOGIN_REDIRECT_URL = '/'
 try:
     SECRET_KEY = config['Security']['SECRET_KEY']
 except KeyError as e:
-    print('The site.cfg file exists but is not properly configured. See '
-          'example.cfg as a reference.')
+    print(site_cfg_misconfigured)
     sys.exit(1)
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -49,7 +52,7 @@ DEBUG = config['Security'].getboolean('DEBUG')
 # nothing. It's just for testing purposes.
 FAKE_STORAGE_AREA = config['Security'].getboolean('FAKE_STORAGE_AREA')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["c00.bil.psc.edu"]
 
 
 # Application definition
@@ -102,12 +105,39 @@ WSGI_APPLICATION = 'bil_site.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+try:
+    DATABASE = config['Security']['DATABASE']
+except KeyError as e:
+    print(site_cfg_misconfigured)
+    sys.exit(1)
+
+if DATABASE == "postgres":
+    try:
+        DATABASE_PASSWORD = config['Security']['DATABASE_PASSWORD']
+    except KeyError as e:
+        print(site_cfg_misconfigured)
+        sys.exit(1)
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'bil_site',
+            'USER': 'bil_site_user',
+            'PASSWORD': DATABASE_PASSWORD,
+            'HOST': 'localhost',
+            'PORT': '',
+        }
     }
-}
+elif DATABASE == "sqlite":
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
+else:
+    print("Unknown DATABASE option used in site.cfg. Please set 'DATABASE = "
+          "postgres' or 'DATABASE = sqlite'.")
+    sys.exit(1)
 
 
 # Password validation
@@ -147,6 +177,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_RESULT_BACKEND = 'django-cache'
@@ -155,6 +186,5 @@ try:
     IMG_DATA_HOST = config['Security']['IMG_DATA_HOST']
     IMG_DATA_USER = config['Security']['IMG_DATA_USER']
 except KeyError as e:
-    print('The site.cfg file exists but is not properly configured. See '
-          'example.cfg as a reference.')
+    print(site_cfg_misconfigured)
     sys.exit(1)
