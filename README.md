@@ -1,5 +1,61 @@
 # Brain Image Library - Django Site
 
+## Prerequisites for Production (CentOS 7)
+
+You'll need to install python3, nginx, gunicorn, and postgresql.
+
+Run the following command to set up postgres:
+
+    sudo postgresql-setup initdb
+
+Create `gunicorn.service` in `/etc/systemd/system/gunicorn.service`:
+
+    [Unit]
+    Description=gunicorn daemon
+    After=network.target
+
+    [Service]
+    User=<username>
+    Group=<groupname>
+    WorkingDirectory=<top_level_path>/bil_site
+    ExecStart=<top_level_path>/bil_site/bil_site_venv/bin/gunicorn --access-logfile - --workers 3 --bind unix:<top_level_path>/bil_site/bil_site.sock bil_site.wsgi
+
+    [Install]
+    WantedBy=multi-user.target
+
+Be sure to change any of the values listed in angle brackets like `User` and
+`Group`.
+
+In your nginx conf file, add the following to the `server` section:
+
+    server {
+        listen <port number;
+        server_name <host_name>;
+
+        location = /favicon.ico { access_log off; log_not_found off; }
+        location /static/ {
+            root <top_level_dir>/bil_site;
+        }
+
+        location / {
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_pass http://unix:<top_level_dir>/bil_site/bil_site.sock;
+        }
+    }
+
+Once again, you'll need to change the options in angle brackets.
+
+Make sure the following packages are running and enabled at startup:
+
+    sudo systemctl start postgresql
+    sudo systemctl start nginx
+    sudo systemctl start gunicorn
+    sudo systemctl enable postgresql
+    sudo systemctl enable nginx
+    sudo systemctl enable gunicorn
 
 ## Installation and Setup
 
@@ -21,8 +77,8 @@ In site.cfg, replace the value associated `SECRET_KEY` with the value you
 generated from the previous command. Note: certain characters will throw off
 the config parser. The easiest thing to do is to just generate a different key.
 
-You'll also want to change IMG_DATA_USER to whatever PSC username you have on
-DXC. You could also change the IMG_DATA_HOST to say your local machine for
+You'll also want to change `IMG_DATA_USER` to whatever PSC username you have on
+DXC. You could also change the `IMG_DATA_HOST` to say your local machine for
 offline testing. This assumes a passwordless authentication like using [ssh
 keys](https://linuxconfig.org/passwordless-ssh). The way remote directory
 creation/destruction/management will work in production is still being
@@ -39,7 +95,7 @@ You also need to install rabbitMQ, which is pretty easy if you're using Ubuntu:
 
     sudo apt-get install rabbitmq-server
 
-## Serving the Django Site
+## Serving the Django Site (in development)
 
 In one terminal, start Celery and leave it running while the server is up:
 
@@ -65,6 +121,8 @@ to run these two commands in the future:
 
 Note: you only have to run the `source` command again if you open a different
 terminal or explicitly `deactivate`.
+
+## Serving the Django Site (in development)
 
 ## Updating the Site
 
