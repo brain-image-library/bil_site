@@ -16,7 +16,7 @@ import sys
 
 site_cfg_misconfigured = (
     "The site.cfg file exists but is not properly "
-    "configured. See ' 'example.cfg as a reference.")
+    "configured. See example.cfg as a reference.")
 
 config = configparser.ConfigParser()
 if not os.path.isfile('site.cfg'):
