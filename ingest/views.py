@@ -15,6 +15,7 @@ from django_tables2 import RequestConfig
 import pyexcel as pe
 from django_celery_results.models import TaskResult
 
+import datetime
 from . import tasks
 from .fieldlist import attrs
 from .forms import CollectionForm
@@ -167,7 +168,7 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 def collection_create(request):
     """ Create a collection. """
     home_dir = "/home/{}".format(settings.IMG_DATA_USER)
-    data_path = "{}/bil_data/{}".format(home_dir, str(uuid.uuid4()))
+    data_path = "{}/bil_data/{}/{}/{}".format(home_dir, str(datetime.datetime.now().year), str(datetime.datetime.now().month), str(uuid.uuid4()))
     host_and_path = "{}@{}:{}".format(
         settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
     if request.method == "POST":
