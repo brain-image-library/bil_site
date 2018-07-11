@@ -52,7 +52,7 @@ DEBUG = config['Security'].getboolean('DEBUG')
 # nothing. It's just for testing purposes.
 FAKE_STORAGE_AREA = config['Security'].getboolean('FAKE_STORAGE_AREA')
 
-ALLOWED_HOSTS = ["localhost", "c00.bil.psc.edu"]
+ALLOWED_HOSTS = ["localhost", "c00.bil.psc.edu", "127.0.0.1"]
 
 
 # Application definition

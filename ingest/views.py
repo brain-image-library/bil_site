@@ -168,7 +168,7 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 def collection_create(request):
     """ Create a collection. """
     home_dir = "/home/{}".format(settings.IMG_DATA_USER)
-    data_path = "{}/bil_data/{}/{}/{}".format(home_dir, str(datetime.datetime.now().year), str(datetime.datetime.now().month), str(uuid.uuid4()))
+    data_path = "{}/bil_data/{}/{:02d}/{}".format(home_dir, str(datetime.datetime.now().year), str(datetime.datetime.now().month), str(uuid.uuid4()))
     host_and_path = "{}@{}:{}".format(
         settings.IMG_DATA_USER, settings.IMG_DATA_HOST, data_path)
     if request.method == "POST":
