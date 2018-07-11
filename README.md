@@ -1,6 +1,6 @@
-# Brain Image Library - Django Site
+# Brain Image Library - Submission Portal
 
-## Prerequisites for Production (CentOS 7)
+## Installation and Setup for Production (CentOS 7)
 
 You'll need to install python3, nginx, gunicorn, and postgresql.
 
@@ -53,11 +53,13 @@ Make sure the following packages are running and enabled at startup:
     sudo systemctl start postgresql
     sudo systemctl start nginx
     sudo systemctl start gunicorn
+    sudo systemctl start rabbitmq-server
     sudo systemctl enable postgresql
     sudo systemctl enable nginx
     sudo systemctl enable gunicorn
+    sudo systemctl enable rabbitmq-server
 
-## Installation and Setup
+## Installation and Setup for Development and Production
 
 To set up the website locally for the first time, do the following:
 
@@ -85,13 +87,13 @@ creation/destruction/management will work in production is still being
 determined. It likely will be handled by one account that manages the
 appropriate permissions.
 
-Next, we'lll set up the database and create a super user:
+Next, we'll set up the database and create a super user:
 
     python manage.py makemigrations
     python manage.py migrate --run-syncdb
     python manage.py createsuperuser
 
-You also need to install rabbitMQ, which is pretty easy if you're using Ubuntu:
+On the Ubuntu development site, you also need to install rabbitMQ:
 
     sudo apt-get install rabbitmq-server
 
@@ -122,9 +124,28 @@ to run these two commands in the future:
 Note: you only have to run the `source` command again if you open a different
 terminal or explicitly `deactivate`.
 
-## Serving the Django Site (in development)
+## Serving the Django Site (in production)
 
-## Updating the Site
+In one terminal, start Celery and leave it running while the server is up:
+
+    celery -A bil_site worker -l info
+
+Note: this eventually needs to be done using systemd, so it's running in the
+background when the system starts up.
+
+Make sure nginx, gunicorn, and postgres are running:
+
+    sudo systemctl status postgresql
+    sudo systemctl status nginx
+    sudo systemctl status gunicorn
+
+If not, they can be started like this:
+
+    sudo systemctl start postgresql
+    sudo systemctl start nginx
+    sudo systemctl start gunicorn
+
+## Updating the Site (development and production)
 
 If you ever change the models, you'll likely have to re-run the migrate
 commands:
@@ -132,10 +153,19 @@ commands:
     python manage.py makemigrations
     python manage.py migrate --run-syncdb
 
+## Updating the Site (production)
+
+You'll want to collect all the static files:
+
+    python manage.py collectstatic
+
+You'll also want to restart gunicorn:
+
+    sudo systemctl restart gunicorn
+
 ## Notes
-Currently, when a collection is created, a fake staging area is 
-created for the collection. This option can be changed in site.cfg 
-(FAKE_STORAGE_AREA) when hosting the server. Once the website is 
-deployed, this option will be 
-changed so that the path reflects where the collection will actually 
-be stored. 
+
+Currently, when a collection is created, a fake staging area is created for the
+collection. This option can be changed in site.cfg (`FAKE_STORAGE_AREA`) when
+hosting the server. Once the website is deployed, this option will be changed
+so that the path reflects where the collection will actually be stored. 
