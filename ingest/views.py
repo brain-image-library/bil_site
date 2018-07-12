@@ -116,7 +116,7 @@ def image_metadata_list(request):
         table = ImageMetadataTable(
             ImageMetadata.objects.filter(user=request.user), exclude=['user'])
         RequestConfig(request).configure(table)
-        image_metadata = ImageMetadata.objects.all()
+        image_metadata = ImageMetadata.objects.filter(user=request.user)
         return render(
             request,
             'ingest/image_metadata_list.html',
@@ -217,7 +217,7 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
             Collection.objects.filter(user=self.request.user),
             exclude=['user'])
         context['table_class'] = table_class
-        context['collections'] = Collection.objects.all()
+        context['collections'] = Collection.objects.filter(user=self.request.user)
         return context
 
     def get_filterset_kwargs(self, filterset_class):
