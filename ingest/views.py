@@ -95,7 +95,11 @@ def image_metadata_upload(request):
             return redirect('ingest:image_metadata_list')
     else:
         form = UploadForm()
-    collections = Collection.objects.filter(locked=False)
+        # Only let a user associate metadata with an unlocked collection that
+        # they own
+        form.fields['associated_collection'].queryset = Collection.objects.filter(
+            locked=False, user=request.user)
+    collections = Collection.objects.filter(locked=False, user=request.user)
     return render(
         request,
         'ingest/image_metadata_upload.html',
@@ -143,6 +147,10 @@ def image_metadata_create(request):
             return redirect('ingest:image_metadata_list')
     else:
         form = ImageMetadataForm()
+        # Only let a user associate metadata with an unlocked collection that
+        # they own
+        form.fields['collection'].queryset = Collection.objects.filter(
+            locked=False, user=request.user)
     return render(request, 'ingest/image_metadata_create.html', {'form': form})
 
 

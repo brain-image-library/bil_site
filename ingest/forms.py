@@ -24,8 +24,7 @@ class SignUpForm(UserCreationForm):
 
 
 class UploadForm(forms.Form):
-    associated_collection = forms.ModelChoiceField(
-        queryset=Collection.objects.filter(locked=False))
+    associated_collection = forms.ModelChoiceField(queryset=Collection.objects.all())
 
 
 class ImageMetadataForm(forms.ModelForm):
