@@ -14,23 +14,33 @@ import os
 import configparser
 import sys
 
+
 site_cfg_misconfigured = (
-    "The site.cfg file exists but is not properly "
-    "configured. See example.cfg as a reference.")
+    "The site.cfg file exists but is not properly configured. The key '{}' is "
+    "missing. See example.cfg as a reference.")
+
+if not os.path.isfile('site.cfg'):
+    print('The site.cfg file is missing. Please generate one and put it '
+          'relative to where the manage.py Python process is starting '
+          '(typically it goes in ./bil_site). See example.cfg '
+          'as a reference.')
+    sys.exit(1)
+
+essential_site_cfg_keys = [
+    'SECRET_KEY', 'DEBUG', 'IMG_DATA_HOST', 'IMG_DATA_USER',
+    'FAKE_STORAGE_AREA', 'DATABASE', 'STAGING_AREA_ROOT'
+]
 
 config = configparser.ConfigParser()
-if not os.path.isfile('site.cfg'):
-    print('The site.cfg file is missing. Please generate one and put it'
-          ' relative to where the Python process is starting. See example.cfg'
-          ' as a reference.')
-    sys.exit(1)
 config.read('site.cfg')
 
-# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# LOGIN_REDIRECT_URL= '../index'
-LOGIN_REDIRECT_URL = '/'
+# just test if they exist. still need to assign them later
+for k in essential_site_cfg_keys:
+    try:
+        _ = config['Security'][k]
+    except KeyError as e:
+        print(site_cfg_misconfigured.format(k))
+        sys.exit(1)
 
 
 # Quick-start development settings - unsuitable for production
@@ -39,11 +49,7 @@ LOGIN_REDIRECT_URL = '/'
 # SECURITY WARNING: keep the secret key used in production secret!
 # See example.cfg for reference. You can generate a new secret key like this:
 # python manage.py shell -c 'from django.core.management import utils; print(utils.get_random_secret_key())'')'
-try:
-    SECRET_KEY = config['Security']['SECRET_KEY']
-except KeyError as e:
-    print(site_cfg_misconfigured)
-    sys.exit(1)
+SECRET_KEY = config['Security']['SECRET_KEY']
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config['Security'].getboolean('DEBUG')
@@ -52,8 +58,16 @@ DEBUG = config['Security'].getboolean('DEBUG')
 # nothing. It's just for testing purposes.
 FAKE_STORAGE_AREA = config['Security'].getboolean('FAKE_STORAGE_AREA')
 
-ALLOWED_HOSTS = ["localhost", "c00.bil.psc.edu", "127.0.0.1"]
+IMG_DATA_HOST = config['Security']['IMG_DATA_HOST']
+IMG_DATA_USER = config['Security']['IMG_DATA_USER']
+STAGING_AREA_ROOT = config['Security']['STAGING_AREA_ROOT']
 
+# Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+LOGIN_REDIRECT_URL = '/'
+
+ALLOWED_HOSTS = ["localhost", "c00.bil.psc.edu", "127.0.0.1"]
 
 # Application definition
 
@@ -105,17 +119,14 @@ WSGI_APPLICATION = 'bil_site.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
-try:
-    DATABASE = config['Security']['DATABASE']
-except KeyError as e:
-    print(site_cfg_misconfigured)
-    sys.exit(1)
+DATABASE = config['Security']['DATABASE']
 
 if DATABASE == "postgres":
+    k = 'DATABASE_PASSWORD'
     try:
-        DATABASE_PASSWORD = config['Security']['DATABASE_PASSWORD']
+        DATABASE_PASSWORD = config['Security'][k]
     except KeyError as e:
-        print(site_cfg_misconfigured)
+        print(site_cfg_misconfigured.format(k))
         sys.exit(1)
     DATABASES = {
         'default': {
@@ -181,11 +192,3 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static/")
 
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_RESULT_BACKEND = 'django-cache'
-
-try:
-    IMG_DATA_HOST = config['Security']['IMG_DATA_HOST']
-    IMG_DATA_USER = config['Security']['IMG_DATA_USER']
-    STAGING_AREA_ROOT = config['Security']['STAGING_AREA_ROOT']
-except KeyError as e:
-    print(site_cfg_misconfigured)
-    sys.exit(1)
