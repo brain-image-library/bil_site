@@ -218,13 +218,12 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     template_name = 'ingest/collection_list.html'
     filterset_class = CollectionFilter
 
+    def get_queryset(self, **kwargs):
+        return Collection.objects.filter(user=self.request.user)
+
     def get_context_data(self, **kwargs):
         # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
-        table_class = CollectionTable(
-            Collection.objects.filter(user=self.request.user),
-            exclude=['user'])
-        context['table_class'] = table_class
         context['collections'] = Collection.objects.filter(user=self.request.user)
         return context
 
