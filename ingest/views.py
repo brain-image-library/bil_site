@@ -254,7 +254,7 @@ def collection_detail(request, pk):
             task_result = TaskResult(task_id=task.task_id)
             task_result.save()
     table = ImageMetadataTable(
-        ImageMetadata.objects.filter(user=request.user),
+        ImageMetadata.objects.filter(user=request.user, collection=collection),
         exclude=['user', 'selection'])
     return render(
         request,
