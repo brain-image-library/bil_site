@@ -11,8 +11,8 @@
     <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Project funder ID</h4> {{collection.project_funder_id}}</a>
     <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Data staging area</h4> {{collection.data_path}}</a>
     <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Locked</h4> {{collection.locked}}</a>
-    {% if status %}
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Status</h4> {{status}}</a>
+    {% if submission_status %}
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Submission & Validation Status</h4> {{submission_status}}</a>
     {% endif %}
     {% if dir_size %}
     <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Directory Size</h4> {{dir_size}}</a>
