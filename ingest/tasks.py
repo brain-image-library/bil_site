@@ -30,11 +30,15 @@ def delete_data_path(host_and_path):
 
 @shared_task
 def get_directory_size(host_and_path):
-    pass
-    #data_path = host_and_path.split(":")[1]
+    data_path = host_and_path.split(":")[1]
+    command = 'du -sh {}'.format(data_path)
+    p = subprocess.Popen(command.split(" "), stdout=subprocess.PIPE)
+    output = p.communicate()[0].decode("utf-8")
+    dir_size = output.split('\t')[0]
+    return dir_size
     #c = Connection(
     #    host=settings.IMG_DATA_HOST, user=settings.IMG_DATA_USER, port=22)
-    #output = c.run('du -sh {}'.format(data_path))
+    #output = c.run(command)
     #stdout = output.stdout
     #dir_size = stdout.split('\t')[0]
     #return dir_size

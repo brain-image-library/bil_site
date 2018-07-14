@@ -61,6 +61,11 @@ class Collection(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL, blank=True, null=True)
+    # This is how we're initially tracking validation. Ultimately, we'll
+    # probably want to break up validation into multiple tasks (e.g. checking
+    # dataset size, verifying valid TIFF/JPEG2000 files, etc), in which case
+    # we'll probably want to set up a one-to-many relationship w/ task IDs.
+    celery_task_id = models.CharField(max_length=256)
 
 
 class CollectionTable(tables.Table):

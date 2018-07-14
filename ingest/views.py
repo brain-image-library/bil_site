@@ -14,6 +14,8 @@ from django_tables2.views import SingleTableMixin
 from django_tables2 import RequestConfig
 import pyexcel as pe
 from django_celery_results.models import TaskResult
+from celery.result import AsyncResult
+
 
 import datetime
 from . import tasks
@@ -247,20 +249,33 @@ def collection_detail(request, pk):
             i.locked = True
             i.save()
             data_path = collection.data_path.__str__()
-            # This is just a test, which will be replaced with some real
-            # validation and analysis in the future
+        # This is just a very simple test, which will be replaced with some
+        # real validation and analysis in the future
         if not settings.FAKE_STORAGE_AREA:
             task = tasks.get_directory_size.delay(data_path)
-            task_result = TaskResult(task_id=task.task_id)
-            task_result.save()
+            collection.celery_task_id = task.task_id
+            collection.save()
+
     table = ImageMetadataTable(
         ImageMetadata.objects.filter(user=request.user, collection=collection),
         exclude=['user', 'selection'])
+    submission_status = "Not submitted"
+    dir_size = ""
+    if collection.celery_task_id:
+        result = AsyncResult(collection.celery_task_id)
+        state = result.state
+        if state == 'SUCCESS':
+            submission_status = "Completed"
+            dir_size = result.get()
+        else:
+            submission_status = "Pending"
     return render(
         request,
         'ingest/collection_detail.html',
         {'table': table,
          'collection': collection,
+         'submission_status': submission_status,
+         'dir_size': dir_size,
          'image_metadata_queryset': image_metadata_queryset})
 
 
