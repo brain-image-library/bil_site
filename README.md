@@ -101,7 +101,7 @@ On the Ubuntu development site, you also need to install rabbitMQ:
 
 In one terminal, start Celery and leave it running while the server is up:
 
-    celery -A bil_site worker -l info
+    celery -A bil_site worker -l info --config celeryconfig.py -E
 
 In a separate terminal, start Django itself:
 
