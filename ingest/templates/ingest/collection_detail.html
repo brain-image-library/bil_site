@@ -13,8 +13,7 @@
     <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Lab</h4> {{collection.lab_name}}</a>
     <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Project funder</h4> {{collection.project_funder}}</a>
     <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Project funder ID</h4> {{collection.project_funder_id}}</a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Data staging area</h4> {{collection.data_path}}</a>
-    <!--<a href="#" class="list-group-item"><h4 class="list-group-item-heading">Locked</h4> {{collection.locked}}<i class="fa fa-lock" style="font-size:24px">blah</i></a>-->
+    <a href="{% url 'ingest:collection_data_path' pk=collection.pk %}" class="list-group-item"><h4 class="list-group-item-heading">Data staging area</h4> {{collection.data_path}}</a>
 
     {% if submission_validation_status == "not_submitted" %}
     <a href="#" class="list-group-item list-group-item-info"><h4 class="list-group-item-heading">Submission & Validation Status</h4> Not submitted or validated</a>

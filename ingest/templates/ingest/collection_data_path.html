@@ -1,0 +1,44 @@
+{% extends 'ingest/wide.html' %}
+
+{% block wide %}
+
+<h1><b>Staging Area for Collection</b> {{ collection.name }} 
+  {% if collection.locked %}<i class="fa fa-lock"></i>
+  {% else %}<i class="fa fa-unlock"></i>
+  {% endif %}
+  </h1>
+  <p>We recommend using <strong>rsync</strong>, <strong>scp</strong>, or
+  <strong>globus</strong> to upload your data sets to the Brain Image Library.
+  Linux and OSX users can use any of these options.  Most Windows users should
+  use <strong>globus</strong>.</p> 
+
+  <p>If using <strong>rsync</strong> or <strong>scp</strong>, you'll first want
+  to <code>cd</code> into the top level directory containing all your datasets.
+  For example, if your datasets are located in
+  <code>/home/user/brain_image_datasets</code>, then you'd want to type the
+  following:</p>
+
+  <p><code>cd /home/user/brain_image_datasets/</code></p>
+
+  <p>Here are example <strong>rsync</strong> and <strong>scp</strong> commands
+  using the path to your collection's landing zone.</p>
+
+  <h2>Using scp</h2>
+    <p><code>scp -r . {{data_path}}</code></p>
+    <strong>scp</strong> will <i>not</i> use checksums or resume if the
+    connection is interrupted.
+  <h2>Using rsync</h2>
+    <p><code>rsync -a . {{data_path}}</code><p>
+    <p>Unlike <strong>scp</strong>, <strong>rsync</strong> can resume if the
+    connection is interrupted. If your connection is interrupted, you can
+    resume it by using the <code>append-verify</code> flag like this:</p>
+    <p><code>rsync -a --append-verify . {{data_path}}</code><p>
+  <h2>Using globus</h2>
+    See the <a href="https://www.psc.edu/bridges/user-guide/transferring-files#globus">PSC
+    guide on Globus</a>. If you use Globus, the endpoint to use is
+    <code>psc#dxc</code>, not the <code>psc#bridges-xsede</code> or
+    <code>psc#bridges-cilogon</code> endpoints shown in the link above.</p>
+
+</br>
+
+{% endblock %}
