@@ -4,6 +4,7 @@ from fabric import Connection
 from django.conf import settings
 import os
 import subprocess
+import pathlib
 
 
 @shared_task
@@ -11,9 +12,6 @@ def create_data_path(data_path):
     """ We create a staging area when we create a collection. """
     command = 'mkdir -p {}'.format(data_path)
     subprocess.call(command.split(" "))
-    #c = Connection(
-    #    host=settings.IMG_DATA_HOST, user=settings.IMG_DATA_USER, port=22)
-    #c.run('mkdir -p {}'.format(data_path))
 
 
 @shared_task
@@ -22,23 +20,26 @@ def delete_data_path(host_and_path):
     data_path = host_and_path.split(":")[1]
     command = 'rm -fr {}'.format(data_path)
     subprocess.call(command.split(" "))
-    #data_path = host_and_path.split(":")[1]
-    #c = Connection(
-    #    host=settings.IMG_DATA_HOST, user=settings.IMG_DATA_USER, port=22)
-    #c.run(command)
 
 
 @shared_task
-def get_directory_size(host_and_path):
+def run_analysis(host_and_path, metadata_dirs):
+    analysis_results = {}
+    # if anything sets this to false, then validation has failed
+    analysis_results['valid'] = True
+    # get directory size
     data_path = host_and_path.split(":")[1]
     command = 'du -sh {}'.format(data_path)
     p = subprocess.Popen(command.split(" "), stdout=subprocess.PIPE)
     output = p.communicate()[0].decode("utf-8")
     dir_size = output.split('\t')[0]
-    return dir_size
-    #c = Connection(
-    #    host=settings.IMG_DATA_HOST, user=settings.IMG_DATA_USER, port=22)
-    #output = c.run(command)
-    #stdout = output.stdout
-    #dir_size = stdout.split('\t')[0]
-    #return dir_size
+    analysis_results['dir_size'] = dir_size
+    # make sure metadata directories exist
+    invalid_metadata_directories = []
+    for md in metadata_dirs:
+        full_metadata_directory = pathlib.Path(data_path, md)
+        if not full_metadata_directory.is_dir():
+            invalid_metadata_directories.append(full_metadata_directory.as_posix())
+            analysis_results['valid'] = False
+    analysis_results['invalid_metadata_directories'] = invalid_metadata_directories
+    return analysis_results

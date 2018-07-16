@@ -223,6 +223,14 @@ class ImageMetadata(models.Model):
         choices=PROCESSING_CHOICES,
         default=UNKNOWN,
     )
+    directory = models.CharField(
+        max_length=4096,
+        blank=True,
+        default="",
+        help_text=(
+            "relative to the landing zone, the top level directory name of "
+            "this dataset, e.g. './mouse_dataset_0001'"),
+    )
 
 
 class ImageMetadataTable(tables.Table):

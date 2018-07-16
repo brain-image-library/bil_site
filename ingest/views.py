@@ -240,42 +240,46 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
 def collection_detail(request, pk):
     """ View, edit, delete, create a particular collection. """
     collection = Collection.objects.get(id=pk)
-    image_metadata_queryset = ImageMetadata.objects.filter(
-        user=request.user).filter(collection=pk)
+    image_metadata_queryset = collection.imagemetadata_set.all()
     if request.method == 'POST' and image_metadata_queryset:
         collection.locked = True
         collection.save()
-        for i in image_metadata_queryset:
-            i.locked = True
-            i.save()
-            data_path = collection.data_path.__str__()
+        metadata_dirs = []
+        for im in image_metadata_queryset:
+            im.locked = True
+            im.save()
+            metadata_dirs.append(im.directory)
         # This is just a very simple test, which will be replaced with some
         # real validation and analysis in the future
         if not settings.FAKE_STORAGE_AREA:
-            task = tasks.get_directory_size.delay(data_path)
+            data_path = collection.data_path.__str__()
+            task = tasks.run_analysis.delay(data_path, metadata_dirs)
             collection.celery_task_id = task.task_id
             collection.save()
 
     table = ImageMetadataTable(
         ImageMetadata.objects.filter(user=request.user, collection=collection),
         exclude=['user', 'selection'])
-    submission_status = "Not submitted"
+    submission_status = "Not submitted or validated"
     dir_size = ""
     if collection.celery_task_id:
         result = AsyncResult(collection.celery_task_id)
         state = result.state
         if state == 'SUCCESS':
-            submission_status = "Completed"
-            dir_size = result.get()
+            analysis_results = result.get()
+            if analysis_results['valid']:
+                submission_status = 'Submitted and validated successfully'
+            else:
+                submission_status = 'Submitted and validation failed'
+            # need to do some work here to verify that it is validated
         else:
-            submission_status = "Pending"
+            submission_status = "Submission and validation pending"
     return render(
         request,
         'ingest/collection_detail.html',
         {'table': table,
          'collection': collection,
          'submission_status': submission_status,
-         'dir_size': dir_size,
          'image_metadata_queryset': image_metadata_queryset})
 
 

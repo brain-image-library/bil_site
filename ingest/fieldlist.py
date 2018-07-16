@@ -15,4 +15,5 @@ attrs = [
     'processing_level',
     'image_filename_pattern',
     'image_map_style',
+    'directory',
 ]
