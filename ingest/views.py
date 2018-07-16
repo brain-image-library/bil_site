@@ -241,7 +241,10 @@ def collection_detail(request, pk):
     """ View, edit, delete, create a particular collection. """
     collection = Collection.objects.get(id=pk)
     image_metadata_queryset = collection.imagemetadata_set.all()
+    # submit and validate POST
     if request.method == 'POST' and image_metadata_queryset:
+        # lock everything (collection and associated image metadata) during
+        # submission and validation. if successful, keep it locked
         collection.locked = True
         collection.save()
         metadata_dirs = []
@@ -256,10 +259,8 @@ def collection_detail(request, pk):
             task = tasks.run_analysis.delay(data_path, metadata_dirs)
             collection.celery_task_id = task.task_id
             collection.save()
-
-    table = ImageMetadataTable(
-        ImageMetadata.objects.filter(user=request.user, collection=collection),
-        exclude=['user', 'selection'])
+    
+    # check submission and validation status
     submission_status = "Not submitted or validated"
     dir_size = ""
     if collection.celery_task_id:
@@ -271,9 +272,18 @@ def collection_detail(request, pk):
                 submission_status = 'Submitted and validated successfully'
             else:
                 submission_status = 'Submitted and validation failed'
-            # need to do some work here to verify that it is validated
+                # need to unlock, so user can fix problem
+                collection.locked = False
+                collection.save()
+                for im in image_metadata_queryset:
+                    im.locked = False
+                    im.save()
         else:
             submission_status = "Submission and validation pending"
+
+    table = ImageMetadataTable(
+        ImageMetadata.objects.filter(user=request.user, collection=collection),
+        exclude=['user', 'selection'])
     return render(
         request,
         'ingest/collection_detail.html',
