@@ -261,7 +261,7 @@ def collection_detail(request, pk):
             collection.save()
     
     # check submission and validation status
-    submission_status = "Not submitted or validated"
+    submission_validation_status = "not_submitted"
     dir_size = ""
     if collection.celery_task_id:
         result = AsyncResult(collection.celery_task_id)
@@ -269,9 +269,9 @@ def collection_detail(request, pk):
         if state == 'SUCCESS':
             analysis_results = result.get()
             if analysis_results['valid']:
-                submission_status = 'Submitted and validated successfully'
+                submission_validation_status = "success"
             else:
-                submission_status = 'Submitted and validation failed'
+                submission_validation_status = "failure"
                 # need to unlock, so user can fix problem
                 collection.locked = False
                 collection.save()
@@ -279,7 +279,7 @@ def collection_detail(request, pk):
                     im.locked = False
                     im.save()
         else:
-            submission_status = "Submission and validation pending"
+            submission_validation_status = "pending"
 
     table = ImageMetadataTable(
         ImageMetadata.objects.filter(user=request.user, collection=collection),
@@ -289,7 +289,7 @@ def collection_detail(request, pk):
         'ingest/collection_detail.html',
         {'table': table,
          'collection': collection,
-         'submission_status': submission_status,
+         'submission_validation_status': submission_validation_status,
          'image_metadata_queryset': image_metadata_queryset})
 
 
