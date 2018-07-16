@@ -24,10 +24,11 @@ class ImageData(models.Model):
 
 
 class Collection(models.Model):
-    # A collection is how we tie metadata to a specific set of data.
+    """ A grouping of one or more datasets and associated metadata. """
     def __str__(self):
         return self.name
 
+    # Required and the user should supply these
     name = models.CharField(max_length=256, unique=True)
     description = models.TextField()
     AI = 'AI'
@@ -50,13 +51,18 @@ class Collection(models.Model):
     )
     lab_name = models.CharField(
         max_length=256, help_text="The lab or department subgroup")
-    project_funder = models.CharField(
-        max_length=256, blank=True, default="NIH")
     project_funder_id = models.CharField(
         max_length=256, help_text="The grant number")
+
+    # Optional fields. The user doesn't need to supply these.
+    project_funder = models.CharField(
+        max_length=256, blank=True, default="NIH")
+
+    # These fields are required but the user shouldn't control these
     data_path = models.ForeignKey(
         ImageData,
         on_delete=models.SET_NULL, blank=True, null=True, unique=True)
+    # "locked" is used to prevent submitted data from being changed
     locked = models.BooleanField(default=False)
     user = models.ForeignKey(
         User,
@@ -69,6 +75,10 @@ class Collection(models.Model):
 
 
 class CollectionTable(tables.Table):
+    """ The table used in the collection list. """
+
+    # We use a collection's id as a link to the corresponding collection
+    # detail.
     id = tables.LinkColumn(
         'ingest:collection_detail',
         verbose_name="",
@@ -78,6 +88,7 @@ class CollectionTable(tables.Table):
     description = tables.Column()
 
     def render_project_description(self, value):
+        """ Ellipsize the project description if it's too long. """
         limit_len = 32
         value = value if len(value) < limit_len else value[:limit_len] + "…"
         return value
@@ -88,6 +99,7 @@ class CollectionTable(tables.Table):
 
 
 class CollectionFilter(django_filters.FilterSet):
+    """ Interactively filter display locked or unlocked collecions. """
     choices = (('', ('Locked & unlocked')),
                ('true', ('Locked')),
                ('false', ('Unlocked')))
@@ -120,8 +132,16 @@ class ImageMetadata(models.Model):
     background_strain = models.CharField(
         max_length=256, help_text="e.g. C57BL/6J")
     image_filename_pattern = models.CharField(max_length=256)
+    directory = models.CharField(
+        max_length=4096,
+        help_text=(
+            "relative to the landing zone, the top level directory name of "
+            "this dataset, e.g. './mouse_dataset_0001'"),
+    )
 
-    # Required but the user shouldn't control these
+    # These fields are required but the user shouldn't control these
+    #
+    # "locked" is used to prevent submitted data from being changed
     locked = models.BooleanField(default=False)
     user = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, blank=True)
@@ -223,17 +243,13 @@ class ImageMetadata(models.Model):
         choices=PROCESSING_CHOICES,
         default=UNKNOWN,
     )
-    directory = models.CharField(
-        max_length=4096,
-        blank=True,
-        default="",
-        help_text=(
-            "relative to the landing zone, the top level directory name of "
-            "this dataset, e.g. './mouse_dataset_0001'"),
-    )
 
 
 class ImageMetadataTable(tables.Table):
+    """ The table used in the image metadata list. """
+
+    # We use the metadata's id as a link to the corresponding collection
+    # detail.
     id = tables.LinkColumn(
         'ingest:image_metadata_detail',
         verbose_name="",
@@ -244,6 +260,7 @@ class ImageMetadataTable(tables.Table):
     project_description = tables.Column()
 
     def render_project_description(self, value):
+        """ Ellipsize the project description if it's too long. """
         limit_len = 32
         value = value if len(value) < limit_len else value[:limit_len] + "…"
         return value
@@ -251,8 +268,11 @@ class ImageMetadataTable(tables.Table):
     class Meta:
         model = ImageMetadata
         template_name = 'ingest/bootstrap_ingest.html'
+        # the order of "sequence" determines the ordering of the columns
         sequence = ['id'] + image_metadata_fields
 
+    # This gives us a checkbox for every piece of metadata, thereby allowing
+    # the user to select and delete them (assuming they're unlocked).
     selection = tables.CheckBoxColumn(
         accessor="pk",
         attrs={"th__input": {"onclick": "toggle(this)"}},
