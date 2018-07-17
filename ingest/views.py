@@ -76,6 +76,8 @@ def image_metadata_upload(request):
                 # deal with this.
                 if not (r['project_name']):
                     break
+                if r['age'] == '':
+                    r['age'] = None
                 im = ImageMetadata(
                     collection=associated_collection,
                     project_name=r['project_name'],
