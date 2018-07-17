@@ -8,6 +8,9 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
+# from django.core.cache import caches
+from django.core.cache import cache
+
 
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
@@ -15,7 +18,6 @@ from django_tables2 import RequestConfig
 import pyexcel as pe
 from django_celery_results.models import TaskResult
 from celery.result import AsyncResult
-
 
 import datetime
 from . import tasks
@@ -27,7 +29,6 @@ from .forms import UploadForm
 from .models import Collection
 from .models import CollectionFilter
 from .models import CollectionTable
-from .models import ImageData
 from .models import ImageMetadata
 from .models import ImageMetadataTable
 
@@ -179,29 +180,34 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 @login_required
 def collection_create(request):
     """ Create a collection. """
-    top_level_dir = settings.STAGING_AREA_ROOT
-    data_path = "{}/bil_data/{}/{:02d}/{}".format(
-        top_level_dir,
-        datetime.datetime.now().year,
-        datetime.datetime.now().month,
-        str(uuid.uuid4()))
-    host_and_path = "{}@{}:{}".format(
-        request.user, settings.IMG_DATA_HOST, data_path)
+    if cache.get('host_and_path'):
+        host_and_path = cache.get('host_and_path')
+        data_path = cache.get('data_path')
+    else:
+        top_level_dir = settings.STAGING_AREA_ROOT
+        data_path = "{}/bil_data/{}/{:02d}/{}".format(
+            top_level_dir,
+            datetime.datetime.now().year,
+            datetime.datetime.now().month,
+            str(uuid.uuid4()))
+        host_and_path = "{}@{}:{}".format(
+            request.user, settings.IMG_DATA_HOST, data_path)
+        cache.set('host_and_path', host_and_path, 30)
+        cache.set('data_path', data_path, 30)
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = CollectionForm(request.POST, request=request)
-        if form.is_valid() and request.method == 'POST':
+        if form.is_valid():
             # remotely create the directory on some host using fabric and
             # celery
             # note: you should authenticate with ssh keys, not passwords
             if not settings.FAKE_STORAGE_AREA:
                 tasks.create_data_path.delay(data_path)
-            image_data = ImageData(data_path=host_and_path)
-            image_data.user = request.user
-            image_data.save()
             post = form.save(commit=False)
-            post.data_path = image_data
+            post.data_path = host_and_path
             post.save()
+            cache.delete('host_and_path')
+            cache.delete('data_path')
             messages.success(request, 'Collection successfully created')
             return redirect('ingest:collection_list')
     else:

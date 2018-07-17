@@ -9,20 +9,6 @@ from django_tables2.utils import A  # alias for Accessor
 from .fieldlist import attrs as image_metadata_fields
 
 
-class ImageData(models.Model):
-    # Contains information about where the actual data will be stored.
-    #
-    # The user doesn't supply any of this. It is all generated automatically
-    # when a user creates a Collection
-    def __str__(self):
-        return self.data_path
-
-    data_path = models.CharField(max_length=256)
-    locked = models.BooleanField(default=False)
-    user = models.ForeignKey(
-        User, on_delete=models.SET_NULL, null=True, blank=True)
-
-
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
     def __str__(self):
@@ -59,9 +45,7 @@ class Collection(models.Model):
         max_length=256, blank=True, default="NIH")
 
     # These fields are required but the user shouldn't control these
-    data_path = models.ForeignKey(
-        ImageData,
-        on_delete=models.SET_NULL, blank=True, null=True, unique=True)
+    data_path = models.CharField(max_length=256)
     # "locked" is used to prevent submitted data from being changed
     locked = models.BooleanField(default=False)
     user = models.ForeignKey(
