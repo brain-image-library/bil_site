@@ -258,6 +258,37 @@ def collection_data_path(request, pk):
 
 
 @login_required
+def collection_validation_results(request, pk):
+    """ View, edit, delete, create a particular collection. """
+    collection = Collection.objects.get(id=pk)
+
+    submission_validation_status = "not_submitted"
+    dir_size = ""
+    invalid_metadata_directories = []
+    if collection.celery_task_id:
+        result = AsyncResult(collection.celery_task_id)
+        state = result.state
+        if state == 'SUCCESS':
+            analysis_results = result.get()
+            if analysis_results['valid']:
+                submission_validation_status = "success"
+            else:
+                submission_validation_status = "failure"
+                invalid_metadata_directories = analysis_results["invalid_metadata_directories"]
+            dir_size = analysis_results['dir_size']
+        else:
+            submission_validation_status = "pending"
+
+    return render(
+        request,
+        'ingest/collection_validation_results.html',
+        {'collection': collection,
+         'dir_size': dir_size,
+         'invalid_metadata_directories': invalid_metadata_directories,
+         'submission_validation_status': submission_validation_status})
+
+
+@login_required
 def collection_detail(request, pk):
     """ View, edit, delete, create a particular collection. """
     collection = Collection.objects.get(id=pk)
