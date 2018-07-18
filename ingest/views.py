@@ -280,6 +280,7 @@ def collection_detail(request, pk):
             task = tasks.run_analysis.delay(data_path, metadata_dirs)
             collection.celery_task_id = task.task_id
             collection.save()
+            return redirect('ingest:collection_detail', pk=pk)
     
     # check submission and validation status
     submission_validation_status = "not_submitted"
