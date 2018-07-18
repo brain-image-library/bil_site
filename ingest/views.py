@@ -248,12 +248,14 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
 def collection_data_path(request, pk):
     """ View, edit, delete, create a particular collection. """
     collection = Collection.objects.get(id=pk)
-    data_path = collection.data_path.__str__()
+    host_and_path = collection.data_path
+    data_path = host_and_path.split(":")[1]
 
     return render(
         request,
         'ingest/collection_data_path.html',
         {'collection': collection,
+         'host_and_path': host_and_path,
          'data_path': data_path})
 
 

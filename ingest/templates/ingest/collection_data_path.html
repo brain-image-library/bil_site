@@ -2,11 +2,38 @@
 
 {% block wide %}
 
+<script>
+function copy_data_path() {
+  var copyText = document.getElementById("data_path");
+  copyText.select();
+  document.execCommand("copy");
+  alert("Copied the text: " + copyText.value);
+}
+</script>
+
+<script>
+function copy_host_and_path() {
+  var copyText = document.getElementById("host_and_path");
+  copyText.select();
+  document.execCommand("copy");
+  alert("Copied the text: " + copyText.value);
+}
+</script>
+
+
 <h1><b>Staging Area for Collection</b> {{ collection.name }} 
   {% if collection.locked %}<i class="fa fa-lock"></i>
   {% else %}<i class="fa fa-unlock"></i>
   {% endif %}
   </h1>
+
+  <hr>
+
+  <h4><strong>host and path:</strong> <input type="text" id="host_and_path" value="{{ host_and_path }}" > <i onclick="copy_host_and_path()" class="fa fa-clone"></i></span></h4>
+  <h4><strong>path:</strong> <input type="text" id="data_path" value="{{ data_path }}" > <i onclick="copy_data_path()" class="fa fa-clone"></i></span></h4>
+
+  <hr>
+
   <p>We recommend using <strong>rsync</strong>, <strong>scp</strong>, or
   <strong>globus</strong> to upload your data sets to the Brain Image Library.
   Linux and OSX users can use any of these options.  Most Windows users should
@@ -23,16 +50,24 @@
   <p>Here are example <strong>rsync</strong> and <strong>scp</strong> commands
   using the path to your collection's landing zone.</p>
 
+  <hr>
+
   <h2>Using scp</h2>
-    <p><code>scp -r . {{data_path}}</code></p>
+    <p><code>scp -r . {{host_and_path}}</code></p>
     <strong>scp</strong> will <i>not</i> use checksums or resume if the
     connection is interrupted.
+
+  <hr>
+
   <h2>Using rsync</h2>
-    <p><code>rsync -a . {{data_path}}</code><p>
+    <p><code>rsync -a . {{host_and_path}}</code><p>
     <p>Unlike <strong>scp</strong>, <strong>rsync</strong> can resume if the
     connection is interrupted. If your connection is interrupted, you can
     resume it by using the <code>append-verify</code> flag like this:</p>
-    <p><code>rsync -a --append-verify . {{data_path}}</code><p>
+    <p><code>rsync -a --append-verify . {{host_and_path}}</code><p>
+
+  <hr>
+
   <h2>Using globus</h2>
     See the <a href="https://www.psc.edu/bridges/user-guide/transferring-files#globus">PSC
     guide on Globus</a>. If you use Globus, the endpoint to use is
