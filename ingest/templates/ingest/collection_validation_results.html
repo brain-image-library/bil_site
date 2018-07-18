@@ -8,19 +8,19 @@
   {% endif %}
   </h1>
 
-  {% if submission_validation_status == "not_submitted" %}
+  {% if collection.status == "NOT_SUBMITTED" %}
     <div class="alert alert-info">
       <strong>Not submitted or validated.</strong> Once you have submitted your collection, the validation results will show up here.
     </div>
-  {% elif submission_validation_status == "pending" %}
+  {% elif collection.status == "PENDING" %}
     <div class="alert alert-warning">
       <strong>Submitted and validation pending</strong>. Please check back here later. If you think there may be a problem, please contact us at bil-support@psc.edu.</p>
     </div>
-  {% elif submission_validation_status == "success" %}
+  {% elif collection.status == "SUCCESS" %}
     <div class="alert alert-success">
       <strong>Submission and validation succeeded.</strong> Feel free to look over the results for any irregularities. If you notice a problem, you'll have to contact us at bil-support@psc.edu to unlock them.
     </div>
-  {% elif submission_validation_status == "failure" %}
+  {% elif collection.status == "FAILED" %}
     <div class="alert alert-danger">
       <strong>Submitted and validation failed</strong> Please correct any mistakes listed and resubmit when you are ready.
     </div>

@@ -56,6 +56,21 @@ class Collection(models.Model):
     # dataset size, verifying valid TIFF/JPEG2000 files, etc), in which case
     # we'll probably want to set up a one-to-many relationship w/ task IDs.
     celery_task_id = models.CharField(max_length=256)
+    NOT_SUBMITTED = 'NOT_SUBMITTED'
+    SUCCESS = 'SUCCESS'
+    PENDING = 'PENDING'
+    FAILED = 'FAILED'
+    STATUS_CHOICES = (
+        (NOT_SUBMITTED, 'Not submitted'),
+        (SUCCESS, 'Success'),
+        (PENDING, 'Pending'),
+        (FAILED, 'Failed'),
+    )
+    status = models.CharField(
+        max_length=256,
+        choices=STATUS_CHOICES,
+        default=NOT_SUBMITTED,
+    )
 
 
 class CollectionTable(tables.Table):
@@ -77,8 +92,28 @@ class CollectionTable(tables.Table):
         value = value if len(value) < limit_len else value[:limit_len] + "…"
         return value
 
+    def render_locked(self, value):
+        if value:
+            value = format_html('<i class="fa fa-lock"></i>')
+        else:
+            value = format_html('<i class="fa fa-unlock"></i>')
+        return value
+
+    def render_status(self, value):
+        """ Show the status as an icon. """
+        if value == "Not submitted":
+            value = format_html('<i class="fa fa-minus" style="color:blue"></i>')
+        elif value == "Success":
+            value = format_html('<i class="fa fa-check" style="color:green"></i>')
+        elif value == "Pending":
+            value = format_html('<i class="fa fa-clock" style="color:yellow"></i>')
+        elif value == "Failed":
+            value = format_html('<i class="fa fa-exclamation-circle" style="color:red"></i>')
+        return value
+
     class Meta:
         model = Collection
+        exclude = ['celery_task_id', 'user']
         template_name = 'ingest/bootstrap_ingest.html'
 
 
@@ -247,6 +282,13 @@ class ImageMetadataTable(tables.Table):
         """ Ellipsize the project description if it's too long. """
         limit_len = 32
         value = value if len(value) < limit_len else value[:limit_len] + "…"
+        return value
+
+    def render_locked(self, value):
+        if value:
+            value = format_html('<i class="fa fa-lock"></i>')
+        else:
+            value = format_html('<i class="fa fa-unlock"></i>')
         return value
 
     class Meta:

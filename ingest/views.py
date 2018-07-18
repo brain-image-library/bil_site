@@ -262,7 +262,7 @@ def collection_validation_results(request, pk):
     """ View, edit, delete, create a particular collection. """
     collection = Collection.objects.get(id=pk)
 
-    submission_validation_status = "not_submitted"
+    collection.status = "NOT_SUBMITTED"
     dir_size = ""
     invalid_metadata_directories = []
     if collection.celery_task_id:
@@ -271,21 +271,20 @@ def collection_validation_results(request, pk):
         if state == 'SUCCESS':
             analysis_results = result.get()
             if analysis_results['valid']:
-                submission_validation_status = "success"
+                collection.status = "SUCCESS"
             else:
-                submission_validation_status = "failure"
+                collection.status = "FAILED"
                 invalid_metadata_directories = analysis_results["invalid_metadata_directories"]
             dir_size = analysis_results['dir_size']
         else:
-            submission_validation_status = "pending"
+            collection.status = "PENDING"
 
     return render(
         request,
         'ingest/collection_validation_results.html',
         {'collection': collection,
          'dir_size': dir_size,
-         'invalid_metadata_directories': invalid_metadata_directories,
-         'submission_validation_status': submission_validation_status})
+         'invalid_metadata_directories': invalid_metadata_directories})
 
 
 @login_required
@@ -314,7 +313,6 @@ def collection_detail(request, pk):
             return redirect('ingest:collection_detail', pk=pk)
     
     # check submission and validation status
-    submission_validation_status = "not_submitted"
     dir_size = ""
     if collection.celery_task_id:
         result = AsyncResult(collection.celery_task_id)
@@ -322,17 +320,17 @@ def collection_detail(request, pk):
         if state == 'SUCCESS':
             analysis_results = result.get()
             if analysis_results['valid']:
-                submission_validation_status = "success"
+                collection.status = "SUCCESS"
             else:
-                submission_validation_status = "failure"
+                collection.status = "FAILED"
                 # need to unlock, so user can fix problem
                 collection.locked = False
-                collection.save()
                 for im in image_metadata_queryset:
                     im.locked = False
                     im.save()
         else:
-            submission_validation_status = "pending"
+            collection.status = "PENDING"
+    collection.save()
 
     table = ImageMetadataTable(
         ImageMetadata.objects.filter(user=request.user, collection=collection),
@@ -342,7 +340,6 @@ def collection_detail(request, pk):
         'ingest/collection_detail.html',
         {'table': table,
          'collection': collection,
-         'submission_validation_status': submission_validation_status,
          'image_metadata_queryset': image_metadata_queryset})
 
 
