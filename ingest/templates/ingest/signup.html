@@ -1,21 +1,28 @@
 {% extends 'ingest/narrow.html' %}
 
 {% block narrow %}
-  <h2>Sign up</h2>
-  <form method="post">
-    {% csrf_token %}
-    {% for field in form %}
-      <p>
-        {{ field.label_tag }}<br>
-        {{ field }}
-        {% if field.help_text %}
-          <small style="color: grey">{{ field.help_text |safe }}</small>
-        {% endif %}
-        {% for error in field.errors %}
-          <p style="color: red">{{ error }}</p>
-        {% endfor %}
-      </p>
-    {% endfor %}
-    <button type="submit" class="save btn btn-lg btn-primary">Sign up</button>
-  </form>
+
+<h2>Sign up</h2>
+
+<p>To deposit data an account will need to be created on our machines. To
+request an account, please send an email message to: bil-support@psc.edu with
+the following information:</p>
+
+<div class="list-group">
+  <div class="list-group-item">First and last name</div>
+  <div class="list-group-item">Institution</div>
+  <div class="list-group-item">Mailing Address</div>
+  <div class="list-group-item">Current email address (plus an alternate if available)</div>
+  <div class="list-group-item">Telephone number</div>
+  <div class="list-group-item">Preferred login name (at least 2 and no more than 8 characters, lowercase letters and numbers only)</div>
+  <div class="list-group-item">The BICCN or BRAIN initiative project you are associated with.</div>
+  <div class="list-group-item">Your academic (or other) status (e.g. Faculty, Research Staff, Postdoctorate, Graduate Student, Undergraduate Student, Government, Nonprofit, Industry)</div>
+</div>
+
+
+<p>After your account is created, you will receive an email regarding your
+account and how to set the initial password on it through a special website:
+https://apr.psc.edu. Instructions on password policies and how to set or change
+your password.</p>
+
 {% endblock %}
