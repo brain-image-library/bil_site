@@ -236,6 +236,7 @@ def collection_create(request):
 
 
 class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
+    """ A list of all a user's collections. """
 
     table_class = CollectionTable
     model = Collection
@@ -252,15 +253,17 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
         return context
 
     def get_filterset_kwargs(self, filterset_class):
+        """ Sets the default collection filter status. """
         kwargs = super().get_filterset_kwargs(filterset_class)
         if kwargs["data"] is None:
-            kwargs["data"] = {"locked": False}
+            kwargs["data"] = {"status": "NOT_SUBMITTED"}
         return kwargs
 
 
 @login_required
 def collection_data_path(request, pk):
-    """ View, edit, delete, create a particular collection. """
+    """ Info about the staging area for a user's collection. """
+
     collection = Collection.objects.get(id=pk)
     host_and_path = collection.data_path
     data_path = host_and_path.split(":")[1]
@@ -275,7 +278,7 @@ def collection_data_path(request, pk):
 
 @login_required
 def collection_validation_results(request, pk):
-    """ View, edit, delete, create a particular collection. """
+    """ Where a user can see the results of submission & validation. """
     collection = Collection.objects.get(id=pk)
 
     collection.status = "NOT_SUBMITTED"
@@ -307,13 +310,13 @@ def collection_validation_results(request, pk):
 def collection_detail(request, pk):
     """ View, edit, delete, create a particular collection. """
     collection = Collection.objects.get(id=pk)
+    # the metadata associated with this collection
     image_metadata_queryset = collection.imagemetadata_set.all()
-    # submit and validate POST
+    # this is what is triggered if the user hits "Submit collection"
     if request.method == 'POST' and image_metadata_queryset:
         # lock everything (collection and associated image metadata) during
         # submission and validation. if successful, keep it locked
         collection.locked = True
-        collection.save()
         metadata_dirs = []
         for im in image_metadata_queryset:
             im.locked = True
@@ -325,8 +328,8 @@ def collection_detail(request, pk):
             data_path = collection.data_path.__str__()
             task = tasks.run_analysis.delay(data_path, metadata_dirs)
             collection.celery_task_id = task.task_id
-            collection.save()
-            return redirect('ingest:collection_detail', pk=pk)
+        collection.save()
+        return redirect('ingest:collection_detail', pk=pk)
     
     # check submission and validation status
     dir_size = ""
@@ -374,14 +377,14 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
 def collection_delete(request, pk):
     """ Delete a collection.
 
-    Implicit in this is the deletion of the storage area (both the database
-    entry and the actual remote storage area).
     """
 
     collection = Collection.objects.get(pk=pk)
     if request.method == 'POST':
         data_path = collection.data_path.__str__()
         if not settings.FAKE_STORAGE_AREA:
+            # This is what deletes the actual directory associated with the
+            # staging area
             tasks.delete_data_path.delay(data_path)
         collection.delete()
         messages.success(request, 'Collection successfully deleted')
