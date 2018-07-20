@@ -119,16 +119,10 @@ class CollectionTable(tables.Table):
 
 class CollectionFilter(django_filters.FilterSet):
     """ Interactively filter display locked or unlocked collecions. """
-    choices = (('', ('Locked & unlocked')),
-               ('true', ('Locked')),
-               ('false', ('Unlocked')))
-    bw = django_filters.widgets.BooleanWidget()
-    bw.choices = choices
-    locked = django_filters.BooleanFilter(widget=bw)
 
     class Meta:
         model = Collection
-        fields = ['locked']
+        fields = ['status']
 
 
 class ImageMetadata(models.Model):
