@@ -9,6 +9,7 @@ urlpatterns = [
     # Main/home page
     path('', views.index, name='index'),
     # The signup should probably be moved somewhere else.
+    re_path(r'^logout/$', views.logout, name='logout'),
     re_path(r'^signup/$', views.signup, name='signup'),
     # All the image metadata pages
     path('metadata/<int:pk>/', views.ImageMetadataDetail.as_view(), name='image_metadata_detail'),

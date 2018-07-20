@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
+from django.contrib import auth
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -8,7 +9,6 @@ from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
-# from django.core.cache import caches
 from django.core.cache import cache
 
 
@@ -35,8 +35,22 @@ from .models import ImageMetadataTable
 import uuid
 
 
+def logout(request):
+    # XXX: this view should be separated from the the ingestion views and
+    # placed with other authentication views to allow us to reuse the
+    # authentication views with other apps (e.g. data exploration portal).
+    auth.logout(request)
+    # Send the user back to the login page when they log out.
+    # XXX: we might want to use django's messaging system to inform them that
+    # they've successfully logged out.
+    return redirect('login')
+
+
 def signup(request):
     """ This is how a user signs up for a new account. """
+
+    # XXX: Like the logout view, this view should be separated from the the
+    # ingestion views and placed with other authentication views
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
