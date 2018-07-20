@@ -48,8 +48,8 @@
 
 /* for the big buttons at the bottom of the main page */
 .big-button { 
-    padding-left: 5em;
-    padding-right: 5em;
+    padding-left: 3em;
+    padding-right: 3em;
     padding-bottom: 5em;
     line-height: 1.8;
     text-align: center;
