@@ -10,6 +10,8 @@ from django.urls import reverse_lazy
 from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.core.cache import cache
+from django.http import Http404
+from django.core.exceptions import ObjectDoesNotExist
 
 
 from django_filters.views import FilterView
@@ -309,7 +311,10 @@ def collection_validation_results(request, pk):
 @login_required
 def collection_detail(request, pk):
     """ View, edit, delete, create a particular collection. """
-    collection = Collection.objects.get(id=pk)
+    try:
+        collection = Collection.objects.get(id=pk)
+    except ObjectDoesNotExist:
+        raise Http404
     # the metadata associated with this collection
     image_metadata_queryset = collection.imagemetadata_set.all()
     # this is what is triggered if the user hits "Submit collection"
