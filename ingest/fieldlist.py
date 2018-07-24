@@ -1,3 +1,5 @@
+# The order that these fields appear in this list will affect the order that
+# they appear on the Metadata Creation page
 attrs = [
     'collection',
     'project_name',
@@ -12,8 +14,8 @@ attrs = [
     'organ_substructure',
     'assay',
     'slicing_direction',
+    'image_map_style',
     'processing_level',
     'image_filename_pattern',
-    'image_map_style',
     'directory',
 ]

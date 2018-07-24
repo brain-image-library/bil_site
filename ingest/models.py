@@ -191,11 +191,11 @@ class ImageMetadata(models.Model):
         choices=SEX_CHOICES,
         default=UNKNOWN,
     )
-    organ = models.CharField(max_length=256, blank=True, default="brain")
+    organ = models.CharField(max_length=256, blank=True, default="Brain")
     organ_substructure = models.CharField(
         max_length=256,
         blank=True,
-        default="whole brain",
+        default="Whole brain",
         help_text="e.g. hippocampus, prefrontal cortex")
     assay = models.CharField(
         max_length=256,
@@ -231,6 +231,8 @@ class ImageMetadata(models.Model):
         (MAPYXZ, 'Map YXZ'),
         (MAPZXY, 'Map ZXY'),
         (MAPZYX, 'Map ZYX'),
+        (MAPZYX, 'Map ZYX'),
+        (UNKNOWN, 'Unknown'),
     )
     image_map_style = models.CharField(
         max_length=256,
@@ -249,6 +251,7 @@ class ImageMetadata(models.Model):
         (PROC3, 'Full Capture Reformatted'),
         (PROC4, 'Full Capture Stitched Reformatted'),
         (PROC5, 'Processed'),
+        (UNKNOWN, 'Unknown'),
     )
 
     processing_level = models.CharField(
