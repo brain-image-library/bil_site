@@ -95,6 +95,7 @@ def image_metadata_upload(request):
                     organ_substructure=r['organ_substructure'],
                     assay=r['assay'],
                     slicing_direction=r['slicing_direction'],
+                    directory=r['directory'],
                     user=request.user)
                 im.save()
             messages.success(request, 'Metadata successfully uploaded')
