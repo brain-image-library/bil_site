@@ -275,6 +275,12 @@ class ImageMetadataTable(tables.Table):
     )
     project_description = tables.Column()
 
+    def render_project_name(self, value):
+        """ Ellipsize the project name if it's too long. """
+        limit_len = 32
+        value = value if len(value) < limit_len else value[:limit_len] + "…"
+        return value
+
     def render_project_description(self, value):
         """ Ellipsize the project description if it's too long. """
         limit_len = 32
