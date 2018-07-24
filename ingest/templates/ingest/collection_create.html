@@ -2,6 +2,13 @@
 
 {% block narrow %}
 
+
+<datalist id="funder_list">
+  {% for funder in funder_list  %}
+  <option value="{{ funder }}">
+  {% endfor %}
+</datalist>
+
 <h1>Create Collection</h1>
 <form method="POST" class="post-form">
 {% csrf_token %}

@@ -216,11 +216,25 @@ def collection_create(request):
     else:
         form = CollectionForm()
     collections = Collection.objects.all()
+    funder_list = [
+        "1-U01-H114812-01",
+        "1-U01-MH114819-01",
+        "1-U01-MH114824-01",
+        "1-U01-MH114825-01",
+        "1-U01-MH114829-01",
+        "1-U19-MH114821-01",
+        "1-U19-MH114830-01",
+        "1-U19-MH114831-01",
+        "1-U24-MH114827-01",
+        "1R24MH114788-01",
+        "1R24MH114793-01",
+    ]
     return render(
         request,
         'ingest/collection_create.html',
         {'form': form,
          'collections': collections,
+         'funder_list': funder_list,
          'host_and_path': host_and_path})
 
 

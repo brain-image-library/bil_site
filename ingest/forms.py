@@ -40,6 +40,9 @@ class CollectionForm(forms.ModelForm):
             'lab_name',
             'project_funder',
             'project_funder_id')
+        widgets = {
+            'project_funder_id': forms.TextInput(attrs={'list': 'funder_list'}),
+        }
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
