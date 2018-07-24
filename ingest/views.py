@@ -26,7 +26,6 @@ from . import tasks
 from .fieldlist import attrs
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
-from .forms import SignUpForm
 from .forms import UploadForm
 from .models import Collection
 from .models import CollectionFilter
@@ -49,22 +48,8 @@ def logout(request):
 
 
 def signup(request):
-    """ This is how a user signs up for a new account. """
-
-    # XXX: Like the logout view, this view should be separated from the the
-    # ingestion views and placed with other authentication views
-    if request.method == 'POST':
-        form = SignUpForm(request.POST)
-        if form.is_valid():
-            form.save()
-            username = form.cleaned_data.get('username')
-            raw_password = form.cleaned_data.get('password1')
-            user = authenticate(username=username, password=raw_password)
-            login(request, user)
-            return redirect('/')
-    else:
-        form = SignUpForm()
-    return render(request, 'ingest/signup.html', {'form': form})
+    """ Info about signing up for a new account. """
+    return render(request, 'ingest/signup.html')
 
 
 def index(request):
@@ -196,6 +181,8 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 @login_required
 def collection_create(request):
     """ Create a collection. """
+    # We cache the staging area location, so that we can show it in the GET and
+    # later use it during creation (POST)
     if cache.get('host_and_path'):
         host_and_path = cache.get('host_and_path')
         data_path = cache.get('data_path')

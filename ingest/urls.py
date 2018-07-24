@@ -8,7 +8,7 @@ app_name = 'ingest'
 urlpatterns = [
     # Main/home page
     path('', views.index, name='index'),
-    # The signup should probably be moved somewhere else.
+    # logout and signup should probably be moved somewhere else
     re_path(r'^logout/$', views.logout, name='logout'),
     re_path(r'^signup/$', views.signup, name='signup'),
     # All the image metadata pages
