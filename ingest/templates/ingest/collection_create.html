@@ -7,7 +7,7 @@
 {% csrf_token %}
   {% for field in form  %}
     <p data-toggle="tooltip" title="{{field.help_text}}">
-      {{ field.label_tag }} {% if field.field.required %} * {% endif %}<br>
+      {{ field.label_tag }} {% if field.field.required %} <span style='color:red'>*</span> {% endif %}<br>
       {{ field }}
       {% for error in field.errors %}
         <p style="color: red">{{ error }}</p>
