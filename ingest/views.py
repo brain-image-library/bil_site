@@ -23,7 +23,7 @@ from celery.result import AsyncResult
 
 import datetime
 from . import tasks
-from .fieldlist import attrs
+from .fieldlist import attrs, required_metadata
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
 from .forms import UploadForm
@@ -71,32 +71,37 @@ def image_metadata_upload(request):
             myfile = request.FILES['myfile']
             fs = FileSystemStorage()
             filename = fs.save(myfile.name, myfile)
-            rec = pe.iget_records(file_name=filename)
-            for r in rec:
-                # XXX: ods format doesn't seem to stop reading after end of
-                # last entry. Should add some better error handling in here to
-                # deal with this.
-                if not (r['project_name']):
-                    break
-                if r['age'] == '':
-                    r['age'] = None
+            records = pe.iget_records(file_name=filename)
+            # This is kinda inefficient, but we'll pre-scan the entire
+            # spreadsheet before saving entries, so we don't get half-way
+            # uploaded spreadsheets.
+            error = False
+            for idx, record in enumerate(records):
+                # XXX: right now, we're just checking for required fields that
+                # are missing, but we can add whatever checks we want here.
+                # XXX: blank rows in the spreadsheet that have some hidden
+                # formatting can screw up this test
+                missing = [k for k in record if k in required_metadata and not record[k]]
+                if missing: 
+                    error = True
+                    missing_str = ", ".join(missing)
+                    error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                    messages.error(request, error_msg)
+            if error:
+                # We have to add 2 to idx because spreadsheet rows are
+                # 1-indexed and first row is header
+                return redirect('ingest:image_metadata_upload')
+            records = pe.iget_records(file_name=filename)
+            for idx, record in enumerate(records):
+                # "age" isn't required, so we need to explicitly set blank
+                # entries to None or else django will get confused.
+                if record['age'] == '':
+                    record['age'] = None
                 im = ImageMetadata(
                     collection=associated_collection,
-                    project_name=r['project_name'],
-                    project_description=r['project_description'],
-                    background_strain=r['background_strain'],
-                    image_filename_pattern=r['image_filename_pattern'],
-                    taxonomy_name=r['taxonomy_name'],
-                    transgenic_line_name=r['transgenic_line_name'],
-                    age=r['age'],
-                    age_unit=r['age_unit'],
-                    sex=r['sex'],
-                    organ=r['organ'],
-                    organ_substructure=r['organ_substructure'],
-                    assay=r['assay'],
-                    slicing_direction=r['slicing_direction'],
-                    directory=r['directory'],
                     user=request.user)
+                for k in record:
+                    setattr(im, k, record[k])    
                 im.save()
             messages.success(request, 'Metadata successfully uploaded')
             return redirect('ingest:image_metadata_list')

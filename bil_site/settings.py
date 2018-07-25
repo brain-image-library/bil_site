@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 import os
 import configparser
 import sys
+from django.contrib import messages
 
 
 site_cfg_misconfigured = (
@@ -203,4 +204,8 @@ CACHES = {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'unique-snowflake',
     }
+}
+
+MESSAGE_TAGS = {
+    messages.ERROR: 'danger'
 }
