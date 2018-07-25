@@ -64,47 +64,52 @@ def index(request):
 @login_required
 def image_metadata_upload(request):
     """ Upload a spreadsheet containing image metadata information. """
-    if request.method == 'POST' and request.FILES['myfile']:
+    if request.method == 'POST' and request.FILES['spreadsheet_file']:
         form = UploadForm(request.POST)
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
-            myfile = request.FILES['myfile']
+            spreadsheet_file = request.FILES['spreadsheet_file']
             fs = FileSystemStorage()
-            filename = fs.save(myfile.name, myfile)
-            records = pe.iget_records(file_name=filename)
-            # This is kinda inefficient, but we'll pre-scan the entire
-            # spreadsheet before saving entries, so we don't get half-way
-            # uploaded spreadsheets.
-            error = False
-            for idx, record in enumerate(records):
-                # XXX: right now, we're just checking for required fields that
-                # are missing, but we can add whatever checks we want here.
-                # XXX: blank rows in the spreadsheet that have some hidden
-                # formatting can screw up this test
-                missing = [k for k in record if k in required_metadata and not record[k]]
-                if missing: 
-                    error = True
-                    missing_str = ", ".join(missing)
-                    error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
-                    messages.error(request, error_msg)
-            if error:
-                # We have to add 2 to idx because spreadsheet rows are
-                # 1-indexed and first row is header
+            filename = fs.save(spreadsheet_file.name, spreadsheet_file)
+            try:
+                records = pe.iget_records(file_name=filename)
+                # This is kinda inefficient, but we'll pre-scan the entire
+                # spreadsheet before saving entries, so we don't get half-way
+                # uploaded spreadsheets.
+                error = False
+                for idx, record in enumerate(records):
+                    # XXX: right now, we're just checking for required fields that
+                    # are missing, but we can add whatever checks we want here.
+                    # XXX: blank rows in the spreadsheet that have some hidden
+                    # formatting can screw up this test
+                    missing = [k for k in record if k in required_metadata and not record[k]]
+                    if missing: 
+                        error = True
+                        missing_str = ", ".join(missing)
+                        error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                        messages.error(request, error_msg)
+                if error:
+                    # We have to add 2 to idx because spreadsheet rows are
+                    # 1-indexed and first row is header
+                    return redirect('ingest:image_metadata_upload')
+                records = pe.iget_records(file_name=filename)
+                for idx, record in enumerate(records):
+                    # "age" isn't required, so we need to explicitly set blank
+                    # entries to None or else django will get confused.
+                    if record['age'] == '':
+                        record['age'] = None
+                    im = ImageMetadata(
+                        collection=associated_collection,
+                        user=request.user)
+                    for k in record:
+                        setattr(im, k, record[k])    
+                    im.save()
+                messages.success(request, 'Metadata successfully uploaded')
+                return redirect('ingest:image_metadata_list')
+            except pe.exceptions.FileTypeNotSupported:
+                messages.error(request, "File type not supported")
                 return redirect('ingest:image_metadata_upload')
-            records = pe.iget_records(file_name=filename)
-            for idx, record in enumerate(records):
-                # "age" isn't required, so we need to explicitly set blank
-                # entries to None or else django will get confused.
-                if record['age'] == '':
-                    record['age'] = None
-                im = ImageMetadata(
-                    collection=associated_collection,
-                    user=request.user)
-                for k in record:
-                    setattr(im, k, record[k])    
-                im.save()
-            messages.success(request, 'Metadata successfully uploaded')
-            return redirect('ingest:image_metadata_list')
+
     else:
         form = UploadForm()
         # Only let a user associate metadata with an unlocked collection that
