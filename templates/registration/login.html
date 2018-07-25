@@ -11,8 +11,7 @@
       <input type="text" name="username" required id="id_username" placeholder="username"/>
       <input type="password" name="password" required id="id_password" placeholder="password"/>
       <button type="submit">login</button>
-      {# Assumes you setup the password_reset view in your URLconf #}
-      <p class="message"><a href="{% url 'password_reset' %}">Lost your password?</a></p>
+      <p class="message"><a href="mailto:bil-support@psc.edu?Subject=Forgot%20password">Forgot your password?</a></p>
     </form>
   </div>
 </div>
