@@ -11,6 +11,7 @@ class UploadForm(forms.Form):
 
 
 class ImageMetadataForm(forms.ModelForm):
+    age = forms.IntegerField(min_value=0)
 
     class Meta:
         model = ImageMetadata
