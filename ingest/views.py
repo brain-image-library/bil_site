@@ -23,14 +23,14 @@ from celery.result import AsyncResult
 
 from . import tasks
 from .field_list import required_metadata, metadata_fields
+from .filters import CollectionFilter
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
 from .forms import UploadForm
 from .models import Collection
-from .models import CollectionFilter
-from .models import CollectionTable
 from .models import ImageMetadata
-from .models import ImageMetadataTable
+from .tables import CollectionTable
+from .tables import ImageMetadataTable
 
 import uuid
 import datetime
