@@ -12,6 +12,10 @@
       <input type="password" name="password" required id="id_password" placeholder="password"/>
       <button type="submit">login</button>
       <p class="message"><a href="mailto:bil-support@psc.edu?Subject=Forgot%20password">Forgot your password?</a></p>
+      {% if form.errors %}
+      <br>
+      <div class="alert alert-danger">Your username and password didn't match. Please try again.</div>
+      {% endif %}
     </form>
   </div>
 </div>
