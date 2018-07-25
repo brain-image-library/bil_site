@@ -21,9 +21,8 @@ import pyexcel as pe
 from django_celery_results.models import TaskResult
 from celery.result import AsyncResult
 
-import datetime
 from . import tasks
-from .fieldlist import attrs, required_metadata
+from .field_list import required_metadata, metadata_fields
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
 from .forms import UploadForm
@@ -34,6 +33,7 @@ from .models import ImageMetadata
 from .models import ImageMetadataTable
 
 import uuid
+import datetime
 
 
 def logout(request):
@@ -174,7 +174,7 @@ def image_metadata_create(request):
 class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
     """ Modify an existing piece of image metadata. """
     model = ImageMetadata
-    fields = attrs
+    fields = metadata_fields
     template_name = 'ingest/image_metadata_update.html'
     success_url = reverse_lazy('ingest:image_metadata_list')
 

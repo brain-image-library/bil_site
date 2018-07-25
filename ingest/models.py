@@ -6,7 +6,7 @@ import django_filters
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
 
-from .fieldlist import attrs as image_metadata_fields
+from .field_list import metadata_fields
 
 
 class Collection(models.Model):
@@ -298,7 +298,7 @@ class ImageMetadataTable(tables.Table):
         model = ImageMetadata
         template_name = 'ingest/bootstrap_ingest.html'
         # the order of "sequence" determines the ordering of the columns
-        sequence = ['id'] + image_metadata_fields
+        sequence = ['id'] + metadata_fields
 
     # This gives us a checkbox for every piece of metadata, thereby allowing
     # the user to select and delete them (assuming they're unlocked).

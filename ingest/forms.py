@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .fieldlist import attrs
+from .field_list import metadata_fields, collection_fields
 from .models import ImageMetadata
 from .models import Collection
 
@@ -15,7 +15,7 @@ class ImageMetadataForm(forms.ModelForm):
 
     class Meta:
         model = ImageMetadata
-        fields = attrs
+        fields = metadata_fields
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
@@ -34,13 +34,7 @@ class CollectionForm(forms.ModelForm):
 
     class Meta:
         model = Collection
-        fields = (
-            'name',
-            'description',
-            'organization_name',
-            'lab_name',
-            'project_funder',
-            'project_funder_id')
+        fields = collection_fields
         widgets = {
             'project_funder_id': forms.TextInput(attrs={'list': 'funder_list'}),
         }
