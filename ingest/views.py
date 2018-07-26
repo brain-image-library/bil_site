@@ -121,14 +121,14 @@ def image_metadata_create(request):
     """ Create new image metadata. """
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
-        form = ImageMetadataForm(request.POST, request=request)
+        form = ImageMetadataForm(request.POST, user=request.user)
         if form.is_valid():
             post = form.save(commit=False)
             post.save()
             messages.success(request, 'Metadata successfully created')
             return redirect('ingest:image_metadata_list')
     else:
-        form = ImageMetadataForm()
+        form = ImageMetadataForm(user=request.user)
         # Only let a user associate metadata with an unlocked collection that
         # they own
         form.fields['collection'].queryset = Collection.objects.filter(
@@ -139,9 +139,14 @@ def image_metadata_create(request):
 class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
     """ Modify an existing piece of image metadata. """
     model = ImageMetadata
-    fields = metadata_fields
     template_name = 'ingest/image_metadata_update.html'
     success_url = reverse_lazy('ingest:image_metadata_list')
+    form_class = ImageMetadataForm
+
+    def get_form_kwargs(self):
+        kwargs = super(ImageMetadataUpdate, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
 
 
 class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
