@@ -2,6 +2,7 @@ import django_filters
 
 from .models import Collection
 
+
 class CollectionFilter(django_filters.FilterSet):
     """ Interactively filter display locked or unlocked collecions. """
 

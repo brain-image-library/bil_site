@@ -2,10 +2,9 @@ from django.utils.html import format_html
 
 from .models import Collection
 from .models import ImageMetadata
-from .field_list import metadata_fields
-
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
+
 
 class CollectionTable(tables.Table):
     """ The table used in the collection list. """

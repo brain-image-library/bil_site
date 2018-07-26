@@ -200,5 +200,3 @@ class ImageMetadata(models.Model):
         choices=PROCESSING_CHOICES,
         default=UNKNOWN,
     )
-
-

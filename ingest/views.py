@@ -321,7 +321,6 @@ def collection_detail(request, pk):
         return redirect('ingest:collection_detail', pk=pk)
 
     # check submission and validation status
-    dir_size = ""
     if collection.celery_task_id:
         result = AsyncResult(collection.celery_task_id)
         state = result.state
@@ -396,7 +395,7 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
             # XXX: blank rows in the spreadsheet that have some hidden
             # formatting can screw up this test
             missing = [k for k in record if k in required_metadata and not record[k]]
-            if missing: 
+            if missing:
                 error = True
                 missing_str = ", ".join(missing)
                 error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
@@ -416,7 +415,7 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
                 collection=associated_collection,
                 user=request.user)
             for k in record:
-                setattr(im, k, record[k])    
+                setattr(im, k, record[k])
             im.save()
         messages.success(request, 'Metadata successfully uploaded')
         # return redirect('ingest:image_metadata_list')

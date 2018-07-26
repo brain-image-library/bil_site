@@ -1,6 +1,4 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
 from .field_list import metadata_fields, collection_fields
 from .models import ImageMetadata
 from .models import Collection
