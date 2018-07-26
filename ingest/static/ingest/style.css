@@ -168,3 +168,20 @@ p {
   color: #b3b3b3;
   font-size: 12px;
 }
+
+.dropdown input {
+    display: block;
+    padding: 3px 20px;
+    clear: both;
+    font-weight: 400;
+    line-height: 1.42857143;
+    color: #333;
+    white-space: nowrap;
+    height: 26px;
+    text-align: left;
+}
+
+.dropdown .btn-link:hover {
+    text-decoration: none;
+    background-color: #e8e8e8;
+}
