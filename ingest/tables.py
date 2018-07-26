@@ -87,8 +87,34 @@ class ImageMetadataTable(tables.Table):
     class Meta:
         model = ImageMetadata
         template_name = 'ingest/bootstrap_ingest.html'
+        # XXX: we should store this information in field_list
+        exclude = [
+            'user',
+            'background_strain',
+            'taxonomy_name',
+            'transgenic_line_name',
+            'age',
+            'age_unit',
+            'sex',
+            'organ',
+            'organ_substructure',
+            'assay',
+            'slicing_direction',
+            'image_map_style',
+            'processing_level',
+            'image_filename_pattern',
+        ]
         # the order of "sequence" determines the ordering of the columns
-        sequence = ['id'] + metadata_fields
+        sequence = [
+            'id',
+            'collection',
+            'project_name',
+            'project_description',
+            'directory',
+            'date_created',
+            'last_edited',
+            'locked'
+        ]
 
     # This gives us a checkbox for every piece of metadata, thereby allowing
     # the user to select and delete them (assuming they're unlocked).
