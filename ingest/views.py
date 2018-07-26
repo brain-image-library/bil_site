@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.contrib import messages
 from django.contrib import auth
-from django.contrib.auth import login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
@@ -18,11 +17,10 @@ from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
 from django_tables2 import RequestConfig
 import pyexcel as pe
-from django_celery_results.models import TaskResult
 from celery.result import AsyncResult
 
 from . import tasks
-from .field_list import required_metadata, metadata_fields
+from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
@@ -68,7 +66,7 @@ def image_metadata_upload(request):
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
         form = UploadForm(request.POST)
         if form.is_valid():
-            associated_collection = form.cleaned_data['associated_collection']
+            collection = form.cleaned_data['associated_collection']
             spreadsheet_file = request.FILES['spreadsheet_file']
             error = upload_spreadsheet(spreadsheet_file, collection, request)
             if error:
