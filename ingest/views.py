@@ -37,6 +37,7 @@ import datetime
 
 
 def logout(request):
+    messages.success(request, "You've successfully logged out")
     # XXX: this view should be separated from the the ingestion views and
     # placed with other authentication views to allow us to reuse the
     # authentication views with other apps (e.g. data exploration portal).
@@ -69,47 +70,11 @@ def image_metadata_upload(request):
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
             spreadsheet_file = request.FILES['spreadsheet_file']
-            fs = FileSystemStorage()
-            filename = fs.save(spreadsheet_file.name, spreadsheet_file)
-            try:
-                records = pe.iget_records(file_name=filename)
-                # This is kinda inefficient, but we'll pre-scan the entire
-                # spreadsheet before saving entries, so we don't get half-way
-                # uploaded spreadsheets.
-                error = False
-                for idx, record in enumerate(records):
-                    # XXX: right now, we're just checking for required fields that
-                    # are missing, but we can add whatever checks we want here.
-                    # XXX: blank rows in the spreadsheet that have some hidden
-                    # formatting can screw up this test
-                    missing = [k for k in record if k in required_metadata and not record[k]]
-                    if missing: 
-                        error = True
-                        missing_str = ", ".join(missing)
-                        error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
-                        messages.error(request, error_msg)
-                if error:
-                    # We have to add 2 to idx because spreadsheet rows are
-                    # 1-indexed and first row is header
-                    return redirect('ingest:image_metadata_upload')
-                records = pe.iget_records(file_name=filename)
-                for idx, record in enumerate(records):
-                    # "age" isn't required, so we need to explicitly set blank
-                    # entries to None or else django will get confused.
-                    if record['age'] == '':
-                        record['age'] = None
-                    im = ImageMetadata(
-                        collection=associated_collection,
-                        user=request.user)
-                    for k in record:
-                        setattr(im, k, record[k])    
-                    im.save()
-                messages.success(request, 'Metadata successfully uploaded')
-                return redirect('ingest:image_metadata_list')
-            except pe.exceptions.FileTypeNotSupported:
-                messages.error(request, "File type not supported")
+            error = upload_spreadsheet(spreadsheet_file, collection, request)
+            if error:
                 return redirect('ingest:image_metadata_upload')
-
+            else:
+                return redirect('ingest:image_metadata_list')
     else:
         form = UploadForm()
         # Only let a user associate metadata with an unlocked collection that
@@ -330,7 +295,14 @@ def collection_detail(request, pk):
     # the metadata associated with this collection
     image_metadata_queryset = collection.imagemetadata_set.all()
     # this is what is triggered if the user hits "Submit collection"
-    if request.method == 'POST' and image_metadata_queryset:
+    # import ipdb
+    # ipdb.set_trace(context=20)
+    # if request.method == 'POST' and request.FILES['spreadsheet_file']:
+    if request.method == 'POST' and 'spreadsheet_file' in request.FILES:
+        spreadsheet_file = request.FILES['spreadsheet_file']
+        upload_spreadsheet(spreadsheet_file, collection, request)
+        return redirect('ingest:collection_detail', pk=pk)
+    elif request.method == 'POST' and 'submit_collection' in request.POST:
         # lock everything (collection and associated image metadata) during
         # submission and validation. if successful, keep it locked
         collection.locked = True
@@ -347,7 +319,7 @@ def collection_detail(request, pk):
             collection.celery_task_id = task.task_id
         collection.save()
         return redirect('ingest:collection_detail', pk=pk)
-    
+
     # check submission and validation status
     dir_size = ""
     if collection.celery_task_id:
@@ -392,9 +364,7 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
 
 @login_required
 def collection_delete(request, pk):
-    """ Delete a collection.
-
-    """
+    """ Delete a collection. """
 
     collection = Collection.objects.get(pk=pk)
     if request.method == 'POST':
@@ -408,3 +378,51 @@ def collection_delete(request, pk):
         return redirect('ingest:collection_list')
     return render(
         request, 'ingest/collection_delete.html', {'collection': collection})
+
+
+def upload_spreadsheet(spreadsheet_file, associated_collection, request):
+    """ Helper used by image_metadata_upload and collection_detail."""
+    fs = FileSystemStorage()
+    filename = fs.save(spreadsheet_file.name, spreadsheet_file)
+    error = False
+    try:
+        records = pe.iget_records(file_name=filename)
+        # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
+        # before saving entries, so we don't get half-way uploaded
+        # spreadsheets.
+        for idx, record in enumerate(records):
+            # XXX: right now, we're just checking for required fields that are
+            # missing, but we can add whatever checks we want here.
+            # XXX: blank rows in the spreadsheet that have some hidden
+            # formatting can screw up this test
+            missing = [k for k in record if k in required_metadata and not record[k]]
+            if missing: 
+                error = True
+                missing_str = ", ".join(missing)
+                error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                messages.error(request, error_msg)
+        if error:
+            # We have to add 2 to idx because spreadsheet rows are 1-indexed
+            # and first row is header
+            # return redirect('ingest:image_metadata_upload')
+            return error
+        records = pe.iget_records(file_name=filename)
+        for idx, record in enumerate(records):
+            # "age" isn't required, so we need to explicitly set blank
+            # entries to None or else django will get confused.
+            if record['age'] == '':
+                record['age'] = None
+            im = ImageMetadata(
+                collection=associated_collection,
+                user=request.user)
+            for k in record:
+                setattr(im, k, record[k])    
+            im.save()
+        messages.success(request, 'Metadata successfully uploaded')
+        # return redirect('ingest:image_metadata_list')
+        return error
+    except pe.exceptions.FileTypeNotSupported:
+        error = True
+        messages.error(request, "File type not supported")
+        # return redirect('ingest:image_metadata_upload')
+        return error

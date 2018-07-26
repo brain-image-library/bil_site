@@ -27,43 +27,51 @@
 
   </div>
   {% if image_metadata_queryset %}
-    <form action="" method="post">{% csrf_token %}
-      <div class="panel panel-default">
-        <div class="panel-heading collapsed" data-toggle="collapse" data-target="#collapseOrderMetadata"> Metadata <i class="chevron fa fa-fw" ></i></div>
-        <div class="collapse" id="collapseOrderMetadata">
-          {% load render_table from django_tables2 %}
-          {% render_table table %}
-        </div>
+    <div class="panel panel-default">
+      <div class="panel-heading collapsed" data-toggle="collapse" data-target="#collapseOrderMetadata"> Metadata <i class="chevron fa fa-fw" ></i></div>
+      <div class="collapse" id="collapseOrderMetadata">
+        {% load render_table from django_tables2 %}
+        {% render_table table %}
       </div>
-
-
-      {% if collection.locked %}
-        <div class="alert alert-info">
-          <strong>Submitted collections cannot be modified or deleted.</strong>
-        </div>
-      {% else %}
-        <p>If you are done editing metadata and your data is finished uploading, hit submit at this time</p>
-        <div class='btn-group btn-group-lg'>
-          <input class="save btn btn-primary" type="submit" value="Submit collection" onclick="return confirm('If submission is successful, no further edits can be made. Are you sure?')"/>
-          <a class="save btn btn-primary" href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a>
-          <a class="save btn btn-primary" href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a>
-        </div>
-      {% endif %}
-    </form>
-  {% else %}
-    <div class='btn-group btn-group-lg'>
-      <a class="save btn btn-primary" href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a>
-      <a class="save btn btn-primary" href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a>
     </div>
-    </br>
-    </br>
+
+    {% if collection.locked %}
+      <div class="alert alert-info">
+        <strong>Submitted collections cannot be modified or deleted.</strong>
+      </div>
+    {% else %}
+      <p>If you are done editing metadata and your data is finished uploading, hit submit at this time</p>
+      <form action="" method="post">{% csrf_token %}
+        <p>
+          <input class="btn btn-primary" type="submit" value="Submit Collection" name="submit_collection" onclick="return confirm('If submission is successful, no further edits can be made. Are you sure?')"/>
+        </p>
+      </form>
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}
+        <p>
+          <input type="button" class="btn btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
+          <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit()" />
+        </p>
+      </form>
+      <p><a class="btn btn-primary" href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a></p>
+      <p><a class="btn btn-danger" href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a></p>
+    {% endif %}
+  {% else %}
+      <form method="post" enctype="multipart/form-data">{% csrf_token %}
+        <p>
+          <input type="button" class="btn btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
+          <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit()" />
+        </p>
+      </form>
+      <p><a class="btn btn-primary" href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit Collection</a></p>
+      <p><a class="btn btn-danger" href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete Collection</a></p>
     <div class="alert alert-info">
       <strong>This collection doesn't have any metadata yet.</strong>
     </div>
   {% endif %}
-</br>
+<p>
 <a href="{% url 'ingest:collection_list' %}">
-  <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
+  <button class="cancel btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
 </a>
+</p>
 
 {% endblock %}
