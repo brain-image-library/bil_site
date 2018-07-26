@@ -295,9 +295,6 @@ def collection_detail(request, pk):
     # the metadata associated with this collection
     image_metadata_queryset = collection.imagemetadata_set.all()
     # this is what is triggered if the user hits "Submit collection"
-    # import ipdb
-    # ipdb.set_trace(context=20)
-    # if request.method == 'POST' and request.FILES['spreadsheet_file']:
     if request.method == 'POST' and 'spreadsheet_file' in request.FILES:
         spreadsheet_file = request.FILES['spreadsheet_file']
         upload_spreadsheet(spreadsheet_file, collection, request)
