@@ -79,9 +79,8 @@ In site.cfg, replace the value associated `SECRET_KEY` with the value you
 generated from the previous command. Note: certain characters will throw off
 the config parser. The easiest thing to do is to just generate a different key.
 
-You'll also want to change `IMG_DATA_USER` to whatever PSC username you have on
-DXC. You could also change the `IMG_DATA_HOST` to say your local machine for
-offline testing. This assumes a passwordless authentication like using [ssh
+You could also change the `IMG_DATA_HOST` to say your local machine for offline
+testing. This assumes a passwordless authentication like using [ssh
 keys](https://linuxconfig.org/passwordless-ssh). The way remote directory
 creation/destruction/management will work in production is still being
 determined. It likely will be handled by one account that manages the

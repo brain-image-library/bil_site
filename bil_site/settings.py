@@ -28,7 +28,7 @@ if not os.path.isfile('site.cfg'):
     sys.exit(1)
 
 essential_site_cfg_keys = [
-    'SECRET_KEY', 'DEBUG', 'IMG_DATA_HOST', 'IMG_DATA_USER',
+    'SECRET_KEY', 'DEBUG', 'IMG_DATA_HOST',
     'FAKE_STORAGE_AREA', 'DATABASE', 'STAGING_AREA_ROOT'
 ]
 
@@ -60,7 +60,6 @@ DEBUG = config['Security'].getboolean('DEBUG')
 FAKE_STORAGE_AREA = config['Security'].getboolean('FAKE_STORAGE_AREA')
 
 IMG_DATA_HOST = config['Security']['IMG_DATA_HOST']
-IMG_DATA_USER = config['Security']['IMG_DATA_USER']
 STAGING_AREA_ROOT = config['Security']['STAGING_AREA_ROOT']
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
