@@ -89,14 +89,19 @@ def image_metadata_upload(request):
 @login_required
 def image_metadata_list(request):
     """ A list of all the metadata the user has created. """
+    # The user is trying to delete the selected metadata
     if request.method == "POST":
         pks = request.POST.getlist("selection")
+        # Get all of the checked metadata (except LOCKED metadata)
         selected_objects = ImageMetadata.objects.filter(
             pk__in=pks, locked=False)
         selected_objects.delete()
         messages.success(request, 'Metadata successfully deleted')
         return redirect('ingest:image_metadata_list')
+    # This is the GET (just show the user their list of metadata)
     else:
+        # XXX: This exclude is likely redundant, becaue there's already the
+        # same exclude in the class itself. Need to test though.
         table = ImageMetadataTable(
             ImageMetadata.objects.filter(user=request.user), exclude=['user'])
         RequestConfig(request).configure(table)
@@ -117,6 +122,7 @@ class ImageMetadataDetail(LoginRequiredMixin, DetailView):
 @login_required
 def image_metadata_create(request):
     """ Create new image metadata. """
+    # The user has hit the "Save" button on the "Create Metadata" page.
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = ImageMetadataForm(request.POST, user=request.user)
@@ -125,6 +131,7 @@ def image_metadata_create(request):
             post.save()
             messages.success(request, 'Metadata successfully created')
             return redirect('ingest:image_metadata_list')
+    # The GET. Just show the user the blank "Create Metadata" form.
     else:
         form = ImageMetadataForm(user=request.user)
         # Only let a user associate metadata with an unlocked collection that
@@ -291,17 +298,20 @@ def collection_validation_results(request, pk):
 @login_required
 def collection_detail(request, pk):
     """ View, edit, delete, create a particular collection. """
+    # If user tries to go to a page using a collection primary key that doesn't
+    # exist, give a 404
     try:
         collection = Collection.objects.get(id=pk)
     except ObjectDoesNotExist:
         raise Http404
     # the metadata associated with this collection
     image_metadata_queryset = collection.imagemetadata_set.all()
-    # this is what is triggered if the user hits "Submit collection"
+    # this is what is triggered if the user hits "Upload to this Collection"
     if request.method == 'POST' and 'spreadsheet_file' in request.FILES:
         spreadsheet_file = request.FILES['spreadsheet_file']
         upload_spreadsheet(spreadsheet_file, collection, request)
         return redirect('ingest:collection_detail', pk=pk)
+    # this is what is triggered if the user hits "Submit collection"
     elif request.method == 'POST' and 'submit_collection' in request.POST:
         # lock everything (collection and associated image metadata) during
         # submission and validation. if successful, keep it locked
