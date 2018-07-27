@@ -11,3 +11,5 @@ tags
 .~lock*.xls#
 static/
 !ingest/static
+user.json
+gunicorn.log
