@@ -48,6 +48,9 @@ def logout(request):
 
 def signup(request):
     """ Info about signing up for a new account. """
+    # XXX: this view should be separated from the the ingestion views and
+    # placed with other authentication views to allow us to reuse the
+    # authentication views with other apps (e.g. data exploration portal).
     return render(request, 'ingest/signup.html')
 
 
@@ -63,6 +66,8 @@ def index(request):
 @login_required
 def image_metadata_upload(request):
     """ Upload a spreadsheet containing image metadata information. """
+
+    # The POST. Auser has selected a file and associated collection to upload.
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
         form = UploadForm(request.POST)
         if form.is_valid():
@@ -73,6 +78,7 @@ def image_metadata_upload(request):
                 return redirect('ingest:image_metadata_upload')
             else:
                 return redirect('ingest:image_metadata_list')
+    # This is the GET (just show the metadata upload page)
     else:
         form = UploadForm()
         # Only let a user associate metadata with an unlocked collection that
