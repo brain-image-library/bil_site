@@ -187,11 +187,15 @@ def collection_create(request):
         str2 = uuidhex[16:]
         str3 = "%x" % (int(str1,16)^int(str2,16))
         bil_uuid = str3.zfill(16)
-        data_path = "{}/bil_data/{}/{:02d}/{}".format(
+        #data_path = "{}/bil_data/{}/{:02d}/{}".format(
+        #    top_level_dir,
+        #    datetime.datetime.now().year,
+        #    datetime.datetime.now().month,
+        #    str(uuid.uuid4()))
+        data_path = "{}/{}/{}".format(
             top_level_dir,
-            datetime.datetime.now().year,
-            datetime.datetime.now().month,
-            str(uuid.uuid4()))
+            request.user,
+            bil_uuid)
         host_and_path = "{}@{}:{}".format(
             request.user, settings.IMG_DATA_HOST, data_path)
         cache.set('host_and_path', host_and_path, 30)
