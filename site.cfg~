@@ -1,0 +1,16 @@
+[Security]
+# Change secret key!!!
+# python manage.py shell -c 'from django.core.management import utils; print(utils.get_random_secret_key())'
+SECRET_KEY = top_secret_key
+DEBUG = yes
+FAKE_STORAGE_AREA = no
+# Use "DATABASE = postgres" in production
+DATABASE = postgres
+# Change DATABASE_PASSWORD if using 'DATABASE = postgres'!!!
+#DATABASE_PASSWORD = top_secret_database_password
+STAGING_AREA_ROOT = /bil/lz
+IMG_DATA_HOST = c00.bil.psc.edu
+IMG_DATA_USER = bil_site_user_luke
+DATABASE_NAME = bil_site_luke
+DATABASE_USER = bil_site_user_luke
+DATABASE_PASSWORD = zNWQ3Y2U1M2RmOTM5MTkxZTM0YzAyNWI

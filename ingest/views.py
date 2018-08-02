@@ -178,8 +178,15 @@ def collection_create(request):
     if cache.get('host_and_path'):
         host_and_path = cache.get('host_and_path')
         data_path = cache.get('data_path')
+        bil_uuid = cache.get('bil_uuid')
     else:
         top_level_dir = settings.STAGING_AREA_ROOT
+        #shortens uuid
+        uuidhex = (uuid.uuid4()).hex
+        str1 = uuidhex[0:16]
+        str2 = uuidhex[16:]
+        str3 = "%x" % (int(str1,16)^int(str2,16))
+        bil_uuid = str3.zfill(16)
         data_path = "{}/bil_data/{}/{:02d}/{}".format(
             top_level_dir,
             datetime.datetime.now().year,
@@ -189,6 +196,7 @@ def collection_create(request):
             request.user, settings.IMG_DATA_HOST, data_path)
         cache.set('host_and_path', host_and_path, 30)
         cache.set('data_path', data_path, 30)
+        cache.set('bil_uuid', bil_uuid, 30)
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = CollectionForm(request.POST, request=request)
@@ -200,6 +208,7 @@ def collection_create(request):
                 tasks.create_data_path.delay(data_path)
             post = form.save(commit=False)
             post.data_path = host_and_path
+            post.bil_uuid = bil_uuid
             post.save()
             cache.delete('host_and_path')
             cache.delete('data_path')

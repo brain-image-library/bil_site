@@ -28,6 +28,7 @@ class Collection(models.Model):
             "The institution where the data generator/submitter or other "
             "responsible person resides.")
     )
+    
     lab_name = models.CharField(
         max_length=256, help_text="The lab or department subgroup")
     project_funder_id = models.CharField(
@@ -36,7 +37,7 @@ class Collection(models.Model):
     # Optional fields. The user doesn't need to supply these.
     project_funder = models.CharField(
         max_length=256, blank=True, default="NIH")
-
+    bil_uuid = models.CharField(max_length=256)
     # These fields are required but the user shouldn't control these
     data_path = models.CharField(max_length=256)
     # "locked" is used to prevent submitted data from being changed
@@ -64,7 +65,6 @@ class Collection(models.Model):
         choices=STATUS_CHOICES,
         default=NOT_SUBMITTED,
     )
-
 
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant

@@ -132,8 +132,8 @@ if DATABASE == "postgres":
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'bil_site',
-            'USER': 'bil_site_user',
+            'NAME': config['Security']['DATABASE_NAME'],
+            'USER': config['Security']['DATABASE_USER'],
             'PASSWORD': DATABASE_PASSWORD,
             'HOST': 'localhost',
             'PORT': '',
