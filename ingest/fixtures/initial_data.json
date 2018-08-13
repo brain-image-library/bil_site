@@ -12,7 +12,8 @@
     "data_path": "chongwei@c00.bil.psc.edu:/bil/lz/chongwei/2018/07/f40c1a47-446b-417f-9561-f6e2e279c509",
     "locked": false,
     "user": 4,
-    "celery_task_id": "",
+    "celery_task_id_submission": "",
+    "celery_task_id_validation": "",
     "status": "NOT_SUBMITTED"
   }
 },
@@ -29,7 +30,8 @@
     "data_path": "chongwei@c00.bil.psc.edu:/bil/lz/chongwei/2018/07/a115d362-28ff-4dd4-af22-14558e274026",
     "locked": false,
     "user": 4,
-    "celery_task_id": "",
+    "celery_task_id_submission": "",
+    "celery_task_id_validation": "",
     "status": "NOT_SUBMITTED"
   }
 },
@@ -46,7 +48,8 @@
     "data_path": "chongwei@c00.bil.psc.edu:/bil/lz/chongwei/2018/07/ade3616b-de27-413e-857f-cd6563abcdfa",
     "locked": false,
     "user": 4,
-    "celery_task_id": "",
+    "celery_task_id_submission": "",
+    "celery_task_id_validation": "",
     "status": "NOT_SUBMITTED"
   }
 },
@@ -63,7 +66,8 @@
     "data_path": "josem@c00.bil.psc.edu:/bil/lz/josem/2018/07/0fe7f0f5-7b0d-466d-80e6-f3a7c4e7b7f5",
     "locked": false,
     "user": 5,
-    "celery_task_id": "",
+    "celery_task_id_submission": "",
+    "celery_task_id_validation": "",
     "status": "NOT_SUBMITTED"
   }
 },
@@ -80,7 +84,8 @@
     "data_path": "biccndc@c00.bil.psc.edu:/bil/lz/biccndc/2018/07/7645be3d-7149-4153-a7db-768c1b5b72f4",
     "locked": false,
     "user": 8,
-    "celery_task_id": "",
+    "celery_task_id_submission": "",
+    "celery_task_id_validation": "",
     "status": "NOT_SUBMITTED"
   }
 },
@@ -97,7 +102,8 @@
     "data_path": "biccndc@c00.bil.psc.edu:/bil/lz/biccndc/2018/07/5a6bf79f-3209-4634-a7ab-7ad7d1dc078f",
     "locked": false,
     "user": 8,
-    "celery_task_id": "",
+    "celery_task_id_submission": "",
+    "celery_task_id_validation": "",
     "status": "NOT_SUBMITTED"
   }
 },

@@ -1,19 +1,20 @@
-{% extends 'ingest/narrow.html' %}
+{% extends 'ingest/wide.html' %}
 
-{% block narrow %}
+{% block wide %}
   <h1>Edit collection</h1>
   <form method="POST" class="post-form">
   {% csrf_token %}
     {% for field in form  %}
       <p data-toggle="tooltip" title="{{field.help_text}}">
-        {{ field.label_tag }} {% if field.field.required %} * {% endif %}<br>
+        {{ field.label_tag }} {% if field.field.required %} <span style='color:red'>*</span> {% endif %}<br>
         {{ field }}
         {% for error in field.errors %}
           <p style="color: red">{{ error }}</p>
         {% endfor %}
       </p>
     {% endfor %}
-    <p>Required fields are marked with an *.</p>
+    <p><b>Required fields are marked with an <span style='color:red'>*</span>.</b></p>
+
     <button type="submit" class="save btn btn-lg btn-primary">Update</button>
   </form>
 <a href="{% url 'ingest:collection_list' %}">

@@ -1,6 +1,6 @@
-{% extends 'ingest/narrow.html' %}
+{% extends 'ingest/wide.html' %}
 
-{% block narrow %}
+{% block wide %}
 <h1><b>Image Metadata</b> {{ image_metadata.project_name }}</h1>
   <div class="list-group">
     <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Project description</h4> {{image_metadata.project_description}}</a>
@@ -29,10 +29,10 @@
   </div>
 
   </br>
+{% endif %}
   </br>
     <a href="{% url 'ingest:image_metadata_list' %}">
       <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
     </a>
 
-{% endif %}
 {% endblock %}

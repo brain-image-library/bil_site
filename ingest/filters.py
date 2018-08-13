@@ -8,4 +8,4 @@ class CollectionFilter(django_filters.FilterSet):
 
     class Meta:
         model = Collection
-        fields = ['status']
+        fields = ['validation_status']

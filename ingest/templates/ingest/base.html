@@ -33,6 +33,28 @@
         <div class="collapse navbar-collapse" id="myNavbar">
           <ul class="nav navbar-nav">
             <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Create/Upload <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="{% url 'ingest:collection_create' %}">Create Collection</a></li>
+                <li><a href="{% url 'ingest:image_metadata_create' %}">Create Metadata</a></li>
+                <li><a href="{% url 'ingest:image_metadata_upload' %}">Upload Metadata</a></li>
+              </ul>
+            </li>
+            <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#">View/Edit <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="{% url 'ingest:collection_list' %}">View/Edit Collections</a></li>
+                <li><a href="{% url 'ingest:image_metadata_list' %}">View/Edit Metadata</a></li>
+              </ul>
+            </li>
+            <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Validate/Submit <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="{% url 'ingest:submit_validate_collection_list' %}">Validate/Submit Collections</a></li>
+              </ul>
+            </li>
+            <!-- This is old stuff -- delete it
+            <li class="dropdown">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#">Collections <span class="caret"></span></a>
               <ul class="dropdown-menu">
                 <li><a href="{% url 'ingest:collection_create' %}">Create Collection</a></li>
@@ -47,6 +69,7 @@
                 <li><a href="{% url 'ingest:image_metadata_list' %}">View Metadata</a></li>
               </ul>
             </li>
+            -->
           </ul>
           {% if request.user.username %}
           <ul class="nav navbar-nav navbar-right">
@@ -55,7 +78,7 @@
           </ul>
           {% else %}
           <ul class="nav navbar-nav navbar-right">
-            <li><a href="{%url 'ingest:signup' %}"><span class="glyphicon glyphicon-user"></span> Sign Up</a></li>
+            <li><a href="{%url 'ingest:signup' %}"><span class="glyphicon glyphicon-user"></span> Sign Up to Deposit Data</a></li>
             <li><a href="{%url 'login' %}"><span class="glyphicon glyphicon-log-in"></span> Login</a></li>
           </ul>
           {% endif %}

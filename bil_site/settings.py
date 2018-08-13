@@ -67,7 +67,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 LOGIN_REDIRECT_URL = '/'
 
-ALLOWED_HOSTS = ["localhost", "c00.bil.psc.edu", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "submit.brainimagelibrary.org", "192.168.1.251"]
 
 # Application definition
 

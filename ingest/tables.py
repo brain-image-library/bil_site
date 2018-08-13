@@ -6,7 +6,7 @@ import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
 
 
-class CollectionTable(tables.Table):
+class SubmitValidateCollectionTable(tables.Table):
     """ The table used in the collection list. """
 
     # We use a collection's id as a link to the corresponding collection
@@ -15,8 +15,9 @@ class CollectionTable(tables.Table):
         'ingest:collection_detail',
         verbose_name="",
         args=[A('pk')],
-        text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
-        attrs={'a': {'class': "btn btn-info", 'role': "button"}})
+        text=format_html('<button type="button" class="btn btn-primary">Select</button>'))
+        #text=format_html('<span class="glyphicon glyphicon-cog">ABCD</span>'),
+        #attrs={'a': {'class': "btn btn-info", 'role': "button"}})
     description = tables.Column()
 
     def render_project_description(self, value):
@@ -32,7 +33,19 @@ class CollectionTable(tables.Table):
             value = format_html('<i class="fa fa-unlock"></i>')
         return value
 
-    def render_status(self, value):
+    def render_submission_status(self, value):
+        """ Show the status as an icon. """
+        if value == "Not submitted":
+            value = format_html('<i class="fa fa-minus" style="color:blue"></i>')
+        elif value == "Success":
+            value = format_html('<i class="fa fa-check" style="color:green"></i>')
+        elif value == "Pending":
+            value = format_html('<i class="fa fa-clock" style="color:yellow"></i>')
+        elif value == "Failed":
+            value = format_html('<i class="fa fa-exclamation-circle" style="color:red"></i>')
+        return value
+
+    def render_validation_status(self, value):
         """ Show the status as an icon. """
         if value == "Not submitted":
             value = format_html('<i class="fa fa-minus" style="color:blue"></i>')
@@ -46,8 +59,67 @@ class CollectionTable(tables.Table):
 
     class Meta:
         model = Collection
-        exclude = ['celery_task_id', 'user']
+        exclude = ['celery_task_id_submission', 'celery_task_id_validation', 'user']
         template_name = 'ingest/bootstrap_ingest.html'
+
+
+class CollectionTable(tables.Table):
+    """ The table used in the collection list. """
+
+    # We use a collection's id as a link to the corresponding collection
+    # detail.
+    id = tables.LinkColumn(
+        'ingest:collection_detail',
+        verbose_name="",
+        args=[A('pk')],
+        text=format_html('<button type="button" class="btn btn-primary">Select</button>'))
+        #text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
+        #attrs={'a': {'class': "btn btn-info", 'role': "button"}})
+    description = tables.Column()
+
+    def render_project_description(self, value):
+        """ Ellipsize the project description if it's too long. """
+        limit_len = 32
+        value = value if len(value) < limit_len else value[:limit_len] + "…"
+        return value
+
+    def render_locked(self, value):
+        if value:
+            value = format_html('<i class="fa fa-lock"></i>')
+        else:
+            value = format_html('<i class="fa fa-unlock"></i>')
+        return value
+
+    def render_submission_status(self, value):
+        """ Show the status as an icon. """
+        if value == "Not submitted":
+            value = format_html('<i class="fa fa-minus" style="color:blue"></i>')
+        elif value == "Success":
+            value = format_html('<i class="fa fa-check" style="color:green"></i>')
+        elif value == "Pending":
+            value = format_html('<i class="fa fa-clock" style="color:yellow"></i>')
+        elif value == "Failed":
+            value = format_html('<i class="fa fa-exclamation-circle" style="color:red"></i>')
+        return value
+
+    def render_validation_status(self, value):
+        """ Show the status as an icon. """
+        if value == "Not submitted":
+            value = format_html('<button type="button" class="btn btn-primary">Not Submitted</button>')
+            #value = format_html('<i class="fa fa-minus" style="color:blue"></i>')
+        elif value == "Success":
+            value = format_html('<i class="fa fa-check" style="color:green"></i>')
+        elif value == "Pending":
+            value = format_html('<i class="fa fa-clock" style="color:yellow"></i>')
+        elif value == "Failed":
+            value = format_html('<i class="fa fa-exclamation-circle" style="color:red"></i>')
+        return value
+
+    class Meta:
+        model = Collection
+        exclude = ['celery_task_id_submission', 'celery_task_id_validation', 'user']
+        template_name = 'ingest/bootstrap_ingest.html'
+
 
 
 class ImageMetadataTable(tables.Table):
@@ -59,8 +131,9 @@ class ImageMetadataTable(tables.Table):
         'ingest:image_metadata_detail',
         verbose_name="",
         args=[A('pk')],
-        text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
-        attrs={'a': {'class': "btn btn-info", 'role': "button"}}
+        text=format_html('<button type="button" class="btn btn-primary">Detail</button>')
+        #text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
+        #attrs={'a': {'class': "btn btn-info", 'role': "button"}}
     )
     project_description = tables.Column()
 

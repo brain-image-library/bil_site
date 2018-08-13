@@ -1,6 +1,14 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+class UUID(models.Model):
+    """ A grouping of one or more datasets and associated metadata. """
+    def __str__(self):
+        return self.name
+
+    # Required and the user should supply these
+    useduuid = models.CharField(max_length=256, unique=True)
+
 
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
@@ -49,21 +57,34 @@ class Collection(models.Model):
     # probably want to break up validation into multiple tasks (e.g. checking
     # dataset size, verifying valid TIFF/JPEG2000 files, etc), in which case
     # we'll probably want to set up a one-to-many relationship w/ task IDs.
-    celery_task_id = models.CharField(max_length=256)
+    celery_task_id_submission = models.CharField(max_length=256)
+    celery_task_id_validation = models.CharField(max_length=256)
     NOT_SUBMITTED = 'NOT_SUBMITTED'
+    NOT_VALIDATED = 'NOT_VALIDATED'
     SUCCESS = 'SUCCESS'
     PENDING = 'PENDING'
     FAILED = 'FAILED'
-    STATUS_CHOICES = (
+    STATUS_CHOICES_SUBMISSION = (
         (NOT_SUBMITTED, 'Not submitted'),
         (SUCCESS, 'Success'),
         (PENDING, 'Pending'),
         (FAILED, 'Failed'),
     )
-    status = models.CharField(
+    STATUS_CHOICES_VALIDATION = (
+        (NOT_VALIDATED, 'Not validated'),
+        (SUCCESS, 'Success'),
+        (PENDING, 'Pending'),
+        (FAILED, 'Failed'),
+    )
+    submission_status = models.CharField(
         max_length=256,
-        choices=STATUS_CHOICES,
+        choices=STATUS_CHOICES_SUBMISSION,
         default=NOT_SUBMITTED,
+    )
+    validation_status = models.CharField(
+        max_length=256,
+        choices=STATUS_CHOICES_VALIDATION,
+        default=NOT_VALIDATED,
     )
 
 class ImageMetadata(models.Model):

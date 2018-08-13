@@ -25,6 +25,7 @@ from .filters import CollectionFilter
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
 from .forms import UploadForm
+from .models import UUID
 from .models import Collection
 from .models import ImageMetadata
 from .tables import CollectionTable
@@ -109,7 +110,7 @@ def image_metadata_list(request):
         # XXX: This exclude is likely redundant, becaue there's already the
         # same exclude in the class itself. Need to test though.
         table = ImageMetadataTable(
-            ImageMetadata.objects.filter(user=request.user), exclude=['user'])
+            ImageMetadata.objects.filter(user=request.user), exclude=['user','bil_uuid'])
         RequestConfig(request).configure(table)
         image_metadata = ImageMetadata.objects.filter(user=request.user)
         return render(
@@ -187,6 +188,12 @@ def collection_create(request):
         str2 = uuidhex[16:]
         str3 = "%x" % (int(str1,16)^int(str2,16))
         bil_uuid = str3.zfill(16)
+        #this should make uuid unique or just redirect to home page if collision.
+        uu = UUID(useduuid=bil_uuid)
+        try:
+           uu.save()
+        except:
+           return redirect('ingest:index') 
         #data_path = "{}/bil_data/{}/{:02d}/{}".format(
         #    top_level_dir,
         #    datetime.datetime.now().year,
@@ -216,6 +223,7 @@ def collection_create(request):
             post.save()
             cache.delete('host_and_path')
             cache.delete('data_path')
+            cache.delete('bil_uuid')
             messages.success(request, 'Collection successfully created')
             return redirect('ingest:collection_list')
     else:
@@ -243,6 +251,30 @@ def collection_create(request):
          'host_and_path': host_and_path})
 
 
+class SubmitValidateCollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
+    """ A list of all a user's collections. """
+
+    table_class = CollectionTable
+    model = Collection
+    template_name = 'ingest/submit_validate_collection_list.html'
+    filterset_class = CollectionFilter
+
+    def get_queryset(self, **kwargs):
+        return Collection.objects.filter(user=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        context['collections'] = Collection.objects.filter(user=self.request.user)
+        return context
+
+    def get_filterset_kwargs(self, filterset_class):
+        """ Sets the default collection filter status. """
+        kwargs = super().get_filterset_kwargs(filterset_class)
+        if kwargs["data"] is None:
+            kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
+        return kwargs
+
 class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     """ A list of all a user's collections. """
 
@@ -264,7 +296,7 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
         """ Sets the default collection filter status. """
         kwargs = super().get_filterset_kwargs(filterset_class)
         if kwargs["data"] is None:
-            kwargs["data"] = {"status": "NOT_SUBMITTED"}
+            kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
         return kwargs
 
 
@@ -286,30 +318,80 @@ def collection_data_path(request, pk):
 
 @login_required
 def collection_validation_results(request, pk):
-    """ Where a user can see the results of submission & validation. """
+    """ Where a user can see the results of validation. """
     collection = Collection.objects.get(id=pk)
 
-    collection.status = "NOT_SUBMITTED"
+    collection.validation_status = "NOT_VALIDATED"
     dir_size = ""
+    outvalidfile = ""
+    filecontents = ""
     invalid_metadata_directories = []
-    if collection.celery_task_id:
-        result = AsyncResult(collection.celery_task_id)
+    if collection.celery_task_id_validation:
+        result = AsyncResult(collection.celery_task_id_validation)
         state = result.state
         if state == 'SUCCESS':
             analysis_results = result.get()
             if analysis_results['valid']:
-                collection.status = "SUCCESS"
+                collection.validation_status = "SUCCESS"
             else:
-                collection.status = "FAILED"
+                collection.validation_status = "FAILED"
                 invalid_metadata_directories = analysis_results["invalid_metadata_directories"]
             dir_size = analysis_results['dir_size']
+            outvalidfile = analysis_results['output']
+            #Open the log file and read the contents
+            f=open(outvalidfile, "r")
+            if f.mode == 'r':
+               filecontents=f.read()
+            f.close()
         else:
-            collection.status = "PENDING"
+            collection.validation_status = "PENDING"
 
     return render(
         request,
         'ingest/collection_validation_results.html',
         {'collection': collection,
+         'outfile': outvalidfile,
+         'output': filecontents,
+         'dir_size': dir_size,
+         'invalid_metadata_directories': invalid_metadata_directories})
+
+
+@login_required
+def collection_submission_results(request, pk):
+    """ Where a user can see the results of submission. """
+    collection = Collection.objects.get(id=pk)
+
+    collection.submission_status = "NOT_SUBMITTED"
+    dir_size = ""
+    outvalidfile = ""
+    filecontents = ""
+    invalid_metadata_directories = []
+    if collection.celery_task_id_submission:
+        result = AsyncResult(collection.celery_task_id_submission)
+        state = result.state
+        if state == 'SUCCESS':
+            analysis_results = result.get()
+            if analysis_results['valid']:
+                collection.submission_status = "SUCCESS"
+            else:
+                collection.submission_status = "FAILED"
+                invalid_metadata_directories = analysis_results["invalid_metadata_directories"]
+            dir_size = analysis_results['dir_size']
+            outvalidfile = analysis_results['output']
+            #Open the log file and read the contents
+            f=open(outvalidfile, "r")
+            if f.mode == 'r':
+               filecontents=f.read()
+            f.close()
+        else:
+            collection.submission_status = "PENDING"
+
+    return render(
+        request,
+        'ingest/collection_submission_results.html',
+        {'collection': collection,
+         'outfile': outvalidfile,
+         'output': filecontents,
          'dir_size': dir_size,
          'invalid_metadata_directories': invalid_metadata_directories})
 
@@ -331,6 +413,24 @@ def collection_detail(request, pk):
         upload_spreadsheet(spreadsheet_file, collection, request)
         return redirect('ingest:collection_detail', pk=pk)
     # this is what is triggered if the user hits "Submit collection"
+    elif request.method == 'POST' and 'validate_collection' in request.POST:
+        #---trying to model validate_collection this after submit_collection
+        # lock everything (collection and associated image metadata) during
+        # submission and validation. if successful, keep it locked
+        collection.locked = False
+        metadata_dirs = []
+        for im in image_metadata_queryset:
+            im.locked = True
+            im.save()
+            metadata_dirs.append(im.directory)
+        # This is just a very simple test, which will be replaced with some
+        # real validation and analysis in the future
+        if not settings.FAKE_STORAGE_AREA:
+            data_path = collection.data_path.__str__()
+            task = tasks.run_validate.delay(data_path, metadata_dirs)
+            collection.celery_task_id_validation = task.task_id
+        collection.save()
+        return redirect('ingest:collection_detail', pk=pk)
     elif request.method == 'POST' and 'submit_collection' in request.POST:
         # lock everything (collection and associated image metadata) during
         # submission and validation. if successful, keep it locked
@@ -345,32 +445,51 @@ def collection_detail(request, pk):
         if not settings.FAKE_STORAGE_AREA:
             data_path = collection.data_path.__str__()
             task = tasks.run_analysis.delay(data_path, metadata_dirs)
-            collection.celery_task_id = task.task_id
+            collection.celery_task_id_submission = task.task_id
         collection.save()
         return redirect('ingest:collection_detail', pk=pk)
 
-    # check submission and validation status
-    if collection.celery_task_id:
-        result = AsyncResult(collection.celery_task_id)
+    # check submission status
+    if collection.celery_task_id_submission:
+        result = AsyncResult(collection.celery_task_id_submission)
         state = result.state
         if state == 'SUCCESS':
             analysis_results = result.get()
             if analysis_results['valid']:
-                collection.status = "SUCCESS"
+                collection.submission_status = "SUCCESS"
             else:
-                collection.status = "FAILED"
+                collection.submission_status = "FAILED"
                 # need to unlock, so user can fix problem
                 collection.locked = False
                 for im in image_metadata_queryset:
                     im.locked = False
                     im.save()
         else:
-            collection.status = "PENDING"
+            collection.submission_status = "PENDING"
+    collection.save()
+
+   # check validation status
+    if collection.celery_task_id_validation:
+        result = AsyncResult(collection.celery_task_id_validation)
+        state = result.state
+        if state == 'SUCCESS':
+            analysis_results = result.get()
+            if analysis_results['valid']:
+                collection.validation_status = "SUCCESS"
+            else:
+                collection.validation_status = "FAILED"
+                # need to unlock, so user can fix problem
+                collection.locked = False
+                for im in image_metadata_queryset:
+                    im.locked = False
+                    im.save()
+        else:
+            collection.validation_status = "PENDING"
     collection.save()
 
     table = ImageMetadataTable(
         ImageMetadata.objects.filter(user=request.user, collection=collection),
-        exclude=['user', 'selection'])
+        exclude=['user', 'selection', 'bil_uuid'])
     return render(
         request,
         'ingest/collection_detail.html',

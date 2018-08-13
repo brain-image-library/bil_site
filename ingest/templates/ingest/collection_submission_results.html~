@@ -1,0 +1,46 @@
+{% extends 'ingest/wide.html' %}
+
+{% block wide %}
+
+<h1><b>Submission Results for Collection</b> {{ collection.name }} 
+  {% if collection.locked %}<i class="fa fa-lock"></i>
+  {% else %}<i class="fa fa-unlock"></i>
+  {% endif %}
+  </h1>
+
+  {% if collection.submission_status == "NOT_SUBMITTED" %}
+    <div class="alert alert-info">
+      <strong>Not submitted.</strong> Once you have submitted your collection, the submission results will show up here.
+    </div>
+  {% elif collection.submission_status == "PENDING" %}
+    <div class="alert alert-warning">
+      <strong>Submission pending</strong>. Please check back here later. If you think there may be a problem, please contact us at bil-support@psc.edu.</p>
+    </div>
+  {% elif collection.submission_status == "SUCCESS" %}
+    <div class="alert alert-success">
+      <strong>Submission succeeded.</strong> Feel free to look over the log for any irregularities. If you notice a problem, contact us at bil-support@psc.edu.
+    </div>
+  {% elif collection.submission_status == "FAILED" %}
+    <div class="alert alert-danger">
+      <strong>Submission failed</strong> Please correct any errors listed and resubmit when you are ready.
+    </div>
+
+    <p>The following directories referenced in the metadata do not exist in the staging area:</p>
+
+    <ul class="list-group">
+    {% for dir in invalid_metadata_directories %}
+      <li class="list-group-item">{{dir}}</li>
+    {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if dir_size %}
+    The total size of your collection: <strong>{{ dir_size }}</strong>
+  {% endif %}
+  
+
+  <p></p> 
+
+</br>
+
+{% endblock %}

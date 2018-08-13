@@ -35,13 +35,13 @@ collection_fields = [
 # since we grab that through other means.
 required_metadata = [
     'project_name',
-    'project_description',
-    'background_strain',
-    'age_unit',
-    'sex',
-    'slicing_direction',
-    'image_map_style',
-    'processing_level',
+    #'project_description',
+    #'background_strain',
+    #'age_unit',
+    #'sex',
+    #'slicing_direction',
+    #'image_map_style',
+    #'processing_level',
     'image_filename_pattern',
     'directory',
 ]

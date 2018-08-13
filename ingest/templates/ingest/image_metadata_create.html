@@ -1,6 +1,6 @@
-{% extends 'ingest/narrow.html' %}
+{% extends 'ingest/wide.html' %}
 
-{% block narrow %}
+{% block wide %}
   <h1>Create Metadata</h1>
   <form method="POST" class="post-form">
   {% csrf_token %}
@@ -13,7 +13,7 @@
         {% endfor %}
       </p>
     {% endfor %}
-    <p>Required fields are marked with an *.</p>
+    <p>Required fields are marked with an <span style='color:red'>*</span>.</p>
     <button type="submit" class="save btn btn-lg btn-primary">Save</button>
   </form>
 <a href="{% url 'ingest:index' %}">
