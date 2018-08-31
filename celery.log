@@ -1,0 +1,28 @@
+/home/ropelews/bil_site_venv/lib/python3.6/site-packages/psycopg2/__init__.py:144: UserWarning: The psycopg2 wheel package will be renamed from release 2.8; in order to keep installing from binary please use "pip install psycopg2-binary" instead. For details see: <http://initd.org/psycopg/docs/install.html#binary-install-from-pypi>.
+  """)
+[2018-08-17 17:20:04,312: INFO/MainProcess] Connected to amqp://guest:**@127.0.0.1:5672//
+[2018-08-17 17:20:04,321: INFO/MainProcess] mingle: searching for neighbors
+[2018-08-17 17:20:05,338: INFO/MainProcess] mingle: all alone
+[2018-08-17 17:20:05,353: WARNING/MainProcess] /home/ropelews/bil_site_venv/lib/python3.6/site-packages/celery/fixups/django.py:200: UserWarning: Using settings.DEBUG leads to a memory leak, never use this setting in production environments!
+  warnings.warn('Using settings.DEBUG leads to a memory leak, never '
+[2018-08-17 17:20:05,353: INFO/MainProcess] celery@bilvm ready.
+[2018-08-17 17:31:39,142: INFO/MainProcess] Received task: ingest.tasks.create_data_path[1e427067-1a77-40e9-98e6-2a51fd52287d]  
+/home/ropelews/bil_site_venv/lib/python3.6/site-packages/psycopg2/__init__.py:144: UserWarning: The psycopg2 wheel package will be renamed from release 2.8; in order to keep installing from binary please use "pip install psycopg2-binary" instead. For details see: <http://initd.org/psycopg/docs/install.html#binary-install-from-pypi>.
+  """)
+[2018-08-17 17:31:39,144: WARNING/ForkPoolWorker-4] mkdir -p /bil/lz/ropelews/c86c5ca8bf0ad17f
+[2018-08-17 17:31:39,170: WARNING/ForkPoolWorker-4] mkdir -p /bil/etc/ropelews/c86c5ca8bf0ad17f
+[2018-08-17 17:31:39,202: INFO/ForkPoolWorker-4] Task ingest.tasks.create_data_path[1e427067-1a77-40e9-98e6-2a51fd52287d] succeeded in 0.05782027399982326s: None
+[2018-08-17 17:39:06,090: INFO/MainProcess] Received task: ingest.tasks.create_data_path[0f5d2242-c2bc-44ec-8bb5-168b14069245]  
+/home/ropelews/bil_site_venv/lib/python3.6/site-packages/psycopg2/__init__.py:144: UserWarning: The psycopg2 wheel package will be renamed from release 2.8; in order to keep installing from binary please use "pip install psycopg2-binary" instead. For details see: <http://initd.org/psycopg/docs/install.html#binary-install-from-pypi>.
+  """)
+[2018-08-17 17:39:06,092: WARNING/ForkPoolWorker-3] mkdir -p /bil/lz/ropelews/fbee3f816ded368d
+[2018-08-17 17:39:06,100: WARNING/ForkPoolWorker-3] mkdir -p /bil/etc/ropelews/fbee3f816ded368d
+[2018-08-17 17:39:06,173: INFO/ForkPoolWorker-3] Task ingest.tasks.create_data_path[0f5d2242-c2bc-44ec-8bb5-168b14069245] succeeded in 0.08156235798378475s: None
+/home/ropelews/bil_site_venv/lib/python3.6/site-packages/psycopg2/__init__.py:144: UserWarning: The psycopg2 wheel package will be renamed from release 2.8; in order to keep installing from binary please use "pip install psycopg2-binary" instead. For details see: <http://initd.org/psycopg/docs/install.html#binary-install-from-pypi>.
+  """)
+[2018-08-18 00:27:11,169: INFO/MainProcess] Connected to amqp://guest:**@127.0.0.1:5672//
+[2018-08-18 00:27:11,179: INFO/MainProcess] mingle: searching for neighbors
+[2018-08-18 00:27:12,195: INFO/MainProcess] mingle: all alone
+[2018-08-18 00:27:12,207: WARNING/MainProcess] /home/ropelews/bil_site_venv/lib/python3.6/site-packages/celery/fixups/django.py:200: UserWarning: Using settings.DEBUG leads to a memory leak, never use this setting in production environments!
+  warnings.warn('Using settings.DEBUG leads to a memory leak, never '
+[2018-08-18 00:27:12,207: INFO/MainProcess] celery@bilvm ready.

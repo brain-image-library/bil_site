@@ -1,0 +1,63 @@
+{% extends 'ingest/wide.html' %}
+
+{% block wide %}
+<h1><b>Image Metadata</b> {{ descriptive_metadata.project_name }}</h1>
+  <div class="list-group">
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">locked</h4> {{descriptive_metadata.locked}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">user</h4>  {{descriptive_metadata.user}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">date_created</h4> {{descriptive_metadata.date_created}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">last_edited</h4> {{descriptive_metadata.last_edited}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">collection</h4>  {{descriptive_metadata.collection}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">sample_id</h4> {{descriptive_metadata.sample_id}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">organism_type</h4> {{descriptive_metadata.organism_type}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">organism_ncbi_taxonomy_id</h4> {{descriptive_metadata.organism_ncbi_taxonomy_id}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">transgenetic_line_information</h4> {{descriptive_metadata.transgenetic_line_information}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">modality</h4> {{descriptive_metadata.modality}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">method</h4> {{descriptive_metadata.method}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">technique</h4> {{descriptive_metadata.technique}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">anatomical_structure</h4> {{descriptive_metadata.anatomical_structure}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">total_processed_cells</h4>  {{descriptive_metadata.total_processed_cells}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">organization</h4>  {{descriptive_metadata.organization}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">lab</h4>  {{descriptive_metadata.lab}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">investigator</h4>  {{descriptive_metadata.investigator}}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">grant_number</h4>  {{descriptive_metadata.grant_number }}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">r24_name</h4>  {{descriptive_metadata.r24_name }}
+    </a>
+    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">r24_directory</h4> {{descriptive_metadata.r24_directory}}
+    </a>
+  </div>
+{% if descriptive_metadata.locked %}
+  <p></p>
+  <div class="alert alert-info">
+      <strong>Submitted metadata cannot be modified or deleted.</strong>
+  </div>
+{% else %}
+  <div class='btn-group btn-group-lg'>
+  </div>
+
+  </br>
+{% endif %}
+  </br>
+    <a href="{% url 'ingest:descriptive_metadata_list' %}">
+      <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+    </a>
+
+{% endblock %}

@@ -24,12 +24,15 @@ from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
+from .forms import DescriptiveMetadataForm
 from .forms import UploadForm
 from .models import UUID
 from .models import Collection
 from .models import ImageMetadata
+from .models import DescriptiveMetadata
 from .tables import CollectionTable
 from .tables import ImageMetadataTable
+from .tables import DescriptiveMetadataTable
 
 import uuid
 import datetime
@@ -65,6 +68,49 @@ def index(request):
 
 
 @login_required
+def descriptive_metadata_upload(request):
+    """ Upload a spreadsheet containing image metadata information. """
+
+    # The POST. Auser has selected a file and associated collection to upload.
+    if request.method == 'POST' and request.FILES['spreadsheet_file']:
+        form = UploadForm(request.POST)
+        if form.is_valid():
+            collection = form.cleaned_data['associated_collection']
+            #messages.error(request, request)
+            #idnum=DescriptiveMetadata(collection=associated_collection)
+            #messages.error(request, request.POST.get('associated_collection'))
+            #messages.error(request,form.fields['associated_collection'])
+            
+            #cobj = Collection.objects.get(id=request.POST.get('associated_collection'))
+            #messages.error(request, cobj.data_path)
+            #messages.error(request, collection.data_path)
+            #paths=collection.data_path.split(':')
+            #datapath=paths[1].replace("/lz/","/etc/")
+            datapath=collection.data_path.replace("/lz/","/etc/")
+
+            #datapath=paths[1]+'.etc'
+            spreadsheet_file = request.FILES['spreadsheet_file']
+        
+            error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
+            if error:
+                return redirect('ingest:descriptive_metadata_upload')
+            else:
+                return redirect('ingest:descriptive_metadata_list')
+    # This is the GET (just show the metadata upload page)
+    else:
+        form = UploadForm()
+        # Only let a user associate metadata with an unlocked collection that
+        # they own
+        form.fields['associated_collection'].queryset = Collection.objects.filter(
+            locked=False, user=request.user)
+    collections = Collection.objects.filter(locked=False, user=request.user)
+    return render(
+        request,
+        'ingest/descriptive_metadata_upload.html',
+        {'form': form, 'collections': collections})
+
+
+@login_required
 def image_metadata_upload(request):
     """ Upload a spreadsheet containing image metadata information. """
 
@@ -91,6 +137,39 @@ def image_metadata_upload(request):
         request,
         'ingest/image_metadata_upload.html',
         {'form': form, 'collections': collections})
+
+
+
+@login_required
+def descriptive_metadata_list(request):
+    """ A list of all the metadata the user has created. """
+    # The user is trying to delete the selected metadata
+    for key in request.POST:
+        messages.success(request, key) 
+        print(key)     
+        messages.success(request, request.POST[key])
+        print (request.POST[key])      
+    if request.method == "POST":
+        pks = request.POST.getlist("selection")
+        # Get all of the checked metadata (except LOCKED metadata)
+        selected_objects = DescriptiveMetadata.objects.filter(
+            pk__in=pks, locked=False)
+        selected_objects.delete()
+        messages.success(request, 'Descriptive Metadata successfully deleted')
+        return redirect('ingest:descriptive_metadata_list')
+    # This is the GET (just show the user their list of metadata)
+    else:
+        # XXX: This exclude is likely redundant, becaue there's already the
+        # same exclude in the class itself. Need to test though.
+        table = DescriptiveMetadataTable(
+            DescriptiveMetadata.objects.filter(user=request.user), exclude=['user'])
+        RequestConfig(request).configure(table)
+        descriptive_metadata = DescriptiveMetadata.objects.filter(user=request.user)
+        return render(
+            request,
+            'ingest/descriptive_metadata_list.html',
+            {'table': table, 'descriptive_metadata': descriptive_metadata})
+
 
 
 @login_required
@@ -124,6 +203,13 @@ class ImageMetadataDetail(LoginRequiredMixin, DetailView):
     model = ImageMetadata
     template_name = 'ingest/image_metadata_detail.html'
     context_object_name = 'image_metadata'
+
+
+class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
+    """ A detailed view of a single piece of metadata. """
+    model = DescriptiveMetadata
+    template_name = 'ingest/descriptive_metadata_detail.html'
+    context_object_name = 'descriptive_metadata'
 
 
 @login_required
@@ -218,7 +304,8 @@ def collection_create(request):
             if not settings.FAKE_STORAGE_AREA:
                 tasks.create_data_path.delay(data_path)
             post = form.save(commit=False)
-            post.data_path = host_and_path
+            #post.data_path = host_and_path
+            post.data_path = data_path
             post.bil_uuid = bil_uuid
             post.save()
             cache.delete('host_and_path')
@@ -406,7 +493,8 @@ def collection_detail(request, pk):
     except ObjectDoesNotExist:
         raise Http404
     # the metadata associated with this collection
-    image_metadata_queryset = collection.imagemetadata_set.all()
+    #image_metadata_queryset = collection.imagemetadata_set.all()
+    descriptive_metadata_queryset = collection.descriptivemetadata_set.all()
     # this is what is triggered if the user hits "Upload to this Collection"
     if request.method == 'POST' and 'spreadsheet_file' in request.FILES:
         spreadsheet_file = request.FILES['spreadsheet_file']
@@ -419,10 +507,12 @@ def collection_detail(request, pk):
         # submission and validation. if successful, keep it locked
         collection.locked = False
         metadata_dirs = []
-        for im in image_metadata_queryset:
+        for im in descriptive_metadata_queryset:
+        #for im in image_metadata_queryset:
             im.locked = True
             im.save()
-            metadata_dirs.append(im.directory)
+            metadata_dirs.append(im.r24_directory)
+            #metadata_dirs.append(im.directory)
         # This is just a very simple test, which will be replaced with some
         # real validation and analysis in the future
         if not settings.FAKE_STORAGE_AREA:
@@ -436,10 +526,12 @@ def collection_detail(request, pk):
         # submission and validation. if successful, keep it locked
         collection.locked = True
         metadata_dirs = []
-        for im in image_metadata_queryset:
+        for im in descriptive_metadata_queryset:
+        #for im in image_metadata_queryset:
             im.locked = True
             im.save()
-            metadata_dirs.append(im.directory)
+            metadata_dirs.append(im.r24_directory)
+        #    metadata_dirs.append(im.directory)
         # This is just a very simple test, which will be replaced with some
         # real validation and analysis in the future
         if not settings.FAKE_STORAGE_AREA:
@@ -461,7 +553,8 @@ def collection_detail(request, pk):
                 collection.submission_status = "FAILED"
                 # need to unlock, so user can fix problem
                 collection.locked = False
-                for im in image_metadata_queryset:
+                #for im in image_metadata_queryset:
+                for im in descriptive_metadata_queryset:
                     im.locked = False
                     im.save()
         else:
@@ -480,22 +573,31 @@ def collection_detail(request, pk):
                 collection.validation_status = "FAILED"
                 # need to unlock, so user can fix problem
                 collection.locked = False
-                for im in image_metadata_queryset:
+                #for im in image_metadata_queryset:
+                for im in descriptive_metadata_queryset:
                     im.locked = False
                     im.save()
         else:
             collection.validation_status = "PENDING"
     collection.save()
 
-    table = ImageMetadataTable(
-        ImageMetadata.objects.filter(user=request.user, collection=collection),
-        exclude=['user', 'selection', 'bil_uuid'])
+#    table = ImageMetadataTable(
+#        ImageMetadata.objects.filter(user=request.user, collection=collection),
+#        exclude=['user', 'selection', 'bil_uuid'])
+#    return render(
+#        request,
+#        'ingest/collection_detail.html',
+#        {'table': table,
+#         'collection': collection,
+#         'image_metadata_queryset': image_metadata_queryset})
+    table = DescriptiveMetadataTable(
+        DescriptiveMetadata.objects.filter(user=request.user, collection=collection))
     return render(
         request,
         'ingest/collection_detail.html',
         {'table': table,
          'collection': collection,
-         'image_metadata_queryset': image_metadata_queryset})
+         'descriptive_metadata_queryset': descriptive_metadata_queryset})
 
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
@@ -566,6 +668,52 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
                 setattr(im, k, record[k])
             im.save()
         messages.success(request, 'Metadata successfully uploaded')
+        # return redirect('ingest:image_metadata_list')
+        return error
+    except pe.exceptions.FileTypeNotSupported:
+        error = True
+        messages.error(request, "File type not supported")
+        # return redirect('ingest:image_metadata_upload')
+        return error
+
+def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath):
+    """ Helper used by image_metadata_upload and collection_detail."""
+    fs = FileSystemStorage(location=datapath)
+    name_with_path=datapath + '/' + spreadsheet_file.name 
+    filename = fs.save(name_with_path, spreadsheet_file)
+    error = False
+    try:
+        records = pe.iget_records(file_name=filename)
+        # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
+        # before saving entries, so we don't get half-way uploaded
+        # spreadsheets.
+        for idx, record in enumerate(records):
+            # XXX: right now, we're just checking for required fields that are
+            # missing, but we can add whatever checks we want here.
+            # XXX: blank rows in the spreadsheet that have some hidden
+            # formatting can screw up this test
+            missing = [k for k in record if k in required_metadata and not record[k]]
+            if missing:
+                error = True
+                missing_str = ", ".join(missing)
+                error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                messages.error(request, error_msg)
+        if error:
+            # We have to add 2 to idx because spreadsheet rows are 1-indexed
+            # and first row is header
+            # return redirect('ingest:image_metadata_upload')
+            return error
+        records = pe.iget_records(file_name=filename)
+        for idx, record in enumerate(records):
+            im = DescriptiveMetadata(
+                collection=associated_collection,
+                user=request.user)
+            for k in record:
+                setattr(im, k, record[k])
+                #messages.success(request, k)
+                #messages.success(request, record[k])
+            im.save()
+        messages.success(request, 'Descriptive Metadata successfully uploaded')
         # return redirect('ingest:image_metadata_list')
         return error
     except pe.exceptions.FileTypeNotSupported:

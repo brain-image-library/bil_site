@@ -92,7 +92,7 @@
 
       </div>
 
-      {% if image_metadata_queryset %}
+      {% if descriptive_metadata_queryset %}
         <div class="panel panel-default">
           <div class="panel-heading" data-toggle="collapse" data-target="#collapseOrderMetadata"> Metadata <i class="chevron fa fa-fw" ></i></div>
           <div class="collapse in" id="collapseOrderMetadata">
@@ -100,7 +100,6 @@
             {% render_table table %}
           </div>
         </div>
-
         {% if collection.locked %}
           <div class="alert alert-info">
             <strong>Submitted collections cannot be modified or deleted.</strong>
@@ -122,7 +121,7 @@
 
       <table>
       <tr>           
-      {% if image_metadata_queryset %}
+      {% if descriptive_metadata_queryset %}
       <form action="" method="post">{% csrf_token %}
           <button type="submit" class="cancel btn btn-primary" value="Validate" name="validate_collection">Validate</button>
           &nbsp;

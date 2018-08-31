@@ -36,15 +36,19 @@
               <a class="dropdown-toggle" data-toggle="dropdown" href="#">Create/Upload <span class="caret"></span></a>
               <ul class="dropdown-menu">
                 <li><a href="{% url 'ingest:collection_create' %}">Create Collection</a></li>
-                <li><a href="{% url 'ingest:image_metadata_create' %}">Create Metadata</a></li>
+                <!-- <li><a href="{% url 'ingest:image_metadata_create' %}">Create Metadata</a></li>
                 <li><a href="{% url 'ingest:image_metadata_upload' %}">Upload Metadata</a></li>
+                -->
+                <li><a href="{% url 'ingest:descriptive_metadata_upload' %}">Upload Descriptive Metadata</a></li>
               </ul>
             </li>
             <li class="dropdown">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#">View/Edit <span class="caret"></span></a>
               <ul class="dropdown-menu">
                 <li><a href="{% url 'ingest:collection_list' %}">View/Edit Collections</a></li>
-                <li><a href="{% url 'ingest:image_metadata_list' %}">View/Edit Metadata</a></li>
+                <!-- <li><a href="{% url 'ingest:image_metadata_list' %}">View/Edit Metadata</a></li>
+                -->
+                <li><a href="{% url 'ingest:descriptive_metadata_list' %}">View/Edit Descriptive Metadata</a></li>
               </ul>
             </li>
             <li class="dropdown">

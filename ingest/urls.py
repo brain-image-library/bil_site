@@ -18,6 +18,14 @@ urlpatterns = [
     re_path(r'^metadata_create/$', views.image_metadata_create, name='image_metadata_create'),
     re_path(r'^metadata_upload/$', views.image_metadata_upload, name='image_metadata_upload'),
     re_path(r'^metadata_list/$', views.image_metadata_list, name='image_metadata_list'),
+    # All the descriptive metadata pages
+    path('descriptive_metadata/<int:pk>/', views.DescriptiveMetadataDetail.as_view(), name='descriptive_metadata_detail'),
+    #AJR --- NEED TO FIX THESE AND UNCOMMENT.
+    #path('descriptive_metadata_update/<int:pk>/', views.DescriptiveMetadataUpdate.as_view(), name='descriptive_metadata_update'),
+    #path('descriptive_metadata_delete/<int:pk>/', views.DescriptiveMetadataDelete.as_view(), name='descriptive_metadata_delete'),
+    #re_path(r'^descriptive_metadata_create/$', views.descriptive_metadata_create, name='descriptive_metadata_create'),
+    re_path(r'^descriptive_metadata_upload/$', views.descriptive_metadata_upload, name='descriptive_metadata_upload'),
+    re_path(r'^descriptive_metadata_list/$', views.descriptive_metadata_list, name='descriptive_metadata_list'),
     # All the collection pages.
     path('collection_update/<int:pk>', views.CollectionUpdate.as_view(), name='collection_update'),
     path('collection_delete/<int:pk>', views.collection_delete, name='collection_delete'),

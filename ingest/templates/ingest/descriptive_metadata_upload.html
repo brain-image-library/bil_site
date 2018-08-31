@@ -1,0 +1,36 @@
+{% extends 'ingest/narrow.html' %}
+
+{% load static %}
+
+{% block narrow %}
+
+<h1>Upload Descriptive Metadata Spreadsheet</h1>
+{% if collections %}
+<ul class="list-group">
+  <li class="list-group-item">Download and fill out either the <a href="{% static 'ingest/metadata_template.xls' %}">Excel</a> or <a href="{% static 'ingest/metadata_template.ods' %}">LibreOffice Calc</a> template. </li>
+  <li class="list-group-item">Choose a collection and upload your metadata.</li>
+</ul>
+
+  <hr>
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form }}
+    </br>
+    </br>
+    <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
+    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit()" />
+    </br>
+  </form>
+{% else %}
+  <div class="alert alert-info">
+    <p>You need to create a collection before uploading a metadata spreadsheet</p>
+  </div>
+{% endif %}
+
+</br>
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
+
+{% endblock %}

@@ -7,12 +7,17 @@ import subprocess
 import pathlib
 import tempfile
 
+#
+
 @shared_task
 def create_data_path(data_path):
     """ We create a staging area when we create a collection. """
     command = 'mkdir -p {}'.format(data_path)
+    print(command)
     subprocess.call(command.split(" "))
-    command2 = 'mkdir -p {}.etc'.format(data_path)
+    data_path2=data_path.replace("/lz/","/etc/")
+    command2 = 'mkdir -p {}'.format(data_path2)
+    print(command2)
     subprocess.call(command2.split(" "))
 
 
@@ -22,7 +27,8 @@ def delete_data_path(host_and_path):
     data_path = host_and_path.split(":")[1]
     command = 'rm -fr {}'.format(data_path)
     subprocess.call(command.split(" "))
-    command2 = 'rm -fr {}.etc'.format(data_path)
+    data_path2=data_path.replace("/lz/","/etc/")
+    command2 = 'rm -fr {}'.format(data_path2)
     subprocess.call(command2.split(" "))
 
 
@@ -49,7 +55,8 @@ def run_analysis(host_and_path, metadata_dirs):
     analysis_results['invalid_metadata_directories'] = invalid_metadata_directories
     # Run external validation script
     command = 'bil_submit.sh {}'.format(data_path)
-    data_path_logdir= '{}.etc'.format(data_path)
+    datapath2=data_path.replace("/lz/","/etc/")
+    data_path_logdir= '{}'.format(datapath2)
     outfile = tempfile.NamedTemporaryFile(delete=False,dir=data_path_logdir)
     p2 = subprocess.Popen(command.split(" "), stdout=outfile)
     #p = subprocess.Popen(command.split(" "), stdout=subprocess.PIPE)
@@ -88,7 +95,8 @@ def run_validate(host_and_path, metadata_dirs):
     analysis_results['invalid_metadata_directories'] = invalid_metadata_directories
     # Run external validation script
     command = 'bil_validate.sh {}'.format(data_path)
-    data_path_logdir= '{}.etc'.format(data_path)
+    datapath2=data_path.replace("/lz/","/etc/")
+    data_path_logdir= '{}'.format(datapath2)
     outfile = tempfile.NamedTemporaryFile(delete=False,dir=data_path_logdir)
     p2 = subprocess.Popen(command.split(" "), stdout=outfile)
     #p = subprocess.Popen(command.split(" "), stdout=subprocess.PIPE)

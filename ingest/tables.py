@@ -2,6 +2,7 @@ from django.utils.html import format_html
 
 from .models import Collection
 from .models import ImageMetadata
+from .models import DescriptiveMetadata
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
 
@@ -187,6 +188,66 @@ class ImageMetadataTable(tables.Table):
             'last_edited',
             'locked',
             'bil_uuid',
+        ]
+
+    # This gives us a checkbox for every piece of metadata, thereby allowing
+    # the user to select and delete them (assuming they're unlocked).
+    selection = tables.CheckBoxColumn(
+        accessor="pk",
+        attrs={"th__input": {"onclick": "toggle(this)"}},
+        orderable=False)
+
+
+class DescriptiveMetadataTable(tables.Table):
+    """ The table used in the descriptive metadata list. """
+
+    # We use the metadata's id as a link to the corresponding collection
+    # detail.
+    id = tables.LinkColumn(
+        'ingest:descriptive_metadata_detail',
+        verbose_name="",
+        args=[A('pk')],
+        text=format_html('<button type="button" class="btn btn-primary">Detail</button>')
+        #text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
+        #attrs={'a': {'class': "btn btn-info", 'role': "button"}}
+    )
+    project_description = tables.Column()
+
+    def render_locked(self, value):
+        if value:
+            value = format_html('<i class="fa fa-lock"></i>')
+        else:
+            value = format_html('<i class="fa fa-unlock"></i>')
+        return value
+
+    class Meta:
+        model = DescriptiveMetadata
+        template_name = 'ingest/bootstrap_ingest.html'
+        # XXX: we should store this information in field_list
+        exclude = [
+        ]
+        # the order of "sequence" determines the ordering of the columns
+        sequence = [
+            'id',
+            'collection',
+            'date_created',
+            'last_edited',
+            'locked',
+            'sample_id', 
+            'organism_type',
+            'organism_ncbi_taxonomy_id', 
+            'transgenetic_line_information', 
+            'modality',
+            'method',
+            'technique',
+            'anatomical_structure',
+            'total_processed_cells',
+            'organization',
+            'lab',
+            'investigator',
+            'grant_number',
+            'r24_name',
+            'r24_directory',
         ]
 
     # This gives us a checkbox for every piece of metadata, thereby allowing
