@@ -18,25 +18,28 @@ class Collection(models.Model):
     # Required and the user should supply these
     name = models.CharField(max_length=256, unique=True)
     description = models.TextField()
-    AI = 'AI'
-    CSHL = 'CSHL'
-    USC = 'USC'
-    PITT = 'PITT'
-    ORGANIZATION_CHOICES = (
-        (CSHL, 'Cold Spring Harbor Laboratory'),
-        (USC, 'University of Southern California'),
-        (AI, 'Allen Institute'),
-        (PITT, 'University of Pittsburgh'),
-    )
-    organization_name = models.CharField(
-        max_length=256,
-        choices=ORGANIZATION_CHOICES,
-        default=AI,
-        help_text=(
-            "The institution where the data generator/submitter or other "
-            "responsible person resides.")
-    )
+
+    #AI = 'AI'
+    #CSHL = 'CSHL'
+    #USC = 'USC'
+    #PITT = 'PITT'
+    #ORGANIZATION_CHOICES = (
+    #    (CSHL, 'Cold Spring Harbor Laboratory'),
+    #    (USC, 'University of Southern California'),
+    #    (AI, 'Allen Institute'),
+    #    (PITT, 'University of Pittsburgh'),
+    #)
+    #organization_name = models.CharField(
+    #    max_length=256,
+    #    choices=ORGANIZATION_CHOICES,
+    #    default=AI,
+    #    help_text=(
+    #        "The institution where the data generator/submitter or other "
+    #        "responsible person resides.")
+    #)
     
+    organization_name = models.CharField(
+        max_length=256, help_text="The institution where the data generator/submitter or other responsible person resides." )
     lab_name = models.CharField(
         max_length=256, help_text="The lab or department subgroup")
     project_funder_id = models.CharField(
@@ -99,8 +102,7 @@ class ImageMetadata(models.Model):
     # Required and the user should supply these
     project_name = models.CharField(
         max_length=256,
-        help_text=('If this is Minitatlas data, begin this field with '
-                   '"MINIATLAS:". The project name does not have to be the '
+        help_text=('The project name does not have to be the '
                    'same as the NIH project name.'))
     collection = models.ForeignKey(Collection, on_delete=models.CASCADE)
     project_description = models.TextField()

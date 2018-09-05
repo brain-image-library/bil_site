@@ -266,6 +266,7 @@ def collection_create(request):
         host_and_path = cache.get('host_and_path')
         data_path = cache.get('data_path')
         bil_uuid = cache.get('bil_uuid')
+        bil_user = cache.get('bil_user')
     else:
         top_level_dir = settings.STAGING_AREA_ROOT
         #shortens uuid
@@ -291,9 +292,12 @@ def collection_create(request):
             bil_uuid)
         host_and_path = "{}@{}:{}".format(
             request.user, settings.IMG_DATA_HOST, data_path)
+        bil_user = "{}".format(request.user)
         cache.set('host_and_path', host_and_path, 30)
         cache.set('data_path', data_path, 30)
         cache.set('bil_uuid', bil_uuid, 30)
+        cache.set('bil_user', bil_user, 30)
+
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = CollectionForm(request.POST, request=request)
@@ -302,15 +306,17 @@ def collection_create(request):
             # celery
             # note: you should authenticate with ssh keys, not passwords
             if not settings.FAKE_STORAGE_AREA:
-                tasks.create_data_path.delay(data_path)
+                tasks.create_data_path.delay(data_path,bil_user)
             post = form.save(commit=False)
             #post.data_path = host_and_path
             post.data_path = data_path
             post.bil_uuid = bil_uuid
+            post.bil_user = bil_user
             post.save()
             cache.delete('host_and_path')
             cache.delete('data_path')
             cache.delete('bil_uuid')
+            cache.delete('bil_user')
             messages.success(request, 'Collection successfully created')
             return redirect('ingest:collection_list')
     else:

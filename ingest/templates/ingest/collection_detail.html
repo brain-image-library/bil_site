@@ -125,8 +125,10 @@
       <form action="" method="post">{% csrf_token %}
           <button type="submit" class="cancel btn btn-primary" value="Validate" name="validate_collection">Validate</button>
           &nbsp;
+          <!--
           <button type="submit" class="cancel btn btn-primary" value="Submit" name="submit_collection" 
           onclick="return confirm('If submission is successful, no further edits can be made. Are you sure?')"/>Submit</button>
+          -->
           &nbsp;
       </form>       
       {% endif %}

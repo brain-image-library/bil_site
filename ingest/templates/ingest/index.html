@@ -6,16 +6,22 @@
   <div class="row">
 
     <div class="col-lg-12 big-row-text">
-      <h1>Overview</h1>
+      <h1>Data Submission Portal</h1>
       <p>The Brain Image Library (BIL) is a public resource enabling
       researchers to deposit, analyze, mine, share and interact with large
-      brain image datasets.  The BIL is supported by the National Institute of
+      brain image datasets.  
+      More information about the Brain Image Library can be found 
+      on our informational website: 
+      <a href="http://www.brainimagelibrary.org/">www.brainimagelibrary.org</a>.
+      The BIL is supported by the National Institute of
       Mental Health of the National Institutes of Health under award number
-      R24MH114793.  </p>
+      R24MH114793. </p>
     </div>
 
   </div>
 </div>
+
+{% if request.user.username %}
 
 <div class="container-fluid gray_on_med_blue">
   <div class="row">
@@ -62,8 +68,6 @@
   </div>
 </div>
 
-{% if request.user.username %}
-
 <div class="container-fluid white_on_gray">
 
   <div class="row">
@@ -73,7 +77,7 @@
   <div class="row">
     <div class="col-lg-4 big-button"></div>
     <div class="col-lg-2 big-button">
-      <h3>Create Collection</h3>
+      <h3>New Collection</h3>
       <a href="{% url 'ingest:collection_create' %}">
         <span class="fa fa-plus-circle fa-5x"></span>
       </a>
@@ -108,6 +112,7 @@
       <p>After you've created a collection, upload a spreadsheet of your
       metadata.</p>
     </div>
+    <!--
     <div class="col-lg-2 big-button">
       <h3>Create Metadata</h3>
       <a href="{% url 'ingest:image_metadata_create' %}">
@@ -124,6 +129,7 @@
       <p>After you've added your metadata to a collection, you can view an
       interactive list of all your metadata here.</p>
     </div>
+    -->
     <div class="col-lg-3 big-button"></div>
   </div>
 

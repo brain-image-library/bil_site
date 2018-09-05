@@ -10,15 +10,24 @@ import tempfile
 #
 
 @shared_task
-def create_data_path(data_path):
+def create_data_path(data_path,username):
+    print(username)
     """ We create a staging area when we create a collection. """
     command = 'mkdir -p {}'.format(data_path)
-    print(command)
     subprocess.call(command.split(" "))
-    data_path2=data_path.replace("/lz/","/etc/")
-    command2 = 'mkdir -p {}'.format(data_path2)
-    print(command2)
+    command1 = 'chmod 700 {}'.format(data_path)
+    subprocess.call(command1.split(" "))
+    command2 = 'setfacl -m u:{}:rwx {}'.format(username,data_path)
     subprocess.call(command2.split(" "))
+    command3 = 'setfacl -d -m u:{}:rwx {}'.format(username,data_path)
+    #print(command)
+    subprocess.call(command3.split(" "))
+
+
+    data_path2=data_path.replace("/lz/","/etc/")
+    command4 = 'mkdir -p {}'.format(data_path2)
+    print(command4)
+    subprocess.call(command4.split(" "))
 
 
 @shared_task
@@ -79,7 +88,8 @@ def run_validate(host_and_path, metadata_dirs):
     analysis_results['type'] = 'Validate'
     analysis_results['valid'] = True
     # get directory size
-    data_path = host_and_path.split(":")[1]
+    #data_path = host_and_path.split(":")[1]
+    data_path = host_and_path
     command = 'du -sh {}'.format(data_path)
     p1 = subprocess.Popen(command.split(" "), stdout=subprocess.PIPE)
     output = p1.communicate()[0].decode("utf-8")
