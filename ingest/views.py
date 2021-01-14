@@ -86,8 +86,9 @@ def descriptive_metadata_upload(request):
             #messages.error(request, collection.data_path)
             #paths=collection.data_path.split(':')
             #datapath=paths[1].replace("/lz/","/etc/")
-            datapath=collection.data_path.replace("/lz/","/etc/")
 
+            # ***UNCOMMENT THIS AFTER BEFORE PUSHED*** datapath=collection.data_path.replace("/lz/","/etc/")
+            datapath = '/home/ltuite96/testetc/' 
             #datapath=paths[1]+'.etc'
             spreadsheet_file = request.FILES['spreadsheet_file']
         
@@ -698,11 +699,34 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
             # missing, but we can add whatever checks we want here.
             # XXX: blank rows in the spreadsheet that have some hidden
             # formatting can screw up this test
-            missing = [k for k in record if k in required_metadata and not record[k]]
+            # This is where we can probably strip \r from lines and check for header accuracy
+            #has_escapes = [j for j in record if '\r' in j]
+            print(record)
+            
+            #missing = [k for k in record if k in required_metadata and not record[k]]
+            missing = False
+            missing_fields = []
+            for i in required_metadata:
+                if i not in record:
+                    missing = True
+                    missing_fields.append(str(i))
+            has_escapes = False
+            badchar = "\\"
+            bad_str = []
+            for r, i in record.items():
+                result = i
+                if badchar in result:
+                    has_escapes = True
+                    bad_str.append(badchar)
             if missing:
                 error = True
-                missing_str = ", ".join(missing)
+                missing_str = ", ".join(missing_fields)
                 error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                messages.error(request, error_msg)
+            if has_escapes:
+                error = True
+                bad_str = ", ".join(bad_str)
+                error_msg = 'Data contains an illegal character in row "{}": '.format(idx+2, bad_str)
                 messages.error(request, error_msg)
         if error:
             # We have to add 2 to idx because spreadsheet rows are 1-indexed
