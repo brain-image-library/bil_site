@@ -17,6 +17,7 @@ from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
 from django_tables2 import RequestConfig
 import pyexcel as pe
+import xlrd
 from celery.result import AsyncResult
 
 from . import tasks
@@ -688,6 +689,13 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name 
     filename = fs.save(name_with_path, spreadsheet_file)
+    fn = xlrd.open_workbook(filename)
+    allSheetNames = fn.sheet_names()
+    #print(allSheetNames) 
+    for sheet in allSheetNames:
+        print("Current sheet name is {}" .format(sheet))
+        #this is where we left off
+        print(thesesheets)
     error = False
     try:
         records = pe.iget_records(file_name=filename)
@@ -713,6 +721,20 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
             has_escapes = False
             badchar = "\\"
             bad_str = []
+            for row in range(0, currentSheet.nrows):
+                for column in "ABCDEFGHIJKLMNO":  # Here you can add or reduce the columns
+                    cell_name = "{}{}".format(column, row)
+                    if fn[cell_name].value == "\\":
+                        #print("{1} cell is located on {0}" .format(cell_name, currentSheet[cell_name].value))
+                        print("cell position {} has escape character {}".format(cell_name, currentSheet[cell_name].value))
+                        return cell_name
+
+
+
+
+
+
+
             for r, i in record.items():
                 result = i
                 if badchar in result:
