@@ -189,3 +189,73 @@ You'll want to collect all the static files:
 You'll also want to restart gunicorn:
 
     sudo systemctl restart gunicorn
+
+# BIL Branching, Merging, and Publishing Procedures
+
+## Branching
+_`Dev` will act as the major merge point for all feature and bug branches, leaving `master` for publishing to production exclusively._This
+  ### Creating a Feature branch
+  - This can all be done from within the terminal
+    - `git checkout dev`
+    - `git pull` to update your local instance of `dev`
+    - When naming a branch, it's good practice to use dashes `-` and not underscores `_` as the general naming for files contains underscores
+      - `git checkout -b <feature/name>` <---this simultaneously creates a new branch off of `dev` and checks it out
+      - e.g. `git checkout -b feature/metadata-validation`
+    - When you are ready to add a commit to the branch: `git status` to see all changed files
+      - files can be added all at once with a simple `git add .` or individually with `git add <filename>`
+    - To commit what has just been added: `git commit -m "this is your commit message, make it helpful and descriptive"`
+      - e.g. `git commit -m "added validation checking metadata spreadsheet headers for missing values"`
+    - To push those commits: 
+      - For your first push of this branch, you will need: `git push -u origin <feature/name>` <-- this sets your pushes upstream
+      - For all pushes after the first, as simple `git push` will do  
+    ### Creating a Bug branch
+  - This can all be done from within the terminal
+    - `git checkout dev`
+    - `git pull` to update your local instance of `dev`
+    - When naming a bug branch, it's good practice to associate it with the issue it is fixing
+      - `git checkout -b <i/#>` <---where the `i` is for `issue` and the # represents the issue number being fixed
+      - e.g. `git checkout -b i/128`
+    - When you are ready to add a commit to the branch: `git status` to see all changed files
+      - files can be added all at once with a simple `git add .` or individually with `git add <filename>`
+    - To commit what has just been added: `git commit -m "this is your commit message, make it helpful and descriptive"`
+      - e.g. `git commit -m "fixing issue #128"`
+    - To push those commits: 
+      - For your first push of this branch, you will need: `git push -u origin <i/#>` <-- this sets your pushes upstream
+      - For all pushes after the first, as simple `git push` will do  
+
+## Creating a Pull Request
+_PRs are great for seeing what's changed and doing code reviews/discussions_
+  - This is all done from the github gui
+  - Visit https://github.com/brain-image-library/bil_site/compare
+  - Keep the base as `dev` and choose the feature or bug branch you created for the `compare`, click `Create Pull Request`
+  - From there, you can add checklists and descriptions within the PR. This is especially helpful to stay organized and give the code reviewer an idea of what to look for
+  - PRs should be concise and focus on targeted code changes
+
+
+## Cutting a Release of BIL
+_This is assuming that all feature branches have been merged to `dev`, `dev` has been tested, and any bug fixes have been merged_
+
+## Tagging Dev
+- This can all be done within the terminal. We'll also be tagging `master`. For more general info on tagging, check this out. We want the **annotated** tagging method.
+  https://git-scm.com/book/en/v2/Git-Basics-Tagging For more information on what makes a version number, checkout more about Semantic Versioning http://semver.org/
+  - `git checkout dev`
+  - `git pull` to check that your local instance of `dev` is up to date
+  - `git tag -a vX.X.X -m "BIL release version X.X.X"`
+  - `git push origin vX.X`
+
+## Creating a Release
+- This step will be completed from the git gui. You will also need the notes compiled from the BIL Publishes sheet https://docs.google.com/spreadsheets/d/1kozFEBV2jUr0K7EM_rNKNEiikAzoULgZ11tcS_KYl_A/edit#gid=0.
+  - Each branch that has been merged to `dev` will be recorded on the BIL Publishes sheet. Their branch names and descriptions will be listed, merge to `dev` will be contained within the same row, which will result in each release version occupying its own row.
+  - Add the date to the row with accumulated branches and descriptions currently in `dev`
+  - change `dev` in the Version column to the vX.X.X tag you created in the previous step
+  - Within the git gui, go to https://github.com/brain-image-library/bil_site/releases/new
+  - Add the tag version you previously created with the `Target: dev`
+  - Release title can match the tag version `vX.X.X`
+  - Within `Describe this release` paste in the Branch Name / Bug Fixes and Description values from the BIL Publishes sheet
+
+## Merging to Master
+- You'll merge `dev` into `master`:
+  - `git checkout master`
+  - `git pull`
+  - `git merge dev` <-- this will merge `dev` into `master`
+  - `git push`
