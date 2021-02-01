@@ -193,8 +193,8 @@ You'll also want to restart gunicorn:
 # BIL Branching, Merging, and Publishing Procedures
 
 ## Branching
-_`Dev` will act as the major merge point for all feature and bug branches, leaving `master` for publishing to production exclusively._This
-  ### Creating a Feature branch
+_`Dev` will act as the major merge point for all feature and bug branches, leaving `master` for publishing to production exclusively._
+### Creating a Feature branch
   - This can all be done from within the terminal
     - `git checkout dev`
     - `git pull` to update your local instance of `dev`
@@ -208,7 +208,7 @@ _`Dev` will act as the major merge point for all feature and bug branches, leavi
     - To push those commits: 
       - For your first push of this branch, you will need: `git push -u origin <feature/name>` <-- this sets your pushes upstream
       - For all pushes after the first, as simple `git push` will do  
-    ### Creating a Bug branch
+### Creating a Bug branch
   - This can all be done from within the terminal
     - `git checkout dev`
     - `git pull` to update your local instance of `dev`
