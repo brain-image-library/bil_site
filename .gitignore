@@ -5,7 +5,7 @@ __pycache__/
 *.swp
 *venv
 site.cfg
-bil_sit/settings_secret.py
+bil_site/settings_secret.py
 ingest/settings_secret.py
 tags
 .~lock*.xls#
