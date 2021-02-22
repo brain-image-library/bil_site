@@ -130,7 +130,7 @@ class CollectionRequestTable(tables.Table):
         'ingest:collection_detail',
         verbose_name="",
         args=[A('pk')],
-	text=format_html('<input type="checkbox" name = "submit_for_validation" class="form-check-input"></checkbox>'))
+	text=format_html('<input type="checkbox" name = "submit_for_validation" id = "submit_for_validation" class="form-check-input"></checkbox>'))
         #text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
         #attrs={'a': {'class': "btn btn-info", 'role': "button"}})
     description = tables.Column()

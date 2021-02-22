@@ -1,3 +1,6 @@
+<head>
+<script src="/static/ingest/sendemail.js"></script>
+</head>
 {% extends 'ingest/wide.html' %}
 {% load bootstrap4 %} 
 
@@ -5,7 +8,7 @@
 
 <h1>Submit Request to Publicize Collection</h1>
 
-{% if collections %}
+<!--{% if collections %}
   {% load render_table from django_tables2 %}
   {% render_table table %} 
 {% else %}
@@ -13,12 +16,46 @@
     <p>You haven't created any collections yet.</p>
   </div>
 {% endif %}
-
+-->
+<form id="rowform">
+<table id="CollectionTable">
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Organization Lab</th>
+<th>Lab Name</th>
+<th>Project Funder ID</th>
+<th>Project Funder</th>
+<th>BIL Uuid</th>
+<th>Data Path</th>
+<th>Locked</th>
+<th>Submission Status</th>
+<th>Validation Status</th>
+</tr>
+</thead>
+<tbody>
+{% for collection in collections %}
+<tr>
+<td><input type="hidden" name="row" id="row" value="{{ loop.index }}" >{{ loop.index }}</td>
+<td><input type="checkbox" id="collection_is_checked"></td>
+<td>{{collection.name}}</td>
+<td>{{collection.description}}</td>
+<td>{{collection.organization_name}}</td>
+<td>{{collection.lab_name}}</td>
+<td>{{collection.project_funder_id}}</td>
+<td>{{collection.project_funder}}</td>
+<td id="bilUuid">{{collection.bil_uuid}}</td>
+<td>{{collection.data_path}}</td>
+<td>{{collection.locked}}</td>
+<td>{{collection.submission_status}}</td>
+<td>{{collection.validation_status}}</td>
+</tr>
+{% endfor %}
+<button class="btn btn-primary" id="submit" onclick="collection_send();">Submit Validation Request</button>
+</table>
+</form>
 <hr>
-
-<a href="{% url 'ingest:collection_send' %}" class="btn btn-primary">
-  <span class="glyphicon glyphicon-plus"></span> Submit Validation Request
-</a>
 
 <a href="{% url 'ingest:index' %}">
   <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>

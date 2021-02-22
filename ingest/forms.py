@@ -53,7 +53,7 @@ class collection_send(forms.ModelForm):
     class Meta:
         model = Collection
         fields = collection_fields
-          
+        
 
 class CollectionForm(forms.ModelForm):
 

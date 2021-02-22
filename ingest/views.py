@@ -39,7 +39,7 @@ from .tables import DescriptiveMetadataTable
 from .tables import CollectionRequestTable
 import uuid
 import datetime
-
+import json
 
 def logout(request):
     messages.success(request, "You've successfully logged out")
@@ -263,15 +263,16 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 
 @login_required
 def collection_send(request):
-    checked_ids = []
+    content = request.get_json()
+    items = []
+    for item in content:
+        if (item['submit_for_validation']) == True:
+            items.append['bilUuid']
+            bilUuid = item['bilUuid']
     if request.method == "POST":
-        for i in rows:
-            if submit_for_validation == True:
-                 checked_id = request.collection_id
-                 checked_id.append(checked_id)
         subject = '[BIL Validations] New Validation Request'
         sender = 'ltuite96@psc.edu'
-        message = F'The following collections have been requested of validaton {checked_id}'
+        message = F'The following collections have been requested to be validated {items}'
         recipient = 'ltuite96@psc.edu'
 
         send_mail(
@@ -280,8 +281,9 @@ def collection_send(request):
         sender,
         recipient
              )
-        return print('message was sent i hope')
-
+        print(message)
+    return json.dumps({"url": url_for('ingest:index')})
+    #success_url = reverse_lazy('ingest:collection_list')
 
 @login_required
 def collection_create(request):
@@ -417,6 +419,7 @@ class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterVi
         if kwargs["data"] is None:
             kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
         return kwargs
+    success_url = reverse_lazy('ingest:collection_list')
     #def send_email_request(request):
     #    checked_ids = []
     #    if request.method == "POST":
