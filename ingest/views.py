@@ -12,6 +12,8 @@ from django.core.cache import cache
 from django.http import Http404
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
+from django.http import HttpResponse
+from django.http import JsonResponse
 
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
@@ -283,7 +285,7 @@ def collection_send(request):
         recipient
              )
         print(message)
-    return json.dumps({"url": url_for('ingest:index')})
+    return JsonResponse({'ingest:index'})
     #success_url = reverse_lazy('ingest:collection_list')
 
 @login_required

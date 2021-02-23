@@ -1,5 +1,6 @@
 function collection_send() {
   const rowform = document.getElementById("rowform");
+  const allrows = rowform.elements[row];
   const all_names = rowform.elements["name"]
   const all_descriptions = rowform.elements["description"]
   const all_organization_labs = rowform.elements["organization_lab"]
@@ -15,6 +16,7 @@ function collection_send() {
   for(let i = 0; i < all_names.length; i++)
   {
       const rowdata = {
+          rowid: all_rows[i].value,
           name: all_names[i].value,
           description: all_descriptions[i].value,
           organization_lab: all_organization_labs[i].value,
