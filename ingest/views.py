@@ -285,7 +285,7 @@ def collection_send(request):
         recipient
              )
         print(message)
-    return JsonResponse({'ingest:index'})
+    return HttpResponse(status=200)
     #success_url = reverse_lazy('ingest:collection_list')
 
 @login_required
