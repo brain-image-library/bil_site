@@ -269,9 +269,8 @@ def collection_send(request):
     content = request.get_json()
     items = []
     for item in content:
-        if (item['submit_for_validation']) == True:
-            items.append['bilUuid']
-            bilUuid = item['bilUuid']
+        items.append['bilUuid']
+        bilUuid = item['bilUuid']
     if request.method == "POST":
         subject = '[BIL Validations] New Validation Request'
         sender = 'ltuite96@psc.edu'
