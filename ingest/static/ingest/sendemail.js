@@ -1,4 +1,5 @@
 function collection_send() {
+    const csrftoken = Cookies.get('csrftoken');
     let output_rows = []
     $('tbody>tr').each(function(i, e){
         let $e = $(e);
@@ -12,12 +13,13 @@ function collection_send() {
                 }
             )
     });
-  fetch(window.origin + '/collection_send', {
+  fetch(`${window.origin}/ingest/collection_send/`, {
       method: "POST",
       credentials: "include",
       body: JSON.stringify(output_rows),
       cache: "no-cache",
       headers: new Headers({
+          "X-CSRFToken": "csrftoken",
           "content-type": "application/json"
       })
   })

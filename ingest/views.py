@@ -267,24 +267,26 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 @login_required
 def collection_send(request):
     content = request.get_json()
+    print(content)
     items = []
-    for item in content:
-        items.append['bilUuid']
-        bilUuid = item['bilUuid']
-    if request.method == "POST":
-        subject = '[BIL Validations] New Validation Request'
-        sender = 'ltuite96@psc.edu'
-        message = F'The following collections have been requested to be validated {items}'
-        recipient = 'ltuite96@psc.edu'
+    #for item in content:
+    #    items.append['bilUuid']
+    #    bilUuid = item['bilUuid']
+    #if request.method == "POST":
+    #    subject = '[BIL Validations] New Validation Request'
+    #    sender = 'ltuite96@psc.edu'
+    #    message = F'The following collections have been requested to be validated {items}'
+    #    recipient = 'ltuite96@psc.edu'
 
-        send_mail(
-        subject,
-        message,
-        sender,
-        recipient
-             )
-        print(message)
-    return HttpResponse(status=200)
+    #    send_mail(
+    #    subject,
+    #    message,
+    #    sender,
+    #    recipient
+    #         )
+    #    print(message)
+    return redirect('index')
+    #return HttpResponse(status=200)
     #success_url = reverse_lazy('ingest:collection_list')
 
 @login_required
