@@ -131,7 +131,7 @@ class CollectionRequestTable(tables.Table):
         verbose_name="",
         args=[A('pk')],
     # commenting out below line because i think it is interfering with template on ingest/template/submit_collection    
-	#text=format_html('<input type="checkbox" name = "submit_for_validation" id = "submit_for_validation" class="form-check-input"></checkbox>'))
+	text=format_html('<input type="checkbox" name = "submit_for_validation" id = "submit_for_validation" class="form-check-input"></checkbox>'))
         #text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
         #attrs={'a': {'class': "btn btn-info", 'role': "button"}})
     description = tables.Column()
