@@ -8,15 +8,6 @@
 
 <h1>Submit Request to Publicize Collection</h1>
 
-<!--{% if collections %}
-  {% load render_table from django_tables2 %}
-  {% render_table table %} 
-{% else %}
-  <div class="alert alert-info">
-    <p>You haven't created any collections yet.</p>
-  </div>
-{% endif %}
--->
 <form id="rowform">
 <table id="CollectionTable">
 <thead>
@@ -52,7 +43,7 @@
 <td>{{collection.validation_status}}</td>
 </tr>
 {% endfor %}
-<button class="btn btn-primary" id="submit" onclick="collection_send();">Submit Validation Request</button>
+<button class="btn btn-primary" onclick="collection_send();">Submit Validation Request</button>
 </table>
 </form>
 <hr>
