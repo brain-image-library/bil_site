@@ -6,10 +6,10 @@ function collection_send() {
         // $e is the tr element
         let row_is_checked = $e.find('#collection_is_checked').is(':checked');
         // row_is_checked is a boolean of whether that row is checked or not
-        let bil_uuid = $e.find('#bil')
+        let bil_uuid = $e.find('#bilUuid')
         if(row_is_checked)
             output_rows.push({
-                'billUuid': bil_uuid
+                "bil_uuid": bil_uuid.text()
                 }
             )
     });
@@ -19,7 +19,7 @@ function collection_send() {
       body: JSON.stringify(output_rows),
       cache: "no-cache",
       headers: new Headers({
-          "X-CSRFToken": "csrftoken",
+          "X-CSRFToken": csrftoken,
           "content-type": "application/json"
       })
   })

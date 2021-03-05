@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
+from django.urls import reverse
 from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.core.cache import cache
@@ -266,26 +267,27 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 
 @login_required
 def collection_send(request):
-    content = request.get_json()
+    content = json.loads(request.body)
     print(content)
     items = []
-    #for item in content:
-    #    items.append['bilUuid']
-    #    bilUuid = item['bilUuid']
-    #if request.method == "POST":
-    #    subject = '[BIL Validations] New Validation Request'
-    #    sender = 'ltuite96@psc.edu'
-    #    message = F'The following collections have been requested to be validated {items}'
-    #    recipient = 'ltuite96@psc.edu'
+    for item in content:
+        items.append(item['bil_uuid'])
+        
+    if request.method == "POST":
+        subject = '[BIL Validations] New Validation Request'
+        sender = 'ltuite96@psc.edu'
+        message = F'The following collections have been requested to be validated {items}'
+        recipient = ['ltuite96@psc.edu']
 
-    #    send_mail(
-    #    subject,
-    #    message,
-    #    sender,
-    #    recipient
-    #         )
-    #    print(message)
-    return redirect('index')
+        send_mail(
+        subject,
+        message,
+        sender,
+        recipient
+             )
+        print(message)
+    #messages.success(request, 'Request succesfully sent')
+    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
     #return HttpResponse(status=200)
     #success_url = reverse_lazy('ingest:collection_list')
 
