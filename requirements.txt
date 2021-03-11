@@ -9,7 +9,7 @@ Django==2.2.17
 django-bootstrap4==0.0.6
 django-celery-results==1.0.1
 django-filter==2.0.0
-django-pam==1.4.1
+django-pam==2.0.0
 django-tables2==1.21.2
 et-xmlfile==1.0.1
 fabric==2.1.3
