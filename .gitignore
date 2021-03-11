@@ -6,11 +6,8 @@ __pycache__/
 *venv
 bil_site/settings.py
 site.cfg
-bil_sit/settings_secret.py
-ingest/settings_secret.py
 tags
 .~lock*.xls#
 static/
 !ingest/static
-user.json
 gunicorn.log
