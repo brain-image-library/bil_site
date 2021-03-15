@@ -49,7 +49,11 @@ class ImageMetadataForm(forms.ModelForm):
             obj.user = self.user
         obj.save()
         return obj
-
+class collection_send(forms.ModelForm):
+    class Meta:
+        model = Collection
+        fields = collection_fields
+        
 
 class CollectionForm(forms.ModelForm):
 

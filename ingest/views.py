@@ -6,12 +6,15 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
+from django.urls import reverse
 from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.core.cache import cache
 from django.http import Http404
 from django.core.exceptions import ObjectDoesNotExist
-
+from django.core.mail import send_mail
+from django.http import HttpResponse
+from django.http import JsonResponse
 
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
@@ -28,6 +31,7 @@ from .forms import CollectionForm
 from .forms import ImageMetadataForm
 from .forms import DescriptiveMetadataForm
 from .forms import UploadForm
+from .forms import collection_send
 from .models import UUID
 from .models import Collection
 from .models import ImageMetadata
@@ -35,10 +39,10 @@ from .models import DescriptiveMetadata
 from .tables import CollectionTable
 from .tables import ImageMetadataTable
 from .tables import DescriptiveMetadataTable
-
+from .tables import CollectionRequestTable
 import uuid
 import datetime
-
+import json
 
 def logout(request):
     messages.success(request, "You've successfully logged out")
@@ -262,6 +266,34 @@ class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
 
 
 @login_required
+def collection_send(request):
+    content = json.loads(request.body)
+    print(content)
+    items = []
+    user_name = request.user
+    for item in content:
+        items.append(item['bil_uuid'])
+        
+    if request.method == "POST":
+        subject = '[BIL Validations] New Validation Request'
+        sender = 'ltuite96@psc.edu'
+        message = F'The following collections have been requested to be validated {items} by {user_name}@psc.edu'
+        recipient = ['ltuite96@psc.edu']
+        
+        send_mail(
+        subject,
+        message,
+        sender,
+        recipient
+             )
+        print(message)
+        print(user_name)
+    #messages.success(request, 'Request succesfully sent')
+    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+    #return HttpResponse(status=200)
+    #success_url = reverse_lazy('ingest:collection_list')
+
+@login_required
 def collection_create(request):
     """ Create a collection. """
     # We cache the staging area location, so that we can show it in the GET and
@@ -372,6 +404,49 @@ class SubmitValidateCollectionList(LoginRequiredMixin, SingleTableMixin, FilterV
             kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
         return kwargs
 
+class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
+    """ A list of all a user's collections. """
+
+    table_class = CollectionRequestTable
+    model = Collection
+    template_name = 'ingest/submit_request_collection_list.html'
+    filterset_class = CollectionFilter
+
+    def get_queryset(self, **kwargs):
+        return Collection.objects.filter(user=self.request.user)
+
+    def get_context_data(self, **kwargs):
+        # Call the base implementation first to get a context
+        context = super().get_context_data(**kwargs)
+        context['collections'] = Collection.objects.filter(user=self.request.user)
+        return context
+
+    def get_filterset_kwargs(self, filterset_class):
+        """ Sets the default collection filter status. """
+        kwargs = super().get_filterset_kwargs(filterset_class)
+        if kwargs["data"] is None:
+            kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
+        return kwargs
+    success_url = reverse_lazy('ingest:collection_list')
+    #def send_email_request(request):
+    #    checked_ids = []
+    #    if request.method == "POST":
+    #        for i in rows:
+    #            if submit-for-validation == True:
+    #                 checked_id = request.collection_id
+    #                 checked_id.append(checked_id)
+    #        subject = '[BIL Validations] New Validation Request'
+    #        sender = 'ltuite96@psc.edu'
+    #        message = F'The following collections have been requested of validaton {checked_id}'
+    #        recipient = 'ltuite96@psc.edu'
+
+        #    send_mail(
+        #    subject,
+        #    message,
+        #    sender,
+        #    recipient
+        #         )
+        #    return print('message was sent i hope')
 class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     """ A list of all a user's collections. """
 

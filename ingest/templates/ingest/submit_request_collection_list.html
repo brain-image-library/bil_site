@@ -1,0 +1,56 @@
+<head>
+<script src="/static/ingest/sendemail.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+</head>
+{% extends 'ingest/wide.html' %}
+{% load bootstrap4 %} 
+{% block wide %}
+<h1>Submit Request to Publicize Collection</h1>
+<p>Select checkboxes for each collection to request validation and publication. This will submit a ticket to BIL support and be processed</p>
+<form id="rowform">
+{% csrf_token %}
+<table id="CollectionTable" class="table">
+<thead>
+<tr>
+<th></th>
+<th>Name</th>
+<th>Description</th>
+<th>Organization Lab</th>
+<th>Lab Name</th>
+<th>Project Funder ID</th>
+<th>Project Funder</th>
+<th>BIL Uuid</th>
+<th>Data Path</th>
+<th>Locked</th>
+<th>Submission Status</th>
+<th>Validation Status</th>
+</tr>
+</thead>
+<tbody>
+{% for collection in collections %}
+<tr>
+<td><input type="checkbox" id="collection_is_checked"></td>
+<td>{{collection.name}}</td>
+<td>{{collection.description}}</td>
+<td>{{collection.organization_name}}</td>
+<td>{{collection.lab_name}}</td>
+<td>{{collection.project_funder_id}}</td>
+<td>{{collection.project_funder}}</td>
+<td id="bilUuid">{{collection.bil_uuid}}</td>
+<td>{{collection.data_path}}</td>
+<td>{{collection.locked}}</td>
+<td>{{collection.submission_status}}</td>
+<td>{{collection.validation_status}}</td>
+</tr>
+{% endfor %}
+</table>
+</form>
+<button class="btn btn-primary" onclick="collection_send();">Submit Validation Request</button>
+<hr>
+
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
+
+{% endblock %}
+

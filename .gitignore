@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 *.swp
 *venv
+bil_site/settings.py
 site.cfg
 tags
 .~lock*.xls#
