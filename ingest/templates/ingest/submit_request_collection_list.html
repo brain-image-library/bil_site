@@ -6,12 +6,13 @@
 {% load bootstrap4 %} 
 {% block wide %}
 <h1>Submit Request to Publicize Collection</h1>
-
+<p>Select checkboxes for each collection to request validation and publication. This will submit a ticket to BIL support and be processed</p>
 <form id="rowform">
 {% csrf_token %}
-<table id="CollectionTable">
+<table id="CollectionTable" class="table">
 <thead>
 <tr>
+<th></th>
 <th>Name</th>
 <th>Description</th>
 <th>Organization Lab</th>
@@ -28,7 +29,6 @@
 <tbody>
 {% for collection in collections %}
 <tr>
-<td><input type="hidden" name="row" id="row" value="{{ loop.index }}" >{{ loop.index }}</td>
 <td><input type="checkbox" id="collection_is_checked"></td>
 <td>{{collection.name}}</td>
 <td>{{collection.description}}</td>

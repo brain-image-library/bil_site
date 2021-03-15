@@ -270,15 +270,16 @@ def collection_send(request):
     content = json.loads(request.body)
     print(content)
     items = []
+    user_name = request.user
     for item in content:
         items.append(item['bil_uuid'])
         
     if request.method == "POST":
         subject = '[BIL Validations] New Validation Request'
         sender = 'ltuite96@psc.edu'
-        message = F'The following collections have been requested to be validated {items}'
+        message = F'The following collections have been requested to be validated {items} by {user_name}@psc.edu'
         recipient = ['ltuite96@psc.edu']
-
+        
         send_mail(
         subject,
         message,
@@ -286,6 +287,7 @@ def collection_send(request):
         recipient
              )
         print(message)
+        print(user_name)
     #messages.success(request, 'Request succesfully sent')
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
     #return HttpResponse(status=200)
