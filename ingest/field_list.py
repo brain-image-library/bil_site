@@ -37,7 +37,7 @@ required_metadata = [
     'sample_id',
     'organism_type',
     'organism_ncbi_taxonomy_id',
-    'transgenic_line_information',
+    'transgenetic_line_information',
     'modality',
     'method',
     'technique',
