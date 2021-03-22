@@ -93,9 +93,9 @@ def descriptive_metadata_upload(request):
             #paths=collection.data_path.split(':')
             #datapath=paths[1].replace("/lz/","/etc/")
 
-            datapath=collection.data_path.replace("/lz/","/etc/")
+            #datapath=collection.data_path.replace("/lz/","/etc/")
              
-            #datapath = '/home/ltuite96/testetc/' 
+            datapath = '/home/ltuite96/testetc/' 
             #datapath=paths[1]+'.etc'
             spreadsheet_file = request.FILES['spreadsheet_file']
         
@@ -804,12 +804,12 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
                     else:
                         not_missing.append(cell.value)
                 #Escape/Illegal characters in data check        
-                if badchar in cell.value:
-                    has_escapes = True
-                    bad_str.append(badchar)
-                    errorcol = colidx
-                    errorrow = rowidx
-                    illegalchar = cell.value
+                #if badchar in cell.value:
+                #    has_escapes = True
+                #    bad_str.append(badchar)
+                #    errorcol = colidx
+                #    errorrow = rowidx
+                #    illegalchar = cell.value
                 if cell.value == '':
                         missing = True
                         missingcol = colidx+1
