@@ -93,9 +93,9 @@ def descriptive_metadata_upload(request):
             #paths=collection.data_path.split(':')
             #datapath=paths[1].replace("/lz/","/etc/")
 
-            #datapath=collection.data_path.replace("/lz/","/etc/")
+            datapath=collection.data_path.replace("/lz/","/etc/")
              
-            datapath = '/home/ltuite96/testetc/' 
+            #datapath = '/home/ltuite96/testetc/' 
             #datapath=paths[1]+'.etc'
             spreadsheet_file = request.FILES['spreadsheet_file']
         
