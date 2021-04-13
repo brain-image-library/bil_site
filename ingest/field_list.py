@@ -50,3 +50,10 @@ required_metadata = [
     'r24_name',
     'r24_directory',
 ]
+required_metadata_2021 = [
+    'LocalID',
+    'Species',
+    'NCBITaxonomy',
+    'Abstract(7)',
+     
+]

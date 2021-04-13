@@ -767,6 +767,7 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
     name_with_path=datapath + '/' + spreadsheet_file.name 
     filename = fs.save(name_with_path, spreadsheet_file)
     fn = xlrd.open_workbook(filename)
+    sheetcount = len(fn.sheet_names())
     #allSheetNames = fn.sheet_names()
     #print(allSheetNames) 
     worksheet = fn.sheet_by_index(0)
@@ -775,20 +776,34 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
     #    #this is where we left off
     #    print(sheet)
     error = False
-    try:
-        missing = False
-        badgrantnum = False
-        has_escapes = False
-        missing_fields = []
-        missing_cells = []
-        badchar = "\\"
-        bad_str = []
-        not_missing = []
-        grantpattern = '[A-Z0-9\-][A-Z0-9\-][A-Z0-9A]{3}\-[A-Z0-9]{8}\-[A-Z0-9]{2}'
-        for rowidx in range(worksheet.nrows):
-            row = worksheet.row(rowidx)
-            for colidx, cell in enumerate(row):
-                if rowidx == 0:
+    if sheetcount > 1:
+        #code for new spreadsheet ingestion
+        records = pe.iget_records(file_name=filename)
+        for idx, record in enumerate(records):
+                im = DescriptiveMetadata(
+                    collection=associated_collection,
+                    user=request.user)
+                for k in record:
+                    setattr(im, k, record[k])
+                #messages.success(request, k)
+                #messages.success(request, record[k])
+                im.save()
+                messages.success(request, 'Descriptive Metadata successfully uploaded')
+    else:
+        try:
+            missing = False
+            badgrantnum = False
+            has_escapes = False
+            missing_fields = []
+            missing_cells = []
+            badchar = "\\"
+            bad_str = []
+            not_missing = []
+            grantpattern = '[A-Z0-9\-][A-Z0-9\-][A-Z0-9A]{3}\-[A-Z0-9]{8}\-[A-Z0-9]{2}'
+            for rowidx in range(worksheet.nrows):
+                row = worksheet.row(rowidx)
+                for colidx, cell in enumerate(row):
+                    if rowidx == 0:
                     #Bad Headers Check
                     #if cell.value == 'grant_number':
                     #    grantrow = rowidx+1
@@ -797,12 +812,12 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
                     #    if bool(re.match(grantpattern, grantnum)) != True:
                     #        badgrantnum=True
                     # this will check specifically the headers of the document for missing info.
-                    if cell.value not in required_metadata:
-                        missing = True
-                        missingcol = colidx+1
-                        missingrow = rowidx+1
-                    else:
-                        not_missing.append(cell.value)
+                        if cell.value not in required_metadata:
+                            missing = True
+                            missingcol = colidx+1
+                            missingrow = rowidx+1
+                        else:
+                            not_missing.append(cell.value)
                 #Escape/Illegal characters in data check        
                 #if badchar in cell.value:
                 #    has_escapes = True
@@ -810,18 +825,18 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
                 #    errorcol = colidx
                 #    errorrow = rowidx
                 #    illegalchar = cell.value
-                if cell.value == '':
-                        missing = True
-                        missingcol = colidx+1
-                        missingrow = rowidx+1
-                        missing_cells.append([missingrow, missingcol])
-                else:
-                    not_missing.append(cell.value)
+                    if cell.value == '':
+                            missing = True
+                            missingcol = colidx+1
+                            missingrow = rowidx+1
+                            missing_cells.append([missingrow, missingcol])
+                    else:
+                        not_missing.append(cell.value)
 
-        diff = lambda l1, l2: [x for x in l1 if x not in l2]
-        missing_fields.append(str(diff(required_metadata, not_missing)))
+            diff = lambda l1, l2: [x for x in l1 if x not in l2]
+            missing_fields.append(str(diff(required_metadata, not_missing)))
         
-        records = pe.iget_records(file_name=filename)
+            records = pe.iget_records(file_name=filename)
         # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
         # before saving entries, so we don't get half-way uploaded
         # spreadsheets.
@@ -866,46 +881,46 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
             #    if badchar in result:
             #        has_escapes = True
             #        bad_str.append(badchar)
-        if missing:
-            error = True
-            if missing_fields[0] == '[]':
-                for badcells in missing_cells:
-                    print(badcells)
-                    error_msg = 'Missing Required Information or Extra Field found in spreadsheet in row,column "{}"'.format(badcells)
+            if missing:
+                error = True
+                if missing_fields[0] == '[]':
+                    for badcells in missing_cells:
+                        print(badcells)
+                        error_msg = 'Missing Required Information or Extra Field found in spreadsheet in row,column "{}"'.format(badcells)
+                        messages.error(request, error_msg)
+                else:
+                    missing_str = ", ".join(missing_fields)
+                    error_msg = 'Data missing from row "{}" column "{}". Missing required field(s) in spreadsheet: "{}". Be sure all headers in the metadata spreadsheet provided are included and correctly spelled in your spreadsheet. If issue persists please contact us at bil-support@psc.edu.'.format(missingrow, missingcol, missing_str)
                     messages.error(request, error_msg)
-            else:
-                missing_str = ", ".join(missing_fields)
-                error_msg = 'Data missing from row "{}" column "{}". Missing required field(s) in spreadsheet: "{}". Be sure all headers in the metadata spreadsheet provided are included and correctly spelled in your spreadsheet. If issue persists please contact us at bil-support@psc.edu.'.format(missingrow, missingcol, missing_str)
+            if has_escapes:
+                error = True
+                bad_str = ", ".join(bad_str)
+                error_msg = 'Data contains an illegal character in string "{}"  row: "{}" column: "{}" Be sure there are no escape characters such as "\" or "^" in your spreadsheet. If issue persists please contact us at bil-support@psc.edu.'.format(illegalchar, errorrow, errorcol)
                 messages.error(request, error_msg)
-        if has_escapes:
-            error = True
-            bad_str = ", ".join(bad_str)
-            error_msg = 'Data contains an illegal character in string "{}"  row: "{}" column: "{}" Be sure there are no escape characters such as "\" or "^" in your spreadsheet. If issue persists please contact us at bil-support@psc.edu.'.format(illegalchar, errorrow, errorcol)
-            messages.error(request, error_msg)
-        if badgrantnum:
-            error = True
-            error_msg = 'Grant number does not match correct format for NIH grant number, "{}" in Row: {} Column: {}  must match the format "A-B1C-2D3E4F5G-6H"'.format(grantnum, grantrow, grantcol)
-            messages.error(request, error_msg)
-        if error:
+            if badgrantnum:
+                error = True
+                error_msg = 'Grant number does not match correct format for NIH grant number, "{}" in Row: {} Column: {}  must match the format "A-B1C-2D3E4F5G-6H"'.format(grantnum, grantrow, grantcol)
+                messages.error(request, error_msg)
+            if error:
             # We have to add 2 to idx because spreadsheet rows are 1-indexed
             # and first row is header
             # return redirect('ingest:image_metadata_upload')
-            return error
-        records = pe.iget_records(file_name=filename)
-        for idx, record in enumerate(records):
-            im = DescriptiveMetadata(
-                collection=associated_collection,
-                user=request.user)
-            for k in record:
-                setattr(im, k, record[k])
+                return error
+            records = pe.iget_records(file_name=filename)
+            for idx, record in enumerate(records):
+                im = DescriptiveMetadata(
+                    collection=associated_collection,
+                    user=request.user)
+                for k in record:
+                    setattr(im, k, record[k])
                 #messages.success(request, k)
                 #messages.success(request, record[k])
-            im.save()
-        messages.success(request, 'Descriptive Metadata successfully uploaded')
+                im.save()
+            messages.success(request, 'Descriptive Metadata successfully uploaded')
         # return redirect('ingest:image_metadata_list')
-        return error
-    except pe.exceptions.FileTypeNotSupported:
-        error = True
-        messages.error(request, "File type not supported")
+            return error
+        except pe.exceptions.FileTypeNotSupported:
+            error = True
+            messages.error(request, "File type not supported")
         # return redirect('ingest:image_metadata_upload')
-        return error
+            return error
