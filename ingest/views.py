@@ -21,11 +21,13 @@ from django_tables2.views import SingleTableMixin
 from django_tables2 import RequestConfig
 import pyexcel as pe
 import xlrd
+import xlwt
 import re
 from celery.result import AsyncResult
+from openpyxl import load_workbook
 
 from . import tasks
-from .field_list import required_metadata
+from .field_list import required_metadata, techniques, modalities
 from .filters import CollectionFilter
 from .forms import CollectionForm
 from .forms import ImageMetadataForm
@@ -767,6 +769,9 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
     name_with_path=datapath + '/' + spreadsheet_file.name 
     filename = fs.save(name_with_path, spreadsheet_file)
     fn = xlrd.open_workbook(filename)
+    fn2 = load_workbook(filename)
+    sheets = fn2.sheetnames
+    Sheet1 = fn2[sheets[1]]
     #allSheetNames = fn.sheet_names()
     #print(allSheetNames) 
     worksheet = fn.sheet_by_index(0)
@@ -817,7 +822,16 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
                         missing_cells.append([missingrow, missingcol])
                 else:
                     not_missing.append(cell.value)
-
+                if colidx == 4 and rowidx != 0:
+                    if cell.value not in modalities:
+                        modality_write = "other " + cell.value
+                        sheet1.cell(row = rowidx, column = colidx).value = modality_write
+                        fn2.save(filename)
+                if colidx == 6 and rowidx != 0:
+                    if cell.value not in techniques:
+                        technique_write = "other " + cell.value
+                        sheet1.cell(row = rowidx, column = colidx).value = technique_write
+                        fn2.save(filename)
         diff = lambda l1, l2: [x for x in l1 if x not in l2]
         missing_fields.append(str(diff(required_metadata, not_missing)))
         
