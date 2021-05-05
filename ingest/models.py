@@ -48,6 +48,8 @@ class Collection(models.Model):
     # Optional fields. The user doesn't need to supply these.
     project_funder = models.CharField(
         max_length=256, blank=True, default="NIH")
+    modality = models.CharField(max_length=256, blank=True, default="NIH")
+    collection_type = models.CharField(max_length=256, blank=True, default="NIH")
     bil_uuid = models.CharField(max_length=256)
     # These fields are required but the user shouldn't control these
     data_path = models.CharField(max_length=256)
@@ -259,4 +261,86 @@ class DescriptiveMetadata(models.Model):
     r24_name = models.CharField(max_length=256)
     r24_directory = models.CharField(max_length=256)
     
+class Contributor(models.Model):
 
+    def __str__(self):
+        return self.name
+
+    name = models.CharField(max_length=256)
+    name_type = models.CharField(max_length=256)
+    creator = models.CharField(max_length=256)
+    role = models.CharField(max_length=256)
+    personal_orchid = models.CharField(max_length=256)
+    affiliation = models.CharField(max_length=256)
+    affiliation_identifier = models.CharField(max_length=256)
+
+
+class ProjectHasContributors(models.Model):
+
+    def __str__(self):
+        return self.name
+
+    project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
+    contributor_id = models.ForeignKey(Contributor, on_delete=models.SET_NULL, null=True, blank=True)
+
+class ProgramOfficer(models.Model):
+    def __str__(self):
+        return self.name
+    
+    grant_number = models.CharField(max_length=256)
+    user_id = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+
+class Project(models.Model):
+    def __str__(self):
+        return self.name
+    
+    project_pi = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    funded_by = models.CharField(max_length=256)
+    
+class ProjectHasCollections(models.Model):
+    def __str__(self):
+        return self.name
+    project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
+    collection_id = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
+
+class BilUser(models.Model):
+    def __str__(self):
+        return self.name
+    orcid = models.CharField(max_length=256)
+    is_pi = models.BooleanField(default=False)
+    is_po = models.BooleanField(default=False)
+    is_bil = models.BooleanField(default=False)
+
+class CollectionHasSecondary(models.Model):
+    def __str__(self):
+        return self.name
+    raw_data_id = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True) 
+    secondary_data_id = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
+
+class Funder(models.Model)
+    def __str__(self):
+        return self.name
+    name = models.CharField(max_length=256)
+    funding_reference_identifier = models.CharField(max_length=256)
+    fundingReferenceIdentifierType = models.CharField(max_length=256)
+    awardNumber = models.CharField(max_length=256)
+    awardTitle = models.CharField(max_length=256)
+
+class ProjectHasFunders(models.Model):
+    def __str__(self):
+        return self.name
+    project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
+    funder_id = models.ForeignKey(Funder, on_delete=models.SET_NULL, null=True, blank=True)
+
+class Provenance(models.Model):
+    last_updated = models.DateTimeField()
+    person = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    event_type = models.CharField(max_length=256)
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
+    collection_id = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
+    notes = models.CharField(max_length=256)
+
+class EventsLog(models.Model)
+    collection_id = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
+    event_type = models.CharField(max_length=256)
+    timestamp = models.DateTimeField()
