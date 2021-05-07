@@ -50,3 +50,21 @@ required_metadata = [
     'r24_name',
     'r24_directory',
 ]
+
+event_type = [
+    'mail_tapes_to_bil',
+    'tapes_received',
+    'tapes_ready_for_QC',
+    'moved_to_collection',
+    'request_brainball',
+    'mail_brainball_from_bil',
+    'mail_brainball_to_bil',
+    'received_brainball',
+    'collection_created',
+    'metadata_uploaded',
+    'request_validation',
+    'request_submission',
+    'request_embargo',
+    'collection_public',
+    'request_withdrawl',
+]
