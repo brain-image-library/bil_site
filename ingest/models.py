@@ -1,5 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.conf import settings
+
 
 class UUID(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
@@ -8,7 +10,13 @@ class UUID(models.Model):
 
     # Required and the user should supply these
     useduuid = models.CharField(max_length=256, unique=True)
+class Project(models.Model):
 
+    funded_by = models.CharField(max_length=256)
+    is_biccn = models.BooleanField(default=False)
+class CollectionGroup(models.Model):
+    project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
+    name = models.CharField(max_length = 256)
 
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
@@ -251,7 +259,7 @@ class DescriptiveMetadata(models.Model):
     organism_type = models.CharField(max_length=256)
     organism_ncbi_taxonomy_id = models.CharField(max_length=256)
     transgenetic_line_information = models.CharField(max_length=256)
-    modality = models.CharField(max_length=256)
+    modality = models.CharField(max_length=256, null=True, blank=True)
     method = models.CharField(max_length=256)
     technique = models.CharField(max_length=256)
     anatomical_structure = models.CharField(max_length=256)
@@ -260,38 +268,32 @@ class DescriptiveMetadata(models.Model):
     lab = models.CharField(max_length=256)
     investigator = models.CharField(max_length=256)
     grant_number = models.CharField(max_length=256)
+    dataset_uuid = models.CharField(max_length=256, null=True, blank=True)
     r24_name = models.CharField(max_length=256)
     r24_directory = models.CharField(max_length=256)
     
-class BilUser(models.Model):
+class People(models.Model):
 
     name = models.CharField(max_length=256)
     orcid = models.CharField(max_length=256)
     affiliation = models.CharField(max_length=256)
     affiliation_identifier = models.CharField(max_length=256)
-    auth_user_id = models.ForeignKey(auth_user, on_delete=models.SET_NULL, null = True, blank=True)
+    auth_user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank=True)
 
-class Project(models.Model):
+#class Project(models.Model):
     
-    project_pi = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    funded_by = models.CharField(max_length=256)
-    is_biccn = models.BooleanField(default=False)
+#    funded_by = models.CharField(max_length=256)
+#    is_biccn = models.BooleanField(default=False)
     
-class ProjectCollections(models.Model):
-    def __str__(self):
-        return self.name
-    project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
-    collection_id = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
-
-class ProjectUsers(models.Model):
+class ProjectPeople(models.Model):
  
-    project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
-    bil_user_id = models.ForeignKey(BilUser, on_delete=models.SET_NULL, null = True, blank=True)
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
+    people_id = models.ForeignKey(People, on_delete=models.SET_NULL, null = True, blank=True)
     is_pi = models.BooleanField(default=False)
     is_po = models.BooleanField(default=False)
-    role = models.CharField(max_length=256)
+    doi_role = models.CharField(max_length=256)
 
-class Funder(models.Model)
+class Funder(models.Model):
 
     name = models.CharField(max_length=256)
     funding_reference_identifier = models.CharField(max_length=256)
@@ -302,16 +304,16 @@ class Funder(models.Model)
 
 class ProjectFunders(models.Model):
 
-    project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
-    funder_id = models.ForeignKey(Funder, on_delete=models.SET_NULL, null=True, blank=True)
+    project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
+    funder_id = models.ForeignKey(Funder, on_delete=models.CASCADE, null=True, blank=True)
 
-class EventsLog(models.Model)
+class EventsLog(models.Model):
     collection_id = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
-    bil_user_id = models.ForeignKey(BilUser, on_delete=models.SET_NULL, null=True, blank=True)
+    people_id = models.ForeignKey(People, on_delete=models.SET_NULL, null=True, blank=True)
     project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null = True, blank=True)
     notes = models.CharField(max_length=256)
-    timestamp = models.DateTime()
+    timestamp = models.DateTimeField()
     event_type = models.CharField(max_length=64, default="", choices=[('mail_tapes_to_bil', 'Mail Tapes To BIL'), ('tapes_received', 'Tapes Received'), ('tapes_ready_for_qc', 'Tapes Ready For QC'), ('move_to_collection', 'Move To Collection'), ('request_brainball', 'Request Brainball'), ('Mail_brainball_from_bil', 'Mail Brainball From BIL'), ('mail_brainball_to_bil', 'Mail Brainball To BIL'), ('received_brainball', 'Received Brainball'), ('collection_created', 'Collection Created'), ('metadata_uploaded', 'Metadata Uploaded'), ('request_validation', 'Request Validation'), ('request_submission', 'Request Submission'), ('request_embargo', 'Request Embargo'), ('collection_public', 'Collection Public'), ('request_withdrawal', 'Request Withdrawal')])
-class CollectionsGroup(models.Model):
-    project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
-    name = models.CharField(max_length = 256)
+#class CollectionGroup(models.Model):
+#    project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
+#    name = models.CharField(max_length = 256)
