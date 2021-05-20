@@ -36,6 +36,7 @@ from .models import UUID
 from .models import Collection
 from .models import ImageMetadata
 from .models import DescriptiveMetadata
+from .models import ProjectPeople
 from .tables import CollectionTable
 from .tables import ImageMetadataTable
 from .tables import DescriptiveMetadataTable
@@ -66,8 +67,15 @@ def signup(request):
 
 def index(request):
     """ The main/home page. """
-    return render(request, 'ingest/index.html')
-
+    pi_check = ProjectPeople.objects.get(id=1)
+    check_value = pi_check.is_pi
+    print(check_value)
+    if check_value:
+        print('It said True') 
+        return render(request, 'ingest/bil_index.html')
+    else:
+        return render(request, 'ingest/index.html')
+        print('It did not say True :(')
 
 # What follows is a number of views for uploading, creating, viewing, modifying
 # and deleting IMAGE METADATA.

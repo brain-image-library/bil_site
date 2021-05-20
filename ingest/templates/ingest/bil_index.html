@@ -1,0 +1,148 @@
+{% extends 'ingest/base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="container-fluid white_on_gray">
+  <div class="row">
+
+    <div class="col-lg-12 big-row-text">
+      <h1>BIL User View Data Submission Portal</h1>
+      <p>The Brain Image Library (BIL) is a public resource enabling
+      researchers to deposit, analyze, mine, share and interact with large
+      brain image datasets.  
+      More information about the Brain Image Library can be found 
+      on our informational website: 
+      <a href="http://www.brainimagelibrary.org/">www.brainimagelibrary.org</a>.
+      The BIL is supported by the National Institute of
+      Mental Health of the National Institutes of Health under award number
+      R24MH114793. </p>
+    </div>
+
+  </div>
+</div>
+
+{% if request.user.username %}
+
+<div class="container-fluid gray_on_med_blue">
+  <div class="row">
+
+    <div class="col-lg-4 visible-lg fill">
+      <img src="{% static 'images/coronal_zoom_in.jpg' %}"/>
+    </div>
+
+    <div class="col-lg-8 big-row-text">
+      <h1>Datasets</h1>
+      <p>A dataset is a stand-alone entry (e.g. an image-volume) with metadata.
+      A dataset can contain many 2D image files that may be assembled to form a
+      more complex two or three-dimensional volume. Datasets are defined on
+      disk by their “root” directory in which all the image files for the
+      dataset are contained (the root directory can contain recursive
+      subdirectories that contain image files).  </p>
+    </div>
+
+  </div>
+</div>
+
+<div class="container-fluid gray_on_dark_blue">
+  <div class="row">
+
+    <div class="col-lg-5 big-row-text">
+      <h1>Collections</h1>
+      <p>
+      A collection bundle is an ingestion wrapper that contains one or more 
+      related datasets and metadata.  Collections are tagged with 
+      identifying metadata (such as the NIH project that the data is 
+      associated with) that upon submission will be propagated to each item 
+      in the collection. This important tagging information will allow BIL 
+      to report to NIH on data that has begun, but has not yet completed the 
+      submission process. In general, smaller collection bundles are 
+      recommended because all datasets within a collection must pass the 
+      validation process for the collection bundle to be accepted. 
+      </p>
+    </div>
+
+    <div class="col-lg-7 diagram">
+      <img src="{% static 'images/workflow2.png' %}" class="img-responsive"/>
+    </div>
+
+  </div>
+</div>
+
+<div class="container-fluid white_on_gray">
+
+  <div class="row">
+    <div class="col-lg-12 big-button-header"> <h1>Managing Collections</h1> </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-4 big-button"></div>
+    <div class="col-lg-2 big-button">
+      <h3>New Collection</h3>
+      <a href="{% url 'ingest:collection_create' %}">
+        <span class="fa fa-plus-circle fa-5x"></span>
+      </a>
+      <p>After creating an account on BIL, this is where most new users need to
+      begin.</p>
+    </div>
+    <div class="col-lg-2 big-button">
+      <h3>View Collections</h3>
+      <a href="{% url 'ingest:collection_list' %}">
+        <span class="fa fa-list fa-5x"></span>
+      </a>
+      <p>See a list of the collections you've created and their submission
+      status here.</p>
+    </div>
+    <div class="col-lg-4 big-button"></div>
+  </div>
+
+</div>
+
+<div class="container-fluid gray_on_dark_blue">
+  <div class="row">
+    <div class="col-lg-12 big-button-header"> <h1>Managing Metadata</h1> </div>
+  </div>
+
+  <div class="row">
+    <div class="col-lg-3 big-button"></div>
+    <div class="col-lg-2 big-button">
+      <h3>Upload Metadata</h3>
+      <a href="{% url 'ingest:image_metadata_upload' %}">
+        <span class="fa fa-upload fa-5x"></span>
+      </a>
+      <p>After you've created a collection, upload a spreadsheet of your
+      metadata.</p>
+    </div>
+    <!--
+    <div class="col-lg-2 big-button">
+      <h3>Create Metadata</h3>
+      <a href="{% url 'ingest:image_metadata_create' %}">
+        <span class="fa fa-plus-circle fa-5x"></span>
+      </a>
+      <p>Alternatively, you can manually add metadata to a collection using a
+      web form.</p>
+    </div>
+    <div class="col-lg-2 big-button">
+      <h3>View Metadata</h3>
+      <a href="{% url 'ingest:image_metadata_list' %}">
+        <span class="fa fa-list fa-5x"></span>
+      </a>
+      <p>After you've added your metadata to a collection, you can view an
+      interactive list of all your metadata here.</p>
+    </div>
+    -->
+    <div class="col-lg-3 big-button"></div>
+  </div>
+
+</div>
+
+{% else %}
+<div class="container-fluid wrapper-1">
+  <div class="row">
+    <div class="col-lg-12 big-row-text">
+      <p>Please <a href="{% url 'login' %}"> log in</a> or <a href="{% url 'ingest:signup' %}"> sign up</a> to begin creating collections for publication in the BIL.</p>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
