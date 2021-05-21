@@ -14,6 +14,7 @@ class Project(models.Model):
 
     funded_by = models.CharField(max_length=256)
     is_biccn = models.BooleanField(default=False)
+
 class CollectionGroup(models.Model):
     project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
     name = models.CharField(max_length = 256)
@@ -102,6 +103,7 @@ class Collection(models.Model):
     collection_type = models.CharField(
         max_length=256)
     collection_group_id = models.ForeignKey(CollectionGroup, on_delete=models.CASCADE, blank=True, null=True)
+
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
     # information about a given set of imaging data.
@@ -273,7 +275,6 @@ class DescriptiveMetadata(models.Model):
     r24_directory = models.CharField(max_length=256)
     
 class People(models.Model):
-
     name = models.CharField(max_length=256)
     orcid = models.CharField(max_length=256)
     affiliation = models.CharField(max_length=256)
@@ -286,15 +287,14 @@ class People(models.Model):
 #    is_biccn = models.BooleanField(default=False)
     
 class ProjectPeople(models.Model):
- 
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     people_id = models.ForeignKey(People, on_delete=models.SET_NULL, null = True, blank=True)
     is_pi = models.BooleanField(default=False)
     is_po = models.BooleanField(default=False)
     doi_role = models.CharField(max_length=256)
+    is_bil_admin = models.BooleanField(default=False)
 
 class Funder(models.Model):
-
     name = models.CharField(max_length=256)
     funding_reference_identifier = models.CharField(max_length=256)
     funding_reference_identifier_type = models.CharField(max_length=256)
@@ -303,7 +303,6 @@ class Funder(models.Model):
     grant_number = models.CharField(max_length=256)
 
 class ProjectFunders(models.Model):
-
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     funder_id = models.ForeignKey(Funder, on_delete=models.CASCADE, null=True, blank=True)
 
