@@ -72,8 +72,12 @@ def index(request):
     try:
         people = People.objects.get(auth_user_id_id = current_user.id)
         project_person = ProjectPeople.objects.get(people_id = people.id)
-        if project_person.is_pi:
+	# This is checking if the user is either a Bil Admin or PI
+	# If user is neither, renders main index page
+        if project_person.is_bil_admin:#!!Need to add this to project_person table!!
             return render(request, 'ingest/bil_index.html')
+	else project_person.is_pi:
+	    return render(request, 'ingest/pi_index.html')
     except:
         return render(request, 'ingest/index.html')
 
