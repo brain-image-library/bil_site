@@ -436,25 +436,8 @@ class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterVi
             kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
         return kwargs
     success_url = reverse_lazy('ingest:collection_list')
-    #def send_email_request(request):
-    #    checked_ids = []
-    #    if request.method == "POST":
-    #        for i in rows:
-    #            if submit-for-validation == True:
-    #                 checked_id = request.collection_id
-    #                 checked_id.append(checked_id)
-    #        subject = '[BIL Validations] New Validation Request'
-    #        sender = 'ltuite96@psc.edu'
-    #        message = F'The following collections have been requested of validaton {checked_id}'
-    #        recipient = 'ltuite96@psc.edu'
+    
 
-        #    send_mail(
-        #    subject,
-        #    message,
-        #    sender,
-        #    recipient
-        #         )
-        #    return print('message was sent i hope')
 class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     """ A list of all a user's collections. """
 
@@ -862,12 +845,6 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
                         #print("{1} cell is located on {0}" .format(cell_name, currentSheet[cell_name].value))
                         #print("cell position {} has escape character {}".format(cell_name, currentSheet[cell_name].value))
                         #return cell_name
-
-
-
-
-
-
 
             #for r, i in record.items():
             #    result = i
