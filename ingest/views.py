@@ -75,9 +75,9 @@ def index(request):
 	# This is checking if the user is either a Bil Admin or PI
 	# If user is neither, renders main index page
         if project_person.is_bil_admin:#!!Need to add this to project_person table in schema!!
-            return render(request, 'ingest/bil_index.html')
+            return render(request, 'ingest/bil_index.html', {'project_person': project_person}) 
         elif project_person.is_pi:
-            return render(request, 'ingest/pi_index.html')
+            return render(request, 'ingest/pi_index.html', {'project_person': project_person})
     except:
         return render(request, 'ingest/index.html')
 
