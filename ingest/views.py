@@ -71,12 +71,16 @@ def index(request):
     current_user = request.user
     people = People.objects.get(auth_user_id_id = current_user.id)
     project_person = ProjectPeople.objects.get(people_id = people.id)
+    allpeople = People.objects.all()
+    allprojectpeople = ProjectPeople.objects.all()
     try:
         if project_person.is_bil_admin:
-            return render(request, 'ingest/bil_index.html', {'project_person': project_person})
+            print("we got to the right place")
+            return render(request, 'ingest/bil_index.html', {'project_person': project_person})#, {'allpeople': allpeople}, {'allprojectpeople': allprojectpeople})
         elif project_person.is_pi:
             return render(request, 'ingest/pi_index.html', {'project_person': project_person})
-    except:
+    except Exception as e:
+        print(e)
         return render(request, 'ingest/index.html')
 
 # What follows is a number of views for uploading, creating, viewing, modifying
