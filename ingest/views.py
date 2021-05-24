@@ -69,11 +69,13 @@ def signup(request):
 def index(request):
     """ The main/home page. """
     current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.get(people_id = people.id)
     try:
-        people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.get(people_id = people.id)
-        if project_person.is_pi:
-            return render(request, 'ingest/bil_index.html')
+        if project_person.is_bil_admin:
+            return render(request, 'ingest/bil_index.html', {'project_person': project_person})
+        elif project_person.is_pi:
+            return render(request, 'ingest/pi_index.html', {'project_person': project_person})
     except:
         return render(request, 'ingest/index.html')
 

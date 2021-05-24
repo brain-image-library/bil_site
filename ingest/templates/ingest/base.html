@@ -64,7 +64,7 @@
                 <li><a href="{% url 'ingest:submit_request_collection_list' %}">Submit Validation Request</a></li>
               </ul>
             </li> 
-            {% if project_person.is_pi %}
+            {% if project_person.is_bil_admin %}
             <li class="dropdown">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#">BIL Admin <span class="caret">    </span></a>
               <ul class="dropdown-menu">
@@ -74,23 +74,7 @@
               </ul>
             </li>
             {% endif %}
-            <!-- This is old stuff -- delete it
-            <li class="dropdown">
-              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Collections <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li><a href="{% url 'ingest:collection_create' %}">Create Collection</a></li>
-                <li><a href="{% url 'ingest:collection_list' %}">View Collections</a></li>
-              </ul>
-            </li>
-            <li class="dropdown">
-              <a class="dropdown-toggle" data-toggle="dropdown" href="#">Metadata <span class="caret"></span></a>
-              <ul class="dropdown-menu">
-                <li><a href="{% url 'ingest:image_metadata_create' %}">Create Metadata</a></li>
-                <li><a href="{% url 'ingest:image_metadata_upload' %}">Upload Metadata</a></li>
-                <li><a href="{% url 'ingest:image_metadata_list' %}">View Metadata</a></li>
-              </ul>
-            </li>
-            -->
+            
           </ul>
           {% if request.user.username %}
           <ul class="nav navbar-nav navbar-right">
