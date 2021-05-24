@@ -64,7 +64,16 @@
                 <li><a href="{% url 'ingest:submit_request_collection_list' %}">Submit Validation Request</a></li>
               </ul>
             </li> 
-
+            {% if project_person.is_pi %}
+            <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#">BIL Admin <span class="caret">    </span></a>
+              <ul class="dropdown-menu">
+                <li><a href="{% url 'ingest:submit_request_collection_list' %}">Modify User Access</a></li>
+                <li><a href="/">Tape Tracking</a></li>
+                <li><a href="/">Run Validation</a></li>
+              </ul>
+            </li>
+            {% endif %}
             <!-- This is old stuff -- delete it
             <li class="dropdown">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#">Collections <span class="caret"></span></a>
