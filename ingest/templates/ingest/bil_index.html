@@ -1,4 +1,6 @@
 {% extends 'ingest/base.html' %}
+{% load static %}
+{% block content %}
 {% load bootstrap4 %}
 <head>
 <script></script>
@@ -10,58 +12,8 @@
 
     <div class="col-lg-12 big-row-text">
       <h1>BIL User Admin Portal</h1>
-      <p>The Brain Image Library (BIL) is a public resource enabling
-      researchers to deposit, analyze, mine, share and interact with large
-      brain image datasets.  
-      More information about the Brain Image Library can be found 
-      on our informational website: 
-      <a href="http://www.brainimagelibrary.org/">www.brainimagelibrary.org</a>.
-      The BIL is supported by the National Institute of
-      Mental Health of the National Institutes of Health under award number
-      R24MH114793. </p>
-    </div>
-
+   <a href="{% url 'ingest:manage_users'%}">Manage BIL User Access</a>
+  </div>
   </div>
 </div>
-
-<h1>Modify User Access</h1>
-<p>Change user roles.</p>
-<form id="rowform">
-{% csrf_token %}
-<table id="ModifyUserAccess" class="table">
-<thead>
-<tr>
-<th></th>
-<th>Name</th>
-<th>Username</th>
-<th>Orcid ID</th>
-<th>Affiliation</th>
-<th>Is Project Investigator</th>
-<th>Is Program Officer</th>
-<th>Is BIL Admin</th>
-<th>DOI Role</th>
-</tr>
-</thead>
-<tbody>
-{% for username in auth_user %}
-<tr>
-<td><input type="checkbox" id="collection_is_checked"></td>
-<td>{{people.name}}</td>
-<td>{{auth_user.username}}</td>
-<td>{{people.orcid_id}}</td>
-<td>{{people.affiliation}}</td>
-<td>{{projectpeople.is_pi}}</td>
-<td>{{projectpeople.is_po}}</td>
-<td>{{projectpeople.is_bil_admin}}</td>
-<td>{{projectpeople.doi_role}}</td>
-</tr>
-{% endfor %}
-</table>
-</form>
-<button class="btn btn-primary" onclick="collection_send();">Confirm Changes</button>
-<hr>
-
-<a href="{% url '/' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
-
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'ingest/base.html' %}
+{% block content %}
+{% load bootstrap4 %}
+<head>
+<script></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+</head>
+
+<h1>Modify User Access</h1>
+<p>Change user roles.</p>
+<form id="rowform">
+{% csrf_token %}
+<table id="ModifyUserAccess" class="table">
+<thead>
+<tr>
+<th></th>
+<th>Username</th>
+<th>Name</th>
+<th>Orcid ID</th>
+<th>Affiliation</th>
+<th>Is Project Investigator</th>
+<th>Is Program Officer</th>
+<th>Is BIL Admin</th>
+<th>DOI Role</th>
+</tr>
+</thead>
+<tbody>
+{% for username in allusers %}
+<tr>
+<td><input type="checkbox" id="collection_is_checked"></td>
+<td>{{allusers.username}}</td>
+<td>{{allpeople.name}}</td>
+<td>{{allpeople.orcid_id}}</td>
+<td>{{allpeople.affiliation}}</td>
+<td>{{allprojectpeople.is_pi}}</td>
+<td>{{allprojectpeople.is_po}}</td>
+<td>{{allprojectpeople.is_bil_admin}}</td>
+<td>{{allprojectpeople.doi_role}}</td>
+</tr>
+{% endfor %}
+</table>
+</form>
+<button class="btn btn-primary" onclick="collection_send();">Confirm Changes</button>
+<hr>
+
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
+{% endblock %}
