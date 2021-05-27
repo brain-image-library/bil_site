@@ -93,9 +93,9 @@ def manageUsers(request):
     for user in allusers:
         these_people = People.objects.get(auth_user_id=user)
         these_project_people = ProjectPeople.get(people_id=these_people)
-        users_all['these_people'] = these_people
-        users_all['these_project_people'] = these_project_people
-        print(users_all)
+        user['these_people'] = these_people
+        user['these_project_people'] = these_project_people
+        print(user)
     people = People.objects.get(auth_user_id_id = current_user.id)
     project_person = ProjectPeople.objects.get(people_id = people.id)
     allpeople = People.objects.all()
