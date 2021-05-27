@@ -30,12 +30,12 @@
 <td><input type="checkbox" id="collection_is_checked"></td>
 <td>{{user.username}}</td>
 <td>{{user.these_people.name}}</td>
-<td>{{allpeople.orcid_id}}</td>
-<td>{{allpeople.affiliation}}</td>
-<td>{{allprojectpeople.is_pi}}</td>
-<td>{{allprojectpeople.is_po}}</td>
-<td>{{allprojectpeople.is_bil_admin}}</td>
-<td>{{allprojectpeople.doi_role}}</td>
+<td>{{user.these_people.orcid_id}}</td>
+<td>{{user.these_people.affiliation}}</td>
+<td>{{user.these_project_people.is_pi}}</td>
+<td>{{user.these_project_people.is_po}}</td>
+<td>{{user.these_project_people.is_bil_admin}}</td>
+<td>{{user.these_project_people.doi_role}}</td>
 </tr>
 {% endfor %}
 </table>
