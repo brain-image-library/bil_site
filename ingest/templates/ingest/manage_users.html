@@ -25,10 +25,10 @@
 </tr>
 </thead>
 <tbody>
-{% for username in allusers %}
+{% for user in allusers %}
 <tr>
 <td><input type="checkbox" id="collection_is_checked"></td>
-<td>{{allusers.username}}</td>
+<td>{{user.username}}</td>
 <td>{{allpeople.name}}</td>
 <td>{{allpeople.orcid_id}}</td>
 <td>{{allpeople.affiliation}}</td>

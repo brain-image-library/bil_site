@@ -90,42 +90,47 @@ def manageUsers(request):
     current_user = request.user
     allusers = User.objects.all()
     print(allusers)
+    for user in allusers:
+        these_people = People.objects.get(auth_user_id=user)
+        these_project_people = ProjectPeople.get(people_id=these_people)
+        users_all['these_people'] = these_people
+        users_all['these_project_people'] = these_project_people
+        print(users_all)
     people = People.objects.get(auth_user_id_id = current_user.id)
     project_person = ProjectPeople.objects.get(people_id = people.id)
     allpeople = People.objects.all()
     allprojectpeople = ProjectPeople.objects.all()
     try:
         if project_person.is_bil_admin:
-            print('this is in the if statement')
             return render(request, 'ingest/manage_users.html', {'project_person': project_person, 'allpeople': allpeople, 'allprojectpeople': allprojectpeople, 'allusers':allusers})
        
     except Exception as e:
         print(e)
         return render(request, 'ingest/index.html')
 
-class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
-    """ A list of all a user's collections. """
+#class UserList(LoginRequiredMixin, SingleTableMixin, FilterView):
+#    """ A list of all a user's collections. """
+#
+#    table_class = CollectionTable
+#    model = Collection
+#    template_name = 'ingest/collection_list.html'
+#    filterset_class = CollectionFilter
+#
+#    def get_queryset(self, **kwargs):
+#       return Collection.objects.filter(user=self.request.user)
 
-    table_class = CollectionTable
-    model = Collection
-    template_name = 'ingest/collection_list.html'
-    filterset_class = CollectionFilter
+#    def get_context_data(self, **kwargs):
+#        # Call the base implementation first to get a context
+#        context = super().get_context_data(**kwargs)
+#        context['collections'] = Collection.objects.filter(user=self.request.user)
+#        return context
 
-    def get_queryset(self, **kwargs):
-        return Collection.objects.filter(user=self.request.user)
-
-    def get_context_data(self, **kwargs):
-        # Call the base implementation first to get a context
-        context = super().get_context_data(**kwargs)
-        context['collections'] = Collection.objects.filter(user=self.request.user)
-        return context
-
-    def get_filterset_kwargs(self, filterset_class):
-        """ Sets the default collection filter status. """
-        kwargs = super().get_filterset_kwargs(filterset_class)
-        if kwargs["data"] is None:
-            kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
-        return kwargs
+#    def get_filterset_kwargs(self, filterset_class):
+#        """ Sets the default collection filter status. """
+#        kwargs = super().get_filterset_kwargs(filterset_class)
+#        if kwargs["data"] is None:
+#            kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
+#        return kwargs
 
 
 
