@@ -77,12 +77,6 @@
             {% if project_person.is_pi %}
             <li class="dropdown">
               <a class="dropdown-toggle" data-toggle="dropdown" href="#">PI Dashboard <span class="caret">    </span></a>
-              <ul class="dropdown-menu">
-                <li><a href="{% url 'ingest:submit_request_collection_list' %}">Modify User Access</a></li>
-                <li><a href="/">Tape Tracking</a></li>
-                <li><a href="/">Run Validation</a></li>
-              </ul>
-            </li>
             {% endif %} 
           </ul>
           {% if request.user.username %}
