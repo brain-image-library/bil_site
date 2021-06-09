@@ -66,7 +66,7 @@ def signup(request):
     # authentication views with other apps (e.g. data exploration portal).
     return render(request, 'ingest/signup.html')
 
-
+@login_required
 def index(request):
     """ The main/home page. """
     current_user = request.user
