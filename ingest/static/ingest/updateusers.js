@@ -18,9 +18,7 @@ function submit_user_changes() {
             "is_bil_admin": is_bil_admin.val()})
         }
              console.log(output_rows)
-        //if(row_is_checked)
-        //    output_rows.push({
-        //        "bil_uuid": bil_uuid.text()
+        
                 
             
     });

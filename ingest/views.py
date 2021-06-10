@@ -83,7 +83,7 @@ def index(request):
     except Exception as e:
         print(e)
         return render(request, 'ingest/index.html')
-
+    return render(request, 'ingest/index.html')
 # What follows is a number of views for uploading, creating, viewing, modifying
 # and deleting IMAGE METADATA.
 def manageUsers(request):
@@ -140,12 +140,7 @@ def userModify(request):
             project_person.save()
     print(items)
     
-    #if request.method == "POST":
-    #    project_person = ProjectPeople(is_pi=is_pi, is_po=is_po, is_bil_admin=is_bil_admin).filter( 
-    #messages.success(request, 'Request succesfully sent')
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
-    #return HttpResponse(status=200)
-    #success_url = reverse_lazy('ingest:collection_list')
 
     
     
