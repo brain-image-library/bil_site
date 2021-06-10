@@ -66,15 +66,16 @@ def signup(request):
     # authentication views with other apps (e.g. data exploration portal).
     return render(request, 'ingest/signup.html')
 
-
+@login_required
 def index(request):
     """ The main/home page. """
     current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.get(people_id = people.id)
-    allpeople = People.objects.all()
-    allprojectpeople = ProjectPeople.objects.all()
     try:
+        people = People.objects.get(auth_user_id_id = current_user.id)
+        project_person = ProjectPeople.objects.get(people_id = people.id)
+        allpeople = People.objects.all()
+        allprojectpeople = ProjectPeople.objects.all()
+    
         if project_person.is_bil_admin:
             return render(request, 'ingest/bil_index.html', {'project_person': project_person})#, {'allpeople': allpeople}, {'allprojectpeople': allprojectpeople})
         elif project_person.is_pi:
@@ -82,7 +83,7 @@ def index(request):
     except Exception as e:
         print(e)
         return render(request, 'ingest/index.html')
-
+    return render(request, 'ingest/index.html')
 # What follows is a number of views for uploading, creating, viewing, modifying
 # and deleting IMAGE METADATA.
 def manageUsers(request):
@@ -113,6 +114,37 @@ def manageUsers(request):
         print(e)
         return render(request, 'ingest/index.html')
 
+def userModify(request):
+    
+    content = json.loads(request.body)
+    print(content)
+    items = []
+    for item in content:
+        items.append(item['user_id'])
+        items.append(item['is_pi'])
+        items.append(item['is_po'])
+        items.append(item['is_bil_admin'])
+        user_id = item['user_id']
+        is_pi = item['is_pi']
+        is_po = item['is_po']
+        is_bil_admin = item['is_bil_admin']
+        person = People.objects.get(auth_user_id_id=user_id)
+        project_person = ProjectPeople.objects.get(people_id=person)
+        if not project_person:
+            project_person = ProjectPeople(is_pi=is_pi, is_po=is_po, is_bil_admin=is_bil_admin, people_id=user_id)
+            project_person.save()
+        else:
+            project_person.is_pi=is_pi
+            project_person.is_po=is_po
+            project_person.is_bil_admin=is_bil_admin
+            project_person.save()
+    print(items)
+    
+    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+
+    
+    
+    
 #class UserList(LoginRequiredMixin, SingleTableMixin, FilterView):
 #    """ A list of all a user's collections. """
 #

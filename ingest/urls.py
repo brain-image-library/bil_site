@@ -38,6 +38,7 @@ urlpatterns = [
     re_path(r'^collection_list/$', views.CollectionList.as_view(), name='collection_list'),
     re_path(r'^submit_validate_collection_list/$', views.SubmitValidateCollectionList.as_view(), name='submit_validate_collection_list'),
     re_path(r'^submit_request_collection_list/$', views.SubmitRequestCollectionList.as_view(), name ='submit_request_collection_list'),
-    re_path(r'^collection_send/$', views.collection_send, name = 'collection_send')
-    
+    re_path(r'^collection_send/$', views.collection_send, name = 'collection_send'),
+    re_path(r'^manageUsers/$', views.manageUsers, name = 'manageUsers'),
+    re_path(r'^userModify/$', views.userModify, name = 'userModify') 
 ]
