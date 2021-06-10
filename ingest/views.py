@@ -70,11 +70,12 @@ def signup(request):
 def index(request):
     """ The main/home page. """
     current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.get(people_id = people.id)
-    allpeople = People.objects.all()
-    allprojectpeople = ProjectPeople.objects.all()
     try:
+        people = People.objects.get(auth_user_id_id = current_user.id)
+        project_person = ProjectPeople.objects.get(people_id = people.id)
+        allpeople = People.objects.all()
+        allprojectpeople = ProjectPeople.objects.all()
+    
         if project_person.is_bil_admin:
             return render(request, 'ingest/bil_index.html', {'project_person': project_person})#, {'allpeople': allpeople}, {'allprojectpeople': allprojectpeople})
         elif project_person.is_pi:
