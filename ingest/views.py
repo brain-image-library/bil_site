@@ -113,6 +113,42 @@ def manageUsers(request):
         print(e)
         return render(request, 'ingest/index.html')
 
+def userModify(request):
+    
+    content = json.loads(request.body)
+    print(content)
+    items = []
+    for item in content:
+        items.append(item['user_id'])
+        items.append(item['is_pi'])
+        items.append(item['is_po'])
+        items.append(item['is_bil_admin'])
+        user_id = item['user_id']
+        is_pi = item['is_pi']
+        is_po = item['is_po']
+        is_bil_admin = item['is_bil_admin']
+        person = People.objects.get(auth_user_id_id=user_id)
+        project_person = ProjectPeople.objects.get(people_id=person)
+        if not project_person:
+            project_person = ProjectPeople(is_pi=is_pi, is_po=is_po, is_bil_admin=is_bil_admin, people_id=user_id)
+            project_person.save()
+        else:
+            project_person.is_pi=is_pi
+            project_person.is_po=is_po
+            project_person.is_bil_admin=is_bil_admin
+            project_person.save()
+    print(items)
+    
+    #if request.method == "POST":
+    #    project_person = ProjectPeople(is_pi=is_pi, is_po=is_po, is_bil_admin=is_bil_admin).filter( 
+    #messages.success(request, 'Request succesfully sent')
+    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+    #return HttpResponse(status=200)
+    #success_url = reverse_lazy('ingest:collection_list')
+
+    
+    
+    
 #class UserList(LoginRequiredMixin, SingleTableMixin, FilterView):
 #    """ A list of all a user's collections. """
 #

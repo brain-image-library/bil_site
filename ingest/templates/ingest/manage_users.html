@@ -2,8 +2,9 @@
 {% block content %}
 {% load bootstrap4 %}
 <head>
-<script></script>
+<script src="/static/ingest/updateusers.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+<script>$(document).ready(function(){$('table').find('input').on('change', function() {$(this).addClass('modified');});})</script>
 </head>
 
 <h1>Modify User Access</h1>
@@ -13,7 +14,6 @@
 <table id="ModifyUserAccess" class="table">
 <thead>
 <tr>
-<th></th>
 <th>Username</th>
 <th>Name</th>
 <th>Orcid ID</th>
@@ -26,21 +26,20 @@
 </thead>
 <tbody>
 {% for user in allusers %}
-<tr>
-<td><input type="checkbox" id="collection_is_checked"></td>
+<tr data-user_id="{{user.id}}">
 <td>{{user.username}}</td>
 <td>{{user.these_people.name}}</td>
 <td>{{user.these_people.orcid_id}}</td>
 <td>{{user.these_people.affiliation}}</td>
-<td>{{user.these_project_people.is_pi}}</td>
-<td>{{user.these_project_people.is_po}}</td>
-<td>{{user.these_project_people.is_bil_admin}}</td>
+<td><input type="text" name="is_pi" id="is_pi" value="{{user.these_project_people.is_pi}}"></td>
+<td><input type="text" name="is_po" id="is_po" value="{{user.these_project_people.is_po}}"></td>
+<td><input type="text" name="is_bil_admin" id="is_bil_admin" value="{{user.these_project_people.is_bil_admin}}"></td>
 <td>{{user.these_project_people.doi_role}}</td>
 </tr>
 {% endfor %}
 </table>
 </form>
-<button class="btn btn-primary" onclick="collection_send();">Confirm Changes</button>
+<button class="btn btn-primary" onclick="submit_user_changes();">Confirm Changes</button>
 <hr>
 
 <a href="{% url 'ingest:index' %}">
