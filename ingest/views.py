@@ -37,6 +37,7 @@ from .models import UUID
 from .models import Collection
 from .models import ImageMetadata
 from .models import DescriptiveMetadata
+from .models import Project
 from .models import ProjectPeople
 from .models import People
 from .tables import CollectionTable
@@ -75,15 +76,37 @@ def index(request):
         project_person = ProjectPeople.objects.get(people_id = people.id)
         allpeople = People.objects.all()
         allprojectpeople = ProjectPeople.objects.all()
-    
+        
+        print(project_person.is_pi)
+
         if project_person.is_bil_admin:
             return render(request, 'ingest/bil_index.html', {'project_person': project_person})#, {'allpeople': allpeople}, {'allprojectpeople': allprojectpeople})
         elif project_person.is_pi:
             return render(request, 'ingest/pi_index.html', {'project_person': project_person})
     except Exception as e:
         print(e)
-        return render(request, 'ingest/index.html')
+        #return render(request, 'ingest/index.html')
     return render(request, 'ingest/index.html')
+
+
+@login_required
+def pi_index(request):
+    """ The main/home page. """
+    current_user = request.user
+    try:
+        people = People.objects.get(auth_user_id_id = current_user.id)
+        project_person = ProjectPeople.objects.get(people_id = people.id)
+        allpeople = People.objects.all()
+        allprojectpeople = ProjectPeople.objects.all()
+
+        if project_person.is_pi:
+            return render(request, 'ingest/pi_index.html', {'project_person': project_person})
+    except Exception as e:
+        print(e)
+        #return render(request, 'ingest/index.html')
+    return render(request, 'ingest/index.html')
+
+
 # What follows is a number of views for uploading, creating, viewing, modifying
 # and deleting IMAGE METADATA.
 def manageUsers(request):
@@ -142,7 +165,14 @@ def userModify(request):
     
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
 
-    
+def manageProjects(request):
+    current_user = request.user
+
+    person = People.objects.get(auth_user_id_id=current_user)
+    project_person = ProjectPeople.objects.get(people_id=person) 
+    allprojects = Project.objects.get(id = project_person.project_id_id)
+    print(allprojects)           
+    return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})   
     
     
 #class UserList(LoginRequiredMixin, SingleTableMixin, FilterView):

@@ -1,0 +1,33 @@
+<head>
+<script></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+</head>
+{% extends 'ingest/wide.html' %}
+{% load bootstrap4 %} 
+{% block wide %}
+<h1>Manage Projects</h1>
+<p>Select a project to view details including collections and users associated with it</p>
+
+<table id="ProjectTable" class="table">
+<thead>
+<tr>
+<th></th>
+<th>Name</th>
+</tr>
+</thead>
+<tbody>
+{% for project in projects %}
+<tr>
+<td><a href="{% url ingest:project/{{allprojects.id}}">{{allprojects.name}}</td>
+</tr>
+{% endfor %}
+</table>
+
+<hr>
+
+<a href="{% url 'ingest:pi_index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+
+{% endblock %}
+
