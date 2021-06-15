@@ -174,15 +174,14 @@ def manageProjects(request):
     print(allprojects)           
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})   
     
-def manageCollections(request):
-    current_user = request.user
-
+def manageCollections(LoginRequiredMixin, SingleTableMixin, FilterView):
     person = People.objects.get(auth_user_id_id=current_user)
     project_person = ProjectPeople.objects.get(people_id=person)
     allprojects = Project.objects.get(id = project_person.project_id_id)
-    print(allprojects)
+    allcollectionsgroups = CollectionGroup.objects.get(id = allprojects.project_id_id)
+    allcollections = Collection.objects.get(id = allcollectionsgroups.collection_group_id_id)
 
-    return render(request, 'ingest/manage_collectionss.html', {'allprojects':allprojects})
+    return render(request, 'ingest/manage_collections.html', {'allprojects':allprojects, 'allcollectionsgroups':allcollectionsgroups, 'allcollections':allcollections})
    
 #class UserList(LoginRequiredMixin, SingleTableMixin, FilterView):
 #    """ A list of all a user's collections. """
