@@ -40,6 +40,7 @@ from .models import DescriptiveMetadata
 from .models import Project
 from .models import ProjectPeople
 from .models import People
+from .models import CollectionGroup
 from .tables import CollectionTable
 from .tables import ImageMetadataTable
 from .tables import DescriptiveMetadataTable
@@ -167,21 +168,21 @@ def userModify(request):
 
 def manageProjects(request):
     current_user = request.user
-
     person = People.objects.get(auth_user_id_id=current_user)
     project_person = ProjectPeople.objects.get(people_id=person) 
-    allprojects = Project.objects.get(id = project_person.project_id_id)
+    allprojects = Project.objects.get(id=project_person.project_id_id)
     print(allprojects)           
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})   
     
-def manageCollections(LoginRequiredMixin, SingleTableMixin, FilterView):
+def manageCollections(request):
+    current_user = request.user
     person = People.objects.get(auth_user_id_id=current_user)
     project_person = ProjectPeople.objects.get(people_id=person)
-    allprojects = Project.objects.get(id = project_person.project_id_id)
-    allcollectionsgroups = CollectionGroup.objects.get(id = allprojects.project_id_id)
-    allcollections = Collection.objects.get(id = allcollectionsgroups.collection_group_id_id)
+    allprojects = Project.objects.get(id=project_person.project_id_id)
+    allcollectionsgroups = CollectionGroup.objects.get(project_id_id=allprojects.id)
+    allcollections = Collection.objects.filter(collection_group_id_id=allcollectionsgroups)
 
-    return render(request, 'ingest/manage_collections.html', {'allprojects':allprojects, 'allcollectionsgroups':allcollectionsgroups, 'allcollections':allcollections})
+    return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections})
    
 #class UserList(LoginRequiredMixin, SingleTableMixin, FilterView):
 #    """ A list of all a user's collections. """

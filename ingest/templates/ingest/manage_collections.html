@@ -1,5 +1,5 @@
 <head>
-<script src="/static/ingest/sendemail.js"></script>
+<script></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
 </head>
 {% extends 'ingest/wide.html' %}
@@ -7,10 +7,9 @@
 {% block wide %}
 <h1>Select Collections to See More Details</h1>
 
-<table id="CollectionTable" class="table">
+<table class="table">
 <thead>
 <tr>
-<th></th>
 <th>Name</th>
 <th>Description</th>
 <th>Organization Lab</th>
@@ -25,22 +24,26 @@
 </tr>
 </thead>
 <tbody>
-{% for collection in collections %}
+{% for collection in allcollections %}
 <tr>
-<td><input type="checkbox" id="collection_is_checked"></td>
-<td>{{collection.name}}</td>
-<td>{{collection.description}}</td>
-<td>{{collection.organization_name}}</td>
-<td>{{collection.lab_name}}</td>
-<td>{{collection.project_funder_id}}</td>
-<td>{{collection.project_funder}}</td>
-<td id="bilUuid">{{collection.bil_uuid}}</td>
-<td>{{collection.data_path}}</td>
-<td>{{collection.locked}}</td>
-<td>{{collection.submission_status}}</td>
-<td>{{collection.validation_status}}</td>
+
+<td>{{allcollections.name}}</td>
+<td>{{allcollections.description}}</td>
+<td>{{allcollections.organization_name}}</td>
+<td>{{allcollections.lab_name}}</td>
+<td>{{allcollections.project_funder_id}}</td>
+<td>{{allcollections.project_funder}}</td>
+<td>{{allcollections.bil_uuid}}</td>
+<td>{{allcollections.data_path}}</td>
+<td>{{allcollections.locked}}</td>
+<td>{{allcollections.submission_status}}</td>
+<td>{{allcollections.validation_status}}</td>
 </tr>
 {% endfor %}
 </table>
+
+<a href="{% url 'ingest:pi_index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
 {% endblock %}
 
