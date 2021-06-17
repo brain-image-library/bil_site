@@ -1,0 +1,53 @@
+<head>
+<script></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+</head>
+{% extends 'ingest/wide.html' %}
+{% load bootstrap4 %} 
+{% block wide %}
+<h1>Collections for Project: {{ project.name }}</h1>
+
+<table class="table">
+<thead>
+<tr>
+<th>Name </th>
+<th>Description </th>
+<th>Organization Lab </th>
+<th>Lab Name </th>
+<th>Project Funder ID </th>
+<th>Project Funder </th>
+<th>BIL Uuid </th>
+<th>Data Path </th>
+<th>Locked </th>
+<th>Submission Status </th>
+<th>Validation Status </th>
+<th>Modality </th>
+<th>Collection Type </th>
+</tr>
+</thead>
+<tbody>
+{% for project_collection in allcollections %}
+<tr>
+
+<td>{{project_collection.name}} </td>
+<td>{{project_collection.description}} </td>
+<td>{{project_collection.organization_name}} </td>
+<td>{{project_collection.lab_name}} </td>
+<td>{{project_collection.project_funder_id}} </td>
+<td>{{project_collection.project_funder}} </td>
+<td>{{project_collection.bil_uuid}} </td>
+<td>{{project_collection.data_path}} </td>
+<td>{{project_collection.locked}} </td>
+<td>{{project_collection.submission_status}} </td>
+<td>{{project_collection.validation_status}} </td>
+<td>{{project_collection.modality}} </td>
+<td>{{project_collection.collection_type}} </td>
+</tr>
+{% endfor %}
+</table>
+
+<a href="{% url 'ingest:pi_index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endblock %}
+

@@ -191,6 +191,7 @@ def manageCollections(request):
 def view_project_details(request, pk):
     try:
         project = Project.objects.get(id=pk)
+        print(project.name)
         print(project)
         return render(request, 'ingest/view_project_details.html', {'project':project})
     except ObjectDoesNotExist:
@@ -198,19 +199,33 @@ def view_project_details(request, pk):
 
     return render(request, 'ingest/view_project_details.html', {'project':project})
 
-def projectPeople(request, pk):
+def view_project_people(request, pk):
     try:
         project = Project.objects.get(id=pk)
-        projectpeople = ProjectPeople.objects.filter(project_id_id=project.id)
-        people = People.objects.filter(id=projectpeople.id).all()
-
+        projectpeople = ProjectPeople.objects.filter(project_id_id=project.id).all()
+        print(projectpeople.values())
+      
+        people = People.objects.filter(id=projectpeople.people_id_id).all()
+        print(people.values())
+       
         print(people)
+        return render(request, 'ingest/view_project_people.html', {'people':people}, {'project':project})
     except ObjectDoesNotExist:
         raise Http404
 
-    return render(request, 'ingest/view_project_peoale.html', {'people':people})
+    return render(request, 'ingest/view_project_people.html', {'people':people})
 
+def view_project_collections(reqest, pk):
+    try:
+        project = Project.objects.get(id=pk)
+        collectiongroup = CollectionGroup.objects.get(project_id_id=project.id)
+        project_collections = Collection.objects.filter(collection_group_id_id=collectiongroup).all()
+        
+        print(project_collections)
+    except ObjectDoesNotExist:
+        raise Http404
 
+    return render(request, 'ingest/view_project_collections.html', {'project_collections':project_collections})
 
 
 #class UserList(LoginRequiredMixin, SingleTableMixin, FilterView):

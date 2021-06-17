@@ -17,7 +17,7 @@
 <tbody>
 {% for project in allprojects %}
 <tr>
- <td><a href="{% url 'ingest:view_project_details' 1%}"</td>{{project.name}}</td>
+ <td><a href="{% url 'ingest:view_project_details' project.id%}"</td>{{project.name}}</td>
 </tr>
 {% endfor %}
 </table>
