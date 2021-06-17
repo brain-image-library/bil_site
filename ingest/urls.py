@@ -44,5 +44,5 @@ urlpatterns = [
     re_path(r'^manage_projects/$', views.manageProjects, name = 'manage_projects'),
     re_path(r'^manage_collections/$', views.manageCollections, name = 'manage_collections'),
     re_path(r'pi_index/$', views.pi_index, name = 'pi_index'),
-    re_path(r'view_project_details/<int:pk>/', views.view_project_details, name = 'view_project_details')
+    path('view_project_details/<int:pk>/', views.view_project_details, name = 'view_project_details')
 ]
