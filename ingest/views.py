@@ -40,6 +40,7 @@ from .models import DescriptiveMetadata
 from .models import Project
 from .models import ProjectPeople
 from .models import People
+from .models import Project
 from .models import CollectionGroup
 from .tables import CollectionTable
 from .tables import ImageMetadataTable
@@ -170,8 +171,9 @@ def manageProjects(request):
     current_user = request.user
     person = People.objects.get(auth_user_id_id=current_user)
     project_person = ProjectPeople.objects.get(people_id=person) 
-    allprojects = Project.objects.get(id=project_person.project_id_id)
-    print(allprojects)           
+    allprojects = Project.objects.filter(id=project_person.project_id_id).all()   
+
+    print(allprojects.values())           
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})   
     
 def manageCollections(request):
@@ -180,10 +182,37 @@ def manageCollections(request):
     project_person = ProjectPeople.objects.get(people_id=person)
     allprojects = Project.objects.get(id=project_person.project_id_id)
     allcollectionsgroups = CollectionGroup.objects.get(project_id_id=allprojects.id)
-    allcollections = Collection.objects.filter(collection_group_id_id=allcollectionsgroups)
+    allcollections = Collection.objects.filter(collection_group_id_id=allcollectionsgroups).all()
+    
+    print(allcollections)
 
     return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections})
-   
+
+def view_project_details(request, pk):
+    try:
+        project = Project.objects.get(id=pk)
+        print(project)
+        return render(request, 'ingest/view_project_details.html', {'project':project})
+    except ObjectDoesNotExist:
+        raise Http404
+
+    return render(request, 'ingest/view_project_details.html', {'project':project})
+
+def projectPeople(request, pk):
+    try:
+        project = Project.objects.get(id=pk)
+        projectpeople = ProjectPeople.objects.filter(project_id_id=project.id)
+        people = People.objects.filter(id=projectpeople.id).all()
+
+        print(people)
+    except ObjectDoesNotExist:
+        raise Http404
+
+    return render(request, 'ingest/view_project_peoale.html', {'people':people})
+
+
+
+
 #class UserList(LoginRequiredMixin, SingleTableMixin, FilterView):
 #    """ A list of all a user's collections. """
 #

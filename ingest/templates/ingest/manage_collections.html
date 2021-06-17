@@ -10,34 +10,38 @@
 <table class="table">
 <thead>
 <tr>
-<th>Name</th>
-<th>Description</th>
-<th>Organization Lab</th>
-<th>Lab Name</th>
-<th>Project Funder ID</th>
-<th>Project Funder</th>
-<th>BIL Uuid</th>
-<th>Data Path</th>
-<th>Locked</th>
-<th>Submission Status</th>
-<th>Validation Status</th>
+<th>Name </th>
+<th>Description </th>
+<th>Organization Lab </th>
+<th>Lab Name </th>
+<th>Project Funder ID </th>
+<th>Project Funder </th>
+<th>BIL Uuid </th>
+<th>Data Path </th>
+<th>Locked </th>
+<th>Submission Status </th>
+<th>Validation Status </th>
+<th>Modality </th>
+<th>Collection Type </th>
 </tr>
 </thead>
 <tbody>
 {% for collection in allcollections %}
 <tr>
 
-<td>{{allcollections.name}}</td>
-<td>{{allcollections.description}}</td>
-<td>{{allcollections.organization_name}}</td>
-<td>{{allcollections.lab_name}}</td>
-<td>{{allcollections.project_funder_id}}</td>
-<td>{{allcollections.project_funder}}</td>
-<td>{{allcollections.bil_uuid}}</td>
-<td>{{allcollections.data_path}}</td>
-<td>{{allcollections.locked}}</td>
-<td>{{allcollections.submission_status}}</td>
-<td>{{allcollections.validation_status}}</td>
+<td>{{collection.name}} </td>
+<td>{{collection.description}} </td>
+<td>{{collection.organization_name}} </td>
+<td>{{collection.lab_name}} </td>
+<td>{{collection.project_funder_id}} </td>
+<td>{{collection.project_funder}} </td>
+<td>{{collection.bil_uuid}} </td>
+<td>{{collection.data_path}} </td>
+<td>{{collection.locked}} </td>
+<td>{{collection.submission_status}} </td>
+<td>{{collection.validation_status}} </td>
+<td>{{collection.modality}} </td>
+<td>{{collection.collection_type}} </td>
 </tr>
 {% endfor %}
 </table>
