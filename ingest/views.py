@@ -199,6 +199,32 @@ def manageCollections(request):
 
 #    return render(request, 'ingest/view_project_details.html', {'project':project})
 
+def project_form(request):
+    return render(request, 'ingest/project_form.html')
+
+def create_project(request):
+    new_project = json.loads(request.body)
+    print(new_project)
+    items = []
+    for item in new_project:
+        items.append(item['funded_by'])
+        items.append(item['is_biccn'])
+        items.append(item['name'])
+        
+        funded_by = item['funded_by']
+        is_biccn = item['is_biccn']
+        name = item['name']
+       
+        try:
+            project = Project(funded_by=funded_by, is_biccn=is_biccn, name=name)
+            project.save()
+        except Exception as e:
+            print(e)
+            return render(request, 'ingest/index.html')
+
+    return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
+
+
 def view_project_people(request, pk):
     try:
         project = Project.objects.get(id=pk)
