@@ -186,29 +186,26 @@ def manageCollections(request):
     
     print(allcollections)
 
-    return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections})
+    return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections}, {'allprojects':allprojects})
 
-def view_project_details(request, pk):
-    try:
-        project = Project.objects.get(id=pk)
-        print(project.name)
-        print(project)
-        return render(request, 'ingest/view_project_details.html', {'project':project})
-    except ObjectDoesNotExist:
-        raise Http404
+#def view_project_details(request, pk):
+#    try:
+#        project = Project.objects.get(id=pk)
+#        print(project.name)
+#        print(project)
+#        return render(request, 'ingest/view_project_details.html', {'project':project})
+#    except ObjectDoesNotExist:
+#        raise Http404
 
-    return render(request, 'ingest/view_project_details.html', {'project':project})
+#    return render(request, 'ingest/view_project_details.html', {'project':project})
 
 def view_project_people(request, pk):
     try:
         project = Project.objects.get(id=pk)
         projectpeople = ProjectPeople.objects.filter(project_id_id=project.id).all()
         print(projectpeople.values())
-      
-        people = People.objects.filter(id=projectpeople.people_id_id).all()
-        print(people.values())
-       
-        print(people)
+        people = People.objects.get(id=projectpeople.people_id_id).all()
+
         return render(request, 'ingest/view_project_people.html', {'people':people}, {'project':project})
     except ObjectDoesNotExist:
         raise Http404

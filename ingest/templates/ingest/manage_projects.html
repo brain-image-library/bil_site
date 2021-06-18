@@ -12,15 +12,27 @@
 <thead>
 <tr>
 <th>Name</th>
+<th>Funded By</th>
+<th>Is BICCN?</th>
+<th>Personnel</th>
+<th>Collections</th>
 </tr>
 </thead>
 <tbody>
 {% for project in allprojects %}
 <tr>
- <td><a href="{% url 'ingest:view_project_details' project.id%}"</td>{{project.name}}</td>
+ <td>{{project.name}}</td>
+ <td>{{ project.funded_by }}</td>
+ <td>{{ project.is_biccn }}</td>
+ <td><a href="{% url 'ingest:view_project_people' project.id %}">View Personnel</td>
+ <td><a href="{% url 'ingest:view_project_collections' project.id %}">View Collections</td>
 </tr>
 {% endfor %}
 </table>
+
+
+
+
 
 <hr>
 
