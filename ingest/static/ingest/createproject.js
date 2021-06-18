@@ -1,7 +1,7 @@
-function submit_new_project() {
+function create_new_project() {
     const csrftoken = Cookies.get('csrftoken');
-    let output_rows = []
-    const newprojectform = document.getElementByID("newprojectform");
+    let output_rows = [];
+    //const newprojectform = document.getElementByID("CreateNewProject");
 	   
     let name = $e.find('#name')
     let is_biccn = $e.find('#is_biccn')
@@ -12,33 +12,31 @@ function submit_new_project() {
         "is_biccn": is_biccn.value,
         "funded_by": funded_by.value
         })
-     }
-    console.log(output_rows)
+  }
+    //console.log(output_rows)
         
                 
             
-    });
-    fetch(`${window.origin}/ingest/create_project/`, {
-        method: "POST",
-        credentials: "include",
-        body: JSON.stringify(output_rows),
-        cache: "no-cache",
-        headers: new Headers({
-            "X-CSRFToken": csrftoken,
-            "content-type": "application/json"
-        })
-    })
-        .then(function(response) {
-            if (response.status !== 200) {
-                console.log('Looks like there was a problem. Status code: ${response.status}');
-                return;
-            }
-                response.json().then(function(data) {
-                console.log(data);
-                window.location.replace(data['url']);
-            });
-        })
-        .catch(function(error) {
-            console.log("Fetch error: " + error);
-    });
-} 
+  fetch(`${window.origin}/ingest/create_project/`, {
+      method: "POST",
+      credentials: "include",
+      body: JSON.stringify(output_rows),
+      cache: "no-cache",
+      headers: new Headers({
+          "X-CSRFToken": csrftoken,
+          "content-type": "application/json"
+      })
+  })
+      .then(function(response) {
+          if (response.status !== 200) {
+              console.log('Looks like there was a problem. Status code: ${response.status}');
+              return;
+          }
+              response.json().then(function(data) {
+              console.log(data);
+              window.location.replace(data['url']);
+          });
+      })
+      .catch(function(error) {
+          console.log("Fetch error: " + error);
+      });

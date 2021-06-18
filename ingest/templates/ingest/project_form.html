@@ -4,7 +4,7 @@
 <head>
 <script src="/static/ingest/createproject.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-<script>$(document).ready(function(){$('table').find('select').on('change', function() {$(this).addClass('modified');});})</script>
+<script></script>
 </head>
 
 <h1>Create a new project</h1>
@@ -22,7 +22,7 @@
   <label for="funded_by">Funded By:</label>
   <input type="text" id="funded_by" name="funded_by">
 </form>
-<button class="btn btn-primary" onclick="submit_new_project();">Submit New Project</button>
+<button class="btn btn-primary" onclick="create_new_project();">Submit New Project</button>
 <hr>
 
 <a href="{% url 'ingest:index' %}">
