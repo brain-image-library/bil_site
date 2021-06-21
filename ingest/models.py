@@ -19,11 +19,6 @@ class CollectionGroup(models.Model):
     project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
     name = models.CharField(max_length = 256)
 
-class DataGroup(models.Model):
-    project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
-    dataset_uuid1 = models.ForeignKey(DescriptiveMetadata, on_delete = models.SET_NULL, null = False)
-    dataset_uuid2 = models.ForeignKey(DescriptiveMetadata, on_delete = models.SET_NULL, null = False), 
-
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
     def __str__(self):
@@ -323,8 +318,12 @@ class DescriptiveMetadata(models.Model):
     r24_name = models.CharField(max_length=256)
     r24_directory = models.CharField(max_length=256)
  
-class People(models.Model):
+class DataGroup(models.Model):
+    project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
+    dataset_uuid1 = models.ForeignKey(DescriptiveMetadata, on_delete = models.SET_NULL, null = False)
+    dataset_uuid2 = models.ForeignKey(DescriptiveMetadata, on_delete = models.SET_NULL, null = False),
 
+class People(models.Model):
     name = models.CharField(max_length=256)
     orcid = models.CharField(max_length=256)
     affiliation = models.CharField(max_length=256)
