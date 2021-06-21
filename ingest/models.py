@@ -320,8 +320,8 @@ class DescriptiveMetadata(models.Model):
  
 class DataGroup(models.Model):
     project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
-    dataset_uuid1 = models.ForeignKey(DescriptiveMetadata, on_delete = models.SET_NULL, null = False)
-    dataset_uuid2 = models.ForeignKey(DescriptiveMetadata, on_delete = models.SET_NULL, null = False),
+    dataset_uuid1 = models.ForeignKey(DescriptiveMetadata, on_delete = models.CASCADE, null = False)
+    dataset_uuid2 = models.ForeignKey(DescriptiveMetadata, on_delete = models.CASCADE, null = False),
 
 class People(models.Model):
     name = models.CharField(max_length=256)
