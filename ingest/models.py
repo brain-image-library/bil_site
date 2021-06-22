@@ -11,7 +11,7 @@ class UUID(models.Model):
     # Required and the user should supply these
     useduuid = models.CharField(max_length=256, unique=True)
 class Project(models.Model):
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, default="Project Name")
     funded_by = models.CharField(max_length=256)
     is_biccn = models.BooleanField(default=False)
 
@@ -319,9 +319,8 @@ class DescriptiveMetadata(models.Model):
     r24_directory = models.CharField(max_length=256)
  
 class DataGroup(models.Model):
-    project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
-    dm_id_1 = models.ForeignKey(DescriptiveMetadata, null = False)
-    dm_id_2 = models.ForeignKey(DescriptiveMetadata, null = False)
+    data_group_list_id = models.IntegerField()
+    dm_id = models.ForeignKey(DescriptiveMetadata, on_delete=models.CASCADE, null = False)
 
 class People(models.Model):
     name = models.CharField(max_length=256)
