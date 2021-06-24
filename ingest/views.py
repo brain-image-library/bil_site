@@ -228,11 +228,10 @@ def create_project(request):
         current_user = request.user
         person = People.objects.get(auth_user_id_id=current_user)
         
-        project_person = ProjectPeople(people_id=person.id, is_pi=True, is_po=False, is_bil_admin=False, doi_role=null)
+        project_person = ProjectPeople(project_id_id=project_id_id, people_id_id=person.id, is_pi=True, is_po=False, is_bil_admin=False, doi_role='creator')
         project_person.save()
     messages.success(request, 'Project Created!')    
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
-
 
 def view_project_people(request, pk):
     try:
@@ -242,8 +241,9 @@ def view_project_people(request, pk):
         print(projectpeople.values())
         # get all of the people who are in those projectpeople rows
         allpeople = []
-        for person in projectpeople:
-            person = People.objects.filter(id=projectpeople.people_id_id).all()
+        for row in projectpeople:
+            person_id = row.people_id_id
+            person = People.objects.get(id=projectpeople.people_id_id)
             allpeople.append(person)
 
         print(allpeople)     
