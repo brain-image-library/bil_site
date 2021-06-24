@@ -246,27 +246,27 @@ def view_project_people(request, pk):
         allpeople = []
         for row in projectpeople:
             person_id = row.people_id_id
-            person = People.objects.get(id=projectpeople.people_id_id)
+            person = People.objects.get(id=person_id)
             allpeople.append(person)
 
         print(allpeople)     
         return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople}, {'project':project})
     except ObjectDoesNotExist:
         raise Http404
-
-    return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople})
+    return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople}, {'project':project})
 
 def view_project_collections(reqest, pk):
     try:
+        project = Project.objects.get(id=pk)
         # use the id of the project to look it up in the collectiongroup
         collectiongroup = CollectionGroup.objects.get(project_id_id=pk)
         project_collections = Collection.objects.filter(collection_group_id_id=collectiongroup).all()
         
         print(project_collections)
+        return render(request, 'ingest/view_project_collections.html', {'project':project}, {'project_collections':project_collections})
     except ObjectDoesNotExist:
         raise Http404
-
-    return render(request, 'ingest/view_project_collections.html', {'project_collections':project_collections})
+    return render(request, 'ingest/view_project_collections.html', {'project':project}, {'project_collections':project_collections})
 
 
 
