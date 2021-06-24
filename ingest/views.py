@@ -164,12 +164,22 @@ def userModify(request):
 def manageProjects(request):
     current_user = request.user
     person = People.objects.get(auth_user_id_id=current_user)
-    project_person = ProjectPeople.objects.filter(people_id=person).all() 
-    allprojects = Project.objects.filter(id=project_person.project_id_id).all()   
-
-    print(allprojects.values())           
-    return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})   
+    project_person = ProjectPeople.objects.filter(people_id=person).all()            
     
+    print(project_person.values())
+
+    allprojects=[]
+    for row in project_person:
+        project_id = row.project_id_id
+        print(project_id)
+        print('^^^project id!')
+        project =  Project.objects.get(id=project_id)
+        allprojects.append(project)
+        
+    print(allprojects)       
+      
+    return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})
+
 def manageCollections(request):
     current_user = request.user
     person = People.objects.get(auth_user_id_id=current_user)
@@ -227,20 +237,26 @@ def create_project(request):
 def view_project_people(request, pk):
     try:
         project = Project.objects.get(id=pk)
-        projectpeople = ProjectPeople.objects.filter(project_id_id=project.id).all()
+        # get all of the project people rows with the project_id matching the project.id
+        projectpeople = ProjectPeople.objects.filter(project_id_id=pk).all()
         print(projectpeople.values())
-        people = People.objects.get(id=projectpeople.people_id_id).all()
+        # get all of the people who are in those projectpeople rows
+        allpeople = []
+        for person in projectpeople:
+            person = People.objects.filter(id=projectpeople.people_id_id).all()
+            allpeople.append(person)
 
-        return render(request, 'ingest/view_project_people.html', {'people':people}, {'project':project})
+        print(allpeople)     
+        return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople}, {'project':project})
     except ObjectDoesNotExist:
         raise Http404
 
-    return render(request, 'ingest/view_project_people.html', {'people':people})
+    return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople})
 
 def view_project_collections(reqest, pk):
     try:
-        project = Project.objects.get(id=pk)
-        collectiongroup = CollectionGroup.objects.get(project_id_id=project.id)
+        # use the id of the project to look it up in the collectiongroup
+        collectiongroup = CollectionGroup.objects.get(project_id_id=pk)
         project_collections = Collection.objects.filter(collection_group_id_id=collectiongroup).all()
         
         print(project_collections)
@@ -248,32 +264,6 @@ def view_project_collections(reqest, pk):
         raise Http404
 
     return render(request, 'ingest/view_project_collections.html', {'project_collections':project_collections})
-
-
-#class UserList(LoginRequiredMixin, SingleTableMixin, FilterView):
-#    """ A list of all a user's collections. """
-#
-#    table_class = CollectionTable
-#    model = Collection
-#    template_name = 'ingest/collection_list.html'
-#    filterset_class = CollectionFilter
-#
-#    def get_queryset(self, **kwargs):
-#       return Collection.objects.filter(user=self.request.user)
-
-#    def get_context_data(self, **kwargs):
-#        # Call the base implementation first to get a context
-#        context = super().get_context_data(**kwargs)
-#        context['collections'] = Collection.objects.filter(user=self.request.user)
-#        return context
-
-#    def get_filterset_kwargs(self, filterset_class):
-#        """ Sets the default collection filter status. """
-#        kwargs = super().get_filterset_kwargs(filterset_class)
-#        if kwargs["data"] is None:
-#            kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
-#        return kwargs
-
 
 
 
