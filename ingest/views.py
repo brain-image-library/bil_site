@@ -75,19 +75,16 @@ def index(request):
     current_user = request.user
     try:
         people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.get(people_id = people.id)
-        allpeople = People.objects.all()
-        allprojectpeople = ProjectPeople.objects.all()
+        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
         
-        print(project_person.is_pi)
-
-        if project_person.is_bil_admin:
-            return render(request, 'ingest/bil_index.html', {'project_person': project_person})#, {'allpeople': allpeople}, {'allprojectpeople': allprojectpeople})
-        elif project_person.is_pi:
-            return render(request, 'ingest/pi_index.html', {'project_person': project_person})
+        print(project_person.values())
+        for attribute in project_person: 
+            if attribute.is_bil_admin:
+                return render(request, 'ingest/bil_index.html', {'project_person': attribute})
+            elif attribute.is_pi:
+                return render(request, 'ingest/pi_index.html', {'project_person': attribute})
     except Exception as e:
         print(e)
-        #return render(request, 'ingest/index.html')
     return render(request, 'ingest/index.html')
 
 
@@ -97,15 +94,13 @@ def pi_index(request):
     current_user = request.user
     try:
         people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.get(people_id = people.id)
-        allpeople = People.objects.all()
-        allprojectpeople = ProjectPeople.objects.all()
-
-        if project_person.is_pi:
-            return render(request, 'ingest/pi_index.html', {'project_person': project_person})
+        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+        
+        for attribute in project_person:
+            if project_person.is_pi:
+                return render(request, 'ingest/pi_index.html', {'project_person': attribute})
     except Exception as e:
         print(e)
-        #return render(request, 'ingest/index.html')
     return render(request, 'ingest/index.html')
 
 
@@ -140,7 +135,6 @@ def manageUsers(request):
         return render(request, 'ingest/index.html')
 
 def userModify(request):
-    
     content = json.loads(request.body)
     print(content)
     items = []
@@ -170,7 +164,7 @@ def userModify(request):
 def manageProjects(request):
     current_user = request.user
     person = People.objects.get(auth_user_id_id=current_user)
-    project_person = ProjectPeople.objects.get(people_id=person) 
+    project_person = ProjectPeople.objects.filter(people_id=person).all() 
     allprojects = Project.objects.filter(id=project_person.project_id_id).all()   
 
     print(allprojects.values())           
@@ -214,14 +208,19 @@ def create_project(request):
         funded_by = item['funded_by']
         is_biccn = item['is_biccn']
         name = item['name']
-       
-        try:
-            project = Project(funded_by=funded_by, is_biccn=is_biccn, name=name)
-            project.save()
-        except Exception as e:
-            print(e)
-            return render(request, 'ingest/index.html')
-
+        
+        # write project to the project table   
+        project = Project(funded_by=funded_by, is_biccn=is_biccn, name=name)
+        project.save()
+        
+        # create a project_people row for this pi so they can view project on pi dashboard
+        project_id_id = project.id
+        current_user = request.user
+        person = People.objects.get(auth_user_id_id=current_user)
+        
+        project_person = ProjectPeople(people_id=person.id, is_pi=True, is_po=False, is_bil_admin=False, doi_role=null)
+        project_person.save()
+    messages.success(request, 'Project Created!')    
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
 
 
@@ -493,7 +492,7 @@ def collection_send(request):
              )
         print(message)
         print(user_name)
-    #messages.success(request, 'Request succesfully sent')
+    messages.success(request, 'Request succesfully sent')
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
     #return HttpResponse(status=200)
     #success_url = reverse_lazy('ingest:collection_list')
