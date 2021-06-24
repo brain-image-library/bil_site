@@ -165,29 +165,32 @@ def manageProjects(request):
     current_user = request.user
     person = People.objects.get(auth_user_id_id=current_user)
     project_person = ProjectPeople.objects.filter(people_id=person).all()            
-    
-    print(project_person.values())
 
     allprojects=[]
     for row in project_person:
         project_id = row.project_id_id
-        print(project_id)
-        print('^^^project id!')
         project =  Project.objects.get(id=project_id)
-        allprojects.append(project)
-        
-    print(allprojects)       
+        allprojects.append(project)     
       
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})
 
 def manageCollections(request):
     current_user = request.user
     person = People.objects.get(auth_user_id_id=current_user)
-    project_person = ProjectPeople.objects.get(people_id=person)
-    allprojects = Project.objects.get(id=project_person.project_id_id)
-    allcollectionsgroups = CollectionGroup.objects.get(project_id_id=allprojects.id)
-    allcollections = Collection.objects.filter(collection_group_id_id=allcollectionsgroups).all()
+    project_person = ProjectPeople.objects.filter(people_id=person).all()
     
+    # for every line in project_person, get the project_id_id
+    # then use the project_id_ids to get the projects
+    # then use the projects to get the collectionsgroups
+    # finally using the collectionsgroups to get all the collections
+    allcollections = []
+    for row in project_person:
+        project = Project.objects.get(id=project_person.project_id_id)
+        allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=allprojects.id).all()
+        for group in allcollectiongroups:
+            collection = Collection.objects.get(collection_group_id_id=allcollectionsgroups)
+            allcollections.append(collections)
+
     print(allcollections)
 
     return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections}, {'allprojects':allprojects})
