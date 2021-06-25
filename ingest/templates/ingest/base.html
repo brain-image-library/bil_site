@@ -14,14 +14,14 @@
   <link rel="stylesheet" type="text/css" href="{% static 'ingest/style.css' %}" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% block scripts %}
+  {% endblock %} 
     <!-- Latest compiled and minified JavaScript -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-  {% endblock %}
 
   </head>
-  <body>
+  <header>
     <nav class="navbar navbar-inverse header">
       <div class="container-fluid header">
         <div class="navbar-header">
@@ -100,6 +100,8 @@
         </div>
       </div>
     </nav> 
+  </header>
+  <body>
     {% block content %}
     {% endblock %}
   </body>

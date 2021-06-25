@@ -53,6 +53,24 @@ def signup(request):
     # authentication views with other apps (e.g. data exploration portal).
     return render(request, 'ingest/signup.html')
 
+def is_bil_admin(request):
+    current_user = request.user
+    people = People.objects.jet(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_bil_admin:
+        return True
+    return
+
+def is_pi(request):
+    current_user = request.user
+    people = People.objects.jet(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+        return True
+    return
+
 @login_required
 def index(request):
     """ The main/home page. """
