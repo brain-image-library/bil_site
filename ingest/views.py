@@ -14,8 +14,7 @@ from django.core.cache import cache
 from django.http import Http404
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.http import HttpResponse
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
@@ -28,24 +27,9 @@ from celery.result import AsyncResult
 from . import tasks
 from .field_list import required_metadata
 from .filters import CollectionFilter
-from .forms import CollectionForm
-from .forms import ImageMetadataForm
-from .forms import DescriptiveMetadataForm
-from .forms import UploadForm
-from .forms import collection_send
-from .models import UUID
-from .models import Collection
-from .models import ImageMetadata
-from .models import DescriptiveMetadata
-from .models import Project
-from .models import ProjectPeople
-from .models import People
-from .models import Project
-from .models import CollectionGroup
-from .tables import CollectionTable
-from .tables import ImageMetadataTable
-from .tables import DescriptiveMetadataTable
-from .tables import CollectionRequestTable
+from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, CollectionGroup
+from .tables import CollectionTable, ImageMetadataTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
 import json
@@ -90,7 +74,6 @@ def index(request):
 
 @login_required
 def pi_index(request):
-    """ The main/home page. """
     current_user = request.user
     try:
         people = People.objects.get(auth_user_id_id = current_user.id)
@@ -104,10 +87,7 @@ def pi_index(request):
     return render(request, 'ingest/index.html')
 
 
-# What follows is a number of views for uploading, creating, viewing, modifying
-# and deleting IMAGE METADATA.
 def manageUsers(request):
-  
     current_user = request.user
     allusers = User.objects.all()
     print(allusers)
@@ -134,6 +114,7 @@ def manageUsers(request):
         print(e)
         return render(request, 'ingest/index.html')
 
+
 def userModify(request):
     content = json.loads(request.body)
     print(content)
@@ -157,8 +138,7 @@ def userModify(request):
             project_person.is_po=is_po
             project_person.is_bil_admin=is_bil_admin
             project_person.save()
-    print(items)
-    
+        
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
 
 def manageProjects(request):
@@ -175,25 +155,30 @@ def manageProjects(request):
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})
 
 def manageCollections(request):
+    # gathers all the collections associated with the PI, linked on pi_index.html
     current_user = request.user
     person = People.objects.get(auth_user_id_id=current_user)
-    project_person = ProjectPeople.objects.filter(people_id=person).all()
+    allprojectpeople = ProjectPeople.objects.filter(people_id=person.id).all()
     
-    # for every line in project_person, get the project_id_id
+    # for every row in projectpeople, get the project_id_id
     # then use the project_id_ids to get the projects
     # then use the projects to get the collectionsgroups
     # finally using the collectionsgroups to get all the collections
     allcollections = []
-    for row in project_person:
-        project = Project.objects.get(id=project_person.project_id_id)
-        allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=allprojects.id).all()
-        for group in allcollectiongroups:
-            collection = Collection.objects.get(collection_group_id_id=allcollectionsgroups)
-            allcollections.append(collections)
+    print(allprojectpeople.values())
+    for row in allprojectpeople:
+        project_id = row.project_id_id
+        project = Project.objects.get(id=project_id)
+        allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=project.id).all()
+        for group in allcollectionsgroups:
+            collectionsgroup_id = group.id
+            collections = Collection.objects.filter(collection_group_id_id=collectionsgroup_id).all()
+            for c in collections:
+                allcollections.append(c)
 
     print(allcollections)
 
-    return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections}, {'allprojects':allprojects})
+    return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections, 'project':project})
 
 #def view_project_details(request, pk):
 #    try:
@@ -236,6 +221,7 @@ def create_project(request):
     messages.success(request, 'Project Created!')    
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
 
+
 def view_project_people(request, pk):
     try:
         project = Project.objects.get(id=pk)
@@ -249,13 +235,23 @@ def view_project_people(request, pk):
             person = People.objects.get(id=person_id)
             allpeople.append(person)
 
-        print(allpeople)     
-        return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople}, {'project':project})
+        return render(request, 'ingest/view_project_people.html', { 'project':project, 'allpeople':allpeople })
     except ObjectDoesNotExist:
-        raise Http404
-    return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople}, {'project':project})
+        return render(request, 'ingest/no_people.html')
+    #    raise Http404
+    #except Exception as e:
+    #    print(e)
+    return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople, 'project':project})
 
-def view_project_collections(reqest, pk):
+def no_collection(request, pk):
+    project = Project.objects.get(id=pk)
+    return(request, 'ingest/no_collection.html',  {'project':project})
+
+def no_people(request, pk):
+    project = Project.objects.get(id=pk)
+    return(request, 'ingest/no_people.html', {'project':project})
+
+def view_project_collections(request, pk):
     try:
         project = Project.objects.get(id=pk)
         # use the id of the project to look it up in the collectiongroup
@@ -263,10 +259,11 @@ def view_project_collections(reqest, pk):
         project_collections = Collection.objects.filter(collection_group_id_id=collectiongroup).all()
         
         print(project_collections)
-        return render(request, 'ingest/view_project_collections.html', {'project':project}, {'project_collections':project_collections})
+        return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections})
     except ObjectDoesNotExist:
-        raise Http404
-    return render(request, 'ingest/view_project_collections.html', {'project':project}, {'project_collections':project_collections})
+        return render(request, 'ingest/no_collection.html')
+        #raise Http404
+    return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections})
 
 
 

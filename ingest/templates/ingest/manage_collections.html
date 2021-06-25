@@ -1,19 +1,18 @@
 {% extends 'ingest/wide.html' %}
 {% load bootstrap4 %}
+
+
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
 {% block wide %}
 
-{% block scripts %}
-<script></script>
-<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-{% end block %}
-
-<h1>Select Collections to See More Details</h1>
+<h1>All Project Collections</h1>
 
 <table class="table">
 <thead>
 <tr>
 <th>Name </th>
 <th>Description </th>
+<th>Project Name</th>
 <th>Organization Lab </th>
 <th>Lab Name </th>
 <th>Project Funder ID </th>
@@ -33,6 +32,7 @@
 
 <td>{{collection.name}} </td>
 <td>{{collection.description}} </td>
+<td>{{project.name}} </td>
 <td>{{collection.organization_name}} </td>
 <td>{{collection.lab_name}} </td>
 <td>{{collection.project_funder_id}} </td>
@@ -48,7 +48,7 @@
 {% endfor %}
 </table>
 
-<a href="{% url 'ingest:pi_index' %}">
+<a href="{% url 'ingest:index' %}">
   <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
 </a>
 {% endblock %}
