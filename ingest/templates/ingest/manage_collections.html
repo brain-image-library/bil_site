@@ -1,10 +1,12 @@
-<head>
+{% extends 'ingest/wide.html' %}
+{% load bootstrap4 %}
+{% block wide %}
+
+{% block scripts %}
 <script></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-</head>
-{% extends 'ingest/wide.html' %}
-{% load bootstrap4 %} 
-{% block wide %}
+{% end block %}
+
 <h1>Select Collections to See More Details</h1>
 
 <table class="table">
