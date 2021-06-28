@@ -98,18 +98,19 @@ def pi_index(request):
     return render(request, 'ingest/index.html')
 
 def modify_user(request, pk):
-    # present all projects a user is on
-    allprojects = []
-    try:
-        person = People.objects.get(auth_id_id = pk)
-        projectpeople = ProjectPeople.objects.filter(person_id_id=pk).all()
-        for row in projectpeople:
-            project_id = row.project_id_id
-            project = Project.objects.get(id=project_id)
-            allprojects.append(project)
-    except:
-        return render(request, 'ingest/no_projects.html')
-    return render(request, 'ingest/modify_user')    
+    person = People.objects.get(auth_user_id_id = pk)
+    all_project_people = ProjectPeople.objects.filter(people_id_id=person.id).all()
+    for project_person in all_project_people:
+        try:
+            their_project = Project.objects.get(id=project_person.project_id_id)
+        except Project.DoesNotExist:
+            their_project = None
+            return render(request, 'ingest/no_projects.html')
+        
+        project_person.their_project = their_project
+
+    return render(request, 'ingest/modify_user.html', {'all_project_people':all_project_people, 'person':person})    
+
 
 def list_all_users(request):
     allusers = User.objects.all()
@@ -139,7 +140,6 @@ def manageUsers(request):
         for attribute in project_person:
              if attribute.is_bil_admin:
                  return render(request, 'ingest/manage_users.html', {'project_person': attribute, 'allpeople': allpeople, 'allprojectpeople': allprojectpeople, 'allusers':allusers})
-
     except Exception as e:
         print(e)
         return render(request, 'ingest/index.html')
@@ -150,19 +150,22 @@ def userModify(request):
     print(content)
     items = []
     for item in content:
-        items.append(item['user_id'])
         items.append(item['is_pi'])
         items.append(item['is_po'])
         items.append(item['is_bil_admin'])
-        user_id = item['user_id']
+        items.append(item['auth_id'])
         is_pi = item['is_pi']
         is_po = item['is_po']
         is_bil_admin = item['is_bil_admin']
-        person = People.objects.get(auth_user_id_id=user_id)
-        project_person = ProjectPeople.objects.get(people_id=person)
+        auth_id = item['auth_id']
         
+        print(auth_id)
+
+        person = People.objects.get(people_id_id=auth_id)
+            
+
         if not project_person:
-            project_person = ProjectPeople(is_pi=is_pi, is_po=is_po, is_bil_admin=is_bil_admin, people_id=user_id)
+            project_person = ProjectPeople(is_pi=is_pi, is_po=is_po, is_bil_admin=is_bil_admin, people_id_id=person.id)
             project_person.save()
         else:
             project_person.is_pi=is_pi

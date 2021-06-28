@@ -15,17 +15,16 @@
 <table id="ModifyUserAccess" class="table">
 <thead>
 <tr>
-<th></th>
 <th>Username</th>
+<th></th>
 </tr>
 </thead>
 <tbody>
 
 {% for user in allusers %}
 <tr data-user_id="{{user.id}}">
-<td>{{user.name}}</td>
-<td>< a href="{% url 'ingest:modify_user' user.id %}">Edit</td>
-
+<td>{{user.username}}</td>
+<td><a href="{% url 'ingest:modify_user' user.id %}">Edit</td>
  
 {% endfor %}
 </table>
