@@ -1,13 +1,12 @@
 function submit_user_changes() {
     const csrftoken = Cookies.get('csrftoken');
+    let auth_id = document.getElementById("auth_id");
+    console.log(auth_id)
     let output_rows = []
     $('tbody>tr').each(function(i, e){
-        const auth_id = document.getElementById("auth_id")
         let $e = $(e);
         // $e is the tr element
-        //let row_is_checked = $e.find('#collection_is_checked').is(':checked');
         if($e.find('.modified').length>0){
-	    //let auth_id = $e.find(#'auth_id')
             let is_pi = $e.find('#is_pi')
             let is_po = $e.find('#is_po')
             let is_bil_admin = $e.find('#is_bil_admin')

@@ -7,9 +7,9 @@
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
 <script>$(document).ready(function(){$('table').find('select').on('change', function() {$(this).addClass('modified');});})</script>
 </head>
-
-<h1 name="auth_id" id="auth_id" value="{{person.auth_user_id_id}}">Modify User Privs for Individual Projects for {{person.name}}</h1>
 <form id="rowform">
+<h1 name="auth_id" id="auth_id" value="{{person.auth_user_id_id}}">Modify User Privs for Individual Projects for {{person.name}}</h1>
+
 {% csrf_token %}
 <table id="ModifyUserAccess" class="table">
 <thead>
