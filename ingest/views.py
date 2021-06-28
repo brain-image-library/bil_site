@@ -53,22 +53,15 @@ def signup(request):
     # authentication views with other apps (e.g. data exploration portal).
     return render(request, 'ingest/signup.html')
 
-def is_bil_admin(request):
+def is_pi_or_bil_admin(request):
     current_user = request.user
-    people = People.objects.jet(auth_user_id_id = current_user.id)
+    people = People.objects.get(auth_user_id_id = current_user.id)
     project_person = ProjectPeople.objects.filter(people_id = people.id).all()
     for attribute in project_person:
         if attribute.is_bil_admin:
-        return True
-    return
-
-def is_pi(request):
-    current_user = request.user
-    people = People.objects.jet(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-    for attribute in project_person:
-        if attribute.is_pi:
-        return True
+            return True, {'project_person': attribute}
+        elif attribute.is_pi:
+            return True, {'project_person': attribute}
     return
 
 @login_required
@@ -104,30 +97,49 @@ def pi_index(request):
         print(e)
     return render(request, 'ingest/index.html')
 
+def modify_user(request, pk):
+    # present all projects a user is on
+    allprojects = []
+    try:
+        person = People.objects.get(auth_id_id = pk)
+        projectpeople = ProjectPeople.objects.filter(person_id_id=pk).all()
+        for row in projectpeople:
+            project_id = row.project_id_id
+            project = Project.objects.get(id=project_id)
+            allprojects.append(project)
+    except:
+        return render(request, 'ingest/no_projects.html')
+    return render(request, 'ingest/modify_user')    
+
+def list_all_users(request):
+    allusers = User.objects.all()
+    return render(request, 'ingest/list_all_users.html', {'allusers':allusers})
 
 def manageUsers(request):
     current_user = request.user
     allusers = User.objects.all()
-    print(allusers)
     for user in allusers:
         try:
             these_people = People.objects.get(auth_user_id=user)
+            #these_people = People.objects.filter(auth_user_id=user).all()
         except People.DoesNotExist:
             these_people = None
         try:
-            these_project_people = ProjectPeople.objects.get(people_id=these_people)
+            #these_project_people = ProjectPeople.objects.get(people_id=these_people)
+            these_project_people = ProjectPeople.objects.filter(people_id=these_people)
         except ProjectPeople.DoesNotExist:
             these_project_people = None
         user.these_people = these_people
         user.these_project_people = these_project_people
     people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.get(people_id = people.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
     allpeople = People.objects.all()
     allprojectpeople = ProjectPeople.objects.all()
     try:
-        if project_person.is_bil_admin:
-            return render(request, 'ingest/manage_users.html', {'project_person': project_person, 'allpeople': allpeople, 'allprojectpeople': allprojectpeople, 'allusers':allusers})
-       
+        for attribute in project_person:
+             if attribute.is_bil_admin:
+                 return render(request, 'ingest/manage_users.html', {'project_person': attribute, 'allpeople': allpeople, 'allprojectpeople': allprojectpeople, 'allusers':allusers})
+
     except Exception as e:
         print(e)
         return render(request, 'ingest/index.html')
@@ -148,6 +160,7 @@ def userModify(request):
         is_bil_admin = item['is_bil_admin']
         person = People.objects.get(auth_user_id_id=user_id)
         project_person = ProjectPeople.objects.get(people_id=person)
+        
         if not project_person:
             project_person = ProjectPeople(is_pi=is_pi, is_po=is_po, is_bil_admin=is_bil_admin, people_id=user_id)
             project_person.save()
@@ -161,6 +174,7 @@ def userModify(request):
 
 def manageProjects(request):
     current_user = request.user
+    #is_pi_or_bil_admin(request)
     person = People.objects.get(auth_user_id_id=current_user)
     project_person = ProjectPeople.objects.filter(people_id=person).all()            
 

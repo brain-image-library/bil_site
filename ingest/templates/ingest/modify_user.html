@@ -16,7 +16,7 @@
 <thead>
 <tr>
 <th>Username</th>
-<th>Name</th>
+<th>Project Name</th>
 <th>Orcid ID</th>
 <th>Affiliation</th>
 <th>Is Project Investigator</th>
@@ -29,8 +29,9 @@
 
 {% for user in allusers %}
 <tr data-user_id="{{user.id}}">
-<td>{{user.username}}</td>
+<td></td>
 <td>{{user.these_people.name}}</td>
+<td>Project Name</td>
 <td>{{user.these_people.orcid_id}}</td>
 <td>{{user.these_people.affiliation}}</td>
 <td>

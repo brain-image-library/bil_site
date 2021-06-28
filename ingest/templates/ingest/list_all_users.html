@@ -1,0 +1,36 @@
+{% extends 'ingest/base.html' %}
+{% block content %}
+{% load bootstrap4 %}
+
+<head>
+<script src="/static/ingest/updateusers.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+<script>$(document).ready(function(){$('table').find('select').on('change', function() {$(this).addClass('modified');});})</script>
+</head>
+
+<h1>Modify User Access</h1>
+<p>Change user roles.</p>
+<form id="rowform">
+{% csrf_token %}
+<table id="ModifyUserAccess" class="table">
+<thead>
+<tr>
+<th></th>
+<th>Username</th>
+</tr>
+</thead>
+<tbody>
+
+{% for user in allusers %}
+<tr data-user_id="{{user.id}}">
+<td>{{user.name}}</td>
+<td>< a href="{% url 'ingest:modify_user' user.id %}">Edit</td>
+
+ 
+{% endfor %}
+</table>
+
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
+{% endblock %}

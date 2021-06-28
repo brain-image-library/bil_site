@@ -49,5 +49,7 @@ urlpatterns = [
     path('view_project_people/<int:pk>', views.view_project_people, name = 'view_project_people'),
     path('view_project_collections/<int:pk>', views.view_project_collections, name = 'view_project_collections'),
     path('no_collection/<int:pk>', views.no_collection, name = 'no_colletion'),
-    path('no_people/<int:pk>', views.no_people, name = 'no_people')
+    path('no_people/<int:pk>', views.no_people, name = 'no_people'),
+    re_path(r'list_all_users', views.list_all_users, name = 'list_all_users'),
+    path('modify_user/<int:pk>', views.modify_user, name = 'modify_user')   
 ]
