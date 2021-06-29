@@ -53,16 +53,18 @@ def signup(request):
     # authentication views with other apps (e.g. data exploration portal).
     return render(request, 'ingest/signup.html')
 
-def is_pi_or_bil_admin(request):
-    current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-    for attribute in project_person:
-        if attribute.is_bil_admin:
-            return True, {'project_person': attribute}
-        elif attribute.is_pi:
-            return True, {'project_person': attribute}
-    return
+#def is_pi_or_bil_admin(request):
+#    current_user = request.user
+#    people = People.objects.get(auth_user_id_id = current_user.id)
+#    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+#    for attribute in project_person:
+#        if attribute.is_bil_admin:
+#            return True, {'project_person': attribute}
+#        elif attribute.is_pi:
+#            return True, {'project_person': attribute}
+#        else:
+#            return False
+#    return
 
 @login_required
 def index(request):
@@ -99,7 +101,7 @@ def pi_index(request):
 
 def modify_user(request, pk):
     person = People.objects.get(auth_user_id_id = pk)
-    all_project_people = ProjectPeople.objects.filter(people_id_id=person.id).all()
+    all_project_people = ProjectPeople.objects.filter(people_id_id=person.id).all()   
     for project_person in all_project_people:
         try:
             their_project = Project.objects.get(id=project_person.project_id_id)
@@ -111,38 +113,37 @@ def modify_user(request, pk):
 
     return render(request, 'ingest/modify_user.html', {'all_project_people':all_project_people, 'person':person})    
 
-
 def list_all_users(request):
     allusers = User.objects.all()
     return render(request, 'ingest/list_all_users.html', {'allusers':allusers})
 
-def manageUsers(request):
-    current_user = request.user
-    allusers = User.objects.all()
-    for user in allusers:
-        try:
-            these_people = People.objects.get(auth_user_id=user)
-            #these_people = People.objects.filter(auth_user_id=user).all()
-        except People.DoesNotExist:
-            these_people = None
-        try:
-            #these_project_people = ProjectPeople.objects.get(people_id=these_people)
-            these_project_people = ProjectPeople.objects.filter(people_id=these_people)
-        except ProjectPeople.DoesNotExist:
-            these_project_people = None
-        user.these_people = these_people
-        user.these_project_people = these_project_people
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-    allpeople = People.objects.all()
-    allprojectpeople = ProjectPeople.objects.all()
-    try:
-        for attribute in project_person:
-             if attribute.is_bil_admin:
-                 return render(request, 'ingest/manage_users.html', {'project_person': attribute, 'allpeople': allpeople, 'allprojectpeople': allprojectpeople, 'allusers':allusers})
-    except Exception as e:
-        print(e)
-        return render(request, 'ingest/index.html')
+#def manageUsers(request):
+#    current_user = request.user
+#    allusers = User.objects.all()
+#    for user in allusers:
+#        try:
+#            these_people = People.objects.get(auth_user_id=user)
+#            #these_people = People.objects.filter(auth_user_id=user).all()
+#        except People.DoesNotExist:
+#            these_people = None
+#        try:
+#            #these_project_people = ProjectPeople.objects.get(people_id=these_people)
+#            these_project_people = ProjectPeople.objects.filter(people_id=these_people)
+#        except ProjectPeople.DoesNotExist:
+#            these_project_people = None
+#        user.these_people = these_people
+#        user.these_project_people = these_project_people
+#    people = People.objects.get(auth_user_id_id = current_user.id)
+#    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+#    allpeople = People.objects.all()
+#    allprojectpeople = ProjectPeople.objects.all()
+#    try:
+#        for attribute in project_person:
+#             if attribute.is_bil_admin:
+#                 return render(request, 'ingest/manage_users.html', {'project_person': attribute, 'allpeople': allpeople, 'allprojectpeople': allprojectpeople, 'allusers':allusers})
+#    except Exception as e:
+#        print(e)
+#        return render(request, 'ingest/index.html')
 
 
 def userModify(request):
@@ -251,6 +252,28 @@ def create_project(request):
         project_person.save()
     messages.success(request, 'Project Created!')    
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
+
+def add_project_user(request, pk):
+    all_users = User.objects.get.all()
+
+    return render(request, 'ingest/add_project_user.html', {'all_users':all_users})
+
+def write_user_to_project_people(request, pk):
+    content = json.loads(request.body)
+    # add their id(free), is_pi, is_po, doi_role, people_id_id, project_id_id(pk), is_bil_admin 
+    items = []
+    for item in new_content:
+        items.append(item['user_name'])
+        items.append(item['user_id'])
+
+        user_name = item['user_name']
+        user_id = item['user_id']
+
+        project = Project.objects.get(id=pk) 
+        
+        project_person = ProjectPeople(project_id_id=project.id, people_id_id=user_id, is_pi=False, is_po=False, is_bil_admin=False, doi_role='')
+        project_person.save()
+    return HttpResponce(json.dums({'url': reverse('ingest/manage_projects')}))
 
 
 def view_project_people(request, pk):

@@ -18,7 +18,9 @@
 </table>
 
 <hr>
-
+<a href="{% url 'ingest:add_project_user' project.id %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Add Users to Project</button>
+</a>
 <a href="{% url 'ingest:index' %}">
   <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
 </a>
