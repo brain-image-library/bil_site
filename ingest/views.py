@@ -228,7 +228,6 @@ def project_form(request):
 
 def create_project(request):
     new_project = json.loads(request.body)
-    print(new_project)
     items = []
     for item in new_project:
         items.append(item['funded_by'])
@@ -254,26 +253,28 @@ def create_project(request):
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
 
 def add_project_user(request, pk):
-    all_users = User.objects.get.all()
+    all_users = User.objects.all()
+    project = Project.objects.get(id=pk) 
+    return render(request, 'ingest/add_project_user.html', {'all_users':all_users, 'project':project})
 
-    return render(request, 'ingest/add_project_user.html', {'all_users':all_users})
-
-def write_user_to_project_people(request, pk):
+def write_user_to_project_people(request):
     content = json.loads(request.body)
+    print(content)
     # add their id(free), is_pi, is_po, doi_role, people_id_id, project_id_id(pk), is_bil_admin 
     items = []
-    for item in new_content:
-        items.append(item['user_name'])
+    for item in content:
         items.append(item['user_id'])
-
-        user_name = item['user_name']
+        items.append(item['project_id'])
         user_id = item['user_id']
+        project_id = item['project_id']
 
-        project = Project.objects.get(id=pk) 
+        project = Project.objects.get(id=project_id) 
         
         project_person = ProjectPeople(project_id_id=project.id, people_id_id=user_id, is_pi=False, is_po=False, is_bil_admin=False, doi_role='')
-        project_person.save()
-    return HttpResponce(json.dums({'url': reverse('ingest/manage_projects')}))
+        print(project_person)
+        #project_person.save()
+    messages.success(request, 'User Added!')
+    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
 
 
 def view_project_people(request, pk):
@@ -281,7 +282,7 @@ def view_project_people(request, pk):
         project = Project.objects.get(id=pk)
         # get all of the project people rows with the project_id matching the project.id
         projectpeople = ProjectPeople.objects.filter(project_id_id=pk).all()
-        print(projectpeople.values())
+       
         # get all of the people who are in those projectpeople rows
         allpeople = []
         for row in projectpeople:
@@ -312,7 +313,7 @@ def view_project_collections(request, pk):
         collectiongroup = CollectionGroup.objects.get(project_id_id=pk)
         project_collections = Collection.objects.filter(collection_group_id_id=collectiongroup).all()
         
-        print(project_collections)
+       
         return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections})
     except ObjectDoesNotExist:
         return render(request, 'ingest/no_collection.html')

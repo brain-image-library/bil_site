@@ -52,5 +52,6 @@ urlpatterns = [
     path('no_people/<int:pk>', views.no_people, name = 'no_people'),
     re_path(r'list_all_users', views.list_all_users, name = 'list_all_users'),
     path('modify_user/<int:pk>', views.modify_user, name = 'modify_user'),
-    path('add_project_user/<int:pk>', views.add_project_user, name = 'add_project_user')   
+    path('add_project_user/<int:pk>', views.add_project_user, name = 'add_project_user'),
+    re_path(r'^write_user_to_project_people/$', views.write_user_to_project_people, name = 'write_user_to_project_people')   
 ]

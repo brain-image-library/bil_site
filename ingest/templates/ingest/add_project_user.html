@@ -1,14 +1,14 @@
 <head>
-<script src="/static/ingest/addprojectuser.js"></script>
+<script src="/static/ingest/addprojectusers.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
 </head>
 {% extends 'ingest/wide.html' %}
 {% load bootstrap4 %} 
 {% block wide %}
-
-<h1>Add a user to your project</h1>
-<p>Select checkboxes for each user to add them to a this project {{project.name}}</p>
 <form id="rowform">
+<h1 name="project_id" id="project_id" value="{{ project.id }}">Add a user to your project named {{project.name}}</h1>
+<p>Select checkboxes for each user to add them to the project</p>
+
 {% csrf_token %}
 <table id="usertable" class="table">
 <thead>
@@ -22,13 +22,13 @@
 {% for user in all_users %}
 <tr data-user_id="{{user.id}}">
 <td><input type="checkbox" id="user_is_checked"></td>
-<td>{{user.name}}</td>
-
+<td name="username" id="username">{{user.username}}</td>
+<td>
 </tr>
 {% endfor %}
 </table>
 </form>
-<button class="btn btn-primary" onclick="add_users();">Submit Validation Request</button>
+<button class="btn btn-primary" onclick="add_users();">Submit</button>
 <hr>
 
 <a href="{% url 'ingest:index' %}">

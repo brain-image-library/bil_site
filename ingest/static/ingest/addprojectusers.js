@@ -1,19 +1,22 @@
 function add_users() {
     const csrftoken = Cookies.get('csrftoken');
+    const project_id = document.getElementById('project_id');
     let output_rows = []
     $('tbody>tr').each(function(i, e){
         let $e = $(e);
         // $e is the tr element
-        let row_is_checked = $e.find('#user_is_checked').is(':checked');
-        // row_is_checked is a boolean of whether that row is checked or not
-        let username = $e.find('#username')
-        if(row_is_checked)
+        let user_is_checked = $e.find('#user_is_checked').is(':checked');
+        // user_is_checked is a boolean of whether that row is checked or not
+             
+        if(user_is_checked)
             output_rows.push({
-                "username": username.value()
+                "user_id": $e.data('user_id'),
+                "project_id": project_id.getAttribute('value')
                 }
             )
     });
-  fetch(`${window.origin}/ingest/add_project_user/`, {
+     console.log(output_rows);
+  fetch(`${window.origin}/ingest/write_user_to_project_people/`, {
       method: "POST",
       credentials: "include",
       body: JSON.stringify(output_rows),
