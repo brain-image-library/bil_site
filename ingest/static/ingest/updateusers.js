@@ -11,7 +11,8 @@ function submit_user_changes() {
             let is_po = $e.find('#is_po')
             let is_bil_admin = $e.find('#is_bil_admin')
             output_rows.push({
-            "auth_id": auth_id.value,
+            "project_id": $e.data('project_id'),
+            "auth_id": auth_id.getAttribute('value'),
             "is_pi": is_pi.val(),
             "is_po": is_po.val(),
             "is_bil_admin": is_bil_admin.val()})

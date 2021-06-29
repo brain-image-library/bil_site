@@ -147,31 +147,27 @@ def manageUsers(request):
 
 def userModify(request):
     content = json.loads(request.body)
-    print(content)
+        
+    #person = People.objects.get(auth_user_id_id=auth_id)
+    #project_person = ProjectPeople.objects.filter(people_id_id=person.id)
     items = []
     for item in content:
         items.append(item['is_pi'])
         items.append(item['is_po'])
         items.append(item['is_bil_admin'])
         items.append(item['auth_id'])
+        items.append(item['project_id'])
         is_pi = item['is_pi']
         is_po = item['is_po']
         is_bil_admin = item['is_bil_admin']
         auth_id = item['auth_id']
+        project_id = item['project_id']
         
-        print(auth_id)
-
-        person = People.objects.get(people_id_id=auth_id)
-            
-
-        if not project_person:
-            project_person = ProjectPeople(is_pi=is_pi, is_po=is_po, is_bil_admin=is_bil_admin, people_id_id=person.id)
-            project_person.save()
-        else:
-            project_person.is_pi=is_pi
-            project_person.is_po=is_po
-            project_person.is_bil_admin=is_bil_admin
-            project_person.save()
+        project_person = ProjectPeople.objects.get(id=project_id)
+        project_person.is_pi=is_pi
+        project_person.is_po=is_po
+        project_person.is_bil_admin=is_bil_admin
+        project_person.save()
         
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
 
