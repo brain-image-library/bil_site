@@ -28,7 +28,7 @@ from . import tasks
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, CollectionGroup
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, CollectionGroup, EventsLog
 from .tables import CollectionTable, ImageMetadataTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -207,10 +207,13 @@ def manageCollections(request):
             collections = Collection.objects.filter(collection_group_id_id=collectionsgroup_id).all()
             for c in collections:
                 allcollections.append(c)
-
-    print(allcollections)
-
-    return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections, 'project':project})
+                try:
+                    event = EventsLog.objects.get(collection_id_id=c.id).last()
+                    event_type = event.event_type
+                except EventsLog.DoesNotExist:
+                    event = None
+                        
+    return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections, 'project':project, 'event':event})
 
 #def view_project_details(request, pk):
 #    try:
