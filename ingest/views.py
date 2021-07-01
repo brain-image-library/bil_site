@@ -318,13 +318,17 @@ def view_project_collections(request, pk):
         # use the id of the project to look it up in the collectiongroup
         collectiongroup = CollectionGroup.objects.get(project_id_id=pk)
         project_collections = Collection.objects.filter(collection_group_id_id=collectiongroup).all()
-        
+        for c in project_collections:
+            try:
+                event = EventsLog.objects.get(collection_id_id=c.id).last()
+                event_type = event.event_type
+            except EventsLog.DoesNotExist:
+                event = None
        
-        return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections})
+        #return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections, 'event':event})
     except ObjectDoesNotExist:
-        return render(request, 'ingest/no_collection.html')
-        #raise Http404
-    return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections})
+        return render(request, 'ingest/no_collection.html')  
+    return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections, 'event':event})
 
 
 
