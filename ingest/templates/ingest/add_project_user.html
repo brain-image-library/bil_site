@@ -8,7 +8,7 @@
 <form id="rowform">
 <h1 name="project_id" id="project_id" value="{{ project.id }}">Add a user to your project named {{project.name}}</h1>
 <p>Select checkboxes for each user to add them to the project</p>
-
+<p>If the user you are looking for is not on this list, it may be because they have no logged into the Submission Portal, or they have not been added to the system. <a href="http://www.brainimagelibrary.org/submission.html">See Instructions</a>
 {% csrf_token %}
 <table id="usertable" class="table">
 <thead>

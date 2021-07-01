@@ -259,8 +259,7 @@ def add_project_user(request, pk):
 
 def write_user_to_project_people(request):
     content = json.loads(request.body)
-    print(content)
-     
+    
     items = []
     for item in content:
         items.append(item['user_id'])
@@ -271,11 +270,14 @@ def write_user_to_project_people(request):
         project = Project.objects.get(id=project_id) 
         person = People.objects.get(auth_user_id_id=user_id)
         project_person = ProjectPeople(project_id_id=project.id, people_id_id=person.id, is_pi=False, is_po=False, is_bil_admin=False, doi_role='')
-        print(project_person)
-        print('^^^ this person is being added^^^')
-        project_person.save()
-    messages.success(request, 'User Added!')
-    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+        
+        try:
+            check =  ProjectPeople.objects.get(project_id_id=project.id, people_id_id=person.id)
+            user = User.objects.get(id=user_id)
+        except:
+            project_person.save()
+    messages.success(request, 'User(s) Added!')
+    return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
 
 
 def view_project_people(request, pk):
