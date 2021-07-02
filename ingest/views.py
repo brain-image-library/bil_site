@@ -187,33 +187,38 @@ def manageProjects(request):
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})
 
 def manageCollections(request):
+    allcollections = []
+    allevents = []
     # gathers all the collections associated with the PI, linked on pi_index.html
     current_user = request.user
+    # pi's row in the person table
     person = People.objects.get(auth_user_id_id=current_user)
-    allprojectpeople = ProjectPeople.objects.filter(people_id=person.id).all()
-    
-    # for every row in projectpeople, get the project_id_id
+    # pi's rows in the project_people table, where they are pi=true
+    allprojectpeople = ProjectPeople.objects.filter(people_id=person.id, is_pi=True).all()
+    # for every row in allprojectpeople, get the project_id_id
     # then use the project_id_ids to get the projects
-    # then use the projects to get the collectionsgroups
-    # finally using the collectionsgroups to get all the collections
-    allcollections = []
     print(allprojectpeople.values())
     for row in allprojectpeople:
         project_id = row.project_id_id
         project = Project.objects.get(id=project_id)
+        # then use the projects to get the collectionsgroups
+        # finally using the collectionsgroups to get all the collections
         allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=project.id).all()
         for group in allcollectionsgroups:
             collectionsgroup_id = group.id
             collections = Collection.objects.filter(collection_group_id_id=collectionsgroup_id).all()
-            for c in collections:
-                allcollections.append(c)
-                try:
-                    event = EventsLog.objects.get(collection_id_id=c.id).last()
-                    event_type = event.event_type
-                except EventsLog.DoesNotExist:
-                    event = None
+            for collection in collections:
+                allcollections.append(collection)
+                #try:
+                #    event = EventsLog.objects.filter(collection_id_id=collection.id).latest('timestamp')
+                #    event_type = event.event_type
+                #    allevents.append(event_type)
+                #    print(allevents)
+                #    print('^^^all events!')
+                #except EventsLog.DoesNotExist:
+                #    event = None
                         
-    return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections, 'project':project, 'event':event})
+    return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections, 'project':project, 'event_type':event_type})
 
 #def view_project_details(request, pk):
 #    try:
@@ -283,6 +288,29 @@ def write_user_to_project_people(request):
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
 
 
+def people_of_pi(request):
+    # enables pi to see all people on their projects in one large view
+    allusers = []
+    current_user = request.user
+    pi = People.objects.get(auth_user_id_id=current_user.id)
+    # filters the project_people table down to the rows where it's the pi's people_id_id AND is_pi=true
+    pi_projects = ProjectPeople.objects.filter(people_id_id=pi.id, is_pi=True).all()
+    for project in pi_projects:
+        # the project id for every project the pi is a pi for
+        pi_project_id = project.project_id_id
+        # gets the project object that matches the project id of the pi projects
+        project = Project.objects.get(id=pi_project_id)
+        # get all the project_people rows that have the project_id_id that match pi's project_ids
+        people_on_project = ProjectPeople.objects.filter(project_id_id=pi_project_id).all()
+        for p in people_on_project:
+            person = People.objects.get(id=p.people_id_id)
+            user = User.objects.get(id=person.auth_user_id_id)
+            print(user.username)
+            print(user.is_active)
+            allusers.append(user)
+    return render(request, 'ingest/people_of_pi.html', {'allusers':allusers})
+
+
 def view_project_people(request, pk):
     try:
         project = Project.objects.get(id=pk)
@@ -319,6 +347,8 @@ def view_project_collections(request, pk):
         collectiongroup = CollectionGroup.objects.get(project_id_id=pk)
         project_collections = Collection.objects.filter(collection_group_id_id=collectiongroup).all()
         for c in project_collections:
+            user_id = c.user_id
+            owner = User.objects.get(id=user_id)
             try:
                 event = EventsLog.objects.get(collection_id_id=c.id).last()
                 event_type = event.event_type
@@ -328,7 +358,7 @@ def view_project_collections(request, pk):
         #return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections, 'event':event})
     except ObjectDoesNotExist:
         return render(request, 'ingest/no_collection.html')  
-    return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections, 'event':event})
+    return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections, 'event':event, 'owner':owner})
 
 
 
