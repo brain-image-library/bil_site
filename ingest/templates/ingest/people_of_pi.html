@@ -4,21 +4,28 @@
 
 <h1>Users on your projects</h1>
 <p>This is a list of all users associated with your projects</p>
-<table id="people_of_pi" class="table">
+<table id="projects" class="table">
 <thead>
+{% for project in pi_projects %}
 <tr>
-<th>Username</th>
-<th>Active?</th>
-</tr>
-</thead>
-<tbody>
-{% for user in allusers %}
-<tr>
-<td>{{user.username}}</td>
-<td>{{user.is_active}}</td>
-</tr>
+<th style="font-size: 24px; text-decoration: underline overline;">{{project.this_project.name}}</th>
+    <table id="people_of_pi" class="table">
+        <thead>
+        <tr>
+        <th>Username</th>
+        <th>Active?</th>
+        </tr>
+        </thead>
+        {% for people in project_people %}
+        <tbody>
+            <tr>
+            <td>{{people.this_user.username}}</td>
+            <td>{{people.this_user.is_active}}</td>
+            </tr>
+        </tbody>
+        {% endfor %}
 {% endfor %}
-</tbody>
+</thead>
 </table>
 
 <a href="{% url 'ingest:index' %}">

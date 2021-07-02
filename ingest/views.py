@@ -290,7 +290,8 @@ def write_user_to_project_people(request):
 
 def people_of_pi(request):
     # enables pi to see all people on their projects in one large view
-    allusers = []
+    #allusers = []
+    #projects = []
     current_user = request.user
     pi = People.objects.get(auth_user_id_id=current_user.id)
     # filters the project_people table down to the rows where it's the pi's people_id_id AND is_pi=true
@@ -298,17 +299,20 @@ def people_of_pi(request):
     for project in pi_projects:
         # the project id for every project the pi is a pi for
         pi_project_id = project.project_id_id
+
         # gets the project object that matches the project id of the pi projects
-        project = Project.objects.get(id=pi_project_id)
+        this_project = Project.objects.get(id=pi_project_id)
+        #projects.append(this_project)
+        project.this_project = this_project
+
         # get all the project_people rows that have the project_id_id that match pi's project_ids
-        people_on_project = ProjectPeople.objects.filter(project_id_id=pi_project_id).all()
-        for p in people_on_project:
-            person = People.objects.get(id=p.people_id_id)
-            user = User.objects.get(id=person.auth_user_id_id)
-            print(user.username)
-            print(user.is_active)
-            allusers.append(user)
-    return render(request, 'ingest/people_of_pi.html', {'allusers':allusers})
+        project_people = ProjectPeople.objects.filter(project_id_id = this_project).all()
+        for people in project_people:
+            person = People.objects.get(id=people.people_id_id)
+            this_user = User.objects.get(id=person.auth_user_id_id)
+            print(this_user.username)
+            people.this_user = this_user
+    return render(request, 'ingest/people_of_pi.html', {'pi_projects':pi_projects, 'project_people':project_people})
 
 
 def view_project_people(request, pk):
