@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib import messages
 from django.contrib import auth
+from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
@@ -36,6 +37,8 @@ from .models import UUID
 from .models import Collection
 from .models import ImageMetadata
 from .models import DescriptiveMetadata
+from .models import ProjectPeople
+from .models import People
 from .tables import CollectionTable
 from .tables import ImageMetadataTable
 from .tables import DescriptiveMetadataTable
@@ -63,14 +66,110 @@ def signup(request):
     # authentication views with other apps (e.g. data exploration portal).
     return render(request, 'ingest/signup.html')
 
-
+@login_required
 def index(request):
     """ The main/home page. """
+    current_user = request.user
+    try:
+        people = People.objects.get(auth_user_id_id = current_user.id)
+        project_person = ProjectPeople.objects.get(people_id = people.id)
+        allpeople = People.objects.all()
+        allprojectpeople = ProjectPeople.objects.all()
+    
+        if project_person.is_bil_admin:
+            return render(request, 'ingest/bil_index.html', {'project_person': project_person})#, {'allpeople': allpeople}, {'allprojectpeople': allprojectpeople})
+        elif project_person.is_pi:
+            return render(request, 'ingest/pi_index.html', {'project_person': project_person})
+    except Exception as e:
+        print(e)
+        return render(request, 'ingest/index.html')
     return render(request, 'ingest/index.html')
-
-
 # What follows is a number of views for uploading, creating, viewing, modifying
 # and deleting IMAGE METADATA.
+def manageUsers(request):
+  
+    current_user = request.user
+    allusers = User.objects.all()
+    print(allusers)
+    for user in allusers:
+        try:
+            these_people = People.objects.get(auth_user_id=user)
+        except People.DoesNotExist:
+            these_people = None
+        try:
+            these_project_people = ProjectPeople.objects.get(people_id=these_people)
+        except ProjectPeople.DoesNotExist:
+            these_project_people = None
+        user.these_people = these_people
+        user.these_project_people = these_project_people
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.get(people_id = people.id)
+    allpeople = People.objects.all()
+    allprojectpeople = ProjectPeople.objects.all()
+    try:
+        if project_person.is_bil_admin:
+            return render(request, 'ingest/manage_users.html', {'project_person': project_person, 'allpeople': allpeople, 'allprojectpeople': allprojectpeople, 'allusers':allusers})
+       
+    except Exception as e:
+        print(e)
+        return render(request, 'ingest/index.html')
+
+def userModify(request):
+    
+    content = json.loads(request.body)
+    print(content)
+    items = []
+    for item in content:
+        items.append(item['user_id'])
+        items.append(item['is_pi'])
+        items.append(item['is_po'])
+        items.append(item['is_bil_admin'])
+        user_id = item['user_id']
+        is_pi = item['is_pi']
+        is_po = item['is_po']
+        is_bil_admin = item['is_bil_admin']
+        person = People.objects.get(auth_user_id_id=user_id)
+        project_person = ProjectPeople.objects.get(people_id=person)
+        if not project_person:
+            project_person = ProjectPeople(is_pi=is_pi, is_po=is_po, is_bil_admin=is_bil_admin, people_id=user_id)
+            project_person.save()
+        else:
+            project_person.is_pi=is_pi
+            project_person.is_po=is_po
+            project_person.is_bil_admin=is_bil_admin
+            project_person.save()
+    print(items)
+    
+    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+
+    
+    
+    
+#class UserList(LoginRequiredMixin, SingleTableMixin, FilterView):
+#    """ A list of all a user's collections. """
+#
+#    table_class = CollectionTable
+#    model = Collection
+#    template_name = 'ingest/collection_list.html'
+#    filterset_class = CollectionFilter
+#
+#    def get_queryset(self, **kwargs):
+#       return Collection.objects.filter(user=self.request.user)
+
+#    def get_context_data(self, **kwargs):
+#        # Call the base implementation first to get a context
+#        context = super().get_context_data(**kwargs)
+#        context['collections'] = Collection.objects.filter(user=self.request.user)
+#        return context
+
+#    def get_filterset_kwargs(self, filterset_class):
+#        """ Sets the default collection filter status. """
+#        kwargs = super().get_filterset_kwargs(filterset_class)
+#        if kwargs["data"] is None:
+#            kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
+#        return kwargs
+
+
 
 
 @login_required

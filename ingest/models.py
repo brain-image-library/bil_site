@@ -336,6 +336,7 @@ class ProjectPeople(models.Model):
     is_pi = models.BooleanField(default=False)
     is_po = models.BooleanField(default=False)
     doi_role = models.CharField(max_length=256)
+    is_bil_admin = models.BooleanField(default=False)
 
 class Funder(models.Model):
 

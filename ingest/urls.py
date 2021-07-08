@@ -33,9 +33,12 @@ urlpatterns = [
     path('collection_data_path/<int:pk>', views.collection_data_path, name='collection_data_path'),
     path('collection_validation_results/<int:pk>', views.collection_validation_results, name='collection_validation_results'),
     path('collection_submission_results/<int:pk>', views.collection_submission_results, name='collection_submission_results'),
+    path('manageUsers', views.manageUsers, name = 'manage_users'),
     re_path(r'^collection_create/$', views.collection_create, name='collection_create'),
     re_path(r'^collection_list/$', views.CollectionList.as_view(), name='collection_list'),
     re_path(r'^submit_validate_collection_list/$', views.SubmitValidateCollectionList.as_view(), name='submit_validate_collection_list'),
     re_path(r'^submit_request_collection_list/$', views.SubmitRequestCollectionList.as_view(), name ='submit_request_collection_list'),
-    re_path(r'^collection_send/$', views.collection_send, name = 'collection_send')
+    re_path(r'^collection_send/$', views.collection_send, name = 'collection_send'),
+    re_path(r'^manageUsers/$', views.manageUsers, name = 'manageUsers'),
+    re_path(r'^userModify/$', views.userModify, name = 'userModify') 
 ]
