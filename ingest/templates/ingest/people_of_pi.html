@@ -16,11 +16,11 @@
             <th>Active?</th>
             </tr>
             </thead>
-            {% for people in project_people %}
+            {% for person in project_people %}
             <tbody style="padding-bottom:10px;">
                 <tr>
-                <td>{{people.this_user.username}}</td>
-                <td>{{people.this_user.is_active}}</td>
+                <td>{{person.user.username}}</td>
+                <td>{{person.user.is_active}}</td>
                 </tr>
             </tbody>
            {% endfor %}
