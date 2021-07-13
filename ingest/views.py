@@ -209,16 +209,47 @@ def manageCollections(request):
             collections = Collection.objects.filter(collection_group_id_id=collectionsgroup_id).all()
             for collection in collections:
                 allcollections.append(collection)
-                #try:
-                #    event = EventsLog.objects.filter(collection_id_id=collection.id).latest('timestamp')
-                #    event_type = event.event_type
-                #    allevents.append(event_type)
-                #    print(allevents)
-                #    print('^^^all events!')
-                #except EventsLog.DoesNotExist:
-                #    event = None
+                try:
+                    event = EventsLog.objects.filter(collection_id_id=collection.id).latest('timestamp')
+                    event_type = event.event_type
+                    allevents.append(event_type)
+                    print(allevents)
+                    print('^^^all events!')
+                except EventsLog.DoesNotExist:
+                    event = None
                         
     return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections, 'project':project, 'event_type':event_type})
+
+#def manageCollections(request):
+    # gathers all the collections associated with the PI, linked on pi_index.html
+#    current_user = request.user
+    # pi's row in the person table
+#    person = People.objects.get(auth_user_id_id=current_user)
+    # pi's rows in the project_people table, where they are pi=true
+#    allprojectpeople = ProjectPeople.objects.filter(people_id=person.id, is_pi=True).all()
+    # for every row in allprojectpeople, get the project_id_id
+    # then use the project_id_ids to get the projects
+#    for project in allprojectpeople:
+#        project_id = project.project_id_id
+#        proj = Project.objects.get(id=project_id)
+        # then use the projects to get the collectionsgroups
+        # finally using the collectionsgroups to get all the collections
+#        allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=project.id).all()
+#        for group in allcollectionsgroups:
+#            collectionsgroup_id = group.id
+#            collections = Collection.objects.filter(collection_group_id_id=collectionsgroup_id).all()
+#            for collection in collections:
+#                try:
+#                    event = EventsLog.objects.filter(collection_id_id=collection.id).latest('timestamp')
+#                    event_type = event.event_type
+#                    project.collection.event_type = event_type
+#                except EventsLog.DoesNotExist:
+#                    event = None
+#                try:
+                    
+                    
+    
+#    return render(request, 'ingest/manage_collections.html', {'allprojectpeople':allprojectpeople, 'project':project})
 
 #def view_project_details(request, pk):
 #    try:
@@ -350,19 +381,19 @@ def view_project_collections(request, pk):
         # use the id of the project to look it up in the collectiongroup
         collectiongroup = CollectionGroup.objects.get(project_id_id=pk)
         project_collections = Collection.objects.filter(collection_group_id_id=collectiongroup).all()
-        for c in project_collections:
-            user_id = c.user_id
+        for collection in project_collections:
+            user_id = collection.user_id
             owner = User.objects.get(id=user_id)
             try:
-                event = EventsLog.objects.get(collection_id_id=c.id).last()
-                event_type = event.event_type
+                event = EventsLog.objects.filter(collection_id_id=collection.id).latest('event_type')
             except EventsLog.DoesNotExist:
                 event = None
+            collection.event = event
+            collection.owner = owner
        
-        #return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections, 'event':event})
     except ObjectDoesNotExist:
         return render(request, 'ingest/no_collection.html')  
-    return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections, 'event':event, 'owner':owner})
+    return render(request, 'ingest/view_project_collections.html', {'project_collections':project_collections})
 
 
 

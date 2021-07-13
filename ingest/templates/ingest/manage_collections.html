@@ -28,24 +28,24 @@
 </tr>
 </thead>
 <tbody>
-{% for collection in allcollections %}
+{% for project in allprojectpeople %}
 <tr>
 
-<td>{{collection.name}} </td>
-<td>{{collection.description}} </td>
-<td>{{project.name}} </td>
-<td>{{collection.organization_name}} </td>
-<td>{{collection.lab_name}} </td>
-<td>{{collection.project_funder_id}} </td>
-<td>{{collection.project_funder}} </td>
-<td>{{collection.bil_uuid}} </td>
-<td>{{collection.data_path}} </td>
-<td>{{collection.locked}} </td>
-<td>{{collection.submission_status}} </td>
-<td>{{collection.validation_status}} </td>
-<td>{{collection.modality}} </td>
-<td>{{collection.collection_type}} </td>
-<td>{{collection.event_type}} </td>
+<td>{{project.collection.name}} </td>
+<td>{{project.collection.description}} </td>
+<td>{{project.proj_name}}</td>
+<td>{{project.collection.organization_name}} </td>
+<td>{{project.collection.lab_name}} </td>
+<td>{{project.collection.project_funder_id}} </td>
+<td>{{project.collection.project_funder}} </td>
+<td>{{project.collection.bil_uuid}} </td>
+<td>{{project.collection.data_path}} </td>
+<td>{{project.collection.locked}} </td>
+<td>{{project.collection.submission_status}} </td>
+<td>{{project.collection.validation_status}} </td>
+<td>{{project.collection.modality}} </td>
+<td>{{project.collection.collection_type}} </td>
+<td>{{project.collection.event_type}} </td>
 </tr>
 {% endfor %}
 </table>
