@@ -6,9 +6,9 @@
 <p>This is a list of all users associated with your projects</p>
 <table id="projects" class="table">
 <thead>
-    {% for project in pi_projects %}
+    {% for proj in pi_projects %}
     <tr>
-    <th style="font-size: 24px; text-decoration: underline overline;">{{project.this_project.name}}</th>
+    <th style="font-size: 24px; text-decoration: underline overline;">{{proj.project_id.name}}</th>
         <table id="people_of_pi" class="table" style="padding-bottom:10px;">
             <thead>
             <tr>
@@ -16,14 +16,14 @@
             <th>Active?</th>
             </tr>
             </thead>
-            {% for person in project_people %}
+            {% for person in proj.related_project_people %}
             <tbody style="padding-bottom:10px;">
                 <tr>
-                <td>{{person.user.username}}</td>
-                <td>{{person.user.is_active}}</td>
+                <td>{{person.people_id.auth_user_id.username}}</td>
+                <td>{{person.people_id.auth_user_id.is_active}}</td>
                 </tr>
             </tbody>
-           {% endfor %}
+            {% endfor %}
     {% endfor %}
 </thead>
 </table>

@@ -325,21 +325,11 @@ def people_of_pi(request):
     pi = People.objects.get(auth_user_id_id=current_user.id)
     # filters the project_people table down to the rows where it's the pi's people_id_id AND is_pi=true
     pi_projects = ProjectPeople.objects.filter(people_id_id=pi.id, is_pi=True).all()
-    for project in pi_projects:
-        # gets the project object that matches the project id of the pi projects
-        this_project = Project.objects.get(id=project.project_id_id)
-        project.this_project = this_project
-        
-        print(project.this_project.name)
-        print('----------PROJECT NAME ---------------')
-        project_people = ProjectPeople.objects.filter(project_id_id=this_project.id).all()
-        for person in project_people:
-            project_person = People.objects.get(id=person.people_id_id)
-            user = User.objects.get(id=project_person.auth_user_id_id)
-            person.user = user
-            print(person.user)
-) 
-    return render(request, 'ingest/people_of_pi.html', {'pi_projects':pi_projects, 'project_people':project_people})
+    for proj in pi_projects:
+        proj.related_project_people = ProjectPeople.objects.filter(project_id=proj.project_id_id).all()
+        for person in proj.related_project_people:
+            print(person.people_id.auth_user_id.username)
+    return render(request, 'ingest/people_of_pi.html', {'pi_projects':pi_projects})
 
 
 def view_project_people(request, pk):
