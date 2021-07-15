@@ -1,20 +1,17 @@
 from django.conf import settings
-from django.contrib import messages
-from django.contrib import auth
+from django.contrib import messages, auth
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect
-from django.urls import reverse_lazy
-from django.urls import reverse
+from django.urls import reverse_lazy, reverse
 from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.core.cache import cache
-from django.http import Http404
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
 
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
@@ -45,26 +42,12 @@ def logout(request):
     # they've successfully logged out.
     return redirect('login')
 
-
 def signup(request):
     """ Info about signing up for a new account. """
     # XXX: this view should be separated from the the ingestion views and
     # placed with other authentication views to allow us to reuse the
     # authentication views with other apps (e.g. data exploration portal).
     return render(request, 'ingest/signup.html')
-
-#def is_pi_or_bil_admin(request):
-#    current_user = request.user
-#    people = People.objects.get(auth_user_id_id = current_user.id)
-#    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-#    for attribute in project_person:
-#        if attribute.is_bil_admin:
-#            return True, {'project_person': attribute}
-#        elif attribute.is_pi:
-#            return True, {'project_person': attribute}
-#        else:
-#            return False
-#    return
 
 @login_required
 def index(request):
@@ -73,8 +56,7 @@ def index(request):
     try:
         people = People.objects.get(auth_user_id_id = current_user.id)
         project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-        
-        print(project_person.values())
+
         for attribute in project_person: 
             if attribute.is_bil_admin:
                 return render(request, 'ingest/bil_index.html', {'project_person': attribute})
@@ -108,49 +90,15 @@ def modify_user(request, pk):
         except Project.DoesNotExist:
             their_project = None
             return render(request, 'ingest/no_projects.html')
-        
         project_person.their_project = their_project
-
     return render(request, 'ingest/modify_user.html', {'all_project_people':all_project_people, 'person':person})    
 
 def list_all_users(request):
     allusers = User.objects.all()
     return render(request, 'ingest/list_all_users.html', {'allusers':allusers})
 
-#def manageUsers(request):
-#    current_user = request.user
-#    allusers = User.objects.all()
-#    for user in allusers:
-#        try:
-#            these_people = People.objects.get(auth_user_id=user)
-#            #these_people = People.objects.filter(auth_user_id=user).all()
-#        except People.DoesNotExist:
-#            these_people = None
-#        try:
-#            #these_project_people = ProjectPeople.objects.get(people_id=these_people)
-#            these_project_people = ProjectPeople.objects.filter(people_id=these_people)
-#        except ProjectPeople.DoesNotExist:
-#            these_project_people = None
-#        user.these_people = these_people
-#        user.these_project_people = these_project_people
-#    people = People.objects.get(auth_user_id_id = current_user.id)
-#    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-#    allpeople = People.objects.all()
-#    allprojectpeople = ProjectPeople.objects.all()
-#    try:
-#        for attribute in project_person:
-#             if attribute.is_bil_admin:
-#                 return render(request, 'ingest/manage_users.html', {'project_person': attribute, 'allpeople': allpeople, 'allprojectpeople': allprojectpeople, 'allusers':allusers})
-#    except Exception as e:
-#        print(e)
-#        return render(request, 'ingest/index.html')
-
-
 def userModify(request):
     content = json.loads(request.body)
-        
-    #person = People.objects.get(auth_user_id_id=auth_id)
-    #project_person = ProjectPeople.objects.filter(people_id_id=person.id)
     items = []
     for item in content:
         items.append(item['is_pi'])
@@ -174,7 +122,6 @@ def userModify(request):
 
 def manageProjects(request):
     current_user = request.user
-    #is_pi_or_bil_admin(request)
     person = People.objects.get(auth_user_id_id=current_user)
     project_person = ProjectPeople.objects.filter(people_id=person).all()            
 
@@ -187,81 +134,23 @@ def manageProjects(request):
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})
 
 def manageCollections(request):
-    allcollections = []
-    allevents = []
     # gathers all the collections associated with the PI, linked on pi_index.html
     current_user = request.user
-    # pi's row in the person table
     person = People.objects.get(auth_user_id_id=current_user)
-    # pi's rows in the project_people table, where they are pi=true
-    allprojectpeople = ProjectPeople.objects.filter(people_id=person.id, is_pi=True).all()
-    # for every row in allprojectpeople, get the project_id_id
-    # then use the project_id_ids to get the projects
-    print(allprojectpeople.values())
-    for row in allprojectpeople:
-        project_id = row.project_id_id
-        project = Project.objects.get(id=project_id)
-        # then use the projects to get the collectionsgroups
-        # finally using the collectionsgroups to get all the collections
-        allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=project.id).all()
+    allprojects = ProjectPeople.objects.filter(people_id=person.id, is_pi=True).all()
+    for proj in allprojects:
+        allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=proj.project_id_id).all()
         for group in allcollectionsgroups:
-            collectionsgroup_id = group.id
-            collections = Collection.objects.filter(collection_group_id_id=collectionsgroup_id).all()
+            collections = Collection.objects.filter(collection_group_id_id=group.id).all()
             for collection in collections:
-                allcollections.append(collection)
                 try:
-                    event = EventsLog.objects.filter(collection_id_id=collection.id).latest('timestamp')
-                    event_type = event.event_type
-                    allevents.append(event_type)
-                    print(allevents)
-                    print('^^^all events!')
+                    event = EventsLog.objects.filter(collection_id_id=collection.id).latest('event_type')
                 except EventsLog.DoesNotExist:
                     event = None
-                        
-    return render(request, 'ingest/manage_collections.html', {'allcollections':allcollections, 'project':project, 'event_type':event_type})
-
-#def manageCollections(request):
-    # gathers all the collections associated with the PI, linked on pi_index.html
-#    current_user = request.user
-    # pi's row in the person table
-#    person = People.objects.get(auth_user_id_id=current_user)
-    # pi's rows in the project_people table, where they are pi=true
-#    allprojectpeople = ProjectPeople.objects.filter(people_id=person.id, is_pi=True).all()
-    # for every row in allprojectpeople, get the project_id_id
-    # then use the project_id_ids to get the projects
-#    for project in allprojectpeople:
-#        project_id = project.project_id_id
-#        proj = Project.objects.get(id=project_id)
-        # then use the projects to get the collectionsgroups
-        # finally using the collectionsgroups to get all the collections
-#        allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=project.id).all()
-#        for group in allcollectionsgroups:
-#            collectionsgroup_id = group.id
-#            collections = Collection.objects.filter(collection_group_id_id=collectionsgroup_id).all()
-#            for collection in collections:
-#                try:
-#                    event = EventsLog.objects.filter(collection_id_id=collection.id).latest('timestamp')
-#                    event_type = event.event_type
-#                    project.collection.event_type = event_type
-#                except EventsLog.DoesNotExist:
-#                    event = None
-#                try:
-                    
-                    
-    
-#    return render(request, 'ingest/manage_collections.html', {'allprojectpeople':allprojectpeople, 'project':project})
-
-#def view_project_details(request, pk):
-#    try:
-#        project = Project.objects.get(id=pk)
-#        print(project.name)
-#        print(project)
-#        return render(request, 'ingest/view_project_details.html', {'project':project})
-#    except ObjectDoesNotExist:
-#        raise Http404
-
-#    return render(request, 'ingest/view_project_details.html', {'project':project})
-
+                collection.event = event
+                print(collection.name)
+    return render(request, 'ingest/manage_collections.html', {'collections':collections})
+ 
 def project_form(request):
     return render(request, 'ingest/project_form.html')
 
@@ -298,7 +187,6 @@ def add_project_user(request, pk):
 
 def write_user_to_project_people(request):
     content = json.loads(request.body)
-    
     items = []
     for item in content:
         items.append(item['user_id'])
@@ -327,8 +215,6 @@ def people_of_pi(request):
     pi_projects = ProjectPeople.objects.filter(people_id_id=pi.id, is_pi=True).all()
     for proj in pi_projects:
         proj.related_project_people = ProjectPeople.objects.filter(project_id=proj.project_id_id).all()
-        for person in proj.related_project_people:
-            print(person.people_id.auth_user_id.username)
     return render(request, 'ingest/people_of_pi.html', {'pi_projects':pi_projects})
 
 
@@ -337,20 +223,16 @@ def view_project_people(request, pk):
         project = Project.objects.get(id=pk)
         # get all of the project people rows with the project_id matching the project.id
         projectpeople = ProjectPeople.objects.filter(project_id_id=pk).all()
-       
+     
         # get all of the people who are in those projectpeople rows
         allpeople = []
         for row in projectpeople:
             person_id = row.people_id_id
             person = People.objects.get(id=person_id)
             allpeople.append(person)
-
         return render(request, 'ingest/view_project_people.html', { 'project':project, 'allpeople':allpeople })
     except ObjectDoesNotExist:
         return render(request, 'ingest/no_people.html')
-    #    raise Http404
-    #except Exception as e:
-    #    print(e)
     return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople, 'project':project})
 
 def no_collection(request, pk):
