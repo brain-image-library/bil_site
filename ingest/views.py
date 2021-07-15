@@ -379,7 +379,7 @@ def view_project_collections(request, pk):
        
     except ObjectDoesNotExist:
         return render(request, 'ingest/no_collection.html')  
-    return render(request, 'ingest/view_project_collections.html', {'project_collections':project_collections})
+    return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections})
 
 
 
