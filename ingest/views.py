@@ -93,6 +93,24 @@ def modify_user(request, pk):
         project_person.their_project = their_project
     return render(request, 'ingest/modify_user.html', {'all_project_people':all_project_people, 'person':person})    
 
+def modify_biladmin_privs(request, pk):
+    # use pk to find the user in the people table
+    person = People.objects.get(auth_user_id_id = pk)
+    return render(request, 'ingest/modify_biladmin_privs.html', {'person':person})
+
+def change_bil_admin_privs(request):
+    content = json.loads(request.body)
+    items = []
+    for item in content:
+        items.append(item['is_bil_admin'])
+        is_bil_admin = item['is_bil_admin']
+        user_id = item['user_id']
+        
+        person = People.objects.get(id=user.id)
+        person.is_bil_admin=is_bil_admin
+        person.save()
+    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+
 def list_all_users(request):
     allusers = User.objects.all()
     return render(request, 'ingest/list_all_users.html', {'allusers':allusers})
@@ -103,19 +121,19 @@ def userModify(request):
     for item in content:
         items.append(item['is_pi'])
         items.append(item['is_po'])
-        items.append(item['is_bil_admin'])
+        #items.append(item['is_bil_admin'])
         items.append(item['auth_id'])
         items.append(item['project_id'])
         is_pi = item['is_pi']
         is_po = item['is_po']
-        is_bil_admin = item['is_bil_admin']
+        #is_bil_admin = item['is_bil_admin']
         auth_id = item['auth_id']
         project_id = item['project_id']
         
         project_person = ProjectPeople.objects.get(id=project_id)
         project_person.is_pi=is_pi
         project_person.is_po=is_po
-        project_person.is_bil_admin=is_bil_admin
+        #project_person.is_bil_admin=is_bil_admin
         project_person.save()
         
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))

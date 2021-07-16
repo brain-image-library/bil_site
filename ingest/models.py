@@ -327,6 +327,7 @@ class People(models.Model):
     orcid = models.CharField(max_length=256)
     affiliation = models.CharField(max_length=256)
     affiliation_identifier = models.CharField(max_length=256)
+    is_bil_admin = models.BooleanField(default=False)
     auth_user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank=True)
    
 class ProjectPeople(models.Model):
@@ -335,7 +336,7 @@ class ProjectPeople(models.Model):
     is_pi = models.BooleanField(default=False)
     is_po = models.BooleanField(default=False)
     doi_role = models.CharField(max_length=256)
-    is_bil_admin = models.BooleanField(default=False)
+    #is_bil_admin = models.BooleanField(default=False)
 
 class Funder(models.Model):
     name = models.CharField(max_length=256)

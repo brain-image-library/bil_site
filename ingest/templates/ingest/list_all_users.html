@@ -24,7 +24,8 @@
 {% for user in allusers %}
 <tr data-user_id="{{user.id}}">
 <td>{{user.username}}</td>
-<td><a href="{% url 'ingest:modify_user' user.id %}">Edit</td>
+<td><a href="{% url 'ingest:modify_biladmin_privs' user.id %}">Edit BIL Admin Privs</td>
+<td><a href="{% url 'ingest:modify_user' user.id %}">Edit PI or PO Privs</td>
  
 {% endfor %}
 </table>

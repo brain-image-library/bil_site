@@ -1,0 +1,23 @@
+{% extends 'ingest/base.html' %}
+{% block content %}
+{% load bootstrap4 %}
+<script src="/static/ingest/changebiladminprivs.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+
+<h1 name="auth_id" id="auth_id" value="{{person.auth_user_id_id}}>Change BIL Admin Privileges for {{people.auth_id.username}}</h1>
+
+<form id="ChangeBILAdminPrivs">
+{% csrf_token %}
+  <label for="is_bil_admin">Is BIL Admin?:</label>
+  <select  name="is_bil_admin" id="is_bil_admin">
+    <option value="True"> True </option>
+    <option value="False"> False </option>
+  </select>
+</form>
+<button class="btn btn-primary" onclick="change_bil_admin_privs();">Submit Change</button>
+<hr>
+
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
+{% endblock %}

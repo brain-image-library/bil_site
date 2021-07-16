@@ -19,7 +19,6 @@
 <th>Affiliation</th>
 <th>Is Project Investigator</th>
 <th>Is Program Officer</th>
-<th>Is BIL Admin</th>
 <th>DOI Role</th>
 </tr>
 </thead>
@@ -64,25 +63,6 @@
     >False</option>
     <option value="None"
         {% if project_person.is_po is null %}
-        selected
-        {% endif %}
-    >----</option>
-</select>
-</td>
-<td>
-<select name="is_bil_admin" id="is_bil_admin">
-    <option value="True" 
-        {% if project_person.is_bil_admin %}
-        selected
-        {% endif %}
-    >True</option>
-        <option value="False"
-        {% if project_person.is_bil_admin is False %}
-        selected
-        {% endif %}
-    >False</option>
-    <option value="null"
-        {% if project_person.is_bil_admin is null %}
         selected
         {% endif %}
     >----</option>
