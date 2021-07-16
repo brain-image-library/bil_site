@@ -135,22 +135,24 @@ def manageProjects(request):
 
 def manageCollections(request):
     # gathers all the collections associated with the PI, linked on pi_index.html
+    collections_list = []
     current_user = request.user
     person = People.objects.get(auth_user_id_id=current_user)
     allprojects = ProjectPeople.objects.filter(people_id=person.id, is_pi=True).all()
     for proj in allprojects:
+        #print(proj.project_id.name)
         allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=proj.project_id_id).all()
         for group in allcollectionsgroups:
             collections = Collection.objects.filter(collection_group_id_id=group.id).all()
             for collection in collections:
                 try:
-                    event = EventsLog.objects.filter(collection_id_id=collection.id).latest('event_type')
+                    collection.event = EventsLog.objects.filter(collection_id_id=collection.id).latest('event_type')
+              
                 except EventsLog.DoesNotExist:
-                    event = None
-                collection.event = event
-                print(collection.name)
-    return render(request, 'ingest/manage_collections.html', {'collections':collections})
- 
+                    collection.event = None
+            collections_list.extend(collections)
+    return render(request, 'ingest/manage_collections.html', {'collections':collections, 'collections_list':collections_list})
+
 def project_form(request):
     return render(request, 'ingest/project_form.html')
 
