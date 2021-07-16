@@ -53,6 +53,7 @@ urlpatterns = [
     re_path(r'list_all_users', views.list_all_users, name = 'list_all_users'),
     path('modify_user/<int:pk>', views.modify_user, name = 'modify_user'),
     path('modify_biladmin_privs/<int:pk>', views.modify_biladmin_privs, name = 'modify_biladmin_privs'),
+    re_path(r'^change_bil_admin_privs/$', views.change_bil_admin_privs, name = 'change_bil_admin_privs'),
     path('add_project_user/<int:pk>', views.add_project_user, name = 'add_project_user'),
     path('people_of_pi', views.people_of_pi, name = 'people_of_pi'),
     re_path(r'^write_user_to_project_people/$', views.write_user_to_project_people, name = 'write_user_to_project_people')   

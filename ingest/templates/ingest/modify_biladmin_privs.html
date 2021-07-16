@@ -4,15 +4,28 @@
 <script src="/static/ingest/changebiladminprivs.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
 
-<h1 name="auth_id" id="auth_id" value="{{person.auth_user_id_id}}>Change BIL Admin Privileges for {{people.auth_id.username}}</h1>
+<h1 name="person_id" id="person_id" value="{{person.id}}">Change BIL Admin Privileges for {{person.name}}</h1>
 
 <form id="ChangeBILAdminPrivs">
 {% csrf_token %}
   <label for="is_bil_admin">Is BIL Admin?:</label>
-  <select  name="is_bil_admin" id="is_bil_admin">
-    <option value="True"> True </option>
-    <option value="False"> False </option>
-  </select>
+  <select name="is_bil_admin" id="is_bil_admin">
+    <option value="True" 
+        {% if person.is_bil_admin %}
+        selected
+        {% endif %}
+    >True</option>
+    <option value="False"
+        {% if person.is_bil_admin is False %}
+        selected
+        {% endif %}
+    >False</option>
+    <option value="None"
+        {% if person.is_bil_admin is null %}
+        selected
+        {% endif %}
+    >----</option>
+</select>
 </form>
 <button class="btn btn-primary" onclick="change_bil_admin_privs();">Submit Change</button>
 <hr>

@@ -56,11 +56,10 @@ def index(request):
     try:
         people = People.objects.get(auth_user_id_id = current_user.id)
         project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-
+        if people.is_bil_admin:
+            return render(request, 'ingest/bil_index.html', {'people':people})
         for attribute in project_person: 
-            if attribute.is_bil_admin:
-                return render(request, 'ingest/bil_index.html', {'project_person': attribute})
-            elif attribute.is_pi:
+            if attribute.is_pi:
                 return render(request, 'ingest/pi_index.html', {'project_person': attribute})
     except Exception as e:
         print(e)
@@ -96,6 +95,7 @@ def modify_user(request, pk):
 def modify_biladmin_privs(request, pk):
     # use pk to find the user in the people table
     person = People.objects.get(auth_user_id_id = pk)
+    print(person.name)
     return render(request, 'ingest/modify_biladmin_privs.html', {'person':person})
 
 def change_bil_admin_privs(request):
@@ -104,9 +104,9 @@ def change_bil_admin_privs(request):
     for item in content:
         items.append(item['is_bil_admin'])
         is_bil_admin = item['is_bil_admin']
-        user_id = item['user_id']
+        person_id = item['person_id']
         
-        person = People.objects.get(id=user.id)
+        person = People.objects.get(id=person_id)
         person.is_bil_admin=is_bil_admin
         person.save()
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))

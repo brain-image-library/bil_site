@@ -1,12 +1,12 @@
 function change_bil_admin_privs() {
     const csrftoken = Cookies.get('csrftoken');
     const output_rows = [];
-    const auth_id = document.getElementById("auth_id");
+    const person_id = document.getElementById("person_id");
     const is_bil_admin = document.getElementById("is_bil_admin");
 
     output_rows.push({
-        "auth_id": auth_id.getAttribute('value'),
-        "is_bil_admin": is_bil_admin.val(),
+        "person_id": person_id.getAttribute('value'),
+        "is_bil_admin": is_bil_admin.value,
         })
   
     console.log(output_rows)
