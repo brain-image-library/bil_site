@@ -66,25 +66,6 @@
                 <li><a href="{% url 'ingest:submit_request_collection_list' %}">Submit Validation Request</a></li>
               </ul>
             </li> 
-            {% if project_person.is_bil_admin %}
-            <li class="dropdown">
-              <a class="dropdown-toggle" data-toggle="dropdown" href="#">BIL Admin <span class="caret">    </span></a>
-              <ul class="dropdown-menu">
-                <li><a href="{% url 'ingest:manageUsers' %}">Modify User Access</a></li>
-                <li><a href="/">Tape Tracking</a></li>
-                <li><a href="/">Run Validation</a></li>
-              </ul>
-            </li>
-            {% endif %}
-            {% if project_person.is_pi %}
-            <li class="dropdown">
-              <a class="dropdown-toggle" data-toggle="dropdown" href="#">PI Dashboard <span class="caret">    </span></a>
-              <ul class="dropdown-menu">
-                <li><a href="{% url 'ingest:manage_projects' %}">Manage Projects</a></li>
-                <li><a href="/">Manage Users</a></li>
-                <li><a href="/">View Project Collections</a></li>
-              </ul>
-            {% endif %} 
           </ul>
           {% if request.user.username %}
           <ul class="nav navbar-nav navbar-right">
