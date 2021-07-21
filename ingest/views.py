@@ -195,7 +195,7 @@ def create_project(request):
         current_user = request.user
         person = People.objects.get(auth_user_id_id=current_user)
         
-        project_person = ProjectPeople(project_id_id=project_id_id, people_id_id=person.id, is_pi=True, is_po=False, is_bil_admin=False, doi_role='creator')
+        project_person = ProjectPeople(project_id_id=project_id_id, people_id_id=person.id, is_pi=True, is_po=False, doi_role='creator')
         project_person.save()
     messages.success(request, 'Project Created!')    
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
@@ -216,7 +216,7 @@ def write_user_to_project_people(request):
 
         project = Project.objects.get(id=project_id) 
         person = People.objects.get(auth_user_id_id=user_id)
-        project_person = ProjectPeople(project_id_id=project.id, people_id_id=person.id, is_pi=False, is_po=False, is_bil_admin=False, doi_role='')
+        project_person = ProjectPeople(project_id_id=project.id, people_id_id=person.id, is_pi=False, is_po=False, doi_role='')
         
         try:
             check =  ProjectPeople.objects.get(project_id_id=project.id, people_id_id=person.id)
