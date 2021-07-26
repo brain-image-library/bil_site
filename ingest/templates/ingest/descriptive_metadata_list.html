@@ -1,7 +1,6 @@
 {% extends 'ingest/wide.html' %}
 
-{% block wide %}
-
+{% block scripts %}
 <script language="JavaScript">
   function toggle(source) {
       checkboxes = document.getElementsByName('selection');
@@ -17,6 +16,8 @@
     });
   });
 </script>
+{% endblock %}
+{% block wide %}
 
 <h1>Your Descriptive Metadata</h1>
 {% if descriptive_metadata %}

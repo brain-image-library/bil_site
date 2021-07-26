@@ -8,18 +8,20 @@
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
   <!-- Latest theme -->
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
-  <!-- Latest compiled and minified JavaScript -->
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   <link rel="shortcut icon" type = "image/ico" href = "{% static 'images/favicon.ico'%}"/>
   <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css?family=Lato:300" rel="stylesheet">
   <link rel="stylesheet" type="text/css" href="{% static 'ingest/style.css' %}" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  {% block scripts %}
+  {% endblock %} 
+    <!-- Latest compiled and minified JavaScript -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.0-rc.1/dist/js.cookie.min.js"></script>
 
   </head>
-  <body>
+  <header>
     <nav class="navbar navbar-inverse header">
       <div class="container-fluid header">
         <div class="navbar-header">
@@ -64,17 +66,6 @@
                 <li><a href="{% url 'ingest:submit_request_collection_list' %}">Submit Validation Request</a></li>
               </ul>
             </li> 
-            {% if project_person.is_bil_admin %}
-            <li class="dropdown">
-              <a class="dropdown-toggle" data-toggle="dropdown" href="#">BIL Admin <span class="caret">    </span></a>
-              <ul class="dropdown-menu">
-                <li><a href="{% url 'ingest:manageUsers' %}">Modify User Access</a></li>
-                <li><a href="/">Tape Tracking</a></li>
-                <li><a href="/">Run Validation</a></li>
-              </ul>
-            </li>
-            {% endif %}
-            
           </ul>
           {% if request.user.username %}
           <ul class="nav navbar-nav navbar-right">
@@ -90,6 +81,8 @@
         </div>
       </div>
     </nav> 
+  </header>
+  <body>
     {% block content %}
     {% endblock %}
   </body>

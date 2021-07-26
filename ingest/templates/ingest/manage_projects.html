@@ -1,0 +1,41 @@
+{% extends 'ingest/wide.html' %}
+{% load bootstrap4 %}
+{% block wide %}
+
+<h1>Manage Projects</h1>
+<p>Select a project to view details including collections and users associated with it</p>
+
+<table id="ProjectTable" class="table">
+<thead>
+<tr>
+<th>Name</th>
+<th>Funded By</th>
+<th>Is BICCN?</th>
+<th>Personnel</th>
+<th>Collections</th>
+</tr>
+</thead>
+<tbody>
+{% for project in allprojects %}
+<tr>
+ <td>{{ project.name }}</td>
+ <td>{{ project.funded_by }}</td>
+ <td>{{ project.is_biccn }}</td>
+ <td><a href="{% url 'ingest:view_project_people' project.id %}">View Personnel</td>
+ <td><a href="{% url 'ingest:view_project_collections' project.id %}">View Collections</td>
+</tr>
+{% endfor %}
+</table>
+
+<hr>
+
+<a href="{% url 'ingest:project_form' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Create a New Project</button>
+</a>
+
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+
+{% endblock %}
+

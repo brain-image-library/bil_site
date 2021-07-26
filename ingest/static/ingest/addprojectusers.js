@@ -1,28 +1,22 @@
-function submit_user_changes() {
+function add_users() {
     const csrftoken = Cookies.get('csrftoken');
-    let auth_id = document.getElementById("auth_id");
-    console.log(auth_id)
+    const project_id = document.getElementById('project_id');
     let output_rows = []
     $('tbody>tr').each(function(i, e){
         let $e = $(e);
         // $e is the tr element
-        if($e.find('.modified').length>0){
-            let is_pi = $e.find('#is_pi')
-            let is_po = $e.find('#is_po')
-            let is_bil_admin = $e.find('#is_bil_admin')
+        let user_is_checked = $e.find('#user_is_checked').is(':checked');
+        // user_is_checked is a boolean of whether that row is checked or not
+             
+        if(user_is_checked)
             output_rows.push({
-            "project_id": $e.data('project_id'),
-            "auth_id": auth_id.getAttribute('value'),
-            "is_pi": is_pi.val(),
-            "is_po": is_po.val(),
-            "is_bil_admin": is_bil_admin.val()})
-        }
-             console.log(output_rows)
-        
-                
-            
+                "user_id": $e.data('user_id'),
+                "project_id": project_id.getAttribute('value')
+                }
+            )
     });
-  fetch(`${window.origin}/ingest/userModify/`, {
+     console.log(output_rows);
+  fetch(`${window.origin}/ingest/write_user_to_project_people/`, {
       method: "POST",
       credentials: "include",
       body: JSON.stringify(output_rows),

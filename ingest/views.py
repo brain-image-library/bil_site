@@ -1,21 +1,17 @@
 from django.conf import settings
-from django.contrib import messages
-from django.contrib import auth
+from django.contrib import messages, auth
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect
-from django.urls import reverse_lazy
-from django.urls import reverse
+from django.urls import reverse_lazy, reverse
 from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.core.cache import cache
-from django.http import Http404
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.http import HttpResponse
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
 
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
@@ -28,21 +24,9 @@ from celery.result import AsyncResult
 from . import tasks
 from .field_list import required_metadata
 from .filters import CollectionFilter
-from .forms import CollectionForm
-from .forms import ImageMetadataForm
-from .forms import DescriptiveMetadataForm
-from .forms import UploadForm
-from .forms import collection_send
-from .models import UUID
-from .models import Collection
-from .models import ImageMetadata
-from .models import DescriptiveMetadata
-from .models import ProjectPeople
-from .models import People
-from .tables import CollectionTable
-from .tables import ImageMetadataTable
-from .tables import DescriptiveMetadataTable
-from .tables import CollectionRequestTable
+from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, CollectionGroup, EventsLog
+from .tables import CollectionTable, ImageMetadataTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
 import json
@@ -58,7 +42,6 @@ def logout(request):
     # they've successfully logged out.
     return redirect('login')
 
-
 def signup(request):
     """ Info about signing up for a new account. """
     # XXX: this view should be separated from the the ingestion views and
@@ -72,103 +55,233 @@ def index(request):
     current_user = request.user
     try:
         people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.get(people_id = people.id)
-        allpeople = People.objects.all()
-        allprojectpeople = ProjectPeople.objects.all()
-    
-        if project_person.is_bil_admin:
-            return render(request, 'ingest/bil_index.html', {'project_person': project_person})#, {'allpeople': allpeople}, {'allprojectpeople': allprojectpeople})
-        elif project_person.is_pi:
-            return render(request, 'ingest/pi_index.html', {'project_person': project_person})
+        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+        if people.is_bil_admin:
+            return render(request, 'ingest/bil_index.html', {'people':people})
+        for attribute in project_person: 
+            if attribute.is_pi:
+                return render(request, 'ingest/pi_index.html', {'project_person': attribute})
     except Exception as e:
         print(e)
-        return render(request, 'ingest/index.html')
     return render(request, 'ingest/index.html')
-# What follows is a number of views for uploading, creating, viewing, modifying
-# and deleting IMAGE METADATA.
-def manageUsers(request):
-  
+
+
+@login_required
+def pi_index(request):
     current_user = request.user
-    allusers = User.objects.all()
-    print(allusers)
-    for user in allusers:
-        try:
-            these_people = People.objects.get(auth_user_id=user)
-        except People.DoesNotExist:
-            these_people = None
-        try:
-            these_project_people = ProjectPeople.objects.get(people_id=these_people)
-        except ProjectPeople.DoesNotExist:
-            these_project_people = None
-        user.these_people = these_people
-        user.these_project_people = these_project_people
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.get(people_id = people.id)
-    allpeople = People.objects.all()
-    allprojectpeople = ProjectPeople.objects.all()
     try:
-        if project_person.is_bil_admin:
-            return render(request, 'ingest/manage_users.html', {'project_person': project_person, 'allpeople': allpeople, 'allprojectpeople': allprojectpeople, 'allusers':allusers})
-       
+        people = People.objects.get(auth_user_id_id = current_user.id)
+        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+        
+        for attribute in project_person:
+            if project_person.is_pi:
+                return render(request, 'ingest/pi_index.html', {'project_person': attribute})
     except Exception as e:
         print(e)
-        return render(request, 'ingest/index.html')
+    return render(request, 'ingest/index.html')
+
+def modify_user(request, pk):
+    person = People.objects.get(auth_user_id_id = pk)
+    all_project_people = ProjectPeople.objects.filter(people_id_id=person.id).all()   
+    for project_person in all_project_people:
+        try:
+            their_project = Project.objects.get(id=project_person.project_id_id)
+        except Project.DoesNotExist:
+            their_project = None
+            return render(request, 'ingest/no_projects.html')
+        project_person.their_project = their_project
+    return render(request, 'ingest/modify_user.html', {'all_project_people':all_project_people, 'person':person})    
+
+def modify_biladmin_privs(request, pk):
+    # use pk to find the user in the people table
+    person = People.objects.get(auth_user_id_id = pk)
+    print(person.name)
+    return render(request, 'ingest/modify_biladmin_privs.html', {'person':person})
+
+def change_bil_admin_privs(request):
+    content = json.loads(request.body)
+    items = []
+    for item in content:
+        items.append(item['is_bil_admin'])
+        is_bil_admin = item['is_bil_admin']
+        person_id = item['person_id']
+        
+        person = People.objects.get(id=person_id)
+        person.is_bil_admin=is_bil_admin
+        person.save()
+    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+
+def list_all_users(request):
+    allusers = User.objects.all()
+    return render(request, 'ingest/list_all_users.html', {'allusers':allusers})
 
 def userModify(request):
-    
     content = json.loads(request.body)
-    print(content)
+    items = []
+    for item in content:
+        items.append(item['is_pi'])
+        items.append(item['is_po'])
+        #items.append(item['is_bil_admin'])
+        items.append(item['auth_id'])
+        items.append(item['project_id'])
+        is_pi = item['is_pi']
+        is_po = item['is_po']
+        #is_bil_admin = item['is_bil_admin']
+        auth_id = item['auth_id']
+        project_id = item['project_id']
+        
+        project_person = ProjectPeople.objects.get(id=project_id)
+        project_person.is_pi=is_pi
+        project_person.is_po=is_po
+        #project_person.is_bil_admin=is_bil_admin
+        project_person.save()
+        
+    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+
+def manageProjects(request):
+    current_user = request.user
+    person = People.objects.get(auth_user_id_id=current_user)
+    project_person = ProjectPeople.objects.filter(people_id=person).all()            
+
+    allprojects=[]
+    for row in project_person:
+        project_id = row.project_id_id
+        project =  Project.objects.get(id=project_id)
+        allprojects.append(project)     
+      
+    return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})
+
+def manageCollections(request):
+    # gathers all the collections associated with the PI, linked on pi_index.html
+    collections_list = []
+    current_user = request.user
+    person = People.objects.get(auth_user_id_id=current_user)
+    allprojects = ProjectPeople.objects.filter(people_id=person.id, is_pi=True).all()
+    for proj in allprojects:
+        #print(proj.project_id.name)
+        allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=proj.project_id_id).all()
+        for group in allcollectionsgroups:
+            collections = Collection.objects.filter(collection_group_id_id=group.id).all()
+            for collection in collections:
+                try:
+                    collection.event = EventsLog.objects.filter(collection_id_id=collection.id).latest('event_type')
+              
+                except EventsLog.DoesNotExist:
+                    collection.event = None
+            collections_list.extend(collections)
+    return render(request, 'ingest/manage_collections.html', {'collections':collections, 'collections_list':collections_list})
+
+def project_form(request):
+    return render(request, 'ingest/project_form.html')
+
+def create_project(request):
+    new_project = json.loads(request.body)
+    items = []
+    for item in new_project:
+        items.append(item['funded_by'])
+        items.append(item['is_biccn'])
+        items.append(item['name'])
+        
+        funded_by = item['funded_by']
+        is_biccn = item['is_biccn']
+        name = item['name']
+        
+        # write project to the project table   
+        project = Project(funded_by=funded_by, is_biccn=is_biccn, name=name)
+        project.save()
+        
+        # create a project_people row for this pi so they can view project on pi dashboard
+        project_id_id = project.id
+        current_user = request.user
+        person = People.objects.get(auth_user_id_id=current_user)
+        
+        project_person = ProjectPeople(project_id_id=project_id_id, people_id_id=person.id, is_pi=True, is_po=False, doi_role='creator')
+        project_person.save()
+    messages.success(request, 'Project Created!')    
+    return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
+
+def add_project_user(request, pk):
+    all_users = User.objects.all()
+    project = Project.objects.get(id=pk) 
+    return render(request, 'ingest/add_project_user.html', {'all_users':all_users, 'project':project})
+
+def write_user_to_project_people(request):
+    content = json.loads(request.body)
     items = []
     for item in content:
         items.append(item['user_id'])
-        items.append(item['is_pi'])
-        items.append(item['is_po'])
-        items.append(item['is_bil_admin'])
+        items.append(item['project_id'])
         user_id = item['user_id']
-        is_pi = item['is_pi']
-        is_po = item['is_po']
-        is_bil_admin = item['is_bil_admin']
+        project_id = item['project_id']
+
+        project = Project.objects.get(id=project_id) 
         person = People.objects.get(auth_user_id_id=user_id)
-        project_person = ProjectPeople.objects.get(people_id=person)
-        if not project_person:
-            project_person = ProjectPeople(is_pi=is_pi, is_po=is_po, is_bil_admin=is_bil_admin, people_id=user_id)
+        project_person = ProjectPeople(project_id_id=project.id, people_id_id=person.id, is_pi=False, is_po=False, doi_role='')
+        
+        try:
+            check =  ProjectPeople.objects.get(project_id_id=project.id, people_id_id=person.id)
+            user = User.objects.get(id=user_id)
+        except:
             project_person.save()
-        else:
-            project_person.is_pi=is_pi
-            project_person.is_po=is_po
-            project_person.is_bil_admin=is_bil_admin
-            project_person.save()
-    print(items)
-    
-    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+    messages.success(request, 'User(s) Added!')
+    return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
 
-    
-    
-    
-#class UserList(LoginRequiredMixin, SingleTableMixin, FilterView):
-#    """ A list of all a user's collections. """
-#
-#    table_class = CollectionTable
-#    model = Collection
-#    template_name = 'ingest/collection_list.html'
-#    filterset_class = CollectionFilter
-#
-#    def get_queryset(self, **kwargs):
-#       return Collection.objects.filter(user=self.request.user)
 
-#    def get_context_data(self, **kwargs):
-#        # Call the base implementation first to get a context
-#        context = super().get_context_data(**kwargs)
-#        context['collections'] = Collection.objects.filter(user=self.request.user)
-#        return context
+def people_of_pi(request):
+    # enables pi to see all people on their projects in one large view
+    current_user = request.user
+    pi = People.objects.get(auth_user_id_id=current_user.id)
+    # filters the project_people table down to the rows where it's the pi's people_id_id AND is_pi=true
+    pi_projects = ProjectPeople.objects.filter(people_id_id=pi.id, is_pi=True).all()
+    for proj in pi_projects:
+        proj.related_project_people = ProjectPeople.objects.filter(project_id=proj.project_id_id).all()
+    return render(request, 'ingest/people_of_pi.html', {'pi_projects':pi_projects})
 
-#    def get_filterset_kwargs(self, filterset_class):
-#        """ Sets the default collection filter status. """
-#        kwargs = super().get_filterset_kwargs(filterset_class)
-#        if kwargs["data"] is None:
-#            kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
-#        return kwargs
 
+def view_project_people(request, pk):
+    try:
+        project = Project.objects.get(id=pk)
+        # get all of the project people rows with the project_id matching the project.id
+        projectpeople = ProjectPeople.objects.filter(project_id_id=pk).all()
+     
+        # get all of the people who are in those projectpeople rows
+        allpeople = []
+        for row in projectpeople:
+            person_id = row.people_id_id
+            person = People.objects.get(id=person_id)
+            allpeople.append(person)
+        return render(request, 'ingest/view_project_people.html', { 'project':project, 'allpeople':allpeople })
+    except ObjectDoesNotExist:
+        return render(request, 'ingest/no_people.html')
+    return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople, 'project':project})
+
+def no_collection(request, pk):
+    project = Project.objects.get(id=pk)
+    return(request, 'ingest/no_collection.html',  {'project':project})
+
+def no_people(request, pk):
+    project = Project.objects.get(id=pk)
+    return(request, 'ingest/no_people.html', {'project':project})
+
+def view_project_collections(request, pk):
+    try:
+        project = Project.objects.get(id=pk)
+        # use the id of the project to look it up in the collectiongroup
+        collectiongroup = CollectionGroup.objects.get(project_id_id=pk)
+        project_collections = Collection.objects.filter(collection_group_id_id=collectiongroup).all()
+        for collection in project_collections:
+            user_id = collection.user_id
+            owner = User.objects.get(id=user_id)
+            try:
+                event = EventsLog.objects.filter(collection_id_id=collection.id).latest('event_type')
+            except EventsLog.DoesNotExist:
+                event = None
+            collection.event = event
+            collection.owner = owner
+       
+    except ObjectDoesNotExist:
+        return render(request, 'ingest/no_collection.html')  
+    return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections})
 
 
 
@@ -387,7 +500,7 @@ def collection_send(request):
              )
         print(message)
         print(user_name)
-    #messages.success(request, 'Request succesfully sent')
+    messages.success(request, 'Request succesfully sent')
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
     #return HttpResponse(status=200)
     #success_url = reverse_lazy('ingest:collection_list')
@@ -527,25 +640,8 @@ class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterVi
             kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
         return kwargs
     success_url = reverse_lazy('ingest:collection_list')
-    #def send_email_request(request):
-    #    checked_ids = []
-    #    if request.method == "POST":
-    #        for i in rows:
-    #            if submit-for-validation == True:
-    #                 checked_id = request.collection_id
-    #                 checked_id.append(checked_id)
-    #        subject = '[BIL Validations] New Validation Request'
-    #        sender = 'ltuite96@psc.edu'
-    #        message = F'The following collections have been requested of validaton {checked_id}'
-    #        recipient = 'ltuite96@psc.edu'
+    
 
-        #    send_mail(
-        #    subject,
-        #    message,
-        #    sender,
-        #    recipient
-        #         )
-        #    return print('message was sent i hope')
 class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     """ A list of all a user's collections. """
 
@@ -953,12 +1049,6 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
                         #print("{1} cell is located on {0}" .format(cell_name, currentSheet[cell_name].value))
                         #print("cell position {} has escape character {}".format(cell_name, currentSheet[cell_name].value))
                         #return cell_name
-
-
-
-
-
-
 
             #for r, i in record.items():
             #    result = i

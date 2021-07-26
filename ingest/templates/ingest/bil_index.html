@@ -2,17 +2,16 @@
 {% load static %}
 {% block content %}
 {% load bootstrap4 %}
-<head>
+{% block scripts %}
 <script></script>
-<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-</head>
+{% endblock %}
 
 <div class="container-fluid white_on_gray">
   <div class="row">
 
     <div class="col-lg-12 big-row-text">
       <h1>BIL User Admin Portal</h1>
-   <a href="{% url 'ingest:manage_users'%}">Manage BIL User Access</a>
+   <a href="{% url 'ingest:list_all_users'%}">Manage BIL User Access</a>
   </div>
   </div>
 </div>

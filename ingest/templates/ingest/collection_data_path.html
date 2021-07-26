@@ -1,7 +1,7 @@
 {% extends 'ingest/wide.html' %}
 
 {% block wide %}
-
+{% block scripts %}
 <script>
 function copy_data_path() {
   var copyText = document.getElementById("data_path");
@@ -19,7 +19,7 @@ function copy_host_and_path() {
   alert("Copied the text: " + copyText.value);
 }
 </script>
-
+{% endblock %}
 
 <h1><b>Staging Area for Collection</b> {{ collection.name }} 
   {% if collection.locked %}<i class="fa fa-lock"></i>

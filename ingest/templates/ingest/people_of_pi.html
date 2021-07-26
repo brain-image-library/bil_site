@@ -1,0 +1,34 @@
+{% extends 'ingest/base.html' %}
+{% block content %}
+{% load bootstrap4 %}
+
+<h1>Users on your projects</h1>
+<p>This is a list of all users associated with your projects</p>
+<table id="projects" class="table">
+<thead>
+    {% for proj in pi_projects %}
+    <tr>
+    <th style="font-size: 24px; text-decoration: underline overline;">{{proj.project_id.name}}</th>
+        <table id="people_of_pi" class="table" style="padding-bottom:10px;">
+            <thead>
+            <tr>
+            <th>Username</th>
+            <th>Active?</th>
+            </tr>
+            </thead>
+            {% for person in proj.related_project_people %}
+            <tbody style="padding-bottom:10px;">
+                <tr>
+                <td>{{person.people_id.auth_user_id.username}}</td>
+                <td>{{person.people_id.auth_user_id.is_active}}</td>
+                </tr>
+            </tbody>
+            {% endfor %}
+    {% endfor %}
+</thead>
+</table>
+
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endblock %}

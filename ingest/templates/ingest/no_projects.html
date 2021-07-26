@@ -1,0 +1,9 @@
+{% extends 'ingest/base.html' %}
+{% block content %}
+{% load bootstrap4 %}
+
+<h1>There are no projects associated with this user</h1>
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
+{% endblock %}

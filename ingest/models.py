@@ -83,7 +83,6 @@ class Collection(models.Model):
     collection_type = models.CharField(
         max_length=256)
     collection_group_id = models.ForeignKey(CollectionGroup, on_delete=models.CASCADE, blank=True, null=True)
-  
 
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
@@ -317,6 +316,7 @@ class DescriptiveMetadata(models.Model):
     dataset_uuid = models.CharField(max_length=256, null=True, blank=True)
     r24_name = models.CharField(max_length=256)
     r24_directory = models.CharField(max_length=256)
+
  
 class DataGroup(models.Model):
     data_group_list_id = models.IntegerField()
@@ -327,10 +327,10 @@ class People(models.Model):
     orcid = models.CharField(max_length=256)
     affiliation = models.CharField(max_length=256)
     affiliation_identifier = models.CharField(max_length=256)
-    auth_user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank=True)
     is_bil_admin = models.BooleanField(default=False)
+    auth_user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank=True)
   
-class ProjectPeople(models.Model): 
+class ProjectPeople(models.Model):
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     people_id = models.ForeignKey(People, on_delete=models.SET_NULL, null = True, blank=True)
     is_pi = models.BooleanField(default=False)

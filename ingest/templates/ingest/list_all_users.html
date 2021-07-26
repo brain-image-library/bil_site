@@ -1,0 +1,34 @@
+{% extends 'ingest/base.html' %}
+{% block content %}
+{% load bootstrap4 %}
+
+<script src="/static/ingest/updateusers.js"></script>
+<script>$(document).ready(function(){$('table').find('select').on('change', function() {$(this).addClass('modified');});})</script>
+
+
+<h1>Modify User Access</h1>
+<p>Change user roles.</p>
+<form id="rowform">
+{% csrf_token %}
+<table id="ModifyUserAccess" class="table">
+<thead>
+<tr>
+<th>Username</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+
+{% for user in allusers %}
+<tr data-user_id="{{user.id}}">
+<td>{{user.username}}</td>
+<td><a href="{% url 'ingest:modify_biladmin_privs' user.id %}">Edit BIL Admin Privs</td>
+<td><a href="{% url 'ingest:modify_user' user.id %}">Edit PI or PO Privs</td>
+ 
+{% endfor %}
+</table>
+</form>
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
+{% endblock %}
