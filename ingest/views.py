@@ -700,16 +700,19 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
 def collection_delete(request, pk):
     """ Delete a collection. """
 
-    collection = Collection.objects.get(pk=pk)
+     collection = Collection.objects.get(pk=pk)
     if request.method == 'POST':
-        data_path = collection.data_path.__str__()
-        if not settings.FAKE_STORAGE_AREA:
+        if collection.submission_status != "SUCCESS":
+            data_path = collection.data_path.__str__()
+            if not settings.FAKE_STORAGE_AREA:
             # This is what deletes the actual directory associated with the
             # staging area
-            tasks.delete_data_path.delay(data_path)
-        collection.delete()
-        messages.success(request, 'Collection successfully deleted')
-        return redirect('ingest:collection_list')
+                tasks.delete_data_path.delay(data_path)
+            collection.delete()
+            messages.success(request, 'Collection successfully deleted')
+            return redirect('ingest:collection_list')
+        else:
+            messages.error(request, 'This collection is public, it cannot be deleted. If this is incorrect contact us at bil-support@psc.edu')
     return render(
         request, 'ingest/collection_delete.html', {'collection': collection})
 
