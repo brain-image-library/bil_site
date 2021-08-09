@@ -248,12 +248,16 @@ If not, they can be started like this:
 If you ever change the models, you'll likely have to re-run the migrate
 commands:
 
-    python manage.py makemigrations
+    python manage.py makemigrations <-- this works well on `dev` however previous production versions of BIL Submit were not updated using `makemigrations` & 'migrate'
     python manage.py migrate --run-syncdb
+    
+    *** production ***
+    python manage.py makemigrations, if a migration script has not been created in a feature branch
+    python manage.py sqlmigrate ingest <script number> <-- this will print out the raw sql of what is to change and you should use this to manually implement changes to the db directly.
 
 ## Updating the Site (production)
 
-You'll want to collect all the static files:
+You'll want to collect all the static files if any have been added:
 
     python manage.py collectstatic
 
