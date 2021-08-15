@@ -80,6 +80,8 @@ def pi_index(request):
         print(e)
     return render(request, 'ingest/index.html')
 
+# this function presents all users for changing of PI and PO
+@login_required
 def modify_user(request, pk):
     person = People.objects.get(auth_user_id_id = pk)
     all_project_people = ProjectPeople.objects.filter(people_id_id=person.id).all()   
@@ -92,12 +94,15 @@ def modify_user(request, pk):
         project_person.their_project = their_project
     return render(request, 'ingest/modify_user.html', {'all_project_people':all_project_people, 'person':person})    
 
+# this function presents all users and gives a bil admin the option to add or remove bil admin privs to said users
+@login_required
 def modify_biladmin_privs(request, pk):
     # use pk to find the user in the people table
     person = People.objects.get(auth_user_id_id = pk)
-    print(person.name)
     return render(request, 'ingest/modify_biladmin_privs.html', {'person':person})
 
+# this function does the actual changing of bil admin privs
+@login_required
 def change_bil_admin_privs(request):
     content = json.loads(request.body)
     items = []
@@ -111,33 +116,34 @@ def change_bil_admin_privs(request):
         person.save()
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
 
+@login_required
 def list_all_users(request):
     allusers = User.objects.all()
     return render(request, 'ingest/list_all_users.html', {'allusers':allusers})
 
+# this function does the actual changing of is_pi or is_po of users
+@login_required
 def userModify(request):
     content = json.loads(request.body)
     items = []
     for item in content:
         items.append(item['is_pi'])
         items.append(item['is_po'])
-        #items.append(item['is_bil_admin'])
         items.append(item['auth_id'])
         items.append(item['project_id'])
         is_pi = item['is_pi']
         is_po = item['is_po']
-        #is_bil_admin = item['is_bil_admin']
         auth_id = item['auth_id']
         project_id = item['project_id']
         
         project_person = ProjectPeople.objects.get(id=project_id)
         project_person.is_pi=is_pi
         project_person.is_po=is_po
-        #project_person.is_bil_admin=is_bil_admin
         project_person.save()
         
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
 
+@login_required
 def manageProjects(request):
     current_user = request.user
     person = People.objects.get(auth_user_id_id=current_user)
@@ -151,6 +157,7 @@ def manageProjects(request):
       
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})
 
+@login_required
 def manageCollections(request):
     # gathers all the collections associated with the PI, linked on pi_index.html
     collections_list = []
@@ -171,9 +178,11 @@ def manageCollections(request):
             collections_list.extend(collections)
     return render(request, 'ingest/manage_collections.html', {'collections':collections, 'collections_list':collections_list})
 
+@login_required
 def project_form(request):
     return render(request, 'ingest/project_form.html')
 
+@login_required
 def create_project(request):
     new_project = json.loads(request.body)
     items = []
@@ -200,11 +209,13 @@ def create_project(request):
     messages.success(request, 'Project Created!')    
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
 
+@login_required
 def add_project_user(request, pk):
     all_users = User.objects.all()
     project = Project.objects.get(id=pk) 
     return render(request, 'ingest/add_project_user.html', {'all_users':all_users, 'project':project})
 
+@login_required
 def write_user_to_project_people(request):
     content = json.loads(request.body)
     items = []
@@ -226,9 +237,9 @@ def write_user_to_project_people(request):
     messages.success(request, 'User(s) Added!')
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
 
-
+# presents all people on the projects of the pi who is logged in
+@login_required
 def people_of_pi(request):
-    # enables pi to see all people on their projects in one large view
     current_user = request.user
     pi = People.objects.get(auth_user_id_id=current_user.id)
     # filters the project_people table down to the rows where it's the pi's people_id_id AND is_pi=true
@@ -238,6 +249,7 @@ def people_of_pi(request):
     return render(request, 'ingest/people_of_pi.html', {'pi_projects':pi_projects})
 
 
+@login_required
 def view_project_people(request, pk):
     try:
         project = Project.objects.get(id=pk)
@@ -255,14 +267,20 @@ def view_project_people(request, pk):
         return render(request, 'ingest/no_people.html')
     return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople, 'project':project})
 
+# fallback for when a project has no collections associated with it
+@login_required
 def no_collection(request, pk):
     project = Project.objects.get(id=pk)
     return(request, 'ingest/no_collection.html',  {'project':project})
 
+# fallback for when a project has no people assigned to it
+@login_required
 def no_people(request, pk):
     project = Project.objects.get(id=pk)
     return(request, 'ingest/no_people.html', {'project':project})
 
+# view all the collections of a project
+@login_required
 def view_project_collections(request, pk):
     try:
         project = Project.objects.get(id=pk)
@@ -283,13 +301,11 @@ def view_project_collections(request, pk):
         return render(request, 'ingest/no_collection.html')  
     return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections})
 
-
-
 @login_required
 def descriptive_metadata_upload(request):
     """ Upload a spreadsheet containing image metadata information. """
 
-    # The POST. Auser has selected a file and associated collection to upload.
+    # The POST. A user has selected a file and associated collection to upload.
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
         form = UploadForm(request.POST)
         if form.is_valid():
