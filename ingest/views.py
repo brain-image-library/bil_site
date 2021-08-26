@@ -321,7 +321,7 @@ def descriptive_metadata_upload(request):
                 collectiongroup = CollectionGroup.objects.get(project_id=project.id)
 
                 try:
-                    collectiongroup = CollectionGroup.objects.get(project_id=project.id
+                    collectiongroup = CollectionGroup.objects.get(project_id=project.id)
                     updatedcollection = Collection.objects(id=this_collection, collection_group_id = collectiongroup.id)
                     updatedcollection.save()
                 except collectiongroup.DoesNotExist:
@@ -362,15 +362,13 @@ def descriptive_metadata_upload(request):
         # they own
         form.fields['associated_collection'].queryset = Collection.objects.filter(
             locked=False, user=request.user)
-        projects = []
-        user_projects = ProjectPeople.objects.filter(people_id_id=user.id).all()
-        for proj in user_projects:    
-            project = Project.objects.filter(id=proj.project_id_id)
-        projects.extend(project)
+
+        form.fields['associated_project'].queryset = Project.objects.all()
         
     
     collections = Collection.objects.filter(locked=False, user=request.user)
-    
+    projects = Project.objects.all()
+    #project_names = all_projects.name
     return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'collections': collections, 'projects':projects})
 
 # do we still use this???
