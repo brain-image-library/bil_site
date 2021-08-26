@@ -1,10 +1,11 @@
 from django import forms
 from .field_list import metadata_fields, collection_fields
-from .models import ImageMetadata, DescriptiveMetadata, Collection
+from .models import ImageMetadata, DescriptiveMetadata, Collection, Project
 
 
 class UploadForm(forms.Form):
     associated_collection = forms.ModelChoiceField(queryset=Collection.objects.all())
+    associated_project = forms.ModelChoiceField(queryset=Collection.objects.all())
 
 class DescriptiveMetadataForm(forms.ModelForm):
 
