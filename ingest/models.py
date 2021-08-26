@@ -11,6 +11,8 @@ class UUID(models.Model):
     # Required and the user should supply these
     useduuid = models.CharField(max_length=256, unique=True)
 class Project(models.Model):
+    def __str__(self):
+        return self.name
     name = models.CharField(max_length=256, default="Project Name")
     funded_by = models.CharField(max_length=256)
     is_biccn = models.BooleanField(default=False)
