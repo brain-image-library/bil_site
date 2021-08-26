@@ -3,7 +3,6 @@
 {% load static %}
 
 {% block narrow %}
-<script src="/static/ingest/linkprojecttocollection.js"></script>
 
 <h1>Upload Descriptive Metadata Spreadsheet</h1>
 {% if collections %}
@@ -21,7 +20,7 @@
 
     </br>
     <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
-    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit(); link_collection_and_project();" />
+    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();" />
     </br>
   </form>
 {% else %}

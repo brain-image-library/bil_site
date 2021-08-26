@@ -308,29 +308,7 @@ def descriptive_metadata_upload(request):
     # The POST. A user has selected a file and associated collection to upload.
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
         form = UploadForm(request.POST)
-        content = json.loads(request.body)
         if form.is_valid():
-            items = []
-            for item in content:
-                items.append(item['project_id'])
-                items.append(item['collection_id'])
-                project_id = item['project_id']
-                collection_id = item['collection_id']
-
-                project = Project.objects.get(id=project_id)
-                collectiongroup = CollectionGroup.objects.get(project_id=project.id)
-
-                try:
-                    collectiongroup = CollectionGroup.objects.get(project_id=project.id)
-                    updatedcollection = Collection.objects(id=this_collection, collection_group_id = collectiongroup.id)
-                    updatedcollection.save()
-                except collectiongroup.DoesNotExist:
-                    new_collection_group = CollectionGroup.objects(project_id=project_id)
-                    new_collection_group.save()
-                    cg = CollectionGroup.objects.get(project_id=project_id)
-                    updated_collection = Collection.objects(id=this_collection, collection_group_id = cg.id)
-                    updated_collection.save()
-            
             collection = form.cleaned_data['associated_collection']
             #messages.error(request, request)
             #idnum=DescriptiveMetadata(collection=associated_collection)
@@ -364,11 +342,10 @@ def descriptive_metadata_upload(request):
             locked=False, user=request.user)
 
         form.fields['associated_project'].queryset = Project.objects.all()
-        
-    
+            
     collections = Collection.objects.filter(locked=False, user=request.user)
     projects = Project.objects.all()
-    #project_names = all_projects.name
+
     return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'collections': collections, 'projects':projects})
 
 # do we still use this???
