@@ -310,14 +310,11 @@ def descriptive_metadata_upload(request):
         form = UploadForm(request.POST)
         if form.is_valid():
             collection = form.cleaned_data['associated_collection']
-            #messages.error(request, request)
-            #idnum=DescriptiveMetadata(collection=associated_collection)
-            #messages.error(request, request.POST.get('associated_collection'))
-            #messages.error(request,form.fields['associated_collection'])
+            project = form.cleaned_data['associated_project']
             
-            #cobj = Collection.objects.get(id=request.POST.get('associated_collection'))
-            #messages.error(request, cobj.data_path)
-            #messages.error(request, collection.data_path)
+            # write a row to collection_group
+            collection_group = CollectionGroup.objects.create(project_id_id=project.id)
+            
             #paths=collection.data_path.split(':')
             #datapath=paths[1].replace("/lz/","/etc/")
 
@@ -330,7 +327,10 @@ def descriptive_metadata_upload(request):
             error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
             if error:
                 return redirect('ingest:descriptive_metadata_upload')
-            else:         
+            else:
+                
+                print(project.id)
+                collection_group.save()         
                 return redirect('ingest:descriptive_metadata_list')
     # This is the GET (just show the metadata upload page)
     else:
