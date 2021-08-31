@@ -312,8 +312,17 @@ def descriptive_metadata_upload(request):
             collection = form.cleaned_data['associated_collection']
             project = form.cleaned_data['associated_project']
             
-            # write a row to collection_group
-            collection_group = CollectionGroup.objects.create(project_id_id=project.id)
+            # needs to check collection_group for project.id
+            # if project.id exists, just use collection_group_id to add to collection
+            # if project.id doesn't exist, write a new line to the collection_group table
+            # write a row to collection_group, then write that id to collection
+            try:
+                collection_group = CollectionGroup.objects.get(project_id_id=project.id)
+
+            except:
+                collection_group = CollectionGroup.objects.create(project_id_id=project.id)
+            
+            collection.collection_group_id_id = collection_group.id 
             
             #paths=collection.data_path.split(':')
             #datapath=paths[1].replace("/lz/","/etc/")
@@ -328,8 +337,7 @@ def descriptive_metadata_upload(request):
             if error:
                 return redirect('ingest:descriptive_metadata_upload')
             else:
-                
-                print(project.id)
+                collection.save()
                 collection_group.save()         
                 return redirect('ingest:descriptive_metadata_list')
     # This is the GET (just show the metadata upload page)
