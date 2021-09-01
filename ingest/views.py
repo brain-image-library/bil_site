@@ -317,10 +317,10 @@ def descriptive_metadata_upload(request):
             # if project.id doesn't exist, write a new line to the collection_group table
             # write a row to collection_group, then write that id to collection
             try:
-                collection_group = CollectionGroup.objects.get(project_id_id=project.id)
+                collection_group = CollectionGroup.objects.get(project_id_id=project.id, name=project.funded_by)
 
             except:
-                collection_group = CollectionGroup.objects.create(project_id_id=project.id)
+                collection_group = CollectionGroup.objects.create(project_id_id=project.id, name=project.funded_by)
             
             collection.collection_group_id_id = collection_group.id 
             
