@@ -3,7 +3,12 @@
 {% load bootstrap4 %}
 <script src="/static/ingest/createproject.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-
+{% if pi %}
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endif %}
+<br>
 <h1>Create a new project</h1>
 
 <form id="CreateNewProject">

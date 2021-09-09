@@ -3,7 +3,11 @@
 {% load static %}
 
 {% block narrow %}
-
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endif %}
+<br>
 <h1>Upload Metadata Spreadsheet</h1>
 {% if collections %}
 <ul class="list-group">

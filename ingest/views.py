@@ -83,6 +83,14 @@ def pi_index(request):
 # this function presents all users for changing of PI and PO
 @login_required
 def modify_user(request, pk):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     person = People.objects.get(auth_user_id_id = pk)
     all_project_people = ProjectPeople.objects.filter(people_id_id=person.id).all()   
     for project_person in all_project_people:
@@ -90,7 +98,7 @@ def modify_user(request, pk):
             their_project = Project.objects.get(id=project_person.project_id_id)
         except Project.DoesNotExist:
             their_project = None
-            return render(request, 'ingest/no_projects.html')
+            return render(request, 'ingest/no_projects.html', {'pi':pi})
         project_person.their_project = their_project
     return render(request, 'ingest/modify_user.html', {'all_project_people':all_project_people, 'person':person})    
 
@@ -118,8 +126,16 @@ def change_bil_admin_privs(request):
 
 @login_required
 def list_all_users(request):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     allusers = User.objects.all()
-    return render(request, 'ingest/list_all_users.html', {'allusers':allusers})
+    return render(request, 'ingest/list_all_users.html', {'allusers':allusers, 'pi':pi})
 
 # this function does the actual changing of is_pi or is_po of users
 @login_required
@@ -146,6 +162,14 @@ def userModify(request):
 @login_required
 def manageProjects(request):
     current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
+    current_user = request.user
     person = People.objects.get(auth_user_id_id=current_user)
     project_person = ProjectPeople.objects.filter(people_id=person).all()            
 
@@ -155,10 +179,18 @@ def manageProjects(request):
         project =  Project.objects.get(id=project_id)
         allprojects.append(project)     
       
-    return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects})
+    return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects, 'pi':pi})
 
 @login_required
 def manageCollections(request):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     # gathers all the collections associated with the PI, linked on pi_index.html
     collections_list = []
     current_user = request.user
@@ -176,11 +208,19 @@ def manageCollections(request):
                 except EventsLog.DoesNotExist:
                     collection.event = None
             collections_list.extend(collections)
-    return render(request, 'ingest/manage_collections.html', {'collections':collections, 'collections_list':collections_list})
+    return render(request, 'ingest/manage_collections.html', {'collections':collections, 'collections_list':collections_list, 'pi':pi})
 
 @login_required
 def project_form(request):
-    return render(request, 'ingest/project_form.html')
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
+    return render(request, 'ingest/project_form.html', {'pi':pi})
 
 @login_required
 def create_project(request):
@@ -211,9 +251,17 @@ def create_project(request):
 
 @login_required
 def add_project_user(request, pk):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     all_users = User.objects.all()
     project = Project.objects.get(id=pk) 
-    return render(request, 'ingest/add_project_user.html', {'all_users':all_users, 'project':project})
+    return render(request, 'ingest/add_project_user.html', {'all_users':all_users, 'project':project, 'pi':pi})
 
 @login_required
 def write_user_to_project_people(request):
@@ -241,16 +289,32 @@ def write_user_to_project_people(request):
 @login_required
 def people_of_pi(request):
     current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
+    current_user = request.user
     pi = People.objects.get(auth_user_id_id=current_user.id)
     # filters the project_people table down to the rows where it's the pi's people_id_id AND is_pi=true
     pi_projects = ProjectPeople.objects.filter(people_id_id=pi.id, is_pi=True).all()
     for proj in pi_projects:
         proj.related_project_people = ProjectPeople.objects.filter(project_id=proj.project_id_id).all()
-    return render(request, 'ingest/people_of_pi.html', {'pi_projects':pi_projects})
+    return render(request, 'ingest/people_of_pi.html', {'pi_projects':pi_projects, 'pi':pi})
 
 
 @login_required
 def view_project_people(request, pk):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     try:
         project = Project.objects.get(id=pk)
         # get all of the project people rows with the project_id matching the project.id
@@ -265,23 +329,47 @@ def view_project_people(request, pk):
         return render(request, 'ingest/view_project_people.html', { 'project':project, 'allpeople':allpeople })
     except ObjectDoesNotExist:
         return render(request, 'ingest/no_people.html')
-    return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople, 'project':project})
+    return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople, 'project':project, 'pi':pi})
 
 # fallback for when a project has no collections associated with it
 @login_required
 def no_collection(request, pk):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     project = Project.objects.get(id=pk)
-    return(request, 'ingest/no_collection.html',  {'project':project})
+    return(request, 'ingest/no_collection.html',  {'project':project, 'pi':pi})
 
 # fallback for when a project has no people assigned to it
 @login_required
 def no_people(request, pk):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     project = Project.objects.get(id=pk)
-    return(request, 'ingest/no_people.html', {'project':project})
+    return(request, 'ingest/no_people.html', {'project':project, 'pi':pi})
 
 # view all the collections of a project
 @login_required
 def view_project_collections(request, pk):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     try:
         project = Project.objects.get(id=pk)
         # use the id of the project to look it up in the collectiongroup
@@ -299,27 +387,36 @@ def view_project_collections(request, pk):
        
     except ObjectDoesNotExist:
         return render(request, 'ingest/no_collection.html')  
-    return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections})
+    return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections, 'pi':pi})
 
 @login_required
 def descriptive_metadata_upload(request):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else: 
+            pi = False    
     """ Upload a spreadsheet containing image metadata information. """
-
     # The POST. A user has selected a file and associated collection to upload.
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
         form = UploadForm(request.POST)
         if form.is_valid():
             collection = form.cleaned_data['associated_collection']
-            project = form.cleaned_data['associated_project']
+            project_person = form.cleaned_data['associated_project']
             
             # needs to check collection_group for project.id
             # if project.id exists, just use collection_group_id to add to collection
             # if project.id doesn't exist, write a new line to the collection_group table
             # write a row to collection_group, then write that id to collection
             try:
+                project = Project.objects.get(id=project_person.id)
                 collection_group = CollectionGroup.objects.get(project_id_id=project.id, name=project.funded_by)
 
             except:
+                project = Project.objects.get(id=project_person.id)
                 collection_group = CollectionGroup.objects.create(project_id_id=project.id, name=project.funded_by)
             
             collection.collection_group_id_id = collection_group.id 
@@ -348,13 +445,24 @@ def descriptive_metadata_upload(request):
         # they own
         form.fields['associated_collection'].queryset = Collection.objects.filter(
             locked=False, user=request.user)
+        collections = form.fields['associated_collection'].queryset
+        #form.fields['associated_project'].queryset = Project.objects.all()
 
-        form.fields['associated_project'].queryset = Project.objects.all()
+        person = People.objects.get(auth_user_id=user.id)
+        form.fields['associated_project'].queryset = ProjectPeople.objects.filter(people_id=people.id).all()
+        projects = form.fields['associated_project'].queryset
+        #for proj in project_person:
+        #    projects.append(proj)
+
+
+        #form.fields['associated_project'] = projects
             
     collections = Collection.objects.filter(locked=False, user=request.user)
-    projects = Project.objects.all()
+    person = People.objects.get(auth_user_id=user.id)
+    projects = ProjectPeople.objects.filter(people_id=people.id).all()
+    
 
-    return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'collections': collections, 'projects':projects})
+    return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'pi':pi, 'collections':collections, 'projects':projects})
 
 # do we still use this???
 @login_required
@@ -389,6 +497,14 @@ def image_metadata_upload(request):
 
 @login_required
 def descriptive_metadata_list(request):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     """ A list of all the metadata the user has created. """
     # The user is trying to delete the selected metadata
     for key in request.POST:
@@ -415,7 +531,7 @@ def descriptive_metadata_list(request):
         return render(
             request,
             'ingest/descriptive_metadata_list.html',
-            {'table': table, 'descriptive_metadata': descriptive_metadata})
+            {'table': table, 'descriptive_metadata': descriptive_metadata, 'pi':pi})
 
 
 
@@ -534,6 +650,14 @@ def collection_send(request):
 
 @login_required
 def collection_create(request):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     """ Create a collection. """
     # We cache the staging area location, so that we can show it in the GET and
     # later use it during creation (POST)
@@ -616,7 +740,8 @@ def collection_create(request):
         {'form': form,
          'collections': collections,
          'funder_list': funder_list,
-         'host_and_path': host_and_path})
+         'host_and_path': host_and_path,
+         'pi': pi})
 
 
 class SubmitValidateCollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
@@ -644,6 +769,16 @@ class SubmitValidateCollectionList(LoginRequiredMixin, SingleTableMixin, FilterV
         return kwargs
 
 class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
+    def IsPi(request):
+        current_user = request.user
+        people = People.objects.get(auth_user_id_id = current_user.id)
+        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+        for attribute in project_person:
+            if attribute.is_pi:
+                pi = True
+            else:
+                pi = False
+        return render(request, {'pi':pi})
     """ A list of all a user's collections. """
 
     table_class = CollectionRequestTable
@@ -667,7 +802,6 @@ class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterVi
             kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
         return kwargs
     success_url = reverse_lazy('ingest:collection_list')
-    
 
 class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     """ A list of all a user's collections. """
@@ -692,8 +826,7 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
         if kwargs["data"] is None:
             kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
         return kwargs
-
-
+         
 @login_required
 def collection_data_path(request, pk):
     """ Info about the staging area for a user's collection. """
@@ -712,6 +845,14 @@ def collection_data_path(request, pk):
 
 @login_required
 def collection_validation_results(request, pk):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     """ Where a user can see the results of validation. """
     collection = Collection.objects.get(id=pk)
 
@@ -747,11 +888,20 @@ def collection_validation_results(request, pk):
          'outfile': outvalidfile,
          'output': filecontents,
          'dir_size': dir_size,
-         'invalid_metadata_directories': invalid_metadata_directories})
+         'invalid_metadata_directories': invalid_metadata_directories,
+         'pi': pi})
 
 
 @login_required
 def collection_submission_results(request, pk):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     """ Where a user can see the results of submission. """
     collection = Collection.objects.get(id=pk)
 
@@ -787,11 +937,20 @@ def collection_submission_results(request, pk):
          'outfile': outvalidfile,
          'output': filecontents,
          'dir_size': dir_size,
-         'invalid_metadata_directories': invalid_metadata_directories})
+         'invalid_metadata_directories': invalid_metadata_directories,
+         'pi': pi})
 
 
 @login_required
 def collection_detail(request, pk):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     """ View, edit, delete, create a particular collection. """
     # If user tries to go to a page using a collection primary key that doesn't
     # exist, give a 404
@@ -904,7 +1063,8 @@ def collection_detail(request, pk):
         'ingest/collection_detail.html',
         {'table': table,
          'collection': collection,
-         'descriptive_metadata_queryset': descriptive_metadata_queryset})
+         'descriptive_metadata_queryset': descriptive_metadata_queryset,
+         'pi': pi})
 
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
@@ -914,12 +1074,31 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
         'name', 'description', 'organization_name', 'lab_name',
         'project_funder', 'project_funder_id'
     ]
+    
+    def IsPi(request):
+        current_user = request.user
+        people = People.objects.get(auth_user_id_id = current_user.id)
+        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+        for attribute in project_person:
+            if attribute.is_pi:
+                pi = True
+            else:
+                pi = False
+        return render(request, {'pi':pi})
     template_name = 'ingest/collection_update.html'
     success_url = reverse_lazy('ingest:collection_list')
 
 
 @login_required
 def collection_delete(request, pk):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False
     """ Delete a collection. """
 
     collection = Collection.objects.get(pk=pk)
@@ -930,10 +1109,10 @@ def collection_delete(request, pk):
             # staging area
             tasks.delete_data_path.delay(data_path)
         collection.delete()
-        messages.success(request, 'Collection successfully deleted')
+        messages.success(request, 'Collection successfully deleted', {'pi':pi})
         return redirect('ingest:collection_list')
     return render(
-        request, 'ingest/collection_delete.html', {'collection': collection})
+        request, 'ingest/collection_delete.html', {'collection': collection, 'pi':pi})
 
 
 def upload_spreadsheet(spreadsheet_file, associated_collection, request):

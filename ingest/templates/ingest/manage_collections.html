@@ -2,6 +2,10 @@
 {% load bootstrap4 %}
 {% block wide %}
 
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+<br>
 <h1>All Project Collections</h1>
 
 <table class="table">

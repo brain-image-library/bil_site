@@ -18,7 +18,7 @@ class Project(models.Model):
     is_biccn = models.BooleanField(default=False)
 
 class CollectionGroup(models.Model):
-    project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
+    project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, unique=True, blank=True)
     name = models.CharField(max_length = 256)
 
 class Collection(models.Model):
@@ -333,6 +333,8 @@ class People(models.Model):
     auth_user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank=True)
   
 class ProjectPeople(models.Model):
+    def __str__(self):
+        return self.project_id.name
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     people_id = models.ForeignKey(People, on_delete=models.SET_NULL, null = True, blank=True)
     is_pi = models.BooleanField(default=False)

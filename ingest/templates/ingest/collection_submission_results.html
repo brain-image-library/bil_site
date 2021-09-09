@@ -1,7 +1,12 @@
 {% extends 'ingest/wide.html' %}
 
 {% block wide %}
-
+{% if pi %}
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endif %}
+<br>
 <h1><b>Submission Results for Collection</b> {{ collection.name }} 
   {% if collection.locked %}<i class="fa fa-lock"></i>
   {% else %}<i class="fa fa-unlock"></i>

@@ -1,6 +1,11 @@
 {% extends 'ingest/narrow.html' %}
 
 {% block narrow %}
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endif %}
+<br>
 <form action="" method="post">{% csrf_token %}
   <p>Are you sure you want to delete "{{ object }}"?</p>
   <input class="confirm btn btn-primary" type="submit" value="Confirm"/>
