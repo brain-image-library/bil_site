@@ -207,6 +207,11 @@ def manageCollections(request):
               
                 except EventsLog.DoesNotExist:
                     collection.event = None
+                
+                #try:
+                #    collection.metadata = DescriptiveMetadata.objects.get(collection=collection.id)
+                #except DescriptiveMetadata.DoesNotExist:
+                #    collection.metadata = None               
             collections_list.extend(collections)
     return render(request, 'ingest/manage_collections.html', {'collections':collections, 'collections_list':collections_list, 'pi':pi})
 
@@ -456,7 +461,7 @@ def descriptive_metadata_upload(request):
 
 
         #form.fields['associated_project'] = projects
-            
+    user = request.user        
     collections = Collection.objects.filter(locked=False, user=request.user)
     person = People.objects.get(auth_user_id=user.id)
     projects = ProjectPeople.objects.filter(people_id=people.id).all()

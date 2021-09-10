@@ -28,6 +28,7 @@
 <th>Modality </th>
 <th>Collection Type </th>
 <th>Events Log </th>
+<th>View Details </th>
 </tr>
 </thead>
 <tbody>
@@ -49,6 +50,7 @@
 <td>{{ collection.modality}} </td>
 <td>{{ collection.collection_type}} </td>
 <td>{{ collection.event.event_type}} </td>
+<td><a href="{% url 'ingest:collection_detail' collection.id %}">View</td>
 </tr>
 {% endfor %}
 </table>

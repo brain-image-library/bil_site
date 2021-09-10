@@ -12,21 +12,16 @@
 <thead>
 <tr>
 <th>Name </th>
-<th>Description </th>
 <th>Project Name</th>
 <th>Submitter</th>
 <th>Organization Lab </th>
 <th>Lab Name </th>
-<th>Project Funder ID </th>
-<th>Project Funder </th>
-<th>BIL Uuid </th>
-<th>Data Path </th>
 <th>Locked </th>
 <th>Submission Status </th>
 <th>Validation Status </th>
 <th>Modality </th>
-<th>Collection Type </th>
 <th>Events Log</th>
+<th>View Details</th>
 </tr>
 </thead>
 <tbody>
@@ -34,21 +29,16 @@
 <tr>
 
 <td>{{ collection.name}} </td>
-<td>{{ collection.description}} </td>
 <td>{{ collection.collection_group_id.project_id.name }}</td>
 <td>{{ collection.user.username}} </td>
 <td>{{ collection.organization_name}} </td>
 <td>{{ collection.lab_name}} </td>
-<td>{{ collection.project_funder_id}} </td>
-<td>{{ collection.project_funder}} </td>
-<td>{{ collection.bil_uuid}} </td>
-<td>{{ collection.data_path}} </td>
 <td>{{ collection.locked}} </td>
 <td>{{ collection.submission_status}} </td>
 <td>{{ collection.validation_status}} </td>
 <td>{{ collection.modality}} </td>
-<td>{{ collection.collection_type}} </td>
 <td>{{ collection.event.event_type}} </td>
+<td><a href="{% url 'ingest:collection_detail' collection.id %}">View</td>
 </tr>
 {% endfor %}
 </table>
