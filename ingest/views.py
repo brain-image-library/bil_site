@@ -301,7 +301,7 @@ def people_of_pi(request):
             pi = True
         else:
             pi = False
-    current_user = request.user
+    
     pi = People.objects.get(auth_user_id_id=current_user.id)
     # filters the project_people table down to the rows where it's the pi's people_id_id AND is_pi=true
     pi_projects = ProjectPeople.objects.filter(people_id_id=pi.id, is_pi=True).all()
@@ -451,19 +451,13 @@ def descriptive_metadata_upload(request):
         form.fields['associated_collection'].queryset = Collection.objects.filter(
             locked=False, user=request.user)
         collections = form.fields['associated_collection'].queryset
-        #form.fields['associated_project'].queryset = Project.objects.all()
 
         person = People.objects.get(auth_user_id=user.id)
         form.fields['associated_project'].queryset = ProjectPeople.objects.filter(people_id=people.id).all()
         projects = form.fields['associated_project'].queryset
-        #for proj in project_person:
-        #    projects.append(proj)
-
-
-        #form.fields['associated_project'] = projects
-    user = request.user        
+           
     collections = Collection.objects.filter(locked=False, user=request.user)
-    person = People.objects.get(auth_user_id=user.id)
+    person = People.objects.get(auth_user_id=request.user.id)
     projects = ProjectPeople.objects.filter(people_id=people.id).all()
     
 
