@@ -25,7 +25,7 @@ from . import tasks
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, CollectionGroup, EventsLog
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog
 from .tables import CollectionTable, ImageMetadataTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -124,6 +124,7 @@ def change_bil_admin_privs(request):
         person.save()
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
 
+# this function lists all the users so a pi can assign people to their project
 @login_required
 def list_all_users(request):
     current_user = request.user
@@ -169,9 +170,9 @@ def manageProjects(request):
             pi = True
         else:
             pi = False
-    current_user = request.user
-    person = People.objects.get(auth_user_id_id=current_user)
-    project_person = ProjectPeople.objects.filter(people_id=person).all()            
+    
+    #person = People.objects.get(auth_user_id_id=current_user)
+    #project_person = ProjectPeople.objects.filter(people_id=person).all()            
 
     allprojects=[]
     for row in project_person:
@@ -181,6 +182,7 @@ def manageProjects(request):
       
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects, 'pi':pi})
 
+# this functions allows pi to see all the collections
 @login_required
 def manageCollections(request):
     current_user = request.user
@@ -197,24 +199,19 @@ def manageCollections(request):
     person = People.objects.get(auth_user_id_id=current_user)
     allprojects = ProjectPeople.objects.filter(people_id=person.id, is_pi=True).all()
     for proj in allprojects:
-        #print(proj.project_id.name)
-        allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=proj.project_id_id).all()
-        for group in allcollectionsgroups:
-            collections = Collection.objects.filter(collection_group_id_id=group.id).all()
-            for collection in collections:
-                try:
-                    collection.event = EventsLog.objects.filter(collection_id_id=collection.id).latest('event_type')
+        #allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=proj.project_id_id).all()
+        #for group in allcollectionsgroups:
+        collections = Collection.objects.filter(project=proj.id).all()
+        for collection in collections:
+            try:
+                collection.event = EventsLog.objects.filter(collection_id_id=collection.id).latest('event_type')
               
-                except EventsLog.DoesNotExist:
-                    collection.event = None
-                
-                #try:
-                #    collection.metadata = DescriptiveMetadata.objects.get(collection=collection.id)
-                #except DescriptiveMetadata.DoesNotExist:
-                #    collection.metadata = None               
-            collections_list.extend(collections)
+            except EventsLog.DoesNotExist:
+                collection.event = None               
+        collections_list.extend(collections)
     return render(request, 'ingest/manage_collections.html', {'collections':collections, 'collections_list':collections_list, 'pi':pi})
 
+# add a new project
 @login_required
 def project_form(request):
     current_user = request.user
@@ -227,6 +224,7 @@ def project_form(request):
             pi = False
     return render(request, 'ingest/project_form.html', {'pi':pi})
 
+# takes the data from project_form
 @login_required
 def create_project(request):
     new_project = json.loads(request.body)
@@ -254,6 +252,7 @@ def create_project(request):
     messages.success(request, 'Project Created!')    
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
 
+
 @login_required
 def add_project_user(request, pk):
     current_user = request.user
@@ -268,6 +267,7 @@ def add_project_user(request, pk):
     project = Project.objects.get(id=pk) 
     return render(request, 'ingest/add_project_user.html', {'all_users':all_users, 'project':project, 'pi':pi})
 
+# adds person to a project
 @login_required
 def write_user_to_project_people(request):
     content = json.loads(request.body)
@@ -324,7 +324,9 @@ def view_project_people(request, pk):
         project = Project.objects.get(id=pk)
         # get all of the project people rows with the project_id matching the project.id
         projectpeople = ProjectPeople.objects.filter(project_id_id=pk).all()
-     
+        
+        print(project_people)
+        print('project_people!')
         # get all of the people who are in those projectpeople rows
         allpeople = []
         for row in projectpeople:
@@ -332,7 +334,7 @@ def view_project_people(request, pk):
             person = People.objects.get(id=person_id)
             allpeople.append(person)
         return render(request, 'ingest/view_project_people.html', { 'project':project, 'allpeople':allpeople })
-    except ObjectDoesNotExist:
+    except ProjectPeople.ObjectDoesNotExist:
         return render(request, 'ingest/no_people.html')
     return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople, 'project':project, 'pi':pi})
 
@@ -377,9 +379,10 @@ def view_project_collections(request, pk):
             pi = False
     try:
         project = Project.objects.get(id=pk)
-        # use the id of the project to look it up in the collectiongroup
-        collectiongroup = CollectionGroup.objects.get(project_id_id=pk)
-        project_collections = Collection.objects.filter(collection_group_id_id=collectiongroup).all()
+        project_collections = Collection.objects.filter(project_id=project.id).all()
+        
+        print(project_collections)
+        print('project_collections!')
         for collection in project_collections:
             user_id = collection.user_id
             owner = User.objects.get(id=user_id)
@@ -390,7 +393,7 @@ def view_project_collections(request, pk):
             collection.event = event
             collection.owner = owner
        
-    except ObjectDoesNotExist:
+    except Collection.ObjectDoesNotExist:
         return render(request, 'ingest/no_collection.html')  
     return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections, 'pi':pi})
 
@@ -410,22 +413,6 @@ def descriptive_metadata_upload(request):
         form = UploadForm(request.POST)
         if form.is_valid():
             collection = form.cleaned_data['associated_collection']
-            project_person = form.cleaned_data['associated_project']
-            
-            # needs to check collection_group for project.id
-            # if project.id exists, just use collection_group_id to add to collection
-            # if project.id doesn't exist, write a new line to the collection_group table
-            # write a row to collection_group, then write that id to collection
-            try:
-                project = Project.objects.get(id=project_person.id)
-                collection_group = CollectionGroup.objects.get(project_id_id=project.id, name=project.funded_by)
-
-            except:
-                project = Project.objects.get(id=project_person.id)
-                collection_group = CollectionGroup.objects.create(project_id_id=project.id, name=project.funded_by)
-            
-            collection.collection_group_id_id = collection_group.id 
-            
             #paths=collection.data_path.split(':')
             #datapath=paths[1].replace("/lz/","/etc/")
 
@@ -438,9 +425,7 @@ def descriptive_metadata_upload(request):
             error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
             if error:
                 return redirect('ingest:descriptive_metadata_upload')
-            else:
-                collection.save()
-                collection_group.save()         
+            else:         
                 return redirect('ingest:descriptive_metadata_list')
     # This is the GET (just show the metadata upload page)
     else:
@@ -449,19 +434,11 @@ def descriptive_metadata_upload(request):
         # Only let a user associate metadata with an unlocked collection that
         # they own
         form.fields['associated_collection'].queryset = Collection.objects.filter(
-            locked=False, user=request.user)
+            locked=False, project=null, user=request.user)
         collections = form.fields['associated_collection'].queryset
-
-        person = People.objects.get(auth_user_id=user.id)
-        form.fields['associated_project'].queryset = ProjectPeople.objects.filter(people_id=people.id).all()
-        projects = form.fields['associated_project'].queryset
-           
     collections = Collection.objects.filter(locked=False, user=request.user)
-    person = People.objects.get(auth_user_id=request.user.id)
-    projects = ProjectPeople.objects.filter(people_id=people.id).all()
     
-
-    return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'pi':pi, 'collections':collections, 'projects':projects})
+    return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'pi':pi, 'collections':collections})
 
 # do we still use this???
 @login_required
@@ -644,8 +621,6 @@ def collection_send(request):
         print(user_name)
     messages.success(request, 'Request succesfully sent')
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
-    #return HttpResponse(status=200)
-    #success_url = reverse_lazy('ingest:collection_list')
 
 @login_required
 def collection_create(request):
@@ -710,6 +685,7 @@ def collection_create(request):
             post.data_path = data_path
             post.bil_uuid = bil_uuid
             post.bil_user = bil_user
+
             post.save()
             cache.delete('host_and_path')
             cache.delete('data_path')
@@ -719,6 +695,14 @@ def collection_create(request):
             return redirect('ingest:collection_list')
     else:
         form = CollectionForm()
+
+    project_list = []
+    person = People.objects.get(auth_user_id=request.user.id)
+    projects = ProjectPeople.objects.filter(people_id=people.id).all()
+    for proj in projects:
+        project = Project.objects.get(id=proj.project_id_id)  
+        project_list.append(project)
+  
     collections = Collection.objects.all()
     funder_list = [
         "1-U01-H114812-01",
@@ -733,10 +717,13 @@ def collection_create(request):
         "1R24MH114788-01",
         "1R24MH114793-01",
     ]
+
     return render(
         request,
         'ingest/collection_create.html',
         {'form': form,
+         'projects': projects,
+         'project_list': project_list, 
          'collections': collections,
          'funder_list': funder_list,
          'host_and_path': host_and_path,

@@ -1,12 +1,10 @@
 from django import forms
 from .field_list import metadata_fields, collection_fields
-from .models import ImageMetadata, DescriptiveMetadata, Collection, Project, CollectionGroup
+from .models import ImageMetadata, DescriptiveMetadata, Collection
 
 
 class UploadForm(forms.Form):
     associated_collection = forms.ModelChoiceField(queryset=Collection.objects.all())
-    associated_project = forms.ModelChoiceField(queryset=Project.objects.all())
-    #collection_group = forms.ModelChoiceField(queryset=CollectionGroup.objects.all())
 
 class DescriptiveMetadataForm(forms.ModelForm):
 
@@ -60,8 +58,8 @@ class CollectionForm(forms.ModelForm):
     class Meta:
         model = Collection
         fields = collection_fields
-        
         widgets = {
+            'project': forms.TextInput(attrs={'list': 'project_list'}),
             'project_funder_id': forms.TextInput(attrs={'list': 'funder_list'}),
         }
 
