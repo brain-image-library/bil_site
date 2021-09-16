@@ -20,7 +20,6 @@
 <th>Submission Status </th>
 <th>Validation Status </th>
 <th>Modality </th>
-<th>Events Log</th>
 <th>View Details</th>
 </tr>
 </thead>
@@ -37,7 +36,7 @@
 <td>{{ collection.submission_status}} </td>
 <td>{{ collection.validation_status}} </td>
 <td>{{ collection.modality}} </td>
-<td>{{ collection.event.event_type}} </td>
+
 <td><a href="{% url 'ingest:collection_detail' collection.id %}">View</td>
 </tr>
 {% endfor %}

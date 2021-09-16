@@ -192,21 +192,21 @@ def manageCollections(request):
             pi = False
     # gathers all the collections associated with the PI, linked on pi_index.html
     collections_list = []
-    current_user = request.user
-    person = People.objects.get(auth_user_id_id=current_user)
-    allprojects = ProjectPeople.objects.filter(people_id=person.id, is_pi=True).all()
+    allprojects = ProjectPeople.objects.filter(people_id=people.id, is_pi=True).all()
     for proj in allprojects:
-        #allcollectionsgroups = CollectionGroup.objects.filter(project_id_id=proj.project_id_id).all()
-        #for group in allcollectionsgroups:
-        collections = Collection.objects.filter(project=proj.id).all()
+        collections = Collection.objects.filter(project_id=proj.id).all()
         for collection in collections:
-            try:
-                collection.event = EventsLog.objects.filter(collection_id_id=collection.id).latest('event_type')
+        #    try:
+        #        collection.event = EventsLog.objects.filter(collection_id_id=collection.id).latest('event_type')
               
-            except EventsLog.DoesNotExist:
-                collection.event = None               
-        collections_list.extend(collections)
-    return render(request, 'ingest/manage_collections.html', {'collections':collections, 'collections_list':collections_list, 'pi':pi})
+        #    except EventsLog.DoesNotExist:
+        #        collection.event = None               
+            collections_list.extend(collection)
+        #project = proj.project_id
+        #print(project)
+        #collections = Collection.objects.filter(project_id=project.id).all()
+    #print(collections_list)
+    return render(request, 'ingest/manage_collections.html', {'pi':pi, 'collections_list':collections_list})
 
 # add a new project
 @login_required
@@ -321,9 +321,6 @@ def view_project_people(request, pk):
         project = Project.objects.get(id=pk)
         # get all of the project people rows with the project_id matching the project.id
         projectpeople = ProjectPeople.objects.filter(project_id_id=pk).all()
-        
-        print(project_people)
-        print('project_people!')
         # get all of the people who are in those projectpeople rows
         allpeople = []
         for row in projectpeople:
@@ -431,7 +428,7 @@ def descriptive_metadata_upload(request):
         # Only let a user associate metadata with an unlocked collection that
         # they own
         form.fields['associated_collection'].queryset = Collection.objects.filter(
-            locked=False, project=null, user=request.user)
+            locked=False, user=request.user)
         collections = form.fields['associated_collection'].queryset
     collections = Collection.objects.filter(locked=False, user=request.user)
     
