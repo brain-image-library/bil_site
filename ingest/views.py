@@ -164,16 +164,13 @@ def userModify(request):
 def manageProjects(request):
     current_user = request.user
     people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    project_person = ProjectPeople.objects.filter(people_id = people.id, is_pi = True).all()
     for attribute in project_person:
         if attribute.is_pi:
             pi = True
         else:
             pi = False
     
-    #person = People.objects.get(auth_user_id_id=current_user)
-    #project_person = ProjectPeople.objects.filter(people_id=person).all()            
-
     allprojects=[]
     for row in project_person:
         project_id = row.project_id_id
@@ -334,7 +331,7 @@ def view_project_people(request, pk):
             person = People.objects.get(id=person_id)
             allpeople.append(person)
         return render(request, 'ingest/view_project_people.html', { 'project':project, 'allpeople':allpeople })
-    except ProjectPeople.ObjectDoesNotExist:
+    except ProjectPeople.DoesNotExist:
         return render(request, 'ingest/no_people.html')
     return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople, 'project':project, 'pi':pi})
 
@@ -393,7 +390,7 @@ def view_project_collections(request, pk):
             collection.event = event
             collection.owner = owner
        
-    except Collection.ObjectDoesNotExist:
+    except Collection.DoesNotExist:
         return render(request, 'ingest/no_collection.html')  
     return render(request, 'ingest/view_project_collections.html', {'project':project, 'project_collections':project_collections, 'pi':pi})
 
