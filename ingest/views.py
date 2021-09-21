@@ -191,22 +191,20 @@ def manageCollections(request):
         else:
             pi = False
     # gathers all the collections associated with the PI, linked on pi_index.html
-    collections_list = []
-    allprojects = ProjectPeople.objects.filter(people_id=people.id, is_pi=True).all()
+    #collections_list = []
+    allprojects = ProjectPeople.objects.filter(people_id_id=people.id, is_pi=True).all()
+
     for proj in allprojects:
-        collections = Collection.objects.filter(project_id=proj.id).all()
-        for collection in collections:
-        #    try:
-        #        collection.event = EventsLog.objects.filter(collection_id_id=collection.id).latest('event_type')
-              
-        #    except EventsLog.DoesNotExist:
-        #        collection.event = None               
-            collections_list.extend(collection)
+        project = Project.objects.get(id = proj.project_id_id)
+        collections = Collection.objects.filter(project_id=project.id).all()
+                       
+        #collections_list.extend(collection)
         #project = proj.project_id
         #print(project)
         #collections = Collection.objects.filter(project_id=project.id).all()
     #print(collections_list)
-    return render(request, 'ingest/manage_collections.html', {'pi':pi, 'collections_list':collections_list})
+    print(collections.values)
+    return render(request, 'ingest/manage_collections.html', {'pi':pi, 'collections':collections})
 
 # add a new project
 @login_required
