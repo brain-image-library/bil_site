@@ -366,8 +366,6 @@ def view_project_collections(request, pk):
         project = Project.objects.get(id=pk)
         project_collections = Collection.objects.filter(project_id=project.id).all()
         
-        print(project_collections)
-        print('project_collections!')
         for collection in project_collections:
             user_id = collection.user_id
             owner = User.objects.get(id=user_id)
