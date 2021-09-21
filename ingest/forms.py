@@ -60,6 +60,7 @@ class CollectionForm(forms.ModelForm):
         fields = collection_fields
         widgets = {
             'project': forms.TextInput(attrs={'list': 'project_list'}),
+            
             'project_funder_id': forms.TextInput(attrs={'list': 'funder_list'}),
         }
 

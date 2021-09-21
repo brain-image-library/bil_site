@@ -10,7 +10,7 @@
 </datalist>
 <datalist id="project_list">
   {% for project in project_list %}
-  <option value="{{ project }}">
+  <option value="{{ project.id }}">{{ project.name }}</option>
   {% endfor %}
 </datalist>
 {% if pi %}

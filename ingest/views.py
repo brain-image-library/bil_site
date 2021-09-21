@@ -668,6 +668,7 @@ def collection_create(request):
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = CollectionForm(request.POST, request=request)
+        print(form)
         if form.is_valid():
             # remotely create the directory on some host using fabric and
             # celery
