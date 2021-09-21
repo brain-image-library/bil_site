@@ -191,19 +191,12 @@ def manageCollections(request):
         else:
             pi = False
     # gathers all the collections associated with the PI, linked on pi_index.html
-    #collections_list = []
+    collections = []
     allprojects = ProjectPeople.objects.filter(people_id_id=people.id, is_pi=True).all()
-
     for proj in allprojects:
         project = Project.objects.get(id = proj.project_id_id)
-        collections = Collection.objects.filter(project_id=project.id).all()
-                       
-        #collections_list.extend(collection)
-        #project = proj.project_id
-        #print(project)
-        #collections = Collection.objects.filter(project_id=project.id).all()
-    #print(collections_list)
-    print(collections.values)
+        collection = Collection.objects.filter(project_id=project.id).all()
+        collections.extend(collection)
     return render(request, 'ingest/manage_collections.html', {'pi':pi, 'collections':collections})
 
 # add a new project
