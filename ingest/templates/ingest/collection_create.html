@@ -8,6 +8,17 @@
   <option value="{{ funder }}">
   {% endfor %}
 </datalist>
+<datalist id="project_list">
+  {% for project in project_list %}
+  <option value="{{ project.id }}">{{ project.name }}</option>
+  {% endfor %}
+</datalist>
+{% if pi %}
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endif %}
+<br>
 
 <h1>New Collection</h1>
 <form method="POST" class="post-form">

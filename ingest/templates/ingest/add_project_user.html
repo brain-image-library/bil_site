@@ -4,6 +4,13 @@
 {% extends 'ingest/wide.html' %}
 {% load bootstrap4 %} 
 {% block wide %}
+<a href="{% url 'ingest:manage_projects' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
+</a>
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+<br>
 <form id="rowform">
 <h1 name="project_id" id="project_id" value="{{ project.id }}">Add a user to your project named {{project.name}}</h1>
 <p>Select checkboxes for each user to add them to the project</p>
@@ -30,9 +37,12 @@
 <button class="btn btn-primary" onclick="add_users();">Submit</button>
 <hr>
 
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
 
+<a href="{% url 'ingest:manage_projects' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
+</a>
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
 {% endblock %}
 

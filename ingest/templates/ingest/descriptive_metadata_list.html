@@ -18,7 +18,12 @@
 </script>
 {% endblock %}
 {% block wide %}
-
+{% if pi %}
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endif %}
+<br>
 <h1>Your Descriptive Metadata</h1>
 {% if descriptive_metadata %}
   <form action="" method="post">{% csrf_token %}

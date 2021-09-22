@@ -1,6 +1,11 @@
 {% extends 'ingest/wide.html' %}
 
 {% block wide %}
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endif %}
+<br>
   <h1>Create Metadata</h1>
   <form method="POST" class="post-form">
   {% csrf_token %}

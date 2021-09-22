@@ -11,13 +11,11 @@ class UUID(models.Model):
     # Required and the user should supply these
     useduuid = models.CharField(max_length=256, unique=True)
 class Project(models.Model):
+    def __str__(self):
+        return self.name
     name = models.CharField(max_length=256, default="Project Name")
     funded_by = models.CharField(max_length=256)
     is_biccn = models.BooleanField(default=False)
-
-class CollectionGroup(models.Model):
-    project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
-    name = models.CharField(max_length = 256)
 
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
@@ -33,7 +31,7 @@ class Collection(models.Model):
         max_length=256, help_text="The lab or department subgroup")
     project_funder_id = models.CharField(
         max_length=256, help_text="The grant number")
-
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=True, null=True)
     # Optional fields. The user doesn't need to supply these.
     project_funder = models.CharField(
         max_length=256, blank=True, default="NIH")
@@ -82,7 +80,6 @@ class Collection(models.Model):
     )
     collection_type = models.CharField(
         max_length=256)
-    collection_group_id = models.ForeignKey(CollectionGroup, on_delete=models.CASCADE, blank=True, null=True)
 
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
@@ -331,6 +328,8 @@ class People(models.Model):
     auth_user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank=True)
   
 class ProjectPeople(models.Model):
+    def __str__(self):
+        return self.project_id.name
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     people_id = models.ForeignKey(People, on_delete=models.SET_NULL, null = True, blank=True)
     is_pi = models.BooleanField(default=False)
