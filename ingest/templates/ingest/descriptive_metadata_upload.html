@@ -4,11 +4,19 @@
 
 {% block narrow %}
 
+{% if pi %}
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endif %}
+
+<br>
 <h1>Upload Descriptive Metadata Spreadsheet</h1>
 {% if collections %}
 <ul class="list-group">
   <li class="list-group-item">Download and fill out either the <a href="{% static 'ingest/descriptive_metadata_template.xls' %}">Excel</a> or <a href="{% static 'ingest/descriptive_metadata_template.ods' %}">LibreOffice Calc</a> template. </li>
-  <li class="list-group-item">Choose a collection and upload your metadata.</li>
+  <li class="list-group-item">Choose a collection, then upload your metadata.</li>.
+  <p> If the project you are looking for is not in this list, it must be added by the PI of your project. </p>
 </ul>
 
   <hr>
@@ -17,9 +25,10 @@
     {% csrf_token %}
     {{ form }}
     </br>
+
     </br>
     <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
-    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit()" />
+    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();" />
     </br>
   </form>
 {% else %}

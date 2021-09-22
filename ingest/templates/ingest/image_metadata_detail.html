@@ -1,6 +1,12 @@
 {% extends 'ingest/wide.html' %}
 
 {% block wide %}
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endif %}
+<br>
+
 <h1><b>Image Metadata</b> {{ image_metadata.project_name }}</h1>
   <div class="list-group">
     <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Project description</h4> {{image_metadata.project_description}}</a>

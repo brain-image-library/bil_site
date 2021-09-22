@@ -28,6 +28,7 @@ collection_fields = [
     'lab_name',
     'project_funder',
     'project_funder_id',
+    'project',
 ]
 
 

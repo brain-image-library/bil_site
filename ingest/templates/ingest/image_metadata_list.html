@@ -18,7 +18,11 @@
   });
 </script>
 {% endblock %}
-
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+{% endif %}
+<br>
 <h1>Your Metadata</h1>
 {% if image_metadata %}
   <form action="" method="post">{% csrf_token %}

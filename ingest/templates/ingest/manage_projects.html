@@ -2,6 +2,14 @@
 {% load bootstrap4 %}
 {% block wide %}
 
+<a href="{% url 'ingest:project_form' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Create a New Project</button>
+</a>
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+
+<br>
 <h1>Manage Projects</h1>
 <p>Select a project to view details including collections and users associated with it</p>
 
