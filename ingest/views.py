@@ -399,9 +399,9 @@ def descriptive_metadata_upload(request):
             #paths=collection.data_path.split(':')
             #datapath=paths[1].replace("/lz/","/etc/")
 
-            #datapath=collection.data_path.replace("/lz/","/etc/")
+            datapath=collection.data_path.replace("/lz/","/etc/")
              
-            datapath = '/home/shared_bil_dev/testetc/' 
+            #datapath = '/home/shared_bil_dev/testetc/' 
             #datapath=paths[1]+'.etc'
             spreadsheet_file = request.FILES['spreadsheet_file']
         
@@ -1071,7 +1071,7 @@ def collection_delete(request, pk):
             pi = False
     """ Delete a collection. """
 
-     collection = Collection.objects.get(pk=pk)
+    collection = Collection.objects.get(pk=pk)
     if request.method == 'POST':
         if collection.submission_status != "SUCCESS":
             data_path = collection.data_path.__str__()
