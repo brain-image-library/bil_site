@@ -83,7 +83,6 @@ class Collection(models.Model):
     collection_type = models.CharField(
         max_length=256)
     collection_group_id = models.ForeignKey(CollectionGroup, on_delete=models.CASCADE, blank=True, null=True)
-  
 
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
@@ -317,6 +316,7 @@ class DescriptiveMetadata(models.Model):
     dataset_uuid = models.CharField(max_length=256, null=True, blank=True)
     r24_name = models.CharField(max_length=256)
     r24_directory = models.CharField(max_length=256)
+
  
 class DataGroup(models.Model):
     data_group_list_id = models.IntegerField()
@@ -327,10 +327,10 @@ class People(models.Model):
     orcid = models.CharField(max_length=256)
     affiliation = models.CharField(max_length=256)
     affiliation_identifier = models.CharField(max_length=256)
+    is_bil_admin = models.BooleanField(default=False)
     auth_user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank=True)
-   
+  
 class ProjectPeople(models.Model):
- 
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     people_id = models.ForeignKey(People, on_delete=models.SET_NULL, null = True, blank=True)
     is_pi = models.BooleanField(default=False)
@@ -338,7 +338,6 @@ class ProjectPeople(models.Model):
     doi_role = models.CharField(max_length=256)
 
 class Funder(models.Model):
-
     name = models.CharField(max_length=256)
     funding_reference_identifier = models.CharField(max_length=256)
     funding_reference_identifier_type = models.CharField(max_length=256)
@@ -347,7 +346,6 @@ class Funder(models.Model):
     grant_number = models.CharField(max_length=256)
 
 class ProjectFunders(models.Model):
-
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
     funder_id = models.ForeignKey(Funder, on_delete=models.CASCADE, null=True, blank=True)
 
@@ -359,6 +357,3 @@ class EventsLog(models.Model):
     timestamp = models.DateTimeField()
     event_type = models.CharField(max_length=64, default="", choices=[('mail_tapes_to_bil', 'Mail Tapes To BIL'), ('tapes_received', 'Tapes Received'), ('tapes_ready_for_qc', 'Tapes Ready For QC'), ('move_to_collection', 'Move To Collection'), ('request_brainball', 'Request Brainball'), ('Mail_brainball_from_bil', 'Mail Brainball From BIL'), ('mail_brainball_to_bil', 'Mail Brainball To BIL'), ('received_brainball', 'Received Brainball'), ('collection_created', 'Collection Created'), ('metadata_uploaded', 'Metadata Uploaded'), ('request_validation', 'Request Validation'), ('request_submission', 'Request Submission'), ('request_embargo', 'Request Embargo'), ('collection_public', 'Collection Public'), ('request_withdrawal', 'Request Withdrawal')])
 
-#class CollectionGroup(models.Model):
-#    project_id = models.ForeignKey(Project, on_delete = models.SET_NULL, null = True, blank=True)
-#    name = models.CharField(max_length = 256)

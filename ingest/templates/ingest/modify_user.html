@@ -1,0 +1,80 @@
+{% extends 'ingest/base.html' %}
+{% block content %}
+{% load bootstrap4 %}
+
+<script src="/static/ingest/updateusers.js"></script>
+<script>$(document).ready(function(){$('table').find('select').on('change', function() {$(this).addClass('modified');});})</script>
+
+<form id="rowform">
+<h1 name="auth_id" id="auth_id" value="{{person.auth_user_id_id}}">Modify User Privs for Individual Projects for {{person.name}}</h1>
+
+{% csrf_token %}
+<table id="ModifyUserAccess" class="table">
+<thead>
+<tr>
+<th>Project Name</th>
+<th>Orcid ID</th>
+<th>Affiliation</th>
+<th>Is Project Investigator</th>
+<th>Is Program Officer</th>
+<th>DOI Role</th>
+</tr>
+</thead>
+<tbody>
+
+{% for project_person in all_project_people %}
+
+<tr data-project_id="{{project_person.id}}">
+<td>{{ project_person.their_project.name }}</td>
+<td>{{ project_person.orcid_id}}</td>
+<td>{{ project_person.affiliation}}</td>
+<td>
+<select name="is_pi" id="is_pi">
+    <option value="True" 
+        {% if project_person.is_pi %}
+        selected
+        {% endif %}
+    >True</option>
+    <option value="False"
+        {% if project_person.is_pi is False %}
+        selected
+        {% endif %}
+    >False</option>
+    <option value="None"
+        {% if project_person.is_pi is null %}
+        selected
+        {% endif %}
+    >----</option>
+</select>
+</td>
+<td>
+<select name="is_po" id="is_po">
+    <option value="True" 
+        {% if project_person.is_po %}
+        selected
+        {% endif %}
+    >True</option>
+    <option value="False"
+        {% if project_person.is_po is False %}
+            selected
+        {% endif %}
+    >False</option>
+    <option value="None"
+        {% if project_person.is_po is null %}
+        selected
+        {% endif %}
+    >----</option>
+</select>
+</td>
+<td>{{project_person.doi_role}}</td>
+</tr>
+{% endfor %}
+</table>
+</form>
+<button class="btn btn-primary" onclick="submit_user_changes();">Confirm Changes</button>
+<hr>
+
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
+{% endblock %}

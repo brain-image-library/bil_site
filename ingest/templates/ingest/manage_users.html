@@ -1,0 +1,99 @@
+{% extends 'ingest/base.html' %}
+{% block content %}
+{% load bootstrap4 %}
+
+<script src="/static/ingest/updateusers.js"></script>
+<script>$(document).ready(function(){$('table').find('select').on('change', function() {$(this).addClass('modified');});})</script>
+
+<h1>Modify User Access</h1>
+<p>Change user roles.</p>
+<form id="rowform">
+{% csrf_token %}
+<table id="ModifyUserAccess" class="table">
+<thead>
+<tr>
+<th>Username</th>
+<th>Orcid ID</th>
+<th>Affiliation</th>
+<th>Is Project Investigator</th>
+<th>Is Program Officer</th>
+<th>Is BIL Admin</th>
+<th>DOI Role</th>
+</tr>
+</thead>
+<tbody>
+
+{% for user in allusers %}
+<tr data-user_id="{{user.id}}">
+<td>{{user.username}}</td>
+<td>{{user.these_people.orcid_id}}</td>
+<td>{{user.these_people.affiliation}}</td>
+<td>
+<select name="is_pi" id="is_pi">
+    <option value="True" 
+        {% if user.these_project_people.is_pi %}
+        selected
+        {% endif %}
+    >True</option>
+    <option value="False"
+        {% if user.these_project_people.is_pi is False %}
+        selected
+        {% endif %}
+    >False</option>
+    <option value="None"
+        {% if user.these_project_people.is_pi is null %}
+        selected
+        {% endif %}
+    >----</option>
+</select>
+</td>
+<td>
+<select name="is_po" id="is_po">
+    <option value="True" 
+        {% if user.these_project_people.is_po %}
+        selected
+        {% endif %}
+    >True</option>
+    <option value="False"
+        {% if user.these_project_people.is_po is False %}
+            selected
+        {% endif %}
+    >False</option>
+    <option value="None"
+        {% if user.these_project_people.is_po is null %}
+        selected
+        {% endif %}
+    >----</option>
+</select>
+</td>
+<td>
+<select name="is_bil_admin" id="is_bil_admin">
+    <option value="True" 
+        {% if user.these_project_people.is_bil_admin %}
+        selected
+        {% endif %}
+    >True</option>
+        <option value="False"
+        {% if user.these_project_people.is_bil_admin is False %}
+        selected
+        {% endif %}
+    >False</option>
+    <option value="null"
+        {% if user.these_project_people.is_bil_admin is null %}
+        selected
+        {% endif %}
+    >----</option>
+</select>
+</td>
+<td>{{user.these_project_people.doi_role}}</td>
+</tr>
+{% endfor %}
+</table>
+</form>
+<button class="btn btn-primary" onclick="submit_user_changes();">Confirm Changes</button>
+<hr>
+
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+</a>
+{% endblock %}
