@@ -396,13 +396,12 @@ def descriptive_metadata_upload(request):
         form = UploadForm(request.POST)
         if form.is_valid():
             collection = form.cleaned_data['associated_collection']
-            #paths=collection.data_path.split(':')
-            #datapath=paths[1].replace("/lz/","/etc/")
-
-            datapath=collection.data_path.replace("/lz/","/etc/")
-             
-            #datapath = '/home/shared_bil_dev/testetc/' 
-            #datapath=paths[1]+'.etc'
+            # for production
+            #datapath=collection.data_path.replace("/lz/","/etc/")
+            
+            # for development 
+            datapath = '/home/shared_bil_dev/testetc/' 
+            
             spreadsheet_file = request.FILES['spreadsheet_file']
         
             error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
