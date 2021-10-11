@@ -11,12 +11,12 @@
 {% endif %}
 
 <br>
-<h1>Upload Descriptive Metadata Spreadsheet</h1>
+<h1>Upload Metadata Spreadsheet</h1>
 <p>Step 2 of 2: Upload metdata for associated submission</p>
 {% if collections %}
 <ul class="list-group">
   <li class="list-group-item">Download and fill out either the <a href="{% static 'ingest/descriptive_metadata_template.xls' %}">Excel</a> or <a href="{% static 'ingest/descriptive_metadata_template.ods' %}">LibreOffice Calc</a> template. </li>
-  <li class="list-group-item">Choose a collection, then upload your metadata.</li>.
+  <li class="list-group-item">Choose a submission, then upload your metadata.</li>.
   <p> If the project you are looking for is not in this list, it must be added by the PI of your project. </p>
 </ul>
 
@@ -34,7 +34,7 @@
   </form>
 {% else %}
   <div class="alert alert-info">
-    <p>You need to create a collection before uploading a metadata spreadsheet</p>
+    <p>You need to create a submission before uploading a metadata spreadsheet</p>
   </div>
 {% endif %}
 

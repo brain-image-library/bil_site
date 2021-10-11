@@ -7,7 +7,7 @@
 </a>
 {% endif %}
 <br>
-<h1><b>Submission Results for Collection</b> {{ collection.name }} 
+<h1><b>Results for Submission</b> {{ collection.name }} 
   {% if collection.locked %}<i class="fa fa-lock"></i>
   {% else %}<i class="fa fa-unlock"></i>
   {% endif %}
@@ -15,7 +15,7 @@
 
   {% if collection.submission_status == "NOT_SUBMITTED" %}
     <div class="alert alert-info">
-      <strong>Not submitted.</strong> Once you have submitted your collection, the submission results will show up here.
+      <strong>Not submitted.</strong> Once you have completed your submission, the results will show up here.
     </div>
   {% elif collection.submission_status == "PENDING" %}
     <div class="alert alert-warning">
@@ -40,7 +40,7 @@
   {% endif %}
 
   {% if dir_size %}
-    The total size of your collection: <strong>{{ dir_size }}</strong>
+    The total size of your submission: <strong>{{ dir_size }}</strong>
   {% endif %}
   
   {% if output %}
