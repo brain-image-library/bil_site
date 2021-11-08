@@ -17,6 +17,7 @@ from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
 from django_tables2 import RequestConfig
 import pyexcel as pe
+from openpyxl import load_workbook
 import xlrd
 import re
 from celery.result import AsyncResult
@@ -1140,140 +1141,64 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name 
     filename = fs.save(name_with_path, spreadsheet_file)
-    fn = xlrd.open_workbook(filename)
+    fn = load_workbook(filename)
     #allSheetNames = fn.sheet_names()
     #print(allSheetNames) 
-    worksheet = fn.sheet_by_index(0)
-    #for sheet in allSheetNames:
-    #    print("Current sheet name is {}" .format(sheet))
-    #    #this is where we left off
-    #    print(sheet)
+    contributors = fn.get_sheet_by_name('Contributors')
+    funders = fn.get_sheet_by_name('Funders')
+    publication = fn.get_sheet_by_name('Publication')
+    instrument = fn.get_sheet_by_name('Instrument')
+    dataset = fn.get_sheet_by_name('Dataset')
+    specimen = fn.get_sheet_by_name('Specimen')
+    image = fn.get_sheet_by_name('Image')
+    datastate = fn.get_sheet_by_name('DataState')
+    
     error = False
-    try:
-        missing = False
-        badgrantnum = False
-        has_escapes = False
-        missing_fields = []
-        missing_cells = []
-        badchar = "\\"
-        bad_str = []
-        not_missing = []
-        grantpattern = '[A-Z0-9\-][A-Z0-9\-][A-Z0-9A]{3}\-[A-Z0-9]{8}\-[A-Z0-9]{2}'
-        for rowidx in range(worksheet.nrows):
-            row = worksheet.row(rowidx)
-            for colidx, cell in enumerate(row):
-                if rowidx == 0:
-                    #Bad Headers Check
-                    #if cell.value == 'grant_number':
-                    #    grantrow = rowidx+1
-                    #    grantcol = colidx
-                    #    grantnum = worksheet.cell(grantrow, grantcol).value
-                    #    if bool(re.match(grantpattern, grantnum)) != True:
-                    #        badgrantnum=True
-                    # this will check specifically the headers of the document for missing info.
-                    if cell.value not in required_metadata:
-                        missing = True
-                        missingcol = colidx+1
-                        missingrow = rowidx+1
-                    else:
-                        not_missing.append(cell.value)
-                #Escape/Illegal characters in data check        
-                #if badchar in cell.value:
-                #    has_escapes = True
-                #    bad_str.append(badchar)
-                #    errorcol = colidx
-                #    errorrow = rowidx
-                #    illegalchar = cell.value
-                if cell.value == '':
-                        missing = True
-                        missingcol = colidx+1
-                        missingrow = rowidx+1
-                        missing_cells.append([missingrow, missingcol])
-                else:
-                    not_missing.append(cell.value)
+    missing = False
+    badgrantnum = False
+    has_escapes = False
+    missing_fields = []
+    missing_cells = []
+    badchar = "\\"
+    bad_str = []
+    not_missing = []
+    grantpattern = '[A-Z0-9\-][A-Z0-9\-][A-Z0-9A]{3}\-[A-Z0-9]{8}\-[A-Z0-9]{2}'
+    
+    for row_cells in contributors.iter_rows(min_row=4):
+        for cell in row_cells:
+            print('%s: cell.value=%s' % (cell, cell.value) )
+            #if cell.value == '':
+            #    missing = True
+            #    missingcol = colidx+1
+            #    missingrow = rowidx+1
+            #    missing_cells.append([missingrow, missingcol])
 
-        diff = lambda l1, l2: [x for x in l1 if x not in l2]
-        missing_fields.append(str(diff(required_metadata, not_missing)))
-        
-        records = pe.iget_records(file_name=filename)
-        # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
-        # before saving entries, so we don't get half-way uploaded
-        # spreadsheets.
-        
-        #for idx, record in enumerate(records):
-            # XXX: right now, we're just checking for required fields that are
-            # missing, but we can add whatever checks we want here.
-            # XXX: blank rows in the spreadsheet that have some hidden
-            # formatting can screw up this test
-            # This is where we can probably strip \r from lines and check for header accuracy
-            #has_escapes = [j for j in record if '\r' in j]
-            #print(record)
-            
-            #missing = [k for k in record if k in required_metadata and not record[k]]
-            #missing = False
-            #missing_fields = []
-            #for i in required_metadata:
-            #    if i not in record:
-            #        missing = True
-            #        missing_fields.append(str(i))
-        
-            #has_escapes = False
-            #badchar = "\\"
-            #bad_str = []
-                    
-            #for row in range(0, currentSheet.nrows):
-            #    for column in "ABCDEFGHIJKLMNO":  # Here you can add or reduce the columns
-            #        cell_name = "{}{}".format(column, row)
-            #        if fn[cell_name].value == "\\":
-                        #print("{1} cell is located on {0}" .format(cell_name, currentSheet[cell_name].value))
-                        #print("cell position {} has escape character {}".format(cell_name, currentSheet[cell_name].value))
-                        #return cell_name
+    for row_cells in funders.iter_rows(min_row=5):
+        for cell in row_cells:
+            print('%s: cell.value=%s' % (cell, cell.value) )
+   
+    for row_cells in publication.iter_rows(min_row=5):
+        for cell in row_cells:
+            print('%s: cell.value=%s' % (cell, cell.value) )
 
-            #for r, i in record.items():
-            #    result = i
-            #    if badchar in result:
-            #        has_escapes = True
-            #        bad_str.append(badchar)
-        if missing:
-            error = True
-            if missing_fields[0] == '[]':
-                for badcells in missing_cells:
-                    print(badcells)
-                    error_msg = 'Missing Required Information or Extra Field found in spreadsheet in row,column "{}"'.format(badcells)
-                    messages.error(request, error_msg)
-            else:
-                missing_str = ", ".join(missing_fields)
-                error_msg = 'Data missing from row "{}" column "{}". Missing required field(s) in spreadsheet: "{}". Be sure all headers in the metadata spreadsheet provided are included and correctly spelled in your spreadsheet. If issue persists please contact us at bil-support@psc.edu.'.format(missingrow, missingcol, missing_str)
-                messages.error(request, error_msg)
-        if has_escapes:
-            error = True
-            bad_str = ", ".join(bad_str)
-            error_msg = 'Data contains an illegal character in string "{}"  row: "{}" column: "{}" Be sure there are no escape characters such as "\" or "^" in your spreadsheet. If issue persists please contact us at bil-support@psc.edu.'.format(illegalchar, errorrow, errorcol)
-            messages.error(request, error_msg)
-        if badgrantnum:
-            error = True
-            error_msg = 'Grant number does not match correct format for NIH grant number, "{}" in Row: {} Column: {}  must match the format "A-B1C-2D3E4F5G-6H"'.format(grantnum, grantrow, grantcol)
-            messages.error(request, error_msg)
-        if error:
-            # We have to add 2 to idx because spreadsheet rows are 1-indexed
-            # and first row is header
-            # return redirect('ingest:image_metadata_upload')
-            return error
-        records = pe.iget_records(file_name=filename)
-        for idx, record in enumerate(records):
-            im = DescriptiveMetadata(
-                collection=associated_collection,
-                user=request.user)
-            for k in record:
-                setattr(im, k, record[k])
-                #messages.success(request, k)
-                #messages.success(request, record[k])
-            im.save()
-        messages.success(request, 'Descriptive Metadata successfully uploaded')
-        # return redirect('ingest:image_metadata_list')
-        return error
-    except pe.exceptions.FileTypeNotSupported:
-        error = True
-        messages.error(request, "File type not supported")
-        # return redirect('ingest:image_metadata_upload')
-        return error
+    for row_cells in instrument.iter_rows(min_row=5):
+        for cell in row_cells:
+            print('%s: cell.value=%s' % (cell, cell.value) )
+
+    for row_cells in dataset.iter_rows(min_row=5):
+        for cell in row_cells:
+            print('%s: cell.value=%s' % (cell, cell.value) )
+
+    for row_cells in specimen.iter_rows(min_row=5):
+        for cell in row_cells:
+            print('%s: cell.value=%s' % (cell, cell.value) )
+
+    for row_cells in image.iter_rows(min_row=5):
+        for cell in row_cells:
+            print('%s: cell.value=%s' % (cell, cell.value) )
+
+    for row_cells in datastate.iter_rows(min_row=5):
+        for cell in row_cells:
+            print('%s: cell.value=%s' % (cell, cell.value) )
+
+    return print('All done!')
