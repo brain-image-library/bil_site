@@ -47,17 +47,17 @@
   <div class="row">
 
     <div class="col-lg-5 big-row-text">
-      <h1>Collections</h1>
+      <h1>Submissions</h1>
       <p>
-      A collection bundle is an ingestion wrapper that contains one or more 
-      related datasets and metadata.  Collections are tagged with 
+      A submission bundle is an ingestion wrapper that contains one or more 
+      related datasets and metadata.  Submissions are tagged with 
       identifying metadata (such as the NIH project that the data is 
-      associated with) that upon submission will be propagated to each item 
-      in the collection. This important tagging information will allow BIL 
+      associated with) that will be propagated to each item 
+      in the submission. This important tagging information will allow BIL 
       to report to NIH on data that has begun, but has not yet completed the 
-      submission process. In general, smaller collection bundles are 
-      recommended because all datasets within a collection must pass the 
-      validation process for the collection bundle to be accepted. 
+      submission process. In general, smaller submission bundles are 
+      recommended because all datasets within a submission must pass the 
+      validation process for the submission bundle to be accepted. 
       </p>
     </div>
 
@@ -71,13 +71,13 @@
 <div class="container-fluid white_on_gray">
 
   <div class="row">
-    <div class="col-lg-12 big-button-header"> <h1>Managing Collections</h1> </div>
+    <div class="col-lg-12 big-button-header"> <h1>Managing Submissions</h1> </div>
   </div>
 
   <div class="row">
     <div class="col-lg-4 big-button"></div>
     <div class="col-lg-2 big-button">
-      <h3>New Collection</h3>
+      <h3>New Submission</h3>
       <a href="{% url 'ingest:collection_create' %}">
         <span class="fa fa-plus-circle fa-5x"></span>
       </a>
@@ -85,12 +85,11 @@
       begin.</p>
     </div>
     <div class="col-lg-2 big-button">
-      <h3>View Collections</h3>
+      <h3>View Submissions</h3>
       <a href="{% url 'ingest:collection_list' %}">
         <span class="fa fa-list fa-5x"></span>
       </a>
-      <p>See a list of the collections you've created and their submission
-      status here.</p>
+      <p>See a list of the submissions you've created and their status here.</p>
     </div>
     <div class="col-lg-4 big-button"></div>
   </div>
@@ -109,27 +108,9 @@
       <a href="{% url 'ingest:image_metadata_upload' %}">
         <span class="fa fa-upload fa-5x"></span>
       </a>
-      <p>After you've created a collection, upload a spreadsheet of your
+      <p>After you've created a submission, upload a spreadsheet of your
       metadata.</p>
     </div>
-    <!--
-    <div class="col-lg-2 big-button">
-      <h3>Create Metadata</h3>
-      <a href="{% url 'ingest:image_metadata_create' %}">
-        <span class="fa fa-plus-circle fa-5x"></span>
-      </a>
-      <p>Alternatively, you can manually add metadata to a collection using a
-      web form.</p>
-    </div>
-    <div class="col-lg-2 big-button">
-      <h3>View Metadata</h3>
-      <a href="{% url 'ingest:image_metadata_list' %}">
-        <span class="fa fa-list fa-5x"></span>
-      </a>
-      <p>After you've added your metadata to a collection, you can view an
-      interactive list of all your metadata here.</p>
-    </div>
-    -->
     <div class="col-lg-3 big-button"></div>
   </div>
 
@@ -139,7 +120,7 @@
 <div class="container-fluid wrapper-1">
   <div class="row">
     <div class="col-lg-12 big-row-text">
-      <p>Please <a href="{% url 'login' %}"> log in</a> or <a href="{% url 'ingest:signup' %}"> sign up</a> to begin creating collections for publication in the BIL.</p>
+      <p>Please <a href="{% url 'login' %}"> log in</a> or <a href="{% url 'ingest:signup' %}"> sign up</a> to begin creating submissions for publication in the BIL.</p>
     </div>
   </div>
 </div>

@@ -9,54 +9,10 @@
 <div class="content container-fluid">
   <div class="row">
     <div class="col-md-6">
-      <h1><b>Collection Name</b> {{ collection.name }} 
+      <h1><b>Submission Name</b> {{ collection.name }} 
         {% if collection.locked %}<i class="fa fa-lock"></i>
         {% else %}<i class="fa fa-unlock"></i>
         {% endif %}
-      </h1>
-    </div>
-    <div class="col-md-6">
-      <h1>
-<!--
-        <div class="dropdown" align="right">
-          <button class="btn btn-lg btn-default dropdown-toggle" type="button" data-toggle="dropdown">
-          <span class="glyphicon glyphicon-cog"></span></button>
-          <ul class="dropdown-menu dropdown-menu-right">
-            {% if collection.locked %}
-              <li class="dropdown-header">Collection</li>
-              <li class="disabled"><a href="#">Validate</a></li>
-              <li class="disabled"><a href="#">Submit</a></li>
-              <li class="disabled"><a href="#">Edit</a></li>
-              <li class="disabled"><a href="#">Delete</a></li>
-              <li class="divider"></li>
-              <li class="dropdown-header">Metadata</li>
-              <li class="disabled"><a href="#">Upload to this Collection</a></li>
-            {% else %}
-              <li class="dropdown-header">Collection</li>
-              {% if image_metadata_queryset %}
-              <li>
-                <form action="" method="post">{% csrf_token %}
-                  <input type="submit" class="form-control btn btn-link" value="Validate" name="validate_collection">
-                  <input type="submit" class="form-control btn btn-link" value="Submit" name="submit_collection" onclick="return confirm('If submission is successful, no further edits can be made. Are you sure?')"/>
-                </form>
-              </li>
-              {% else %}
-              <li class="disabled"><a href="#">Submit</a></li>
-              {% endif %}
-              <li><a href="{% url 'ingest:collection_update' pk=collection.pk %}">Edit</a></li>
-              <li><a href="{% url 'ingest:collection_delete' pk=collection.pk %}">Delete</a></li>
-              <li class="divider"></li>
-              <li class="dropdown-header">Metadata</li>
-              <li>
-                <form method="post" enctype="multipart/form-data">{% csrf_token %}
-                  <input class="form-control btn btn-link"  id="UploadMetadata" value="Upload to this Collection" onclick="document.getElementById('file').click();" />
-                  <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit()" />
-                </form>
-              </li>
-            {% endif %}
-          </ul>
-        </div>
-       -->
       </h1>
     </div>
   </div>
@@ -64,14 +20,11 @@
     <div class="col-md-12">
 
       <div class="list-group">
-        <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Collection Description</h4> {{collection.description}}</a>
+        <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Submission Description</h4> {{collection.description}}</a>
         <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Organization</h4> {{collection.organization_name}}</a>
         <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Lab</h4> {{collection.lab_name}}</a>
         <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Project funder</h4> {{collection.project_funder}}</a>
         <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Project funder ID</h4> {{collection.project_funder_id}}</a>
-        <!--  
-        <a href="{% url 'ingest:collection_data_path' pk=collection.pk %}" class="list-group-item"><h4 class="list-group-item-heading">Data staging area </h4> {{collection.data_path}} <i class="fa fa-link"></i></a>
-        -->
         <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Data staging area </h4> {{collection.data_path}}</a>
 
         {% if collection.validation_status == "NOT_VALIDATED" %}
@@ -106,18 +59,12 @@
         </div>
         {% if collection.locked %}
           <div class="alert alert-info">
-            <strong>Submitted collections cannot be modified or deleted.</strong>
+            <strong>Locked submissions cannot be modified or deleted.</strong>
           </div>
-        {% else %}
-        <!--
-          <div class="alert alert-info">
-            <strong>If you are done editing metadata and your data is finished uploading, select "Submit Collection" at this time</strong>
-          </div>
-         -->
         {% endif %}
       {% else %}
         <div class="alert alert-info">
-          <strong>This collection doesn't have any metadata yet.</strong>
+          <strong>This submission doesn't have any metadata yet.</strong>
         </div>
       {% endif %}
 
@@ -129,10 +76,6 @@
       <form action="" method="post">{% csrf_token %}
           <button type="submit" class="cancel btn btn-primary" value="Validate" name="validate_collection">Validate</button>
           &nbsp;
-          <!--
-          <button type="submit" class="cancel btn btn-primary" value="Submit" name="submit_collection" 
-          onclick="return confirm('If submission is successful, no further edits can be made. Are you sure?')"/>Submit</button>
-          -->
           &nbsp;
       </form>       
       {% endif %}

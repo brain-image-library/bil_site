@@ -11,7 +11,7 @@
 
 <br>
 <h1>Manage Projects</h1>
-<p>Select a project to view details including collections and users associated with it</p>
+<p>Select a project to view details including submissions and users associated with it</p>
 
 <table id="ProjectTable" class="table">
 <thead>
@@ -20,7 +20,7 @@
 <th>Funded By</th>
 <th>Is BICCN?</th>
 <th>Personnel</th>
-<th>Collections</th>
+<th>Submissions</th>
 </tr>
 </thead>
 <tbody>
@@ -30,7 +30,7 @@
  <td>{{ project.funded_by }}</td>
  <td>{{ project.is_biccn }}</td>
  <td><a href="{% url 'ingest:view_project_people' project.id %}">View Personnel</td>
- <td><a href="{% url 'ingest:view_project_collections' project.id %}">View Collections</td>
+ <td><a href="{% url 'ingest:view_project_collections' project.id %}">View Submissions</td>
 </tr>
 {% endfor %}
 </table>
