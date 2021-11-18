@@ -41,7 +41,7 @@ python-pam==1.8.4
 pytz==2018.3
 six==1.11.0
 soupsieve==2.2.1
-sqlparse==0.4.1
+sqlparse==0.4.2
 texttable==1.2.1
 vine==1.1.4
 xlrd==1.1.0
