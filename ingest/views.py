@@ -199,6 +199,22 @@ def manageCollections(request):
         collections.extend(collection)
     return render(request, 'ingest/manage_collections.html', {'pi':pi, 'collections':collections})
 
+# this function allows PIs to manage their grands/funding
+@login_required
+def manage_funding(request):
+    current_user = request.user
+    people = People.objects.get(auth_user_id_id = current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    for attribute in project_person:
+        if attribute.is_pi:
+            pi = True
+        else:
+            pi = False	
+    # gather all grants associated with PI
+    projects = Project.objects.filter(id = project_person.project_id).all()
+
+    return render(request, 'ingest/manage_funding.html', {'pi':pi, 'projects':projects})
+
 # add a new project
 @login_required
 def project_form(request):

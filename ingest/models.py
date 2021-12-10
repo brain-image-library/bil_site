@@ -14,7 +14,7 @@ class Project(models.Model):
     def __str__(self):
         return self.name
     name = models.CharField(max_length=256, default="Project Name")
-    funded_by = models.CharField(max_length=256)
+    funded_by = models.ForeignKey(Funder, on_delete=models.SET_NULL, blank=True, null=True)
     is_biccn = models.BooleanField(default=False)
 
 class Collection(models.Model):
@@ -337,12 +337,11 @@ class ProjectPeople(models.Model):
     doi_role = models.CharField(max_length=256)
 
 class Funder(models.Model):
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, null=False)
     funding_reference_identifier = models.CharField(max_length=256)
     funding_reference_identifier_type = models.CharField(max_length=256)
     award_number = models.CharField(max_length=256)
     award_title = models.CharField(max_length=256)
-    grant_number = models.CharField(max_length=256)
 
 class ProjectFunders(models.Model):
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
