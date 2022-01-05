@@ -1,0 +1,47 @@
+{% extends 'ingest/wide.html' %}
+{% load bootstrap4 %}
+{% block wide %}
+
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+
+<br>
+<h1>Manage Funding</h1>
+<p>Add a grant</p>
+
+<hr>
+<table id="AddFundingTable" class="table">
+<thead>
+<tr>
+<th>Project</th>
+<th>Funder Name</th>
+<th>Reference Identifier (for NIH Projects)</th>
+<th>Reference Identifier Type</th>
+<th>Award Number (for NIH Projects)</th>
+<th>Award Title (for NIH Projects)</th>
+</tr>
+</thead>
+<form>
+<tbody>
+{% for p in projects %}
+<tr>
+ <td><select name="project" id="project"><option value="{{p.id}}">{{p.name}}</option></select></td>
+ <td input type="text" name="funder_name" id="funder_id"></td>
+ <td input type="text" name="funder_ref_id" id="funder_ref_id"></td>
+ <td input type="text" name="funder_ref_type" id="funder_ref_type"></td>
+ <td input type="text" name="funder_award_num" id="funder_award_num"></td>
+ <td input type="text" name="funder_award_title" id="funder_award_title"></td>
+</tr>
+{% endfor %}
+</table>
+
+<button type="submit" class="save btn btn-lg btn-primary">Save</button>
+</form>
+
+<a href="{% url 'ingest:index' %}">
+  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+</a>
+
+{% endblock %}
+
