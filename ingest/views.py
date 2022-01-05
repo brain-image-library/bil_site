@@ -210,9 +210,12 @@ def manage_funding(request):
             pi = True
         else:
             pi = False	
-    # gather all grants associated with PI
-    projects = Project.objects.filter(id = project_person.project_id).all()
-
+    # gather all projects associated with PI
+    projects=[]
+    for row in project_person:
+        project_id = row.project_id_id
+        project =  Project.objects.get(id=project_id)
+        projects.append(project)
     return render(request, 'ingest/manage_funding.html', {'pi':pi, 'projects':projects})
 
 # add a new project
@@ -243,8 +246,12 @@ def create_project(request):
         name = item['name']
         
         # write project to the project table   
-        project = Project(funded_by=funded_by, is_biccn=is_biccn, name=name)
+        project = Project(is_biccn=is_biccn, name=name)
         project.save()
+
+        # add the funding to the project/funder table
+        project_funder = ProjectFunders(funder_id=funded_by, project_id=project)
+        project_funder.save()
         
         # create a project_people row for this pi so they can view project on pi dashboard
         project_id_id = project.id

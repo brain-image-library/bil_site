@@ -14,7 +14,6 @@ class Project(models.Model):
     def __str__(self):
         return self.name
     name = models.CharField(max_length=256, default="Project Name")
-    funded_by = models.ForeignKey(Funder, on_delete=models.SET_NULL, blank=True, null=True)
     is_biccn = models.BooleanField(default=False)
 
 class Collection(models.Model):
