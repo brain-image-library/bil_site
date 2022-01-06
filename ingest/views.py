@@ -175,9 +175,13 @@ def manageProjects(request):
     for row in project_person:
         project_id = row.project_id_id
         project =  Project.objects.get(id=project_id)
-        allprojects.append(project)     
+        allprojects.append(project)
+        allfunders = ProjectFunders.objects.filter(project_id_id=project.id).all
+        #for f in proj_funder:
+        #    funder_id = f.funder_id_id
+        #    funder = Funder.objects.get(id=funder_id)
       
-    return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects, 'pi':pi})
+    return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects, 'pi':pi, 'allfunders':'allfunders'})
 
 # this functions allows pi to see all the collections
 @login_required
@@ -247,7 +251,7 @@ def create_funding(request):
         proj_funder.save()
   
     messages.success(request, 'Funding Created!')
-    return HttpResponse(json.dumps({'url': reverse('ingest:pi_index')}))
+    return HttpResponse(json.dumps({'url': reverse('ingest:manage_funding')}))
 
 # add a new project
 @login_required

@@ -1,6 +1,6 @@
 function create_funding() {
     const csrftoken = Cookies.get('csrftoken');
-    const output_rows = [];
+    let output_rows = [];
     
     const project = document.getElementById("project");
     const funder_name = document.getElementById("funder_name");
