@@ -218,6 +218,38 @@ def manage_funding(request):
         projects.append(project)
     return render(request, 'ingest/manage_funding.html', {'pi':pi, 'projects':projects})
 
+# this function writes the new funding to the db
+@login_required
+def create_funding(request):
+    new_funding = json.loads(request.body)
+    items = []
+    for item in new_funder:
+        items.append(item['project'])
+        items.append(item['funder_name'])
+        items.append(item['funder_ref_id'])
+        items.append(item['funder_ref_type'])
+        items.append(item['funder_award_num'])
+        items.append(item['funder_award_title'])
+
+        project = item['project']        
+        funder_name = item['funder_name']
+        funder_ref_id = item['funder_ref_id']
+        funder_ref_type = item['funder_ref_type']
+        funder_award_num = item['funder_award_num']
+        funder_award_title = item['funder_award_title']
+     
+        # write values to funders table
+        funding = Funder(name=funder_name, funding_reference_identifier=funder_ref_id, funding_reference_identifier_type=funder_ref_type, award_number=funder_award_num, award_title=funder_award_title)
+        funding.save()
+
+        # write project and funding to the ProjectFunders table
+        proj_funder = ProjectFunders(project_id=project, funder_id=funding.id)
+        proj_funder.save()
+  
+    messages.success(request, 'Funding Created!')
+    return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
+
+
 # add a new project
 @login_required
 def project_form(request):
@@ -249,10 +281,6 @@ def create_project(request):
         project = Project(is_biccn=is_biccn, name=name)
         project.save()
 
-        # add the funding to the project/funder table
-        project_funder = ProjectFunders(funder_id=funded_by, project_id=project)
-        project_funder.save()
-        
         # create a project_people row for this pi so they can view project on pi dashboard
         project_id_id = project.id
         current_user = request.user
