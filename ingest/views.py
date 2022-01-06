@@ -221,6 +221,7 @@ def manage_funding(request):
 # this function writes the new funding to the db
 @login_required
 def create_funding(request):
+    print('****INSIDE CREATE FUNDING***')
     new_funding = json.loads(request.body)
     items = []
     for item in new_funder:
