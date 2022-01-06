@@ -10,7 +10,7 @@ function create_funding() {
     const funder_award_title = document.getElementById("funder_award_title");
 
     output_rows.push({
-        "project_id": project_id.value,
+        "project": project.value,
         "funder_name": funder_name.value,
         "funder_ref_id": funder_ref_id.value,
         "funder_ref_type": funder_ref_type.value,

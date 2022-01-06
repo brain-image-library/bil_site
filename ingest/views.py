@@ -25,7 +25,7 @@ from . import tasks
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, Funder, ProjectFunders, EventsLog
 from .tables import CollectionTable, ImageMetadataTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -221,10 +221,9 @@ def manage_funding(request):
 # this function writes the new funding to the db
 @login_required
 def create_funding(request):
-    print('****INSIDE CREATE FUNDING***')
     new_funding = json.loads(request.body)
     items = []
-    for item in new_funder:
+    for item in new_funding:
         items.append(item['project'])
         items.append(item['funder_name'])
         items.append(item['funder_ref_id'])
@@ -244,12 +243,11 @@ def create_funding(request):
         funding.save()
 
         # write project and funding to the ProjectFunders table
-        proj_funder = ProjectFunders(project_id=project, funder_id=funding.id)
+        proj_funder = ProjectFunders(project_id_id=int(project), funder_id_id=funding.id)
         proj_funder.save()
   
     messages.success(request, 'Funding Created!')
-    return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
-
+    return HttpResponse(json.dumps({'url': reverse('ingest:pi_index')}))
 
 # add a new project
 @login_required
