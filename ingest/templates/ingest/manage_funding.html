@@ -8,7 +8,7 @@
 
 <br>
 <h1>Manage Funding</h1>
-<p>Add a grant</p>
+<p>Add a grant to associate with a project</p>
 
 <hr>
 <table id="AddFundingTable" class="table">
@@ -22,18 +22,21 @@
 <th>Award Title (for NIH Projects)</th>
 </tr>
 </thead>
-<form>
+<form id="addfunding">
+{% csrf_token %}
 <tbody>
-{% for p in projects %}
 <tr>
- <td><select name="project" id="project"><option value="{{p.id}}">{{p.name}}</option></select></td>
- <td input type="text" name="funder_name" id="funder_id"></td>
- <td input type="text" name="funder_ref_id" id="funder_ref_id"></td>
- <td input type="text" name="funder_ref_type" id="funder_ref_type"></td>
- <td input type="text" name="funder_award_num" id="funder_award_num"></td>
- <td input type="text" name="funder_award_title" id="funder_award_title"></td>
+ <td><select name="project" id="project">
+    {% for p in projects %}
+        <option value="{{p.id}}">{{p.name}}</option>
+    {% endfor %}
+ </select></td>
+ <td><input type="text" name="funder_name" id="funder_name" placeholder="Name of the funder"></td>
+ <td><input type="text" name="funder_ref_id" id="funder_ref_id" placeholder="e.g. ROR" title="Uniquely identifies an individual or legal entity. Preferred identifier is the Research Organization Registry (ROR)"></td>
+ <td><input type="text" name="funder_ref_type" id="funder_ref_type" placeholder="e.g. ORCID, ISNI, ROR" title="Identifying scheme used in nameidentifier (CV: ORCID, ISNI, ROR, GRID)"></td>
+ <td><input type="text" name="funder_award_num" id="funder_award_num" placeholder="Funders code" title="Funders code assigned to the grant"></td>
+ <td><input type="text" name="funder_award_title" id="funder_award_title" placeholder="Title of the grant award"></td>
 </tr>
-{% endfor %}
 </table>
 
 <button type="submit" class="save btn btn-lg btn-primary">Save</button>
