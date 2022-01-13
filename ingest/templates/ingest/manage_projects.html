@@ -27,9 +27,8 @@
 {% for project in allprojects %}
 <tr>
  <td>{{ project.name }}</td>
- {% for f in allfunders %}
-     <td>{{ f.allfunders.name }}</td>
- {% endfor %}
+ <td> {% for f in project.related_funders %} {{ f.funder_id.name }} {% endfor %} </td>
+ 
  <td>{{ project.is_biccn }}</td>
  <td><a href="{% url 'ingest:view_project_people' project.id %}">View Personnel</td>
  <td><a href="{% url 'ingest:view_project_collections' project.id %}">View Submissions</td>
