@@ -364,7 +364,7 @@ class EventsLog(models.Model):
 
 class Contributor(models.Model):
     contributorName = models.CharField(max_length=256)
-    creator = models.BooleanFeidl(defaust=False)
+    creator = models.BooleanFeidl(default=False)
     contributorType = models.CharField(max_length=256)
     nameType = models.CharField(max_length=256)
     nameIdentitfier = models.CharField(max_length=256)
