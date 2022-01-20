@@ -10,6 +10,12 @@ class UUID(models.Model):
 
     # Required and the user should supply these
     useduuid = models.CharField(max_length=256, unique=True)
+
+class Sheet(models.Model):
+    def __str__(self):
+        return self.filename
+    filename = models.CharField(max_length=500)   
+
 class Project(models.Model):
     def __str__(self):
         return self.name
@@ -45,6 +51,7 @@ class Collection(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL, blank=True, null=True)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
     # This is how we're initially tracking validation. Ultimately, we'll
     # probably want to break up validation into multiple tasks (e.g. checking
     # dataset size, verifying valid TIFF/JPEG2000 files, etc), in which case
@@ -215,70 +222,6 @@ class ImageMetadata(models.Model):
         default=UNKNOWN,
     )
 
-#class NewMetadata_Unused(models.Model):
-#    # This is the new metadata schema as part of the multisheet excel file
-#    # Unused and waiting to be incorporated into the ingestion process
-#    # Does not include current DescriptiveMetadata values
-#    contributorName = models.CharField(max_length=256)
-#    creator = models.BooleanFeidl(defaust=False)
-#    contributorType = models.CharField(max_length=256)
-#    nameType = models.CharField(max_length=256)
-#    nameIdentitfier = models.CharField(max_length=256)
-#    nameIdentifierScheme = models.CharField(max_length=256)
-#    affiliation = models.CharField(max_length=256)
-#    affiliationIdentifier = models.CharField(max_length=256)
-#    affiliationIdentifierScheme = models.CharField(max_length=256)
-#    funderName = modeles.CharField(max_length=256)
-#    fundingReferenceIdentifier = models.CharField(max_length=256)
-#    fundingReferenceIdentifierType = models.CharField(max_length=256)
-#    awardNumber = models.CharField(max_length=256)
-#    awardTitle = models.CharField(max_length=256)
-#    relatedIdentifier = models.CharField(max_length=256)
-#    relatedIdentifierType = models.CharField(max_length=256)
-#    pmcid = models.CharField(max_length=256)
-#    relationType = models.CharField(max_length=256)
-#    citation = models.CharField(max_length=256)
-#    microscopeType = models.CharField(max_length=256)
-#    microscopeManufacturerAndModel = models.CharField(max_length=1000)
-#    objectiveName = models.CharField(max_length=256)   
-#    objectiveImmersion = models.CharField(max_length=256)    
-#    objectiveNA = models.CharField(max_length=256)
-#    objectiveMagnification = models.CharField(max_length=256)
-#    detectorType = models.CharField(max_length=256)
-#    detectorModel = models.CharField(max_length=256)
-#    illuminationTypes = models.CharField(max_length=256)
-#    illuminationWavelength = models.CharField(max_length=256)
-#    detectionWavelength = models.CharField(max_length=256)
-#    sampleTemperature = models.CharField(max_length=256)
-#    bilDirectory = models.CharField(max_length=256)
-#    title = models.CharField(max_length=256)
-#    socialMedia = models.CharField(max_length=256)
-#    subject = models.CharField(max_length=256)
-#    subjectScheme = models.CharField(max_length=256)
-#    rights = models.CharField(max_length=256)
-#    rightsURI = models.CharField(max_length=256)
-#    rightsIdentifier = models.CharField(max_length=256)
-#    image = models.CharField(max_length=256)
-#    generalModality = models.CharField(max_lenth=256)
-#    technique = models.CharField(max_length=256)
-#    other = models.CharField(max_length=256)
-#    abstract = models.CharField(max_length=256)
-#    methods = models.CharField(max_length=256)
-#    technicalInfo = models.CharField(max_length=256)
-#    localID = models.CharField(max_length=256)
-#    species = models.CharField(max_length=256)
-#    ncbiTaxonomy = models.CharField(max_length=256)
-#    age = models.CharField(max_length=256)
-#    ageUnit = models.CharField(max_length=256)
-#    sex = models.CharField(max_length=256)
-#    genotype = models.CharField(max_length=256)
-#    organLocalID = models.CharField(max_length=256)
-#    organName = models.CharField(max_lenth=256)
-#    sampleLocalID = models.CharField(max_length=256)
-#    atlas = models.CharField(max_length=256)
-#    locations = models.CharField(max_length=256)
-    
- 
 class DescriptiveMetadata(models.Model):
     # This is the exact nomenclature used by BICCN.
     # The meat of the image metadata bookkeeping. This is all the relevant
@@ -337,12 +280,12 @@ class ProjectPeople(models.Model):
     doi_role = models.CharField(max_length=256)
 
 class Funder(models.Model):
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=256, null=False)
     funding_reference_identifier = models.CharField(max_length=256)
     funding_reference_identifier_type = models.CharField(max_length=256)
     award_number = models.CharField(max_length=256)
     award_title = models.CharField(max_length=256)
-    grant_number = models.CharField(max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
 
 class ProjectFunders(models.Model):
     project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
@@ -355,4 +298,116 @@ class EventsLog(models.Model):
     notes = models.CharField(max_length=256)
     timestamp = models.DateTimeField()
     event_type = models.CharField(max_length=64, default="", choices=[('mail_tapes_to_bil', 'Mail Tapes To BIL'), ('tapes_received', 'Tapes Received'), ('tapes_ready_for_qc', 'Tapes Ready For QC'), ('move_to_collection', 'Move To Collection'), ('request_brainball', 'Request Brainball'), ('Mail_brainball_from_bil', 'Mail Brainball From BIL'), ('mail_brainball_to_bil', 'Mail Brainball To BIL'), ('received_brainball', 'Received Brainball'), ('collection_created', 'Collection Created'), ('metadata_uploaded', 'Metadata Uploaded'), ('request_validation', 'Request Validation'), ('request_submission', 'Request Submission'), ('request_embargo', 'Request Embargo'), ('collection_public', 'Collection Public'), ('request_withdrawal', 'Request Withdrawal')])
+
+class Contributor(models.Model):
+    contributorName = models.CharField(max_length=256)
+    creator = models.BooleanFeidl(default=False)
+    contributorType = models.CharField(max_length=256)
+    nameType = models.CharField(max_length=256)
+    nameIdentifier = models.CharField(max_length=256)
+    nameIdentifierScheme = models.CharField(max_length=256)
+    affiliation = models.CharField(max_length=256)
+    affiliationIdentifier = models.CharField(max_length=256)
+    affiliationIdentifierScheme = models.CharField(max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+
+class Publication(models.Model):
+    relatedIdentifier = models.CharField(max_length=256)
+    relatedIdentifierType = models.CharField(max_length=256)
+    pmcid = models.CharField(max_length=256)
+    relationType = models.CharField(max_length=256)
+    citation = models.CharField(max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+
+class Instrument(models.Model):
+    microscopeType = models.CharField(max_length=256)
+    microscopeManufacturerAndModel = models.CharField(max_length=1000)
+    objectiveName = models.CharField(max_length=256)
+    objectiveImmersion = models.CharField(max_length=256)
+    objectiveNA = models.CharField(max_length=256)
+    objectiveMagnification = models.CharField(max_length=256)
+    detectorType = models.CharField(max_length=256)
+    detectorModel = models.CharField(max_length=256)
+    illuminationTypes = models.CharField(max_length=256)
+    illuminationWavelength = models.CharField(max_length=256)
+    detectionWavelength = models.CharField(max_length=256)
+    sampleTemperature = models.CharField(max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+
+class Dataset(models.Model):
+    bilDirectory = models.CharField(max_length=256)
+    title = models.CharField(max_length=256)
+    socialMedia = models.CharField(max_length=256)
+    subject = models.CharField(max_length=256)
+    subjectScheme = models.CharField(max_length=256)
+    rights = models.CharField(max_length=256)
+    rightsURI = models.CharField(max_length=256)
+    rightsIdentifier = models.CharField(max_length=256)
+    image = models.CharField(max_length=256)
+    generalModality = models.CharField(max_lenth=256)
+    technique = models.CharField(max_length=256)
+    other = models.CharField(max_length=256)
+    abstract = models.CharField(max_length=1000)
+    methods = models.CharField(max_length=256)
+    technicalInfo = models.CharField(max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+
+class Species(models.Model):
+    localID = models.CharField(max_length=256)
+    species = models.CharField(max_length=256)
+    ncbiTaxonomy = models.CharField(max_length=256)
+    age = models.CharField(max_length=256)
+    ageUnit = models.CharField(max_length=256)
+    sex = models.CharField(max_length=256)
+    genotype = models.CharField(max_length=256)
+    organLocalID = models.CharField(max_length=256)
+    organName = models.CharField(max_lenth=256)
+    sampleLocalID = models.CharField(max_length=256)
+    atlas = models.CharField(max_length=256)
+    locations = models.CharField(max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+
+class Image(models.Model):
+    xAxis = models.CharField(max_length=256)
+    obliqueXdim1 = models.CharField(max_length=256)
+    obliqueXdim2 = models.CharField(max_length=256)
+    obliqueXdim3 = models.CharField(max_length=256)
+    yAxis = models.CharField(max_length=256)
+    obliqueYdim1 = models.CharField(max_length=256)
+    obliqueYdim2 = models.CharField(max_length=256)
+    obliqueYdim3 = models.CharField(max_length=256)
+    zAxis = models.CharField(max_length=256)
+    obliqueZdim1 = models.CharField(max_length=256)
+    obliqueZdim2 = models.CharField(max_length=256)
+    obliqueZdim3 = models.CharField(max_length=256)
+    landmarkName = models.CharField(max_length=256)
+    landmarkX = models.CharField(max_length=256)
+    landmarkY = models.CharField(max_length=256)
+    landmarkZ = models.CharField(max_length=256)
+    Number = models.CharField(max_length=256)
+    displayColor = models.CharField(max_length=256)
+    Representation = models.CharField(max_length=256)
+    Flurophore = models.CharField(max_length=256)
+    stepSizeX = models.CharField(max_length=256)
+    stepSizeY = models.CharField(max_length=256)
+    stepSizeZ = models.CharField(max_length=256)
+    stepSizeT = models.CharField(max_length=256)
+    Channels = models.CharField(max_length=256)
+    Slices = models.CharField(max_length=256)
+    z = models.CharField(max_length=256)
+    Xsize = models.CharField(max_length=256)
+    Ysize = models.CharField(max_length=256)
+    Zsize = models.CharField(max_length=256)
+    Gbytes = models.CharField(max_length=256)
+    Files = models.CharField(max_length=256)
+    DimensionOrder = models.CharField(max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+
+class DataState(models.Model):
+    level = models.CharField(max_length=256)
+    included = models.BooleanField(default=False)
+    location = models.CharField(max_length=256)
+    attributes = models.CharField(max_length=256)
+    description = models.CharField(max_length=1000)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
 
