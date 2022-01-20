@@ -8,21 +8,21 @@
 </a>
 {% endif %}
 <br>
-<h1>Your Collections</h1>
+<h1>Your Submissions</h1>
 
 {% if collections %}
   {% load render_table from django_tables2 %}
   {% render_table table %} 
 {% else %}
   <div class="alert alert-info">
-    <p>You haven't created any collections yet.</p>
+    <p>You haven't created any submissions yet.</p>
   </div>
 {% endif %}
 
 <hr>
 
 <a href="{% url 'ingest:collection_create' %}" class="btn btn-primary">
-  <span class="glyphicon glyphicon-plus"></span> Create Collection
+  <span class="glyphicon glyphicon-plus"></span> Create Submission
 </a>
 
 <a href="{% url 'ingest:index' %}">

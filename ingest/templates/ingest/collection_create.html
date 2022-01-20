@@ -20,7 +20,8 @@
 {% endif %}
 <br>
 
-<h1>New Collection</h1>
+<h1>New Submission</h1>
+<p>Step 1 of 2: Create new submission and then upload metadata</p>
 <form method="POST" class="post-form">
 {% csrf_token %}
   {% for field in form  %}
@@ -33,8 +34,8 @@
     </p>
   {% endfor %}
   <div class="alert alert-info">
-    Once the collection is created, a data staging area will be assigned. The path to the data staging area will be 
-    shown for the collection after you click on the "Save" button below.
+    Once the submission is created, a data staging area will be assigned. The path to the data staging area will be 
+    shown for the submission after you click on the "Save" button below.
     </br>
     <!-- <strong>{{host_and_path}}</strong> -->
   </div>

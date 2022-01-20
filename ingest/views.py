@@ -676,7 +676,7 @@ def collection_create(request):
             cache.delete('bil_uuid')
             cache.delete('bil_user')
             messages.success(request, 'Collection successfully created!! Please proceed with data upload and metadata upload')
-            return redirect('ingest:collection_list')
+            return redirect('ingest:descriptive_metadata_upload')
     else:
         form = CollectionForm()
 
