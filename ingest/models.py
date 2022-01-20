@@ -367,7 +367,7 @@ class Contributor(models.Model):
     creator = models.BooleanFeidl(default=False)
     contributorType = models.CharField(max_length=256)
     nameType = models.CharField(max_length=256)
-    nameIdentitfier = models.CharField(max_length=256)
+    nameIdentifier = models.CharField(max_length=256)
     nameIdentifierScheme = models.CharField(max_length=256)
     affiliation = models.CharField(max_length=256)
     affiliationIdentifier = models.CharField(max_length=256)
