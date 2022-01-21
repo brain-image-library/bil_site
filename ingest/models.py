@@ -51,7 +51,7 @@ class Collection(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL, blank=True, null=True)
-    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+    #sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
     # This is how we're initially tracking validation. Ultimately, we'll
     # probably want to break up validation into multiple tasks (e.g. checking
     # dataset size, verifying valid TIFF/JPEG2000 files, etc), in which case
@@ -87,6 +87,7 @@ class Collection(models.Model):
     )
     collection_type = models.CharField(
         max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
 
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
@@ -301,7 +302,7 @@ class EventsLog(models.Model):
 
 class Contributor(models.Model):
     contributorName = models.CharField(max_length=256)
-    creator = models.BooleanFeidl(default=False)
+    creator = models.BooleanField(default=False)
     contributorType = models.CharField(max_length=256)
     nameType = models.CharField(max_length=256)
     nameIdentifier = models.CharField(max_length=256)
@@ -344,7 +345,7 @@ class Dataset(models.Model):
     rightsURI = models.CharField(max_length=256)
     rightsIdentifier = models.CharField(max_length=256)
     image = models.CharField(max_length=256)
-    generalModality = models.CharField(max_lenth=256)
+    generalModality = models.CharField(max_length=256)
     technique = models.CharField(max_length=256)
     other = models.CharField(max_length=256)
     abstract = models.CharField(max_length=1000)
@@ -361,7 +362,7 @@ class Species(models.Model):
     sex = models.CharField(max_length=256)
     genotype = models.CharField(max_length=256)
     organLocalID = models.CharField(max_length=256)
-    organName = models.CharField(max_lenth=256)
+    organName = models.CharField(max_length=256)
     sampleLocalID = models.CharField(max_length=256)
     atlas = models.CharField(max_length=256)
     locations = models.CharField(max_length=256)
