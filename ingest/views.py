@@ -1160,14 +1160,22 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
     missing_cells = []
     badchar = "\\"
     bad_str = []
-    not_missing_contributors = []
-    not_missing_funders = []
-    not_missing_publication = []
-    not_missing_instrument = []
-    not_missing_dataset = []
-    not_missing_specimen = []
-    not_missing_image = []
-    not_missing_datastate = []
+    contributors_cells = []
+    contributors_rows = [] 
+    funders_cells = []
+    funders_rows = []
+    publication_cells = []
+    publication_rows = []
+    instrument_cells = []
+    instrument_rows = []
+    dataset_cells = []
+    dataset_rows = []
+    specimen_cells = []
+    speciment_rows = []
+    image_cells = []
+    image_rows = []
+    datastate_cells = []
+    datastate_rows = []
     grantpattern = '[A-Z0-9\-][A-Z0-9\-][A-Z0-9A]{3}\-[A-Z0-9]{8}\-[A-Z0-9]{2}'
     
     for row in contributors.iter_rows(min_row=4):
@@ -1175,113 +1183,93 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
             print('%s: cell.value=%s' % (cell, cell.value) )
             if cell.value not in required_metadata:
                 missing = True
-    
             if cell.value == '':
                 missing = True
-                missingcol = colidx+1
-                missingrow = rowidx+1
-                missing_cells.append([missingrow, missingcol])
             else:
-                not_missing_contributors.append(cell.value)
-                
+                contributors_cells.append(cell.value)
+        # add each row to an array
+        contributors_rows.append(contributors_cells)
+        # then, for every row in an array, assign as an object to get saved to the db further down
+        
     for row in funders.iter_rows(min_row=5):
         for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
             if cell.value not in required_metadata:
                 missing = True
-
             if cell.value == '':
                 missing = True
-                missingcol = colidx+1
-                missingrow = rowidx+1
-                missing_cells.append([missingrow, missingcol])
             else:
-                not_missing_funders.append(cell.value)
+                funders_cells.append(cell.value)
+        funders_rows.append(funders_cells)
     for row in publication.iter_rows(min_row=5):
         for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
             if cell.value not in required_metadata:
                 missing = True
-
             if cell.value == '':
                 missing = True
-                missingcol = colidx+1
-                missingrow = rowidx+1
-                missing_cells.append([missingrow, missingcol])
             else:
-                not_missing_publication.append(cell.value)
+                publication_cells.append(cell.value)
+        publication_rows.append(publication_cells)
     for row in instrument.iter_rows(min_row=5):
         for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
             if cell.value not in required_metadata:
                 missing = True
-
             if cell.value == '':
                 missing = True
-                missingcol = colidx+1
-                missingrow = rowidx+1
-                missing_cells.append([missingrow, missingcol])
             else:
-                not_missing_instrument.append(cell.value)
+                instrument_cells.append(cell.value)
+        instrument_rows.append(instrument_cells)
     for row in dataset.iter_rows(min_row=5):
         for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
             if cell.value not in required_metadata:
                 missing = True
-
             if cell.value == '':
                 missing = True
-                missingcol = colidx+1
-                missingrow = rowidx+1
-                missing_cells.append([missingrow, missingcol])
             else:
-                not_missing_dataset.append(cell.value)
+                dataset_cells.append(cell.value)
+        dataset_rows.append(dataset_cells)
     for row in specimen.iter_rows(min_row=5):
         for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
             if cell.value not in required_metadata:
                 missing = True
-
             if cell.value == '':
                 missing = True
-                missingcol = colidx+1
-                missingrow = rowidx+1
-                missing_cells.append([missingrow, missingcol])
             else:
-                not_missing_specimen.append(cell.value)
+                specimen_cells.append(cell.value)
+        specimen_rows.append(speciment_cells)
     for row in image.iter_rows(min_row=5):
         for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
             if cell.value not in required_metadata:
                 missing = True
-
             if cell.value == '':
                 missing = True
-                missingcol = colidx+1
-                missingrow = rowidx+1
-                missing_cells.append([missingrow, missingcol])
             else:
-                not_missing_image.append(cell.value)
+                image_cells.append(cell.value)
+        image_rows.append(image_cells)
     for row in datastate.iter_rows(min_row=5):
         for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
             if cell.value not in required_metadata:
                 missing = True
-
             if cell.value == '':
                 missing = True
-                missingcol = colidx+1
-                missingrow = rowidx+1
-                missing_cells.append([missingrow, missingcol])
             else:
-                not_missing_datastate.append(cell.value)
-    
+                datastate_cells.append(cell.value)
+        datastate_rows.append(datastate_cells)
     if missing == True:
         return print('Some of the data in your spreadsheet is missing')
     else:
         Try:
-            sheet = Sheet
-            # contributors.save()
+            sheet = Sheet(filename=filename)
+            # for every row in a tab, assign to the corresponding object, then save to db
+            # for c in contributor_rows:
+                # contributor = Contributor(  
+                # contributor.save()
             # funders.save()
             # publication.save()
             # instrument.save()
