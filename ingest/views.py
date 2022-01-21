@@ -1090,7 +1090,7 @@ def collection_delete(request, pk):
 
 
 def upload_spreadsheet(spreadsheet_file, associated_collection, request):
-    """ Helper used by image_metadata_upload and collection_detail."""
+    """ Helper used by metadata_upload and collection_detail."""
     fs = FileSystemStorage()
     filename = fs.save(spreadsheet_file.name, spreadsheet_file)
     error = False
@@ -1137,13 +1137,12 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
         return error
 
 def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath):
-    """ Helper used by image_metadata_upload and collection_detail."""
+    """ Helper used by metadata_upload and collection_detail."""
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name 
     filename = fs.save(name_with_path, spreadsheet_file)
     fn = load_workbook(filename)
-    #allSheetNames = fn.sheet_names()
-    #print(allSheetNames) 
+    
     contributors = fn.get_sheet_by_name('Contributors')
     funders = fn.get_sheet_by_name('Funders')
     publication = fn.get_sheet_by_name('Publication')
@@ -1161,44 +1160,144 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
     missing_cells = []
     badchar = "\\"
     bad_str = []
-    not_missing = []
+    not_missing_contributors = []
+    not_missing_funders = []
+    not_missing_publication = []
+    not_missing_instrument = []
+    not_missing_dataset = []
+    not_missing_specimen = []
+    not_missing_image = []
+    not_missing_datastate = []
     grantpattern = '[A-Z0-9\-][A-Z0-9\-][A-Z0-9A]{3}\-[A-Z0-9]{8}\-[A-Z0-9]{2}'
     
-    for row_cells in contributors.iter_rows(min_row=4):
-        for cell in row_cells:
+    for row in contributors.iter_rows(min_row=4):
+        for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
-            #if cell.value == '':
-            #    missing = True
-            #    missingcol = colidx+1
-            #    missingrow = rowidx+1
-            #    missing_cells.append([missingrow, missingcol])
+            if cell.value not in required_metadata:
+                missing = True
+    
+            if cell.value == '':
+                missing = True
+                missingcol = colidx+1
+                missingrow = rowidx+1
+                missing_cells.append([missingrow, missingcol])
+            else:
+                not_missing_contributors.append(cell.value)
+                
+    for row in funders.iter_rows(min_row=5):
+        for cell in row:
+            print('%s: cell.value=%s' % (cell, cell.value) )
+            if cell.value not in required_metadata:
+                missing = True
 
-    for row_cells in funders.iter_rows(min_row=5):
-        for cell in row_cells:
+            if cell.value == '':
+                missing = True
+                missingcol = colidx+1
+                missingrow = rowidx+1
+                missing_cells.append([missingrow, missingcol])
+            else:
+                not_missing_funders.append(cell.value)
+    for row in publication.iter_rows(min_row=5):
+        for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
-   
-    for row_cells in publication.iter_rows(min_row=5):
-        for cell in row_cells:
-            print('%s: cell.value=%s' % (cell, cell.value) )
+            if cell.value not in required_metadata:
+                missing = True
 
-    for row_cells in instrument.iter_rows(min_row=5):
-        for cell in row_cells:
+            if cell.value == '':
+                missing = True
+                missingcol = colidx+1
+                missingrow = rowidx+1
+                missing_cells.append([missingrow, missingcol])
+            else:
+                not_missing_publication.append(cell.value)
+    for row in instrument.iter_rows(min_row=5):
+        for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
+            if cell.value not in required_metadata:
+                missing = True
 
-    for row_cells in dataset.iter_rows(min_row=5):
-        for cell in row_cells:
+            if cell.value == '':
+                missing = True
+                missingcol = colidx+1
+                missingrow = rowidx+1
+                missing_cells.append([missingrow, missingcol])
+            else:
+                not_missing_instrument.append(cell.value)
+    for row in dataset.iter_rows(min_row=5):
+        for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
+            if cell.value not in required_metadata:
+                missing = True
 
-    for row_cells in specimen.iter_rows(min_row=5):
-        for cell in row_cells:
+            if cell.value == '':
+                missing = True
+                missingcol = colidx+1
+                missingrow = rowidx+1
+                missing_cells.append([missingrow, missingcol])
+            else:
+                not_missing_dataset.append(cell.value)
+    for row in specimen.iter_rows(min_row=5):
+        for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
+            if cell.value not in required_metadata:
+                missing = True
 
-    for row_cells in image.iter_rows(min_row=5):
-        for cell in row_cells:
+            if cell.value == '':
+                missing = True
+                missingcol = colidx+1
+                missingrow = rowidx+1
+                missing_cells.append([missingrow, missingcol])
+            else:
+                not_missing_specimen.append(cell.value)
+    for row in image.iter_rows(min_row=5):
+        for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
+            if cell.value not in required_metadata:
+                missing = True
 
-    for row_cells in datastate.iter_rows(min_row=5):
-        for cell in row_cells:
+            if cell.value == '':
+                missing = True
+                missingcol = colidx+1
+                missingrow = rowidx+1
+                missing_cells.append([missingrow, missingcol])
+            else:
+                not_missing_image.append(cell.value)
+    for row in datastate.iter_rows(min_row=5):
+        for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
+            if cell.value not in required_metadata:
+                missing = True
+
+            if cell.value == '':
+                missing = True
+                missingcol = colidx+1
+                missingrow = rowidx+1
+                missing_cells.append([missingrow, missingcol])
+            else:
+                not_missing_datastate.append(cell.value)
+    
+    if missing == True:
+        return print('Some of the data in your spreadsheet is missing')
+    else:
+        Try:
+            sheet = Sheet
+            # contributors.save()
+            # funders.save()
+            # publication.save()
+            # instrument.save()
+            # dataset.save()
+            # specimen.save()
+            # image.save()
+            # image.save()
+            # datastate.save()
+            # sheet.save()
+
+
+
+
+
+
 
     return print('All done!')
+
+
