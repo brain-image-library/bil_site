@@ -1136,13 +1136,77 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
         # return redirect('ingest:image_metadata_upload')
         return error
 
+def check_contributors_sheet(spreadsheet_file, request, datapath):
+    name_with_path=datapath + '/' + spreadsheet_file.name
+    filename = fs.save(name_with_path, spreadsheet_file)
+    fn = load_workbook(filename)
+    contributors = fn.get_sheet_by_name('Contributors')
+    
+    missing = False
+
+    for row in contributors.iter_rows(min_row=4, max_col=8):
+        for cell in row:
+            print('%s: cell.value=%s' % (cell, cell.value) )
+            if cell.value not in contributor_metadata:
+                missing = True
+            if cell.value == '':
+                missing = True
+    if missing:
+                error = True
+                missing_str = ", ".join(missing)
+                error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                messages.error(request, error_msg)
+    
+def ingest_contributors_sheet(spreadsheet_file, associated_collection, request, datapath):
+    fs = FileSystemStorage(location=datapath)
+    name_with_path=datapath + '/' + spreadsheet_file.name
+    filename = fs.save(name_with_path, spreadsheet_file)
+    fn = load_workbook(filename)
+    contributors = fn.get_sheet_by_name('Contributors')
+    
+    row_count = sheet.max_row
+    column_count = sheet.max_column
+    
+    header = ['contributorName',
+        'creator',
+        'contributorType',
+        'nameType',
+        'nameIdentifier'
+        'nameIdentifierScheme',
+        'affiliation',
+        'affiliationIdentifier',
+        'affiliationIdentifierScheme']
+       
+    contributors = []
+    
+    for row in contributors.rows[4:]:
+        args = [cell.value for cell in row]
+        contributor = Contributor(*args)
+        contributor = contributor(sheet_id)
+        contributors.append(contributor)
+
+    return contributors
+
+        
+        
+    
+    
+
+
+
+
+
+
+
 def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath):
     """ Helper used by metadata_upload and collection_detail."""
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name 
     filename = fs.save(name_with_path, spreadsheet_file)
     fn = load_workbook(filename)
-    
+    row_count = sheet.max_row
+    column_count = sheet.nax_column
+     
     contributors = fn.get_sheet_by_name('Contributors')
     funders = fn.get_sheet_by_name('Funders')
     publication = fn.get_sheet_by_name('Publication')
@@ -1178,10 +1242,10 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
     datastate_rows = []
     grantpattern = '[A-Z0-9\-][A-Z0-9\-][A-Z0-9A]{3}\-[A-Z0-9]{8}\-[A-Z0-9]{2}'
     
-    for row in contributors.iter_rows(min_row=4):
+    for row in contributors.iter_rows(min_row=4, max_col=8):
         for cell in row:
             print('%s: cell.value=%s' % (cell, cell.value) )
-            if cell.value not in required_metadata:
+            if cell.value not in contributor_metadata:
                 missing = True
             if cell.value == '':
                 missing = True
