@@ -424,37 +424,6 @@ def descriptive_metadata_upload(request):
     
     return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'pi':pi, 'collections':collections})
 
-# do we still use this???
-@login_required
-def image_metadata_upload(request):
-    """ Upload a spreadsheet containing image metadata information. """
-
-    # The POST. Auser has selected a file and associated collection to upload.
-    if request.method == 'POST' and request.FILES['spreadsheet_file']:
-        form = UploadForm(request.POST)
-        if form.is_valid():
-            collection = form.cleaned_data['associated_collection']
-            spreadsheet_file = request.FILES['spreadsheet_file']
-            error = upload_spreadsheet(spreadsheet_file, collection, project, request)
-            if error:
-                return redirect('ingest:image_metadata_upload')
-            else:
-                return redirect('ingest:image_metadata_list')
-    # This is the GET (just show the metadata upload page)
-    else:
-        form = UploadForm()
-        # Only let a user associate metadata with an unlocked collection that
-        # they own
-        form.fields['associated_collection'].queryset = Collection.objects.filter(
-            locked=False, user=request.user)
-    collections = Collection.objects.filter(locked=False, user=request.user)
-    return render(
-        request,
-        'ingest/image_metadata_upload.html',
-        {'form': form, 'collections': collections})
-
-
-
 @login_required
 def descriptive_metadata_list(request):
     current_user = request.user
@@ -493,69 +462,11 @@ def descriptive_metadata_list(request):
             'ingest/descriptive_metadata_list.html',
             {'table': table, 'descriptive_metadata': descriptive_metadata, 'pi':pi})
 
-
-
-@login_required
-def image_metadata_list(request):
-    """ A list of all the metadata the user has created. """
-    # The user is trying to delete the selected metadata
-    if request.method == "POST":
-        pks = request.POST.getlist("selection")
-        # Get all of the checked metadata (except LOCKED metadata)
-        selected_objects = ImageMetadata.objects.filter(
-            pk__in=pks, locked=False)
-        selected_objects.delete()
-        messages.success(request, 'Metadata successfully deleted')
-        return redirect('ingest:image_metadata_list')
-    # This is the GET (just show the user their list of metadata)
-    else:
-        # XXX: This exclude is likely redundant, becaue there's already the
-        # same exclude in the class itself. Need to test though.
-        table = ImageMetadataTable(
-            ImageMetadata.objects.filter(user=request.user), exclude=['user','bil_uuid'])
-        RequestConfig(request).configure(table)
-        image_metadata = ImageMetadata.objects.filter(user=request.user)
-        return render(
-            request,
-            'ingest/image_metadata_list.html',
-            {'table': table, 'image_metadata': image_metadata})
-
-
-class ImageMetadataDetail(LoginRequiredMixin, DetailView):
-    """ A detailed view of a single piece of metadata. """
-    model = ImageMetadata
-    template_name = 'ingest/image_metadata_detail.html'
-    context_object_name = 'image_metadata'
-
-
 class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
     """ A detailed view of a single piece of metadata. """
     model = DescriptiveMetadata
     template_name = 'ingest/descriptive_metadata_detail.html'
     context_object_name = 'descriptive_metadata'
-
-
-@login_required
-def image_metadata_create(request):
-    """ Create new image metadata. """
-    # The user has hit the "Save" button on the "Create Metadata" page.
-    if request.method == "POST":
-        # We need to pass in request here, so we can use it to get the user
-        form = ImageMetadataForm(request.POST, user=request.user)
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.save()
-            messages.success(request, 'Metadata successfully created')
-            return redirect('ingest:image_metadata_list')
-    # The GET. Just show the user the blank "Create Metadata" form.
-    else:
-        form = ImageMetadataForm(user=request.user)
-        # Only let a user associate metadata with an unlocked collection that
-        # they own
-        form.fields['collection'].queryset = Collection.objects.filter(
-            locked=False, user=request.user)
-    return render(request, 'ingest/image_metadata_create.html', {'form': form})
-
 
 class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
     """ Modify an existing piece of image metadata. """
@@ -569,16 +480,11 @@ class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
         kwargs.update({'user': self.request.user})
         return kwargs
 
-
 class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
     """ Delete an existing piece of image metadata. """
     model = ImageMetadata
     template_name = 'ingest/image_metadata_delete.html'
     success_url = reverse_lazy('ingest:image_metadata_list')
-
-# What follows is a number of views for uploading, creating, viewing, modifying
-# and deleting COLLECTIONS.
-
 
 @login_required
 def collection_send(request):
@@ -1077,55 +983,6 @@ def collection_delete(request, pk):
             messages.error(request, 'This collection is public, it cannot be deleted. If this is incorrect contact us at bil-support@psc.edu')
     return render(
         request, 'ingest/collection_delete.html', {'collection': collection, 'pi':pi})
-
-
-def upload_spreadsheet(spreadsheet_file, associated_collection, request):
-    """ Helper used by metadata_upload and collection_detail."""
-    fs = FileSystemStorage()
-    filename = fs.save(spreadsheet_file.name, spreadsheet_file)
-    error = False
-    try:
-        records = pe.iget_records(file_name=filename)
-        # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
-        # before saving entries, so we don't get half-way uploaded
-        # spreadsheets.
-        for idx, record in enumerate(records):
-            # XXX: right now, we're just checking for required fields that are
-            # missing, but we can add whatever checks we want here.
-            # XXX: blank rows in the spreadsheet that have some hidden
-            # formatting can screw up this test
-            missing = [k for k in record if k in required_metadata and not record[k]]
-            if missing:
-                error = True
-                missing_str = ", ".join(missing)
-                error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
-                messages.error(request, error_msg)
-        if error:
-            # We have to add 2 to idx because spreadsheet rows are 1-indexed
-            # and first row is header
-            # return redirect('ingest:image_metadata_upload')
-            return error
-        records = pe.iget_records(file_name=filename)
-        for idx, record in enumerate(records):
-            # "age" isn't required, so we need to explicitly set blank
-            # entries to None or else django will get confused.
-            if record['age'] == '':
-                record['age'] = None
-            im = ImageMetadata(
-                collection=associated_collection,
-                user=request.user)
-            for k in record:
-                setattr(im, k, record[k])
-            im.save()
-        messages.success(request, 'Metadata successfully uploaded')
-        # return redirect('ingest:image_metadata_list')
-        return error
-    except pe.exceptions.FileTypeNotSupported:
-        error = True
-        messages.error(request, "File type not supported")
-        # return redirect('ingest:image_metadata_upload')
-        return error
-
 
 def check_contributors_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
@@ -1761,6 +1618,53 @@ def upload_all_metadata_sheets(spreadsheet_file, datapath, missing, contributors
     
     return ('Achievement Unlocked!')
 
+def upload_spreadsheet(spreadsheet_file, associated_collection, request):
+    """ Helper used by metadata_upload and collection_detail."""
+    fs = FileSystemStorage()
+    filename = fs.save(spreadsheet_file.name, spreadsheet_file)
+    error = False
+    try:
+        records = pe.iget_records(file_name=filename)
+        # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
+        # before saving entries, so we don't get half-way uploaded
+        # spreadsheets.
+        for idx, record in enumerate(records):
+            # XXX: right now, we're just checking for required fields that are
+            # missing, but we can add whatever checks we want here.
+            # XXX: blank rows in the spreadsheet that have some hidden
+            # formatting can screw up this test
+            missing = [k for k in record if k in required_metadata and not record[k]]
+            if missing:
+                error = True
+                missing_str = ", ".join(missing)
+                error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                messages.error(request, error_msg)
+        if error:
+            # We have to add 2 to idx because spreadsheet rows are 1-indexed
+            # and first row is header
+            # return redirect('ingest:image_metadata_upload')
+            return error
+        records = pe.iget_records(file_name=filename)
+        for idx, record in enumerate(records):
+            # "age" isn't required, so we need to explicitly set blank
+            # entries to None or else django will get confused.
+            if record['age'] == '':
+                record['age'] = None
+            im = ImageMetadata(
+                collection=associated_collection,
+                user=request.user)
+            for k in record:
+                setattr(im, k, record[k])
+            im.save()
+        messages.success(request, 'Metadata successfully uploaded')
+        # return redirect('ingest:image_metadata_list')
+        return error
+    except pe.exceptions.FileTypeNotSupported:
+        error = True
+        messages.error(request, "File type not supported")
+        # return redirect('ingest:image_metadata_upload')
+        return error
+
 def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath):
     """ Helper used by metadata_upload and collection_detail."""
     fs = FileSystemStorage(location=datapath)
@@ -1788,4 +1692,86 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
 
     return print('All done!')
 
+# DEPRECATED
+# @login_required
+# def image_metadata_upload(request):
+#     """ Upload a spreadsheet containing image metadata information. """
 
+#     # The POST. Auser has selected a file and associated collection to upload.
+#     if request.method == 'POST' and request.FILES['spreadsheet_file']:
+#         form = UploadForm(request.POST)
+#         if form.is_valid():
+#             collection = form.cleaned_data['associated_collection']
+#             spreadsheet_file = request.FILES['spreadsheet_file']
+#             error = upload_spreadsheet(spreadsheet_file, collection, project, request)
+#             if error:
+#                 return redirect('ingest:image_metadata_upload')
+#             else:
+#                 return redirect('ingest:image_metadata_list')
+#     # This is the GET (just show the metadata upload page)
+#     else:
+#         form = UploadForm()
+#         # Only let a user associate metadata with an unlocked collection that
+#         # they own
+#         form.fields['associated_collection'].queryset = Collection.objects.filter(
+#             locked=False, user=request.user)
+#     collections = Collection.objects.filter(locked=False, user=request.user)
+#     return render(
+#         request,
+#         'ingest/image_metadata_upload.html',
+#         {'form': form, 'collections': collections})
+
+# DEPRECATED
+# @login_required
+# def image_metadata_list(request):
+#     """ A list of all the metadata the user has created. """
+#     # The user is trying to delete the selected metadata
+#     if request.method == "POST":
+#         pks = request.POST.getlist("selection")
+#         # Get all of the checked metadata (except LOCKED metadata)
+#         selected_objects = ImageMetadata.objects.filter(
+#             pk__in=pks, locked=False)
+#         selected_objects.delete()
+#         messages.success(request, 'Metadata successfully deleted')
+#         return redirect('ingest:image_metadata_list')
+#     # This is the GET (just show the user their list of metadata)
+#     else:
+#         # XXX: This exclude is likely redundant, becaue there's already the
+#         # same exclude in the class itself. Need to test though.
+#         table = ImageMetadataTable(
+#             ImageMetadata.objects.filter(user=request.user), exclude=['user','bil_uuid'])
+#         RequestConfig(request).configure(table)
+#         image_metadata = ImageMetadata.objects.filter(user=request.user)
+#         return render(
+#             request,
+#             'ingest/image_metadata_list.html',
+#             {'table': table, 'image_metadata': image_metadata})
+
+# DEPRECATED
+# class ImageMetadataDetail(LoginRequiredMixin, DetailView):
+#     """ A detailed view of a single piece of metadata. """
+#     model = ImageMetadata
+#     template_name = 'ingest/image_metadata_detail.html'
+#     context_object_name = 'image_metadata'
+
+# DEPRECATED
+# @login_required
+# def image_metadata_create(request):
+#     """ Create new image metadata. """
+#     # The user has hit the "Save" button on the "Create Metadata" page.
+#     if request.method == "POST":
+#         # We need to pass in request here, so we can use it to get the user
+#         form = ImageMetadataForm(request.POST, user=request.user)
+#         if form.is_valid():
+#             post = form.save(commit=False)
+#             post.save()
+#             messages.success(request, 'Metadata successfully created')
+#             return redirect('ingest:image_metadata_list')
+#     # The GET. Just show the user the blank "Create Metadata" form.
+#     else:
+#         form = ImageMetadataForm(user=request.user)
+#         # Only let a user associate metadata with an unlocked collection that
+#         # they own
+#         form.fields['collection'].queryset = Collection.objects.filter(
+#             locked=False, user=request.user)
+#     return render(request, 'ingest/image_metadata_create.html', {'form': form})
