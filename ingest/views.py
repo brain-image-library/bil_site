@@ -426,26 +426,6 @@ class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
     template_name = 'ingest/descriptive_metadata_detail.html'
     context_object_name = 'descriptive_metadata'
 
-# DEPRECATED
-# class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
-#     """ Modify an existing piece of image metadata. """
-#     model = ImageMetadata
-#     template_name = 'ingest/image_metadata_update.html'
-#     success_url = reverse_lazy('ingest:image_metadata_list')
-#     form_class = ImageMetadataForm
-
-#     def get_form_kwargs(self):
-#         kwargs = super(ImageMetadataUpdate, self).get_form_kwargs()
-#         kwargs.update({'user': self.request.user})
-#         return kwargs
-
-# DEPRECATED
-# class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
-#     """ Delete an existing piece of image metadata. """
-#     model = ImageMetadata
-#     template_name = 'ingest/image_metadata_delete.html'
-#     success_url = reverse_lazy('ingest:image_metadata_list')
-
 @login_required
 def collection_send(request):
     content = json.loads(request.body)
@@ -678,7 +658,6 @@ def collection_data_path(request, pk):
          'host_and_path': host_and_path,
          'data_path': data_path})
 
-
 @login_required
 def collection_validation_results(request, pk):
     current_user = request.user
@@ -727,7 +706,6 @@ def collection_validation_results(request, pk):
          'invalid_metadata_directories': invalid_metadata_directories,
          'pi': pi})
 
-
 @login_required
 def collection_submission_results(request, pk):
     current_user = request.user
@@ -775,7 +753,6 @@ def collection_submission_results(request, pk):
          'dir_size': dir_size,
          'invalid_metadata_directories': invalid_metadata_directories,
          'pi': pi})
-
 
 @login_required
 def collection_detail(request, pk):
@@ -912,7 +889,6 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
         return render(request, {'pi':pi})
     template_name = 'ingest/collection_update.html'
     success_url = reverse_lazy('ingest:collection_list')
-
 
 @login_required
 def collection_delete(request, pk):
@@ -1600,7 +1576,7 @@ def descriptive_metadata_upload(request):
             
             spreadsheet_file = request.FILES['spreadsheet_file']
         
-            upload_all_metadata_sheets(spreadsheet_file)
+            upload_all_metadata_sheets(spreadsheet_file, datapath, )
             #error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
             #if error:
             #    return redirect('ingest:descriptive_metadata_upload')
@@ -1621,7 +1597,7 @@ def descriptive_metadata_upload(request):
 
 def upload_spreadsheet(spreadsheet_file, associated_collection, request):
     """ Helper used by metadata_upload and collection_detail."""
-    print('INSIDE OF UPLOAD_SPREADSHEET')
+    print('INSIDE OF def UPLOAD_SPREADSHEET')
     fs = FileSystemStorage()
     filename = fs.save(spreadsheet_file.name, spreadsheet_file)
     error = False
@@ -1890,3 +1866,22 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
 #         form.fields['collection'].queryset = Collection.objects.filter(
 #             locked=False, user=request.user)
 #     return render(request, 'ingest/image_metadata_create.html', {'form': form})
+# DEPRECATED
+# class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
+#     """ Modify an existing piece of image metadata. """
+#     model = ImageMetadata
+#     template_name = 'ingest/image_metadata_update.html'
+#     success_url = reverse_lazy('ingest:image_metadata_list')
+#     form_class = ImageMetadataForm
+
+#     def get_form_kwargs(self):
+#         kwargs = super(ImageMetadataUpdate, self).get_form_kwargs()
+#         kwargs.update({'user': self.request.user})
+#         return kwargs
+
+# DEPRECATED
+# class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
+#     """ Delete an existing piece of image metadata. """
+#     model = ImageMetadata
+#     template_name = 'ingest/image_metadata_delete.html'
+#     success_url = reverse_lazy('ingest:image_metadata_list')
