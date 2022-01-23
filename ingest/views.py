@@ -1576,7 +1576,7 @@ def descriptive_metadata_upload(request):
             
             spreadsheet_file = request.FILES['spreadsheet_file']
         
-            upload_all_metadata_sheets(spreadsheet_file, datapath, )
+            upload_all_metadata_sheets(spreadsheet_file, datapath)
             #error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
             #if error:
             #    return redirect('ingest:descriptive_metadata_upload')
