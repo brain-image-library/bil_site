@@ -468,23 +468,25 @@ class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
     template_name = 'ingest/descriptive_metadata_detail.html'
     context_object_name = 'descriptive_metadata'
 
-class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
-    """ Modify an existing piece of image metadata. """
-    model = ImageMetadata
-    template_name = 'ingest/image_metadata_update.html'
-    success_url = reverse_lazy('ingest:image_metadata_list')
-    form_class = ImageMetadataForm
+# DEPRECATED
+# class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
+#     """ Modify an existing piece of image metadata. """
+#     model = ImageMetadata
+#     template_name = 'ingest/image_metadata_update.html'
+#     success_url = reverse_lazy('ingest:image_metadata_list')
+#     form_class = ImageMetadataForm
 
-    def get_form_kwargs(self):
-        kwargs = super(ImageMetadataUpdate, self).get_form_kwargs()
-        kwargs.update({'user': self.request.user})
-        return kwargs
+#     def get_form_kwargs(self):
+#         kwargs = super(ImageMetadataUpdate, self).get_form_kwargs()
+#         kwargs.update({'user': self.request.user})
+#         return kwargs
 
-class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
-    """ Delete an existing piece of image metadata. """
-    model = ImageMetadata
-    template_name = 'ingest/image_metadata_delete.html'
-    success_url = reverse_lazy('ingest:image_metadata_list')
+# DEPRECATED
+# class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
+#     """ Delete an existing piece of image metadata. """
+#     model = ImageMetadata
+#     template_name = 'ingest/image_metadata_delete.html'
+#     success_url = reverse_lazy('ingest:image_metadata_list')
 
 @login_required
 def collection_send(request):
