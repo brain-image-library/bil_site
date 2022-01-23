@@ -24,10 +24,10 @@ import re
 from celery.result import AsyncResult
 
 from . import tasks
-from .field_list import required_metadata
+from .field_list import required_metadata, contributor_metadata, funder_metadata, publication_metadata, instrument_metadata, dataset_metadata, species_metadata, image_metadata, datastate_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Species, Image, DataState
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Species, Image, DataState, Sheet
 from .tables import CollectionTable, ImageMetadataTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -1126,28 +1126,184 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
         # return redirect('ingest:image_metadata_upload')
         return error
 
-def check_contributors_sheet(spreadsheet_file, request, datapath):
+
+def check_contributors_sheet(spreadsheet_file, datapath):
+    fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
     fn = load_workbook(filename)
-    contributors = fn.get_sheet_by_name('Contributors')
+    contributors_sheet = fn.get_sheet_by_name('Contributors')
     
     missing = False
 
-    for row in contributors.iter_rows(min_row=4, max_col=8):
+    for row in contributors_sheet.iter_rows(min_row=4, max_col=8):
         for cell in row:
-            print('%s: cell.value=%s' % (cell, cell.value) )
             if cell.value not in contributor_metadata:
                 missing = True
             if cell.value == '':
                 missing = True
-    if missing:
-                error = True
-                missing_str = ", ".join(missing)
-                error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
-                messages.error(request, error_msg)
+    # if missing:
+                # error = True
+                # missing_str = ", ".join(missing)
+                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                # messages.error(request, error_msg)
+    return missing
+
+def check_funders_sheet(spreadsheet_file, datapath):
+    fs = FileSystemStorage(location=datapath)
+    name_with_path=datapath + '/' + spreadsheet_file.name
+    filename = fs.save(name_with_path, spreadsheet_file)
+    fn = load_workbook(filename)
+    funders_sheet = fn.get_sheet_by_name('Funders')
     
-def ingest_contributors_sheet(spreadsheet_file, datapath):
+    missing = False
+
+    for row in funders_sheet.iter_rows(min_row=4, max_col=8):
+        for cell in row:
+            if cell.value not in funder_metadata:
+                missing = True
+            if cell.value == '':
+                missing = True
+    # if missing:
+                # error = True
+                # missing_str = ", ".join(missing)
+                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                # messages.error(request, error_msg)
+    return missing
+
+def check_publication_sheet(spreadsheet_file, datapath):
+    fs = FileSystemStorage(location=datapath)
+    name_with_path=datapath + '/' + spreadsheet_file.name
+    filename = fs.save(name_with_path, spreadsheet_file)
+    fn = load_workbook(filename)
+    publication_sheet = fn.get_sheet_by_name('Publication')
+    
+    missing = False
+
+    for row in publication_sheet.iter_rows(min_row=4, max_col=8):
+        for cell in row:
+            if cell.value not in publication_metadata:
+                missing = True
+            if cell.value == '':
+                missing = True
+    # if missing:
+                # error = True
+                # missing_str = ", ".join(missing)
+                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                # messages.error(request, error_msg)
+    return missing
+
+def check_instrument_sheet(spreadsheet_file, datapath):
+    fs = FileSystemStorage(location=datapath)
+    name_with_path=datapath + '/' + spreadsheet_file.name
+    filename = fs.save(name_with_path, spreadsheet_file)
+    fn = load_workbook(filename)
+    instrument_sheet = fn.get_sheet_by_name('Instrument')
+    
+    missing = False
+
+    for row in instrument_sheet.iter_rows(min_row=4, max_col=8):
+        for cell in row:
+            if cell.value not in instrument_metadata:
+                missing = True
+            if cell.value == '':
+                missing = True
+    # if missing:
+                # error = True
+                # missing_str = ", ".join(missing)
+                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                # messages.error(request, error_msg)
+    return missing
+
+def check_dataset_sheet(spreadsheet_file, datapath):
+    fs = FileSystemStorage(location=datapath)
+    name_with_path=datapath + '/' + spreadsheet_file.name
+    filename = fs.save(name_with_path, spreadsheet_file)
+    fn = load_workbook(filename)
+    dataset_sheet = fn.get_sheet_by_name('Dataset')
+    
+    missing = False
+
+    for row in dataset_sheet.iter_rows(min_row=4, max_col=8):
+        for cell in row:
+            if cell.value not in dataset_metadata:
+                missing = True
+            if cell.value == '':
+                missing = True
+    # if missing:
+                # error = True
+                # missing_str = ", ".join(missing)
+                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                # messages.error(request, error_msg)
+    return missing
+
+def check_species_sheet(spreadsheet_file, datapath):
+    fs = FileSystemStorage(location=datapath)
+    name_with_path=datapath + '/' + spreadsheet_file.name
+    filename = fs.save(name_with_path, spreadsheet_file)
+    fn = load_workbook(filename)
+    species_sheet = fn.get_sheet_by_name('Species')
+    
+    missing = False
+
+    for row in species_sheet.iter_rows(min_row=4, max_col=8):
+        for cell in row:
+            if cell.value not in species_metadata:
+                missing = True
+            if cell.value == '':
+                missing = True
+    # if missing:
+                # error = True
+                # missing_str = ", ".join(missing)
+                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                # messages.error(request, error_msg)
+    return missing
+
+def check_image_sheet(spreadsheet_file, datapath):
+    fs = FileSystemStorage(location=datapath)
+    name_with_path=datapath + '/' + spreadsheet_file.name
+    filename = fs.save(name_with_path, spreadsheet_file)
+    fn = load_workbook(filename)
+    image_sheet = fn.get_sheet_by_name('Image')
+    
+    missing = False
+
+    for row in image_sheet.iter_rows(min_row=4, max_col=8):
+        for cell in row:
+            if cell.value not in image_metadata:
+                missing = True
+            if cell.value == '':
+                missing = True
+    # if missing:
+                # error = True
+                # missing_str = ", ".join(missing)
+                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                # messages.error(request, error_msg)
+    return missing
+
+def check_datastate_sheet(spreadsheet_file, datapath):
+    fs = FileSystemStorage(location=datapath)
+    name_with_path=datapath + '/' + spreadsheet_file.name
+    filename = fs.save(name_with_path, spreadsheet_file)
+    fn = load_workbook(filename)
+    datastate_sheet = fn.get_sheet_by_name('DataState')
+    
+    missing = False
+
+    for row in datastate_sheet.iter_rows(min_row=4, max_col=8):
+        for cell in row:
+            if cell.value not in datastate_metadata:
+                missing = True
+            if cell.value == '':
+                missing = True
+    # if missing:
+                # error = True
+                # missing_str = ", ".join(missing)
+                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                # messages.error(request, error_msg)
+    return missing
+
+def ingest_contributors_sheet(self, spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1158,7 +1314,7 @@ def ingest_contributors_sheet(spreadsheet_file, datapath):
         'creator',
         'contributorType',
         'nameType',
-        'nameIdentifier'
+        'nameIdentifier',
         'nameIdentifierScheme',
         'affiliation',
         'affiliationIdentifier',
@@ -1173,9 +1329,9 @@ def ingest_contributors_sheet(spreadsheet_file, datapath):
             contributor = Contributor(**values)
             contributors.append(contributor)
 
-    return contributors
+    return self.contributors
 
-def ingest_funders_sheet(spreadsheet_file, datapath):
+def ingest_funders_sheet(self, spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1197,9 +1353,9 @@ def ingest_funders_sheet(spreadsheet_file, datapath):
             funder = Funder(**values)
             funders.append(funder)
 
-    return funders
+    return self.funders
 
-def ingest_publication_sheet(spreadsheet_file, datapath):
+def ingest_publication_sheet(self, spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1221,9 +1377,9 @@ def ingest_publication_sheet(spreadsheet_file, datapath):
             publication = Publication(**values)
             publications.append(publication)
 
-    return publications
+    return self.publications
 
-def ingest_instrument_sheet(spreadsheet_file, datapath):
+def ingest_instrument_sheet(self, spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1252,9 +1408,9 @@ def ingest_instrument_sheet(spreadsheet_file, datapath):
             instrument = Instrument(**values)
             instruments.append(instrument)
 
-    return instruments
+    return self.instrument
 
-def ingest_dataset_sheet(spreadsheet_file, datapath):
+def ingest_dataset_sheet(self, spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1286,9 +1442,9 @@ def ingest_dataset_sheet(spreadsheet_file, datapath):
             dataset = Dataset(**values)
             datasets.append(dataset)
 
-    return datasets
+    return self.datasets
 
-def ingest_species_sheet(spreadsheet_file, datapath):
+def ingest_species_sheet(self, spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1308,18 +1464,18 @@ def ingest_species_sheet(spreadsheet_file, datapath):
         'atlas',
         'locations']
        
-    species = []
+    species_set = []
     
     for row in species_sheet.rows[4:]:
         values = {}
         for key, cell in zip(header, row):
             values[key] = cell.value
-            specie_row = Species(**values)
-            species.append(specie_row)
+            species_row = Species(**values)
+            species_set.append(species_row)
 
-    return species
+    return self.species_set
 
-def ingest_image_sheet(spreadsheet_file, datapath):
+def ingest_image_sheet(self, spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1368,9 +1524,9 @@ def ingest_image_sheet(spreadsheet_file, datapath):
             image = Image(**values)
             images.append(image)
 
-    return images
+    return self.images
 
-def ingest_datastate_sheet(spreadsheet_file, datapath):
+def ingest_datastate_sheet(self, spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1392,54 +1548,218 @@ def ingest_datastate_sheet(spreadsheet_file, datapath):
             datastate = DataState(**values)
             datastates.append(datastate)
 
-    return datastates
+    return self.datastates
 
-def check_all_sheets()
-    good = True
-    check_contributors_sheet()
-    check_funders_sheet()
-    check_publication_sheet()
-    check_instrument_sheet()
-    check_dataset_sheet()
-    check_specimen_sheet()
-    check_image_sheet()
-    check_datastate_sheet()
-    return good
+def check_all_sheets(spreadsheet_file, datapath):
+    missing = False
+    if check_contributors_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Contributors sheet failed our check')
+    elif check_funders_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Funders sheet failed our check')
+    elif check_publication_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Publication sheet failed our check')
+    elif check_instrument_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Instrument sheet failed our check')
+    elif check_dataset_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Instrument sheet failed our check')
+    elif check_species_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Instrument sheet failed our check')
+    elif check_image_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Instrument sheet failed our check')
+    elif check_datastate_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Instrument sheet failed our check')
+    return missing
 
-def save_all_sheets()
-    save_contributors_sheet()
-    save_funders_sheet()
-    save_publication_sheet()
-    save_instrument_sheet()
-    save_dataset_sheet()
-    save_specimen_sheet()
-    save_image_sheet()
-    save_datastate_sheet()
-    return
-
-def ingest_all_metadata_sheets(good)
-    check_all_sheets(good)
-    if good:
-        try:
-            ingest_all_sheets()
-            if good:
-                try:
-                    save_all_sheets()
-                # for every contributor in contributors
-                # add the sheet_id to the row
-                # save row to contributors table
-
-    return
-
+def save_contributors_sheet(contributors, sheet):
+    for c in contributors:
+        contributorName = c['contributorName'],
+        creator = c['creator'],
+        contributorType = c['contributorType'],
+        nameType = c['nameType'],
+        nameIdentifier = c['nameIdentifier'],
+        nameIdentifierScheme = c['nameIdentifierScheme'],
+        affiliation = c['affiliation'],
+        affiliationIdentifier = c['affiliationIdentifier'],
+        affiliationIdentifierScheme = c['affiliationIdentifierScheme']
         
+        contributor = Contributor(contributorName=contributorName, creator=creator, contributorType=contributorType, nameType=nameType, nameIdentifier=nameIdentifier, nameIdentifierScheme=nameIdentifierScheme, affiliation=affiliation, affiliationIdentifier=affiliationIdentifier, affiliationIdentifierScheme=affiliationIdentifierScheme, sheet=sheet.id)
+        contributor.save()
+    return
+
+def save_funders_sheet(funders, sheet):
+    for f in funders:
+        name = f['name'],
+        funding_reference_identifier = f['funding_reference_identifier'],
+        funding_reference_identifier_type = f['funding_reference_identifier_type'],
+        award_number = f['award_number'],
+        award_title = f['award_title']
+        
+        funder = Funder(name=name, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet=sheet.id)
+        funder.save()
+    return
+
+def save_publication_sheet(publications, sheet):
+    for p in publications:
+        relatedIdentifier = p['relatedIdentifier'],
+        relatedIdentifierType = p['relatedIdentifierType'],
+        pmcid = p['pmcid'],
+        relationType = p['relationType'],
+        citation = p['citation']
+        
+        publication = Publication(relatedIdentifier=relatedIdentifier, relatedIdentifierType=relatedIdentifierType, pmcid=pmcid, relationType=relationType, citation=citation, sheet=sheet.id)
+        publication.save()
+    return
+
+def save_instrument_sheet(instruments, sheet):
+    for i in instruments:
+        microscopeType = i['microscopeType'],
+        microscopeManufacturerAndModel = i['microscopeManufacturerAndModel'],
+        objectiveName = i['objectiveName'],
+        objectiveImmersion = i['objectiveImmersion'],
+        objectiveNA = i['objectiveNA'],
+        objectiveMagnification = i['objectiveMagnification'],
+        detectorType = i['detectorType'],
+        detectorModel = i['detectorModel'],
+        illuminationTypes = i['illuminationTypes'],
+        illuminationWavelength = i['illuminationWavelength'],
+        detectionWavelength = i['detectionWavelength'],
+        sampleTemperature = i['sampleTemperature']
+        
+        instrument = Instrument(microscopeType=microscopeType, microscopeManufacturerAndModel=microscopeManufacturerAndModel, objectiveName=objectiveName, objectiveImmersion=objectiveImmersion, objectiveNA=objectiveNA, objectiveMagnification=objectiveMagnification, detectorType=detectorType, detectorModel=detectorModel, illuminationTypes=illuminationTypes, illuminationWavelength=illuminationWavelength, detectionWavelength=detectionWavelength, sampleTemperature=sampleTemperature, sheet=sheet.id)
+        instrument.save()
+    return
+
+def save_dataset_sheet(datasets, sheet):
+    for d in datasets:
+        bilDirectory = d['bilDirectory'],
+        title = d['title'],
+        socialMedia = d['socialMedia'],
+        subject = d['subject'],
+        subjectScheme = d['subjectScheme'],
+        rights = d['rights'],
+        rightsURI = d['rightsURI'],
+        rightsIdentifier = d['rightsIdentifier'],
+        image = d['image'],
+        generalModality = d['generalModality'],
+        technique = d['technique'],
+        other = d['other'],
+        abstract = d['abstract'],
+        methods = d['methods'],
+        technicalInfo = d['technicalInfo']
+
+        dataset = Dataset(bilDirectory=bilDirectory, title=title, socialMedia=socialMedia, subject=subject, subjectScheme=subjectScheme, rights=rights, rightsURI=rightsURI, rightsIdentifier=rightsIdentifier, image=image, generalModality=generalModality, technique=technique, other=other, abstract=abstract, methods=methods, technicalInfo=technicalInfo, sheet=sheet.id)
+        dataset.save()
+    return
+
+def save_species_sheet(species_set, sheet):
+    for s in species_set:
+        localID = s['localID'],
+        species = s['species'],
+        ncbiTaxonomy = s['ncbiTaxonomy'],
+        age = s['age'],
+        ageUnit = s['ageUnit'],
+        sex = s['sex'],
+        genotype = s['genotype'],
+        organLocalID = s['organLocalID'],
+        organName = s['organName'],
+        sampleLocalID = s['sampleLocalID'],
+        atlas = s['atlas'],
+        locations = s['locations']
+
+        species_object = Species(localID=localID, species=species, ncbiTaxonomy=ncbiTaxonomy, age=age, ageUnit=ageUnit, sex=sex, genotype=genotype, organLocalID=organLocalID, organName=organName, sampleLocalID=sampleLocalID, atlas=atlas, locations=locations, sheet=sheet.id)
+        species_object.save()
+    return
+
+def save_image_sheet(images, sheet):
+    for i in images:
+        xAxis = i['xAxis'],
+        obliqueXdim1 = i['obliqueXdim1'],
+        obliqueXdim2 = i['obliqueXdim2'],
+        obliqueXdim3 = i['obliqueXdim3'],
+        yAxis = i['yAxis'],
+        obliqueYdim1 = i['obliqueYdim1'],
+        obliqueYdim2 = i['obliqueYdim2'],
+        obliqueYdim3 = i['obliqueYdim3'],
+        zAxis = i['zAxis'],
+        obliqueZdim1 = i['obliqueZdim1'],
+        obliqueZdim2 = i['obliqueZdim2'],
+        obliqueZdim3 = i['obliqueZdim3'],
+        landmarkName = i['landmarkName'],
+        landmarkX = i['landmarkX'],
+        landmarkY = i['landmarkY'],
+        Number = i['Number'],
+        displayColor = i['displayColor'],
+        Representation = i['Representation'],
+        Flurophore = i['Flurophore'],
+        stepSizeX = i['stepSizeX'],
+        stepSizeY = i['stepSizeY'],
+        stepSizeZ = i['stepSizeZ'],
+        stepSizeT = i['stepSizeT'],
+        Channels = i['Channels'],
+        Slices = i['Slices'],
+        z = i['z'],
+        Xsize = i['Xsize'],
+        Ysize = i['Ysize'],
+        Zsize = i['Zsize'],
+        Gbytes = i['Gbytes'],
+        Files = i['Files'],
+        DimensionOrder = i['DimensionOrder']
+ 
+        image = Image(xAxis=xAxis, obliqueXdim1=obliqueXdim1, obliqueXdim2=obliqueXdim2, obliqueXdim3=obliqueXdim3, yAxis=yAxis, obliqueYdim1=obliqueYdim1, obliqueYdim2=obliqueYdim2, obliqueYdim3=obliqueYdim3, zAxis=zAxis, obliqueZdim1=obliqueZdim1, obliqueZdim2=obliqueZdim2, obliqueZdim3=obliqueZdim3,landmarkName=landmarkName, landmarkX=landmarkX, landmarkY=landmarkY, Number=Number, displayColor=displayColor, Representation=Representation, Flurophore=Flurophore, stepSizeX=stepSizeX, stepSizeY=stepSizeY, stepSizeZ=stepSizeZ, stepSizeT=stepSizeT, Channels=Channels, Slices=Slices, z=z, Xsize=Xsize, Ysize=Ysize, Zsize=Zsize, Gbytes=Gbytes, Files=Files, DimensionOrder=DimensionOrder, sheet=sheet.id)
+        image.save()
+    return
+
+def save_datastate_sheet(datastates, sheet):
+    for d in datastates:
+        level = ['level'],
+        included = ['included'],
+        location = ['location'],
+        attributes = ['attributes'],
+        description = ['description']
+       
+ 
+        datastate = DataState(level=level, included=included, location=location, attributes=attributes, description=description, sheet=sheet.id)
+        datastate.save()
+    return
+
+def save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, species_set, images, datastates):
+    save_contributors_sheet(contributors, sheet)
+    save_funders_sheet(funders, sheet)
+    save_publication_sheet(publications, sheet)
+    save_instrument_sheet(instruments, sheet)
+    save_dataset_sheet(datasets, sheet)
+    save_species_sheet(species_set, sheet)
+    save_image_sheet(images, sheet)
+    save_datastate_sheet(datastates, sheet)
+    return
+
+def ingest_all_sheets(spreadsheet_file, datapath):
+    contributors = ingest_contributors_sheet(spreadsheet_file, datapath)
+    funders = ingest_funders_sheet(spreadsheet_file, datapath)
+    publications = ingest_publication_sheet(spreadsheet_file, datapath)
+    instruments = ingest_instrument_sheet(spreadsheet_file, datapath)
+    datasets = ingest_dataset_sheet(spreadsheet_file, datapath)
+    species_sets = ingest_species_sheet(spreadsheet_file, datapath)
+    images = ingest_image_sheet(spreadsheet_file, datapath)
+    datastates = ingest_datastate_sheet(spreadsheet_file, datapath)
+    return contributors, funders, publications, instruments, datasets, species_sets, images, datastates
+
+def upload_all_metadata_sheets(spreadsheet_file, datapath, missing, contributors, funders, publications, instruments, datasets, species_set, images, datastates, sheet):
+    check_all_sheets(spreadsheet_file, datapath)
+    if missing:
+        return ('The checks for the spreadsheet failed')
+    ingest_all_sheets(spreadsheet_file, datapath)
+    save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, species_set, images, datastates)
     
-    
-
-
-
-
-
-
+    return ('Achievement Unlocked!')
 
 def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath):
     """ Helper used by metadata_upload and collection_detail."""
@@ -1447,17 +1767,7 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
     name_with_path=datapath + '/' + spreadsheet_file.name 
     filename = fs.save(name_with_path, spreadsheet_file)
     fn = load_workbook(filename)
-    row_count = sheet.max_row
-    column_count = sheet.nax_column
      
-    contributors = fn.get_sheet_by_name('Contributors')
-    funders = fn.get_sheet_by_name('Funders')
-    publication = fn.get_sheet_by_name('Publication')
-    instrument = fn.get_sheet_by_name('Instrument')
-    dataset = fn.get_sheet_by_name('Dataset')
-    specimen = fn.get_sheet_by_name('Specimen')
-    image = fn.get_sheet_by_name('Image')
-    datastate = fn.get_sheet_by_name('DataState')
     
     error = False
     missing = False
@@ -1467,44 +1777,10 @@ def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, requ
     missing_cells = []
     badchar = "\\"
     bad_str = []
-    contributors_cells = []
-    contributors_rows = [] 
-    funders_cells = []
-    funders_rows = []
-    publication_cells = []
-    publication_rows = []
-    instrument_cells = []
-    instrument_rows = []
-    dataset_cells = []
-    dataset_rows = []
-    specimen_cells = []
-    speciment_rows = []
-    image_cells = []
-    image_rows = []
-    datastate_cells = []
-    datastate_rows = []
     grantpattern = '[A-Z0-9\-][A-Z0-9\-][A-Z0-9A]{3}\-[A-Z0-9]{8}\-[A-Z0-9]{2}'
     
     if missing == True:
         return print('Some of the data in your spreadsheet is missing')
-    else:
-        Try:
-            sheet = Sheet(filename=filename)
-            # for every row in a tab, assign to the corresponding object, then save to db
-            # for c in contributor_rows:
-                # contributor = Contributor(  
-                # contributor.save()
-            # funders.save()
-            # publication.save()
-            # instrument.save()
-            # dataset.save()
-            # specimen.save()
-            # image.save()
-            # image.save()
-            # datastate.save()
-            # sheet.save()
-
-
 
 
 

@@ -79,7 +79,13 @@ contributor_metadata = [
     'affiliation',
     'affiliationIdentifier',
     'affiliationIdentifierScheme',
-    'sheet',
+]
+funder_metadata = [
+    'name',
+    'funding_reference_identifier',
+    'funding_reference_identifier_type',
+    'award_number',
+    'award_title',
 ]
 publication_metadata = [
     'relatedIdentifier',
@@ -87,7 +93,6 @@ publication_metadata = [
     'pmcid',
     'relationType',
     'citation',
-    'sheet',
 ]
 instrument_metadata = [
     'microscopeType',
@@ -102,7 +107,6 @@ instrument_metadata = [
     'illuminationWavelength',
     'detectionWavelength',
     'sampleTemperature',
-    'sheet',
 ]
 dataset_metadata = [
     'bilDirectory',
@@ -120,7 +124,6 @@ dataset_metadata = [
     'abstract',
     'methods',
     'technicalInfo',
-    'sheet',
 ]
 species_metadata = [
     'localID',
@@ -135,7 +138,6 @@ species_metadata = [
     'sampleLocalID',
     'atlas',
     'locations',
-    'sheet',   
 ]
 image_metadata = [
     'xAxis',
@@ -171,7 +173,6 @@ image_metadata = [
     'Gbytes',
     'Files',
     'DimensionOrder',
-    'sheet',
 ]
 datastate_metadata = [
     'level',
@@ -179,5 +180,4 @@ datastate_metadata = [
     'location',
     'attributes',
     'description',
-    'sheet',
 ]
