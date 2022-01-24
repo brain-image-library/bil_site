@@ -1342,33 +1342,9 @@ def ingest_datastate_sheet(self, spreadsheet_file, datapath):
 
     return self.datastates
 
-def check_all_sheets(spreadsheet_file, datapath):
-    missing = False
-    if check_contributors_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        return ('Contributors sheet failed our check')
-    elif check_funders_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        return ('Funders sheet failed our check')
-    elif check_publication_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        return ('Publication sheet failed our check')
-    elif check_instrument_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        return ('Instrument sheet failed our check')
-    elif check_dataset_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        return ('Instrument sheet failed our check')
-    elif check_species_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        return ('Instrument sheet failed our check')
-    elif check_image_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        return ('Instrument sheet failed our check')
-    elif check_datastate_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        return ('Instrument sheet failed our check')
-    return missing
+def save_sheet_row(self, filename, associated_collection):
+    sheet = Sheet(filename=filename, associated_collection=associated_collection)
+    return self.sheet
 
 def save_contributors_sheet(contributors, sheet):
     for c in contributors:
@@ -1517,21 +1493,37 @@ def save_datastate_sheet(datastates, sheet):
         attributes = ['attributes'],
         description = ['description']
        
- 
         datastate = DataState(level=level, included=included, location=location, attributes=attributes, description=description, sheet=sheet.id)
         datastate.save()
     return
 
-def save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, species_set, images, datastates):
-    save_contributors_sheet(contributors, sheet)
-    save_funders_sheet(funders, sheet)
-    save_publication_sheet(publications, sheet)
-    save_instrument_sheet(instruments, sheet)
-    save_dataset_sheet(datasets, sheet)
-    save_species_sheet(species_set, sheet)
-    save_image_sheet(images, sheet)
-    save_datastate_sheet(datastates, sheet)
-    return
+def check_all_sheets(spreadsheet_file, datapath):
+    missing = False
+    if check_contributors_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Contributors sheet failed our check')
+    elif check_funders_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Funders sheet failed our check')
+    elif check_publication_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Publication sheet failed our check')
+    elif check_instrument_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Instrument sheet failed our check')
+    elif check_dataset_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Instrument sheet failed our check')
+    elif check_species_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Instrument sheet failed our check')
+    elif check_image_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Instrument sheet failed our check')
+    elif check_datastate_sheet(spreadsheet_file, datapath) == True:
+        missing = True
+        return ('Instrument sheet failed our check')
+    return missing
 
 def ingest_all_sheets(spreadsheet_file, datapath):
     contributors = ingest_contributors_sheet(spreadsheet_file, datapath)
@@ -1544,11 +1536,34 @@ def ingest_all_sheets(spreadsheet_file, datapath):
     datastates = ingest_datastate_sheet(spreadsheet_file, datapath)
     return contributors, funders, publications, instruments, datasets, species_sets, images, datastates
 
-def upload_all_metadata_sheets(spreadsheet_file, datapath, missing, contributors, funders, publications, instruments, datasets, species_set, images, datastates, sheet, request):
+def save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, species_set, images, datastates, filename, associated_collection):
+    save_sheet_row(filename, associated_collection)
+    save_contributors_sheet(contributors, sheet)
+    save_funders_sheet(funders, sheet)
+    save_publication_sheet(publications, sheet)
+    save_instrument_sheet(instruments, sheet)
+    save_dataset_sheet(datasets, sheet)
+    save_species_sheet(species_set, sheet)
+    save_image_sheet(images, sheet)
+    save_datastate_sheet(datastates, sheet)
+    return
+
+def upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection, request):
+    missing = False
+    contributors = []
+    funders = [] 
+    publications = []
+    instruments = [] 
+    datasets = []
+    species_set = [] 
+    images = [] 
+    datastates = []
+    sheet = int
+    check_all_sheets()
     if missing:
         messages.error(request, 'The checks for the spreadsheet failed')
     ingest_all_sheets(spreadsheet_file, datapath)
-    save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, species_set, images, datastates)
+    save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, species_set, images, datastates, associated_collection)
     messages.success(request, 'Metadata successfully uploaded')
     return
 
@@ -1567,7 +1582,7 @@ def descriptive_metadata_upload(request):
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
         form = UploadForm(request.POST)
         if form.is_valid():
-            collection = form.cleaned_data['associated_collection']
+            associated_collection = form.cleaned_data['associated_collection']
             # for production
             #datapath=collection.data_path.replace("/lz/","/etc/")
             
@@ -1576,7 +1591,7 @@ def descriptive_metadata_upload(request):
             
             spreadsheet_file = request.FILES['spreadsheet_file']
         
-            upload_all_metadata_sheets(spreadsheet_file, datapath)
+            upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection, request)
             #error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
             #if error:
             #    return redirect('ingest:descriptive_metadata_upload')
