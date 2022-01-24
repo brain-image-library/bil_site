@@ -1560,7 +1560,7 @@ def descriptive_metadata_upload(request):
     for attribute in project_person:
         if attribute.is_pi:
             pi = True
-        else: 
+        else:
             pi = False    
     """ Upload a spreadsheet containing image metadata information. """
     # The POST. A user has selected a file and associated collection to upload.
