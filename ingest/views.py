@@ -1564,16 +1564,16 @@ def save_datastate_sheet(datastates, sheet):
 def check_all_sheets(spreadsheet_file, datapath):
     print('the file got to the check_all_sheets')
     missing = False
-    errormsg = ""
-    mysheets = {}
-    workbook=xlrd.open_workbook(file_contents=spreadsheet_file.read())
-    req_tabs = ['README','Contributors','Funders','Publications','Descriptions']
-    for sheetname in req_tabs:
-        try:
-           mysheets[sheetname] = workbook.sheet_by_name(sheetname)
-        except:
-           errormsg = errormsg +"Required tab " + sheetname + " is missing from spreadsheet. "
-           #return errormsg
+    # errormsg = ""
+    # mysheets = {}
+    # workbook=xlrd.open_workbook(file_contents=spreadsheet_file.read())
+    # req_tabs = ['README','Contributors','Funders','Publications','Descriptions']
+    # for sheetname in req_tabs:
+    #     try:
+    #        mysheets[sheetname] = workbook.sheet_by_name(sheetname)
+    #     except:
+    #        errormsg = errormsg +"Required tab " + sheetname + " is missing from spreadsheet. "
+    #        #return errormsg
     if check_contributors_sheet(spreadsheet_file, datapath) == True:
         missing = True
         return ('Contributors sheet failed our check')
