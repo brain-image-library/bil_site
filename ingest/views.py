@@ -924,21 +924,83 @@ def check_contributors_sheet(spreadsheet_file, datapath):
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
     fn = load_workbook(filename)
-    contributors_sheet = fn.get_sheet_by_name('Contributors')
-    
+    mysheets = {}
+    errormsg=""
+    #contributors_sheet = fn.get_sheet_by_name('Contributors')
+    req_tabs = ['README','Contributors','Funders','Publication']
+    workbook=xlrd.open_workbook(filename)
+    for sheetname in req_tabs:
+        try:
+            mysheets[sheetname] = workbook.sheet_by_name(sheetname)
+        except:
+            errormsg = errormsg +"Required tab " + sheetname + " is missing from spreadsheet. "
+            print(errormsg)
+            #return errormsg
+    sheet = workbook.sheet_by_name('Contributors')
     missing = False
-
-    for row in contributors_sheet.iter_rows(min_row=4, max_col=8):
-        for cell in row:
-            if cell.value not in contributor_metadata:
-                missing = True
-            if cell.value == '':
-                missing = True
+    colheads=['contributorName (2)','Creator','contributorType',
+                 'nameType','nameIdentifier(1)','nameIdentifierScheme(1)',
+                 'affiliation', 'affiliationIdentifier', 'affiliationIdentifierScheme(1)']
+    creator = ['Yes', 'No']
+    contributortype = ['ProjectLeader','ResearchGroup','ContactPerson', 'DataCollector', 'DataCurator', 'ProjectLeader', 'ProjectManager', 'ProjectMember','RelatedPerson', 'Researcher', 'ResearchGroup','Other' ]
+    nametype = ['Personal', 'Organizational']
+    nameidentifierscheme = ['ORCID','ISNI','ROR','GRID','RRID' ]
+    affiliationidentifierscheme = ['ORCID','ISNI','ROR','GRID','RRID' ]
+    cellcols=['A','B','C','D','E','F','G','H','I']
+    cols=mysheets['Contributors'].row_values(2)
+    ok=0
+    for i in range(0,len(colheads)):
+        if cols[i] != colheads[i]:
+            errormsg = errormsg + ' Tab: "Contributors" cell heading found: "' + cols[i] + \
+                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
+        print(errormsg)
+    if errormsg != "":
+        return [ True, errormsg ]
+    #Need to figure out how to get this to stop everything and display the error message
+    curr_row = 7
+    for i in range(6,mysheets['Contributors'].nrows):
+        cols=mysheets['Contributors'].row_values(i)
+        if cols[0] == "":
+            errormsg = errormsg + 'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+        if cols[1] == "":
+            errormsg = errormsg + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+        if cols[1] not in creator:
+            errormsg = errormsg + 'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
+        if cols[2] == "":
+            errormsg = errormsg + 'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
+        if cols[2] not in contributortype:
+            errormsg = errormsg + 'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
+        if cols[3] == "":
+            errormsg = errormsg + 'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+        if cols[3] not in nametype:
+            errormsg = errormsg + 'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
+        if cols[3] == "Personal":
+            if cols[4] == "":
+                errormsg = errormsg + 'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+            if cols[5] == "":
+                errormsg = errormsg + 'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
+            if cols[5] not in nameidentifierscheme:
+                errormsg = errormsg + 'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
+        if cols[6] == "":
+            errormsg = errormsg + 'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
+        if cols[7] == "":
+            errormsg = errormsg + 'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
+        if cols[8] == "":
+            errormsg = errormsg + 'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
+        if cols[8] not in affiliationidentifierscheme:
+            errormsg = errormsg + 'Column: "' + colheads[8] + '" Incorrect CV value found: "' + cols[8] + '" in cell "' + cellcols[8] + str(i+1) + '". '
+    #for row in contributors_sheet.iter_rows(min_row=4, max_col=8):
+    #    for cell in row:
+    #        if cell.value not in contributor_metadata:
+    #            missing = True
+    #        if cell.value == '':
+    #            missing = True
     # if missing:
                 # error = True
                 # missing_str = ", ".join(missing)
                 # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
                 # messages.error(request, error_msg)
+    print(errormsg)
     return missing
 
 def check_funders_sheet(spreadsheet_file, datapath):
@@ -1498,7 +1560,18 @@ def save_datastate_sheet(datastates, sheet):
     return
 
 def check_all_sheets(spreadsheet_file, datapath):
+    print('the file got to the check_all_sheets')
     missing = False
+    errormsg = ""
+    mysheets = {}
+    workbook=xlrd.open_workbook(file_contents=spreadsheet_file.read())
+    req_tabs = ['README','Contributors','Funders','Publications','Descriptions']
+    for sheetname in req_tabs:
+        try:
+           mysheets[sheetname] = workbook.sheet_by_name(sheetname)
+        except:
+           errormsg = errormsg +"Required tab " + sheetname + " is missing from spreadsheet. "
+           #return errormsg
     if check_contributors_sheet(spreadsheet_file, datapath) == True:
         missing = True
         return ('Contributors sheet failed our check')
@@ -1559,10 +1632,10 @@ def upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection
     images = {}
     datastates = {}
     sheet = int
-    check_all_sheets(spreadsheet_file, datapath)
-    if missing:
-        messages.error(request, 'The checks for the spreadsheet failed')
-    ingest_all_sheets(spreadsheet_file, datapath)
+    # check_all_sheets(spreadsheet_file, datapath)
+    # if missing:
+        # messages.error(request, 'The checks for the spreadsheet failed')
+    # ingest_all_sheets(spreadsheet_file, datapath)
     save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, species_set, images, datastates, associated_collection)
     messages.success(request, 'Metadata successfully uploaded')
     return
@@ -1590,8 +1663,10 @@ def descriptive_metadata_upload(request):
             datapath = '/home/shared_bil_dev/testetc/' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
-        
+            check_all_sheets(spreadsheet_file, datapath)
+            ingest_all_sheets(spreadsheet_file, datapath)
             upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection, request)
+
             #error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
             #if error:
             #    return redirect('ingest:descriptive_metadata_upload')
