@@ -1179,7 +1179,7 @@ def ingest_contributors_sheet(spreadsheet_file, datapath):
     print(contributors)
     return contributors
 
-def ingest_funders_sheet(self, spreadsheet_file, datapath):
+def ingest_funders_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1194,16 +1194,16 @@ def ingest_funders_sheet(self, spreadsheet_file, datapath):
        
     funders = []
     
-    for row in funders_sheet.rows[4:]:
+    for row in funders_sheet.rows:
         values = {}
         for key, cell in zip(header, row):
             values[key] = cell.value
             funder = Funder(**values)
             funders.append(funder)
 
-    return self.funders
+    return funders
 
-def ingest_publication_sheet(self, spreadsheet_file, datapath):
+def ingest_publication_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1218,16 +1218,16 @@ def ingest_publication_sheet(self, spreadsheet_file, datapath):
        
     publications = []
     
-    for row in publication_sheet.rows[4:]:
+    for row in publication_sheet.rows:
         values = {}
         for key, cell in zip(header, row):
             values[key] = cell.value
             publication = Publication(**values)
             publications.append(publication)
 
-    return self.publications
+    return publications
 
-def ingest_instrument_sheet(self, spreadsheet_file, datapath):
+def ingest_instrument_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1249,16 +1249,16 @@ def ingest_instrument_sheet(self, spreadsheet_file, datapath):
        
     instruments = []
     
-    for row in instrument_sheet.rows[4:]:
+    for row in instrument_sheet.rows:
         values = {}
         for key, cell in zip(header, row):
             values[key] = cell.value
             instrument = Instrument(**values)
             instruments.append(instrument)
 
-    return self.instrument
+    return instrument
 
-def ingest_dataset_sheet(self, spreadsheet_file, datapath):
+def ingest_dataset_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1283,16 +1283,16 @@ def ingest_dataset_sheet(self, spreadsheet_file, datapath):
        
     datasets = []
     
-    for row in dataset_sheet.rows[4:]:
+    for row in dataset_sheet.rows:
         values = {}
         for key, cell in zip(header, row):
             values[key] = cell.value
             dataset = Dataset(**values)
             datasets.append(dataset)
 
-    return self.datasets
+    return datasets
 
-def ingest_species_sheet(self, spreadsheet_file, datapath):
+def ingest_species_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1314,16 +1314,16 @@ def ingest_species_sheet(self, spreadsheet_file, datapath):
        
     species_set = []
     
-    for row in species_sheet.rows[4:]:
+    for row in species_sheet.rows:
         values = {}
         for key, cell in zip(header, row):
             values[key] = cell.value
             species_row = Species(**values)
             species_set.append(species_row)
 
-    return self.species_set
+    return species_set
 
-def ingest_image_sheet(self, spreadsheet_file, datapath):
+def ingest_image_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1365,16 +1365,16 @@ def ingest_image_sheet(self, spreadsheet_file, datapath):
        
     images = []
     
-    for row in image_sheet.rows[4:]:
+    for row in image_sheet.rows:
         values = {}
         for key, cell in zip(header, row):
             values[key] = cell.value
             image = Image(**values)
             images.append(image)
 
-    return self.images
+    return images
 
-def ingest_datastate_sheet(self, spreadsheet_file, datapath):
+def ingest_datastate_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1389,18 +1389,18 @@ def ingest_datastate_sheet(self, spreadsheet_file, datapath):
        
     datastates = []
     
-    for row in datastate_sheet.rows[4:]:
+    for row in datastate_sheet.rows:
         values = {}
         for key, cell in zip(header, row):
             values[key] = cell.value
             datastate = DataState(**values)
             datastates.append(datastate)
 
-    return self.datastates
+    return datastates
 
-def save_sheet_row(self, filename, associated_collection):
+def save_sheet_row(filename, associated_collection):
     sheet = Sheet(filename=filename, associated_collection=associated_collection)
-    return self.sheet
+    return sheet
 
 def save_contributors_sheet(contributors, sheet):
     for c in contributors:
