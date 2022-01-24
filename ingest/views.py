@@ -923,21 +923,10 @@ def check_contributors_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
-    # fn = load_workbook(filename)
-    # mysheets = {}
     
     errormsg=""
-    #contributors_sheet = fn.get_sheet_by_name('Contributors')
-    # req_tabs = ['README','Contributors','Funders','Publication']
     workbook=xlrd.open_workbook(filename)
     contributors_sheet = workbook.sheet_by_name('Contributors')
-    # for sheetname in req_tabs:
-    #     try:
-    #         mysheets[sheetname] = workbook.sheet_by_name(sheetname)
-    #     except:
-    #         errormsg = errormsg +"Required tab " + sheetname + " is missing from spreadsheet. "
-    #         print(errormsg)
-    #         #return errormsg
     missing = False
     colheads=['contributorName (2)','Creator','contributorType',
                  'nameType','nameIdentifier(1)','nameIdentifierScheme(1)',
@@ -1010,7 +999,10 @@ def check_funders_sheet(spreadsheet_file, datapath):
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
     fn = load_workbook(filename)
-    funders_sheet = fn.get_sheet_by_name('Funders')
+        
+    errormsg=""
+    workbook=xlrd.open_workbook(filename)
+    funders_sheet = workbook.sheet_by_name('Funders')
     
     missing = False
 
