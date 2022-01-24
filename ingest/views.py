@@ -1121,7 +1121,7 @@ def ingest_contributors_sheet(self, spreadsheet_file, datapath):
             contributor = Contributor(**values)
             contributors.append(contributor)
 
-    return self.contributors
+    return self.contributors, spreadsheet_file, datapath
 
 def ingest_funders_sheet(self, spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
