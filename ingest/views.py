@@ -1550,14 +1550,14 @@ def save_all_sheets(sheet, contributors, funders, publications, instruments, dat
 
 def upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection, request):
     missing = False
-    contributors = []
-    funders = [] 
-    publications = []
-    instruments = [] 
-    datasets = []
-    species_set = [] 
-    images = [] 
-    datastates = []
+    contributors = {}
+    funders = {}
+    publications = {}
+    instruments = {} 
+    datasets = {}
+    species_set = {} 
+    images = {}
+    datastates = {}
     sheet = int
     check_all_sheets(spreadsheet_file, datapath)
     if missing:
