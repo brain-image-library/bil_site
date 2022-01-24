@@ -1559,7 +1559,7 @@ def upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection
     images = [] 
     datastates = []
     sheet = int
-    check_all_sheets()
+    check_all_sheets(spreadsheet_file, datapath)
     if missing:
         messages.error(request, 'The checks for the spreadsheet failed')
     ingest_all_sheets(spreadsheet_file, datapath)
