@@ -1151,7 +1151,7 @@ def check_datastate_sheet(spreadsheet_file, datapath):
                 # messages.error(request, error_msg)
     return missing
 
-def ingest_contributors_sheet(self, spreadsheet_file, datapath):
+def ingest_contributors_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1176,8 +1176,8 @@ def ingest_contributors_sheet(self, spreadsheet_file, datapath):
             values[key] = cell.value
             contributor = Contributor(**values)
             contributors.append(contributor)
-
-    return self.contributors
+    print(contributors)
+    return contributors
 
 def ingest_funders_sheet(self, spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
@@ -1556,16 +1556,6 @@ def save_datastate_sheet(datastates, sheet):
 def check_all_sheets(spreadsheet_file, datapath):
     print('the file got to the check_all_sheets')
     missing = False
-    # errormsg = ""
-    # mysheets = {}
-    # workbook=xlrd.open_workbook(file_contents=spreadsheet_file.read())
-    # req_tabs = ['README','Contributors','Funders','Publications','Descriptions']
-    # for sheetname in req_tabs:
-    #     try:
-    #        mysheets[sheetname] = workbook.sheet_by_name(sheetname)
-    #     except:
-    #        errormsg = errormsg +"Required tab " + sheetname + " is missing from spreadsheet. "
-    #        #return errormsg
     if check_contributors_sheet(spreadsheet_file, datapath) == True:
         missing = True
         return ('Contributors sheet failed our check')
@@ -1657,8 +1647,8 @@ def descriptive_metadata_upload(request):
             datapath = '/home/shared_bil_dev/testetc/' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
-            check_all_sheets(spreadsheet_file, datapath)
-            # ingest_all_sheets(spreadsheet_file, datapath)
+            # check_all_sheets(spreadsheet_file, datapath)
+            ingest_all_sheets(spreadsheet_file, datapath)
             # upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection, request)
 
             #error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
