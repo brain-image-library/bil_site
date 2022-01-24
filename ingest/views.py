@@ -1523,7 +1523,7 @@ def check_all_sheets(spreadsheet_file, datapath):
     elif check_datastate_sheet(spreadsheet_file, datapath) == True:
         missing = True
         return ('Instrument sheet failed our check')
-    return missing
+    return missing, datapath, spreadsheet_file
 
 def ingest_all_sheets(spreadsheet_file, datapath):
     contributors = ingest_contributors_sheet(spreadsheet_file, datapath)
