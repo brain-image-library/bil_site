@@ -1170,7 +1170,7 @@ def ingest_contributors_sheet(spreadsheet_file, datapath):
        
     contributors = []
     
-    for row in contributors_sheet.rows[4:]:
+    for row in contributors_sheet.rows:
         values = {}
         for key, cell in zip(header, row):
             values[key] = cell.value
