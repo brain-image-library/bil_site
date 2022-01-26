@@ -998,69 +998,168 @@ def check_funders_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
-    fn = load_workbook(filename)
-        
+    
     errormsg=""
     workbook=xlrd.open_workbook(filename)
     funders_sheet = workbook.sheet_by_name('Funders')
-    
     missing = False
-
-    for row in funders_sheet.iter_rows(min_row=4, max_col=8):
-        for cell in row:
-            if cell.value not in funder_metadata:
-                missing = True
-            if cell.value == '':
-                missing = True
-    # if missing:
-                # error = True
-                # missing_str = ", ".join(missing)
-                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
-                # messages.error(request, error_msg)
+    colheads=['funderName','fundingReferenceIdentifier','fundingReferenceIdentifierType',
+                 'awardNumber','awardTitle']
+    fundingReferenceIdentifierType = ['ROR', 'GRID', 'ORCID', 'ISNI']
+    cellcols=['A','B','C','D','E']
+    cols=funders_sheet.row_values(2)
+    for i in range(0,len(colheads)):
+        if cols[i] != colheads[i]:
+            errormsg = errormsg + ' Tab: "Funders" cell heading found: "' + cols[i] + \
+                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
+        print(errormsg)
+    if errormsg != "":
+        return [ True, errormsg ]
+    #Need to figure out how to get this to stop everything and display the error message
+    for i in range(6,funders_sheet.nrows):
+        cols=funders_sheet.row_values(i)
+        if cols[0] == "":
+            errormsg = errormsg + 'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+            missing = True
+        if cols[1] == "":
+            errormsg = errormsg + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+            missing = True
+        if cols[2] == "":
+            errormsg = errormsg + 'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
+            missing = True
+        if cols[3] == "":
+            errormsg = errormsg + 'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+            missing = True
+        if cols[3] not in fundingReferenceIdentifierType:
+            errormsg = errormsg + 'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
+            missing = True
+        if cols[4] == "":
+            errormsg = errormsg + 'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+            missing = True
+        if cols[5] == "":
+            errormsg = errormsg + 'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
+            missing = True
+            
+    print(errormsg)
     return missing
 
 def check_publication_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
-    fn = load_workbook(filename)
-    publication_sheet = fn.get_sheet_by_name('Publication')
     
+    errormsg=""
+    workbook=xlrd.open_workbook(filename)
+    publication_sheet = workbook.sheet_by_name('Publication')
     missing = False
-
-    for row in publication_sheet.iter_rows(min_row=4, max_col=8):
-        for cell in row:
-            if cell.value not in publication_metadata:
-                missing = True
-            if cell.value == '':
-                missing = True
-    # if missing:
-                # error = True
-                # missing_str = ", ".join(missing)
-                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
-                # messages.error(request, error_msg)
+    colheads=['relatedIdentifier (3)','relatedIdentifierType','PMCID',
+                 'relationType (3)','citation']
+    relatedIdentifierType = ['arcXiv', 'DOI', 'PMID', 'ISBN']
+    relationType = ['isCitedBy', 'isDocumentedBy']
+    cellcols=['A','B','C','D','E']
+    cols=publication_sheet.row_values(2)
+    for i in range(0,len(colheads)):
+        if cols[i] != colheads[i]:
+            errormsg = errormsg + ' Tab: "Publication" cell heading found: "' + cols[i] + \
+                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
+        print(errormsg)
+    if errormsg != "":
+        return [ True, errormsg ]
+    #Need to figure out how to get this to stop everything and display the error message
+    for i in range(6,publication_sheet.nrows):
+        cols=publication_sheet.row_values(i)
+        if cols[0] == "":
+            errormsg = errormsg + 'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+            missing = True
+        if cols[1] == "":
+            errormsg = errormsg + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+            missing = True
+        if cols[2] == "":
+            errormsg = errormsg + 'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
+            missing = True
+        if cols[2] not in relatedIdentifierType:
+            errormsg = errormsg + 'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
+            missing = True
+        if cols[3] == "":
+            errormsg = errormsg + 'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+            missing = True
+        if cols[4] == "":
+            errormsg = errormsg + 'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+            missing = True
+        if cols[4] not in relationType:
+            errormsg = errormsg + 'Column: "' + colheads[4] + '" incorrect CV value found: "' + cols[4] + '" in cell "' + cellcols[4] + str(i+1) + '". '
+            missing = True
+        if cols[5] == "":
+            errormsg = errormsg + 'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
+            missing = True
+            
+    print(errormsg)
     return missing
 
 def check_instrument_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
     name_with_path=datapath + '/' + spreadsheet_file.name
     filename = fs.save(name_with_path, spreadsheet_file)
-    fn = load_workbook(filename)
-    instrument_sheet = fn.get_sheet_by_name('Instrument')
     
+    errormsg=""
+    workbook=xlrd.open_workbook(filename)
+    instrument_sheet = workbook.sheet_by_name('Instrument')
     missing = False
-
-    for row in instrument_sheet.iter_rows(min_row=4, max_col=8):
-        for cell in row:
-            if cell.value not in instrument_metadata:
-                missing = True
-            if cell.value == '':
-                missing = True
-    # if missing:
-                # error = True
-                # missing_str = ", ".join(missing)
-                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
-                # messages.error(request, error_msg)
+    colheads=['MicroscopeType (10)','MicroscopeManufacturerAndModel','ObjectiveName',
+                 'ObjectiveImmersion','ObjectiveNA', 'ObjectiveMagnification', 'DetectorType', 'DetectorModel', 'IlluminationTypes', 'IlluminationWavelength', 'DetectionWavelength', 'SampleTemperature']
+    cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
+    cols=instrument_sheet.row_values(2)
+    for i in range(0,len(colheads)):
+        if cols[i] != colheads[i]:
+            errormsg = errormsg + ' Tab: "Instrument" cell heading found: "' + cols[i] + \
+                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
+        print(errormsg)
+    if errormsg != "":
+        return [ True, errormsg ]
+    #Need to figure out how to get this to stop everything and display the error message
+    for i in range(6,instrument_sheet.nrows):
+        cols=instrument_sheet.row_values(i)
+        if cols[0] == "":
+            errormsg = errormsg + 'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+            missing = True
+        if cols[1] == "":
+            errormsg = errormsg + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+            missing = True
+        if cols[2] == "":
+            errormsg = errormsg + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+            missing = True
+        if cols[3] == "":
+            errormsg = errormsg + 'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+            missing = True
+        if cols[4] == "":
+            errormsg = errormsg + 'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+            missing = True
+        if cols[5] == "":
+            errormsg = errormsg + 'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
+            missing = True
+        if cols[6] == "":
+            errormsg = errormsg + 'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
+            missing = True
+        if cols[7] == "":
+            errormsg = errormsg + 'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
+            missing = True
+        if cols[8] == "":
+            errormsg = errormsg + 'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
+            missing = True
+        if cols[9] == "":
+            errormsg = errormsg + 'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
+            missing = True
+        if cols[10] == "":
+            errormsg = errormsg + 'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
+            missing = True
+        if cols[11] == "":
+            errormsg = errormsg + 'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
+            missing = True
+        if cols[12] == "":
+            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+            missing = True
+            
+    print(errormsg)
     return missing
 
 def check_dataset_sheet(spreadsheet_file, datapath):
@@ -1605,8 +1704,7 @@ def save_all_sheets(sheet, contributors, funders, publications, instruments, dat
     save_datastate_sheet(datastates, sheet)
     return
 
-def upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection, request):
-    missing = False
+def upload_all_metadata_sheets(associated_collection, request):
     contributors = {}
     funders = {}
     publications = {}
@@ -1616,10 +1714,6 @@ def upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection
     images = {}
     datastates = {}
     sheet = int
-    # check_all_sheets(spreadsheet_file, datapath)
-    # if missing:
-        # messages.error(request, 'The checks for the spreadsheet failed')
-    # ingest_all_sheets(spreadsheet_file, datapath)
     save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, species_set, images, datastates, associated_collection)
     messages.success(request, 'Metadata successfully uploaded')
     return
@@ -1647,9 +1741,9 @@ def descriptive_metadata_upload(request):
             datapath = '/home/shared_bil_dev/testetc/' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
-            # check_all_sheets(spreadsheet_file, datapath)
+            check_all_sheets(spreadsheet_file, datapath)
             ingest_all_sheets(spreadsheet_file, datapath)
-            # upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection, request)
+            upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection, request)
 
             #error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
             #if error:
@@ -1669,51 +1763,52 @@ def descriptive_metadata_upload(request):
     
     return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'pi':pi, 'collections':collections})
 
-def upload_spreadsheet(spreadsheet_file, associated_collection, request):
-    """ Helper used by metadata_upload and collection_detail."""
-    print('INSIDE OF def UPLOAD_SPREADSHEET')
-    fs = FileSystemStorage()
-    filename = fs.save(spreadsheet_file.name, spreadsheet_file)
-    error = False
-    try:
-        records = pe.iget_records(file_name=filename)
-        # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
-        # before saving entries, so we don't get half-way uploaded
-        # spreadsheets.
-        for idx, record in enumerate(records):
-            # XXX: right now, we're just checking for required fields that are
-            # missing, but we can add whatever checks we want here.
-            # XXX: blank rows in the spreadsheet that have some hidden
-            # formatting can screw up this test
-            missing = [k for k in record if k in required_metadata and not record[k]]
-            if missing:
-                error = True
-                missing_str = ", ".join(missing)
-                error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
-                messages.error(request, error_msg)
-        if error:
-            # We have to add 2 to idx because spreadsheet rows are 1-indexed
-            # and first row is header
-            return error
-        records = pe.iget_records(file_name=filename)
-        for idx, record in enumerate(records):
-            # "age" isn't required, so we need to explicitly set blank
-            # entries to None or else django will get confused.
-            if record['age'] == '':
-                record['age'] = None
-            im = ImageMetadata(
-                collection=associated_collection,
-                user=request.user)
-            for k in record:
-                setattr(im, k, record[k])
-            im.save()
-        messages.success(request, 'Metadata successfully uploaded')
-        # return redirect('ingest:image_metadata_list')
-        return error
-    except pe.exceptions.FileTypeNotSupported:
-        error = True
-        messages.error(request, "File type not supported")
-        return error
+# This gets called in the descriptive_metadata_upload function but we've commented that out to use upload_all_metadata_sheets instead, but prob will harvest some code from here. don't remove yet.
+# def upload_spreadsheet(spreadsheet_file, associated_collection, request):
+#     """ Helper used by metadata_upload and collection_detail."""
+#     print('INSIDE OF def UPLOAD_SPREADSHEET')
+#     fs = FileSystemStorage()
+#     filename = fs.save(spreadsheet_file.name, spreadsheet_file)
+#     error = False
+#     try:
+#         records = pe.iget_records(file_name=filename)
+#         # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
+#         # before saving entries, so we don't get half-way uploaded
+#         # spreadsheets.
+#         for idx, record in enumerate(records):
+#             # XXX: right now, we're just checking for required fields that are
+#             # missing, but we can add whatever checks we want here.
+#             # XXX: blank rows in the spreadsheet that have some hidden
+#             # formatting can screw up this test
+#             missing = [k for k in record if k in required_metadata and not record[k]]
+#             if missing:
+#                 error = True
+#                 missing_str = ", ".join(missing)
+#                 error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+#                 messages.error(request, error_msg)
+#         if error:
+#             # We have to add 2 to idx because spreadsheet rows are 1-indexed
+#             # and first row is header
+#             return error
+#         records = pe.iget_records(file_name=filename)
+#         for idx, record in enumerate(records):
+#             # "age" isn't required, so we need to explicitly set blank
+#             # entries to None or else django will get confused.
+#             if record['age'] == '':
+#                 record['age'] = None
+#             im = ImageMetadata(
+#                 collection=associated_collection,
+#                 user=request.user)
+#             for k in record:
+#                 setattr(im, k, record[k])
+#             im.save()
+#         messages.success(request, 'Metadata successfully uploaded')
+#         # return redirect('ingest:image_metadata_list')
+#         return error
+#     except pe.exceptions.FileTypeNotSupported:
+#         error = True
+#         messages.error(request, "File type not supported")
+#         return error
 
 # we will do these checks further up the chain in individual methods, but some things in here may be useful to rip out
 # def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath):
