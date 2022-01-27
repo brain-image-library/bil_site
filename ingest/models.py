@@ -353,7 +353,7 @@ class Dataset(models.Model):
     technicalInfo = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
 
-class Species(models.Model):
+class Specimen(models.Model):
     localID = models.CharField(max_length=256)
     species = models.CharField(max_length=256)
     ncbiTaxonomy = models.CharField(max_length=256)

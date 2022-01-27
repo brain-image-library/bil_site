@@ -125,7 +125,7 @@ dataset_metadata = [
     'methods',
     'technicalInfo',
 ]
-species_metadata = [
+specimen_metadata = [
     'localID',
     'species',
     'ncbiTaxonomy',
