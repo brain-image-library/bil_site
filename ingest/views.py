@@ -1706,6 +1706,7 @@ def ingest_image_sheet(spreadsheet_file, datapath):
         'landmarkName',
         'landmarkX',
         'landmarkY',
+        'landmarkZ',
         'Number',
         'displayColor',
         'Representation',
@@ -1735,29 +1736,30 @@ def ingest_image_sheet(spreadsheet_file, datapath):
 
     return images
 
-def ingest_datastate_sheet(spreadsheet_file, datapath):
-    fs = FileSystemStorage(location=datapath)
-    name_with_path=datapath + '/' + spreadsheet_file.name
-    filename = fs.save(name_with_path, spreadsheet_file)
-    fn = load_workbook(filename)
-    datastate_sheet = fn.get_sheet_by_name('DataState')
+# DataState tab of spreadsheet is on hold for now
+# def ingest_datastate_sheet(spreadsheet_file, datapath):
+#     fs = FileSystemStorage(location=datapath)
+#     name_with_path=datapath + '/' + spreadsheet_file.name
+#     filename = fs.save(name_with_path, spreadsheet_file)
+#     fn = load_workbook(filename)
+#     datastate_sheet = fn.get_sheet_by_name('DataState')
 
-    header = ['level',
-        'included',
-        'location',
-        'attributes',
-        'description']
+#     header = ['level',
+#         'included',
+#         'location',
+#         'attributes',
+#         'description']
        
-    datastates = []
+#     datastates = []
     
-    for row in datastate_sheet.rows:
-        values = {}
-        for key, cell in zip(header, row):
-            values[key] = cell.value
-            datastate = DataState(**values)
-            datastates.append(datastate)
+#     for row in datastate_sheet.rows:
+#         values = {}
+#         for key, cell in zip(header, row):
+#             values[key] = cell.value
+#             datastate = DataState(**values)
+#             datastates.append(datastate)
 
-    return datastates
+#     return datastates
 
 def save_sheet_row(filename, associated_collection):
     sheet = Sheet(filename=filename, associated_collection=associated_collection)
