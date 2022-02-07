@@ -1356,131 +1356,161 @@ def check_image_sheet(spreadsheet_file, datapath):
             errormsg = errormsg + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
             missing = True
         if cols[1] not in xAxis:
-            errormsg = errormsg + 'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[6] + str(i+1) + '". '
+            errormsg = errormsg + 'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
         if cols[2] == "":
-            errormsg = errormsg + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+            errormsg = errormsg + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[2] + str(i+1) + '". '
             missing = True
         if cols[2] not in obliqueXdim1:
-            errormsg = errormsg + 'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[2] + str(i+1) + '". '
+            errormsg = errormsg + 'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
+            missing = True
         if cols[3] == "":
             errormsg = errormsg + 'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+            missing = True
+        if cols[3] not in obliqueXdim2:
+            errormsg = errormsg + 'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
             missing = True
         if cols[4] == "":
             errormsg = errormsg + 'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
             missing = True
+        if cols[4] not in obliqueXdim3:
+            errormsg = errormsg + 'Column: "' + colheads[4] + '" incorrect CV value found: "' + cols[4] + '" in cell "' + cellcols[4] + str(i+1) + '". '
+            missing = True
         if cols[5] == "":
             errormsg = errormsg + 'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
+            missing = True
+        if cols[5] not in yAxis:
+            errormsg = errormsg + 'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
             missing = True
         if cols[6] == "":
             errormsg = errormsg + 'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
             missing = True
-        if cols[6] not in Sex:
-            errormsg = errormsg + 'Column: "' + colheads[6] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[6] + str(i+1) + '". '
+        if cols[6] not in obliqueYdim1:
+            errormsg = errormsg + 'Column: "' + colheads[6] + '" incorrect CV value found: "' + cols[6] + '" in cell "' + cellcols[6] + str(i+1) + '". '
+            missing = True
         if cols[7] == "":
             errormsg = errormsg + 'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
+            missing = True
+        if cols[7] not in obliqueYdim2:
+            errormsg = errormsg + 'Column: "' + colheads[7] + '" incorrect CV value found: "' + cols[7] + '" in cell "' + cellcols[7] + str(i+1) + '". '
             missing = True
         if cols[8] == "":
             errormsg = errormsg + 'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
             missing = True
+        if cols[8] not in obliqueYdim3:
+            errormsg = errormsg + 'Column: "' + colheads[8] + '" incorrect CV value found: "' + cols[8] + '" in cell "' + cellcols[8] + str(i+1) + '". '
+            missing = True
         if cols[9] == "":
             errormsg = errormsg + 'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
+            missing = True
+        if cols[9] not in zAxis:
+            errormsg = errormsg + 'Column: "' + colheads[9] + '" incorrect CV value found: "' + cols[9] + '" in cell "' + cellcols[9] + str(i+1) + '". '
             missing = True
         if cols[10] == "":
             errormsg = errormsg + 'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
             missing = True
+        if cols[10] not in ObliqueZdim1:
+            errormsg = errormsg + 'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
+            missing = True
         if cols[11] == "":
             errormsg = errormsg + 'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[11] not in ObliqueZdim2:
+            errormsg = errormsg + 'Column: "' + colheads[11] + '" incorrect CV value found: "' + cols[11] + '" in cell "' + cellcols[11] + str(i+1) + '". '
             missing = True
         if cols[12] == "":
             errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
+        if cols[12] not in ObliqueZdim3:
+            errormsg = errormsg + 'Column: "' + colheads[12] + '" incorrect CV value found: "' + cols[12] + '" in cell "' + cellcols[12] + str(i+1) + '". '
+            missing = True
+        if cols[13] == "":
+            errormsg = errormsg + 'Column: "' + colheads[13] + '" value expected but not found in cell "' + cellcols[13] + str(i+1) + '". '
+            missing = True
+        if cols[14] == "":
             errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
+        if cols[15] == "":
+            errormsg = errormsg + 'Column: "' + colheads[15] + '" value expected but not found in cell "' + cellcols[15] + str(i+1) + '". '
+            missing = True
+        if cols[16] == "":
             errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
+        if cols[17] == "":
             errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
+        if cols[18] == "":
+            errormsg = errormsg + 'Column: "' + colheads[18] + '" value expected but not found in cell "' + cellcols[18] + str(i+1) + '". '
+            missing = True
+        if cols[19] == "":
             errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[20] == "":
+            errormsg = errormsg + 'Column: "' + colheads[20] + '" value expected but not found in cell "' + cellcols[20] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[21] == "":
+            errormsg = errormsg + 'Column: "' + colheads[21] + '" value expected but not found in cell "' + cellcols[21] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[22] == "":
+            errormsg = errormsg + 'Column: "' + colheads[22] + '" value expected but not found in cell "' + cellcols[22] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[23] == "":
+            errormsg = errormsg + 'Column: "' + colheads[23] + '" value expected but not found in cell "' + cellcols[23] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[24] == "":
+            errormsg = errormsg + 'Column: "' + colheads[24] + '" value expected but not found in cell "' + cellcols[24] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[25] == "":
+            errormsg = errormsg + 'Column: "' + colheads[25] + '" value expected but not found in cell "' + cellcols[25] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[26] == "":
+            errormsg = errormsg + 'Column: "' + colheads[26] + '" value expected but not found in cell "' + cellcols[26] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[27] == "":
+            errormsg = errormsg + 'Column: "' + colheads[27] + '" value expected but not found in cell "' + cellcols[27] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[28] == "":
+            errormsg = errormsg + 'Column: "' + colheads[28] + '" value expected but not found in cell "' + cellcols[28] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[29] == "":
+            errormsg = errormsg + 'Column: "' + colheads[29] + '" value expected but not found in cell "' + cellcols[29] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[30] == "":
+            errormsg = errormsg + 'Column: "' + colheads[30] + '" value expected but not found in cell "' + cellcols[30] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[31] == "":
+            errormsg = errormsg + 'Column: "' + colheads[31] + '" value expected but not found in cell "' + cellcols[31] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[32] == "":
+            errormsg = errormsg + 'Column: "' + colheads[32] + '" value expected but not found in cell "' + cellcols[32] + str(i+1) + '". '
             missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-            missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-            missing = True
-        if cols[12] == "":
-            errormsg = errormsg + 'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        if cols[33] == "":
+            errormsg = errormsg + 'Column: "' + colheads[33] + '" value expected but not found in cell "' + cellcols[33] + str(i+1) + '". '
             missing = True
     print(errormsg)
     return missing
 
-def check_datastate_sheet(spreadsheet_file, datapath):
-    fs = FileSystemStorage(location=datapath)
-    name_with_path=datapath + '/' + spreadsheet_file.name
-    filename = fs.save(name_with_path, spreadsheet_file)
-    fn = load_workbook(filename)
-    datastate_sheet = fn.get_sheet_by_name('DataState')
+# DataState tab of the spreadsheet is being put on hold for now
+# def check_datastate_sheet(spreadsheet_file, datapath):
+#     fs = FileSystemStorage(location=datapath)
+#     name_with_path=datapath + '/' + spreadsheet_file.name
+#     filename = fs.save(name_with_path, spreadsheet_file)
+#     fn = load_workbook(filename)
+#     datastate_sheet = fn.get_sheet_by_name('DataState')
     
-    missing = False
+#     missing = False
 
-    for row in datastate_sheet.iter_rows(min_row=4, max_col=8):
-        for cell in row:
-            if cell.value not in datastate_metadata:
-                missing = True
-            if cell.value == '':
-                missing = True
-    # if missing:
-                # error = True
-                # missing_str = ", ".join(missing)
-                # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
-                # messages.error(request, error_msg)
-    return missing
+#     for row in datastate_sheet.iter_rows(min_row=4, max_col=8):
+#         for cell in row:
+#             if cell.value not in datastate_metadata:
+#                 missing = True
+#             if cell.value == '':
+#                 missing = True
+#     # if missing:
+#                 # error = True
+#                 # missing_str = ", ".join(missing)
+#                 # error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+#                 # messages.error(request, error_msg)
+#     return missing
 
 def ingest_contributors_sheet(spreadsheet_file, datapath):
     fs = FileSystemStorage(location=datapath)
