@@ -1882,6 +1882,7 @@ def save_image_sheet(images, sheet):
         landmarkName = i['landmarkName'],
         landmarkX = i['landmarkX'],
         landmarkY = i['landmarkY'],
+        landmarkZ = i['landmarkY'],
         Number = i['Number'],
         displayColor = i['displayColor'],
         Representation = i['Representation'],
@@ -1900,21 +1901,22 @@ def save_image_sheet(images, sheet):
         Files = i['Files'],
         DimensionOrder = i['DimensionOrder']
  
-        image = Image(xAxis=xAxis, obliqueXdim1=obliqueXdim1, obliqueXdim2=obliqueXdim2, obliqueXdim3=obliqueXdim3, yAxis=yAxis, obliqueYdim1=obliqueYdim1, obliqueYdim2=obliqueYdim2, obliqueYdim3=obliqueYdim3, zAxis=zAxis, obliqueZdim1=obliqueZdim1, obliqueZdim2=obliqueZdim2, obliqueZdim3=obliqueZdim3,landmarkName=landmarkName, landmarkX=landmarkX, landmarkY=landmarkY, Number=Number, displayColor=displayColor, Representation=Representation, Flurophore=Flurophore, stepSizeX=stepSizeX, stepSizeY=stepSizeY, stepSizeZ=stepSizeZ, stepSizeT=stepSizeT, Channels=Channels, Slices=Slices, z=z, Xsize=Xsize, Ysize=Ysize, Zsize=Zsize, Gbytes=Gbytes, Files=Files, DimensionOrder=DimensionOrder, sheet=sheet.id)
+        image = Image(xAxis=xAxis, obliqueXdim1=obliqueXdim1, obliqueXdim2=obliqueXdim2, obliqueXdim3=obliqueXdim3, yAxis=yAxis, obliqueYdim1=obliqueYdim1, obliqueYdim2=obliqueYdim2, obliqueYdim3=obliqueYdim3, zAxis=zAxis, obliqueZdim1=obliqueZdim1, obliqueZdim2=obliqueZdim2, obliqueZdim3=obliqueZdim3,landmarkName=landmarkName, landmarkX=landmarkX, landmarkY=landmarkY, landmarkZ=landmarkZ, Number=Number, displayColor=displayColor, Representation=Representation, Flurophore=Flurophore, stepSizeX=stepSizeX, stepSizeY=stepSizeY, stepSizeZ=stepSizeZ, stepSizeT=stepSizeT, Channels=Channels, Slices=Slices, z=z, Xsize=Xsize, Ysize=Ysize, Zsize=Zsize, Gbytes=Gbytes, Files=Files, DimensionOrder=DimensionOrder, sheet=sheet.id)
         image.save()
     return
 
-def save_datastate_sheet(datastates, sheet):
-    for d in datastates:
-        level = ['level'],
-        included = ['included'],
-        location = ['location'],
-        attributes = ['attributes'],
-        description = ['description']
+# dataState tab is being put on hold for now
+# def save_datastate_sheet(datastates, sheet):
+#     for d in datastates:
+#         level = ['level'],
+#         included = ['included'],
+#         location = ['location'],
+#         attributes = ['attributes'],
+#         description = ['description']
        
-        datastate = DataState(level=level, included=included, location=location, attributes=attributes, description=description, sheet=sheet.id)
-        datastate.save()
-    return
+#         datastate = DataState(level=level, included=included, location=location, attributes=attributes, description=description, sheet=sheet.id)
+#         datastate.save()
+#     return
 
 def check_all_sheets(spreadsheet_file, datapath):
     print('the file got to the check_all_sheets')
@@ -1933,16 +1935,16 @@ def check_all_sheets(spreadsheet_file, datapath):
         return ('Instrument sheet failed our check')
     elif check_dataset_sheet(spreadsheet_file, datapath) == True:
         missing = True
-        return ('Instrument sheet failed our check')
+        return ('DataSet sheet failed our check')
     elif check_specimen_sheet(spreadsheet_file, datapath) == True:
         missing = True
-        return ('Instrument sheet failed our check')
+        return ('Specimen sheet failed our check')
     elif check_image_sheet(spreadsheet_file, datapath) == True:
         missing = True
-        return ('Instrument sheet failed our check')
-    elif check_datastate_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        return ('Instrument sheet failed our check')
+        return ('Image sheet failed our check')
+    # elif check_datastate_sheet(spreadsheet_file, datapath) == True:
+    #     missing = True
+        # return ('DataState sheet failed our check')
     return missing, datapath, spreadsheet_file
 
 def ingest_all_sheets(spreadsheet_file, datapath):
@@ -1953,10 +1955,10 @@ def ingest_all_sheets(spreadsheet_file, datapath):
     datasets = ingest_dataset_sheet(spreadsheet_file, datapath)
     specimen_sets = ingest_specimen_sheet(spreadsheet_file, datapath)
     images = ingest_image_sheet(spreadsheet_file, datapath)
-    datastates = ingest_datastate_sheet(spreadsheet_file, datapath)
-    return contributors, funders, publications, instruments, datasets, specimen_sets, images, datastates
+    # datastates = ingest_datastate_sheet(spreadsheet_file, datapath)
+    return contributors, funders, publications, instruments, datasets, specimen_sets, images #, datastates
 
-def save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, specimen_set, images, datastates, filename, associated_collection):
+def save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, specimen_set, images, filename, associated_collection):
     save_sheet_row(filename, associated_collection)
     save_contributors_sheet(contributors, sheet)
     save_funders_sheet(funders, sheet)
@@ -1965,7 +1967,7 @@ def save_all_sheets(sheet, contributors, funders, publications, instruments, dat
     save_dataset_sheet(datasets, sheet)
     save_specimen_sheet(specimen_set, sheet)
     save_image_sheet(images, sheet)
-    save_datastate_sheet(datastates, sheet)
+    # save_datastate_sheet(datastates, sheet)
     return
 
 def upload_all_metadata_sheets(associated_collection, request):
