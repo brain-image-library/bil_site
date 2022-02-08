@@ -1968,21 +1968,13 @@ def save_all_sheets(sheet, contributors, funders, publications, instruments, dat
     save_specimen_sheet(specimen_set, sheet)
     save_image_sheet(images, sheet)
     # save_datastate_sheet(datastates, sheet)
+    messages.success('Metadata successfully uploaded')
     return
 
-def upload_all_metadata_sheets(associated_collection, request):
-    contributors = {}
-    funders = {}
-    publications = {}
-    instruments = {} 
-    datasets = {}
-    specimen_set = {} 
-    images = {}
-    datastates = {}
-    sheet = int
-    save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, specimen_set, images, datastates, associated_collection)
-    messages.success(request, 'Metadata successfully uploaded')
-    return
+# def upload_all_metadata_sheets(associated_collection, request):
+#     save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, specimen_set, images, datastates, associated_collection)
+#     messages.success(request, 'Metadata successfully uploaded')
+#     return
 
 @login_required
 def descriptive_metadata_upload(request):
@@ -2009,7 +2001,7 @@ def descriptive_metadata_upload(request):
             spreadsheet_file = request.FILES['spreadsheet_file']
             check_all_sheets(spreadsheet_file, datapath)
             ingest_all_sheets(spreadsheet_file, datapath)
-            upload_all_metadata_sheets(spreadsheet_file, datapath, associated_collection, request)
+            save_all_sheets(spreadsheet_file, datapath, associated_collection, request)
 
             #error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
             #if error:
