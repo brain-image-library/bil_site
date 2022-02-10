@@ -521,6 +521,8 @@ def collection_create(request):
             post.save()
 
             time = datetime.now()
+            print(post.id)
+            print('*******post.id')
             coll_id = Collection.objects.get(id = post.id)
             #coll_id = Collection.objects.filter(bil_uuid = bil_uuid).values_list('id', flat=True)
             proj_id = Collection.objects.get(project = post.project_id)
