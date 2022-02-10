@@ -2056,6 +2056,9 @@ def descriptive_metadata_upload(request):
                     saved = save_all_sheets(spreadsheet_file, datapath, associated_collection, request, contributors, funders, publications, instruments, datasets, specimen_sets, images)
                     if saved == True:
                         return redirect('ingest:descriptive_metadata_list')
+                    else:
+                        return redirect('ingest:descriptive_metadata_upload')
+
 
     # This is the GET (just show the metadata upload page)
     else:
