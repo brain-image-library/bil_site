@@ -521,11 +521,9 @@ def collection_create(request):
             post.save()
 
             time = datetime.now()
-            print(post.id)
-            print('*******post.id')
             coll_id = Collection.objects.get(id = post.id)
             #coll_id = Collection.objects.filter(bil_uuid = bil_uuid).values_list('id', flat=True)
-            proj_id = Collection.objects.get(project = post.project_id)
+            proj_id = coll_id.project_id
             event = EventsLog(collection_id = coll_id, people_id = people.id, project_id = proj_id, notes = '', timestamp = time, event_type = 'collection_created')
             event.save()
             cache.delete('host_and_path')
