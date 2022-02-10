@@ -1,4 +1,5 @@
 from calendar import c
+from xmlrpc.client import Boolean
 from django.conf import settings
 from django.contrib import messages, auth
 from django.contrib.auth.models import User
@@ -1929,53 +1930,78 @@ def check_all_sheets(spreadsheet_file, datapath):
     missing = False
     if check_contributors_sheet(spreadsheet_file, datapath) == True:
         missing = True
-        return ('Contributors sheet failed our check')
+        message = 'Contributors sheet failed our check'
+        return message, missing
     elif check_funders_sheet(spreadsheet_file, datapath) == True:
         missing = True
-        return ('Funders sheet failed our check')
+        message = 'Funders sheet failed our check'
+        return message, missing
     elif check_publication_sheet(spreadsheet_file, datapath) == True:
         missing = True
-        return ('Publication sheet failed our check')
+        message = 'Publication sheet failed our check'
+        return message, missing
     elif check_instrument_sheet(spreadsheet_file, datapath) == True:
         missing = True
-        return ('Instrument sheet failed our check')
+        message = 'Instrument sheet failed our check'
+        return message, missing
     elif check_dataset_sheet(spreadsheet_file, datapath) == True:
         missing = True
-        return ('DataSet sheet failed our check')
+        message = 'Dataset sheet failed our check'
+        return message, missing
     elif check_specimen_sheet(spreadsheet_file, datapath) == True:
         missing = True
-        return ('Specimen sheet failed our check')
+        message = 'Specimen sheet failed our check'
+        return message, missing
     elif check_image_sheet(spreadsheet_file, datapath) == True:
         missing = True
-        return ('Image sheet failed our check')
+        message = 'Image sheet failed our check'
+        return message, missing
     # elif check_datastate_sheet(spreadsheet_file, datapath) == True:
     #     missing = True
         # return ('DataState sheet failed our check')
     return missing, datapath, spreadsheet_file
 
-def ingest_all_sheets(spreadsheet_file, datapath):
-    contributors = ingest_contributors_sheet(spreadsheet_file, datapath)
-    funders = ingest_funders_sheet(spreadsheet_file, datapath)
-    publications = ingest_publication_sheet(spreadsheet_file, datapath)
-    instruments = ingest_instrument_sheet(spreadsheet_file, datapath)
-    datasets = ingest_dataset_sheet(spreadsheet_file, datapath)
-    specimen_sets = ingest_specimen_sheet(spreadsheet_file, datapath)
-    images = ingest_image_sheet(spreadsheet_file, datapath)
-    # datastates = ingest_datastate_sheet(spreadsheet_file, datapath)
-    return contributors, funders, publications, instruments, datasets, specimen_sets, images #, datastates
+# def ingest_all_sheets(spreadsheet_file, datapath):
+#     contributors = ingest_contributors_sheet(spreadsheet_file, datapath)
+#     funders = ingest_funders_sheet(spreadsheet_file, datapath)
+#     publications = ingest_publication_sheet(spreadsheet_file, datapath)
+#     instruments = ingest_instrument_sheet(spreadsheet_file, datapath)
+#     datasets = ingest_dataset_sheet(spreadsheet_file, datapath)
+#     specimen_sets = ingest_specimen_sheet(spreadsheet_file, datapath)
+#     images = ingest_image_sheet(spreadsheet_file, datapath)
+#     # datastates = ingest_datastate_sheet(spreadsheet_file, datapath)
+#     return contributors, funders, publications, instruments, datasets, specimen_sets, images #, datastates
 
 def save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, specimen_set, images, filename, associated_collection):
-    save_sheet_row(filename, associated_collection)
-    save_contributors_sheet(contributors, sheet)
-    save_funders_sheet(funders, sheet)
-    save_publication_sheet(publications, sheet)
-    save_instrument_sheet(instruments, sheet)
-    save_dataset_sheet(datasets, sheet)
-    save_specimen_sheet(specimen_set, sheet)
-    save_image_sheet(images, sheet)
-    # save_datastate_sheet(datastates, sheet)
-    messages.success('Metadata successfully uploaded')
-    return
+    saved = Boolean
+    try:
+        save_sheet_row(filename, associated_collection)
+        save_contributors_sheet(contributors, sheet)
+        save_funders_sheet(funders, sheet)
+        save_publication_sheet(publications, sheet)
+        save_instrument_sheet(instruments, sheet)
+        save_dataset_sheet(datasets, sheet)
+        save_specimen_sheet(specimen_set, sheet)
+        save_image_sheet(images, sheet)
+        # save_datastate_sheet(datastates, sheet)
+        saved = True
+        messages.success('Metadata successfully uploaded')
+        return saved
+    except:
+        saved = False
+        return saved
+
+def metadata_version_check(spreadsheet_file, datapath):
+    version1 = Boolean
+    fs = FileSystemStorage(location=datapath)
+    name_with_path=datapath + '/' + spreadsheet_file.name
+    filename = fs.save(name_with_path, spreadsheet_file)
+    workbook=xlrd.open_workbook(filename)
+    if workbook.sheet_by_name('README'):
+        version1 = False
+    else:
+        version1 = True
+    return version1
 
 # def upload_all_metadata_sheets(associated_collection, request):
 #     save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, specimen_set, images, datastates, associated_collection)
@@ -2005,15 +2031,31 @@ def descriptive_metadata_upload(request):
             datapath = '/home/shared_bil_dev/testetc/' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
-            check_all_sheets(spreadsheet_file, datapath)
-            ingest_all_sheets(spreadsheet_file, datapath)
-            save_all_sheets(spreadsheet_file, datapath, associated_collection, request)
+            
+            version1 = metadata_version_check(spreadsheet_file)
+            if version1 == True:
+                error = upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath)
+                if error:
+                    return redirect('ingest:descriptive_metadata_upload')
+                else:         
+                    return redirect('ingest:descriptive_metadata_list')
+            elif version1 == False:
+                missing = check_all_sheets(spreadsheet_file, datapath)
+                if missing == True:
+                    return redirect('ingest:descriptive_metadata_upload')
+                else:
+                    contributors = ingest_contributors_sheet(spreadsheet_file, datapath)
+                    funders = ingest_funders_sheet(spreadsheet_file, datapath)
+                    publications = ingest_publication_sheet(spreadsheet_file, datapath)
+                    instruments = ingest_instrument_sheet(spreadsheet_file, datapath)
+                    datasets = ingest_dataset_sheet(spreadsheet_file, datapath)
+                    specimen_sets = ingest_specimen_sheet(spreadsheet_file, datapath)
+                    images = ingest_image_sheet(spreadsheet_file, datapath)
+                    
+                    saved = save_all_sheets(spreadsheet_file, datapath, associated_collection, request, contributors, funders, publications, instruments, datasets, specimen_sets, images)
+                    if saved == True:
+                        return redirect('ingest:descriptive_metadata_list')
 
-            #error = upload_descriptive_spreadsheet(spreadsheet_file, collection, request, datapath)
-            #if error:
-            #    return redirect('ingest:descriptive_metadata_upload')
-            #else:         
-            return redirect('ingest:descriptive_metadata_list')
     # This is the GET (just show the metadata upload page)
     else:
         user = request.user
@@ -2027,82 +2069,34 @@ def descriptive_metadata_upload(request):
     
     return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'pi':pi, 'collections':collections})
 
-# This gets called in the descriptive_metadata_upload function but we've commented that out to use upload_all_metadata_sheets instead, but prob will harvest some code from here. don't remove yet.
-# def upload_spreadsheet(spreadsheet_file, associated_collection, request):
-#     """ Helper used by metadata_upload and collection_detail."""
-#     print('INSIDE OF def UPLOAD_SPREADSHEET')
-#     fs = FileSystemStorage()
-#     filename = fs.save(spreadsheet_file.name, spreadsheet_file)
-#     error = False
-#     try:
-#         records = pe.iget_records(file_name=filename)
-#         # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
-#         # before saving entries, so we don't get half-way uploaded
-#         # spreadsheets.
-#         for idx, record in enumerate(records):
-#             # XXX: right now, we're just checking for required fields that are
-#             # missing, but we can add whatever checks we want here.
-#             # XXX: blank rows in the spreadsheet that have some hidden
-#             # formatting can screw up this test
-#             missing = [k for k in record if k in required_metadata and not record[k]]
-#             if missing:
-#                 error = True
-#                 missing_str = ", ".join(missing)
-#                 error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
-#                 messages.error(request, error_msg)
-#         if error:
-#             # We have to add 2 to idx because spreadsheet rows are 1-indexed
-#             # and first row is header
-#             return error
-#         records = pe.iget_records(file_name=filename)
-#         for idx, record in enumerate(records):
-#             # "age" isn't required, so we need to explicitly set blank
-#             # entries to None or else django will get confused.
-#             if record['age'] == '':
-#                 record['age'] = None
-#             im = ImageMetadata(
-#                 collection=associated_collection,
-#                 user=request.user)
-#             for k in record:
-#                 setattr(im, k, record[k])
-#             im.save()
-#         messages.success(request, 'Metadata successfully uploaded')
-#         # return redirect('ingest:image_metadata_list')
-#         return error
-#     except pe.exceptions.FileTypeNotSupported:
-#         error = True
-#         messages.error(request, "File type not supported")
-#         return error
-
-# we will do these checks further up the chain in individual methods, but some things in here may be useful to rip out
-# def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath):
-    # """ Helper used by image_metadata_upload and collection_detail."""
-    # fs = FileSystemStorage(location=datapath)
-    # name_with_path=datapath + '/' + spreadsheet_file.name 
-    # filename = fs.save(name_with_path, spreadsheet_file)
-    # fn = xlrd.open_workbook(filename)
+def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath):
+    """ Helper used by image_metadata_upload and collection_detail."""
+    fs = FileSystemStorage(location=datapath)
+    name_with_path=datapath + '/' + spreadsheet_file.name 
+    filename = fs.save(name_with_path, spreadsheet_file)
+    fn = xlrd.open_workbook(filename)
     #allSheetNames = fn.sheet_names()
     #print(allSheetNames) 
-    # worksheet = fn.sheet_by_index(0)
+    worksheet = fn.sheet_by_index(0)
     #for sheet in allSheetNames:
     #    print("Current sheet name is {}" .format(sheet))
     #    #this is where we left off
     #    print(sheet)
-    # error = False
-    # try:
-    #     missing = False
-    #     badgrantnum = False
-    #     has_escapes = False
-    #     missing_fields = []
-    #     missing_cells = []
-    #     badchar = "\\"
-    #     bad_str = []
-    #     not_missing = []
-    #     grantpattern = '[A-Z0-9\-][A-Z0-9\-][A-Z0-9A]{3}\-[A-Z0-9]{8}\-[A-Z0-9]{2}'
-    #     for rowidx in range(worksheet.nrows):
-    #         row = worksheet.row(rowidx)
-    #         for colidx, cell in enumerate(row):
-    #             if rowidx == 0:
+    error = False
+    try:
+        missing = False
+        badgrantnum = False
+        has_escapes = False
+        missing_fields = []
+        missing_cells = []
+        badchar = "\\"
+        bad_str = []
+        not_missing = []
+        grantpattern = '[A-Z0-9\-][A-Z0-9\-][A-Z0-9A]{3}\-[A-Z0-9]{8}\-[A-Z0-9]{2}'
+        for rowidx in range(worksheet.nrows):
+            row = worksheet.row(rowidx)
+            for colidx, cell in enumerate(row):
+                if rowidx == 0:
                     #Bad Headers Check
                     #if cell.value == 'grant_number':
                     #    grantrow = rowidx+1
@@ -2111,12 +2105,12 @@ def descriptive_metadata_upload(request):
                     #    if bool(re.match(grantpattern, grantnum)) != True:
                     #        badgrantnum=True
                     # this will check specifically the headers of the document for missing info.
-                    # if cell.value not in required_metadata:
-                    #     missing = True
-                    #     missingcol = colidx+1
-                    #     missingrow = rowidx+1
-                    # else:
-                    #     not_missing.append(cell.value)
+                    if cell.value not in required_metadata:
+                        missing = True
+                        missingcol = colidx+1
+                        missingrow = rowidx+1
+                    else:
+                        not_missing.append(cell.value)
                 #Escape/Illegal characters in data check        
                 #if badchar in cell.value:
                 #    has_escapes = True
@@ -2124,18 +2118,18 @@ def descriptive_metadata_upload(request):
                 #    errorcol = colidx
                 #    errorrow = rowidx
                 #    illegalchar = cell.value
-                # if cell.value == '':
-                #         missing = True
-                #         missingcol = colidx+1
-                #         missingrow = rowidx+1
-                #         missing_cells.append([missingrow, missingcol])
-                # else:
-                #     not_missing.append(cell.value)
+                if cell.value == '':
+                        missing = True
+                        missingcol = colidx+1
+                        missingrow = rowidx+1
+                        missing_cells.append([missingrow, missingcol])
+                else:
+                    not_missing.append(cell.value)
 
-        # diff = lambda l1, l2: [x for x in l1 if x not in l2]
-        # missing_fields.append(str(diff(required_metadata, not_missing)))
+        diff = lambda l1, l2: [x for x in l1 if x not in l2]
+        missing_fields.append(str(diff(required_metadata, not_missing)))
         
-        # records = pe.iget_records(file_name=filename)
+        records = pe.iget_records(file_name=filename)
         # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
         # before saving entries, so we don't get half-way uploaded
         # spreadsheets.
@@ -2174,47 +2168,95 @@ def descriptive_metadata_upload(request):
             #    if badchar in result:
             #        has_escapes = True
             #        bad_str.append(badchar)
-        # if missing:
-        #     error = True
-        #     if missing_fields[0] == '[]':
-        #         for badcells in missing_cells:
-        #             print(badcells)
-        #             error_msg = 'Missing Required Information or Extra Field found in spreadsheet in row,column "{}"'.format(badcells)
-        #             messages.error(request, error_msg)
-        #     else:
-        #         missing_str = ", ".join(missing_fields)
-        #         error_msg = 'Data missing from row "{}" column "{}". Missing required field(s) in spreadsheet: "{}". Be sure all headers in the metadata spreadsheet provided are included and correctly spelled in your spreadsheet. If issue persists please contact us at bil-support@psc.edu.'.format(missingrow, missingcol, missing_str)
-        #         messages.error(request, error_msg)
-        # if has_escapes:
-        #     error = True
-        #     bad_str = ", ".join(bad_str)
-        #     error_msg = 'Data contains an illegal character in string "{}"  row: "{}" column: "{}" Be sure there are no escape characters such as "\" or "^" in your spreadsheet. If issue persists please contact us at bil-support@psc.edu.'.format(illegalchar, errorrow, errorcol)
-        #     messages.error(request, error_msg)
-        # if badgrantnum:
-        #     error = True
-        #     error_msg = 'Grant number does not match correct format for NIH grant number, "{}" in Row: {} Column: {}  must match the format "A-B1C-2D3E4F5G-6H"'.format(grantnum, grantrow, grantcol)
-        #     messages.error(request, error_msg)
-        # if error:
-        #     # We have to add 2 to idx because spreadsheet rows are 1-indexed
-        #     # and first row is header
-        #     # return redirect('ingest:image_metadata_upload')
-        #     return error
-        # records = pe.iget_records(file_name=filename)
-        # for idx, record in enumerate(records):
-        #     im = DescriptiveMetadata(
-        #         collection=associated_collection,
-        #         user=request.user)
-        #     for k in record:
-        #         setattr(im, k, record[k])
-        #         #messages.success(request, k)
-        #         #messages.success(request, record[k])
-        #     im.save()
-    #     messages.success(request, 'Descriptive Metadata successfully uploaded')
-    #     return error
-    # except pe.exceptions.FileTypeNotSupported:
-    #     error = True
-    #     messages.error(request, "File type not supported")
-    #     return error
+        if missing:
+            error = True
+            if missing_fields[0] == '[]':
+                for badcells in missing_cells:
+                    print(badcells)
+                    error_msg = 'Missing Required Information or Extra Field found in spreadsheet in row,column "{}"'.format(badcells)
+                    messages.error(request, error_msg)
+            else:
+                missing_str = ", ".join(missing_fields)
+                error_msg = 'Data missing from row "{}" column "{}". Missing required field(s) in spreadsheet: "{}". Be sure all headers in the metadata spreadsheet provided are included and correctly spelled in your spreadsheet. If issue persists please contact us at bil-support@psc.edu.'.format(missingrow, missingcol, missing_str)
+                messages.error(request, error_msg)
+        if has_escapes:
+            error = True
+            bad_str = ", ".join(bad_str)
+            error_msg = 'Data contains an illegal character in string "{}"  row: "{}" column: "{}" Be sure there are no escape characters such as "\" or "^" in your spreadsheet. If issue persists please contact us at bil-support@psc.edu.'.format(illegalchar, errorrow, errorcol)
+            messages.error(request, error_msg)
+        if badgrantnum:
+            error = True
+            error_msg = 'Grant number does not match correct format for NIH grant number, "{}" in Row: {} Column: {}  must match the format "A-B1C-2D3E4F5G-6H"'.format(grantnum, grantrow, grantcol)
+            messages.error(request, error_msg)
+        if error:
+            # We have to add 2 to idx because spreadsheet rows are 1-indexed
+            # and first row is header
+            # return redirect('ingest:image_metadata_upload')
+            return error
+        records = pe.iget_records(file_name=filename)
+        for idx, record in enumerate(records):
+            im = DescriptiveMetadata(
+                collection=associated_collection,
+                user=request.user)
+            for k in record:
+                setattr(im, k, record[k])
+                #messages.success(request, k)
+                #messages.success(request, record[k])
+            im.save()
+        messages.success(request, 'Descriptive Metadata successfully uploaded')
+        # return redirect('ingest:image_metadata_list')
+        return error
+    except pe.exceptions.FileTypeNotSupported:
+        error = True
+        messages.error(request, "File type not supported")
+        # return redirect('ingest:image_metadata_upload')
+        return error
+
+# This gets called in the descriptive_metadata_upload function but we've commented that out to use upload_all_metadata_sheets instead, but prob will harvest some code from here. don't remove yet.
+def upload_spreadsheet(spreadsheet_file, associated_collection, request):
+    """ Helper used by metadata_upload and collection_detail."""
+    fs = FileSystemStorage()
+    filename = fs.save(spreadsheet_file.name, spreadsheet_file)
+    error = False
+    try:
+        records = pe.iget_records(file_name=filename)
+        # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
+        # before saving entries, so we don't get half-way uploaded
+        # spreadsheets.
+        for idx, record in enumerate(records):
+            # XXX: right now, we're just checking for required fields that are
+            # missing, but we can add whatever checks we want here.
+            # XXX: blank rows in the spreadsheet that have some hidden
+            # formatting can screw up this test
+            missing = [k for k in record if k in required_metadata and not record[k]]
+            if missing:
+                error = True
+                missing_str = ", ".join(missing)
+                error_msg = 'Data missing from row {} in field(s): "{}"'.format(idx+2, missing_str)
+                messages.error(request, error_msg)
+        if error:
+            # We have to add 2 to idx because spreadsheet rows are 1-indexed
+            # and first row is header
+            return error
+        records = pe.iget_records(file_name=filename)
+        for idx, record in enumerate(records):
+            # "age" isn't required, so we need to explicitly set blank
+            # entries to None or else django will get confused.
+            if record['age'] == '':
+                record['age'] = None
+            im = ImageMetadata(
+                collection=associated_collection,
+                user=request.user)
+            for k in record:
+                setattr(im, k, record[k])
+            im.save()
+        messages.success(request, 'Metadata successfully uploaded')
+        # return redirect('ingest:image_metadata_list')
+        return error
+    except pe.exceptions.FileTypeNotSupported:
+        error = True
+        messages.error(request, "File type not supported")
+        return error
 
 # DEPRECATED
 # @login_required
