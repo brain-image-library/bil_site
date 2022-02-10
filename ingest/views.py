@@ -1919,7 +1919,6 @@ def save_image_sheet(images, sheet):
 #     return
 
 def check_all_sheets(spreadsheet_file, datapath):
-    print('the file got to the check_all_sheets')
     missing = False
     if check_contributors_sheet(spreadsheet_file, datapath) == True:
         missing = True
