@@ -517,13 +517,13 @@ def collection_create(request):
             post.data_path = data_path
             post.bil_uuid = bil_uuid
             post.bil_user = bil_user
-            person = ProjectPeople.objects.get(id = people.id)
-            time = datetime.now()
             post.save()
+
+            time = datetime.now()
             coll_id = Collection.objects.get(id = post.id)
             #coll_id = Collection.objects.filter(bil_uuid = bil_uuid).values_list('id', flat=True)
-            proj_id = Collection.objects.get(project_id = post.project_id)
-            event = EventsLog(collection_id = coll_id, people_id = person, project_id = proj_id, notes = '', timestamp = time, event_type = 'collection_created')
+            proj_id = Collection.objects.get(project = post.project_id)
+            event = EventsLog(collection_id = coll_id, people_id = people.id, project_id = proj_id, notes = '', timestamp = time, event_type = 'collection_created')
             event.save()
             cache.delete('host_and_path')
             cache.delete('data_path')
