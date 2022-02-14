@@ -436,7 +436,13 @@ def collection_send(request):
     user_name = request.user
     for item in content:
         items.append(item['bil_uuid'])
-        
+        coll = Collection.objects.get(bil_uuid = item['bil_uuid'])
+        coll_id = Collection.objects.get(id = coll.id)
+        person = People.objects.get(name = user_name)
+        person_id = person.id
+        time = datetime.now()
+        event = EventsLog(collection_id = coll_id, people_id_id = person.id, project_id_id = coll.project_id, notes = '', timestamp = time, event_type = 'request_validation')
+        event.save()
     if request.method == "POST":
         subject = '[BIL Validations] New Validation Request'
         sender = 'ltuite96@psc.edu'
@@ -2025,6 +2031,7 @@ def descriptive_metadata_upload(request):
         form = UploadForm(request.POST)
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
+            print(associated_collection)
             # for production
             #datapath=collection.data_path.replace("/lz/","/etc/")
             
@@ -2055,6 +2062,7 @@ def descriptive_metadata_upload(request):
                     
                     saved = save_all_sheets(spreadsheet_file, datapath, associated_collection, request, contributors, funders, publications, instruments, datasets, specimen_sets, images)
                     if saved == True:
+                        
                         return redirect('ingest:descriptive_metadata_list')
                     else:
                         return redirect('ingest:descriptive_metadata_upload')
