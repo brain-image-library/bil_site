@@ -1953,7 +1953,7 @@ def check_all_sheets(spreadsheet_file, datapath, request):
     errormsg = check_contributors_sheet(spreadsheet_file, datapath, request)
     print(errormsg)
     print("return from check contributors sheet") 
-    if errormsg == True:
+    if errormsg != "":
         messages.error(request, errormsg)
     # errormsg = check_funders_sheet(spreadsheet_file, datapath)
     # if errormsg == True:
@@ -2060,7 +2060,7 @@ def descriptive_metadata_upload(request):
             elif version1 == False:
                 errormsg = check_all_sheets(spreadsheet_file, datapath, request)
                 print (errormsg)
-                if errormsg == True:
+                if errormsg != "":
                     return redirect('ingest:descriptive_metadata_upload')
             #     else:
             #         contributors = ingest_contributors_sheet(spreadsheet_file, datapath)
