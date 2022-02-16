@@ -2032,7 +2032,7 @@ def descriptive_metadata_upload(request):
             
             spreadsheet_file = request.FILES['spreadsheet_file']
             
-            version1 = metadata_version_check(spreadsheet_file)
+            version1 = metadata_version_check(spreadsheet_file, datapath)
             if version1 == True:
                 error = upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath)
                 if error:
