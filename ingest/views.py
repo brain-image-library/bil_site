@@ -1937,24 +1937,25 @@ def check_all_sheets(spreadsheet_file, datapath):
     errormsg = check_contributors_sheet(spreadsheet_file, datapath) 
     if errormsg == True:
         return errormsg
-    errormsg = check_funders_sheet(spreadsheet_file, datapath)
-    if errormsg == True:
-        return errormsg
-    errormsg = check_publication_sheet(spreadsheet_file, datapath)
-    if errormsg == True:
-        return errormsg
-    errormsg = check_instrument_sheet(spreadsheet_file, datapath)
-    if errormsg == True:
-        return errormsg
-    errormsg = check_dataset_sheet(spreadsheet_file, datapath)
-    if errormsg == True:
-        return errormsg
-    errormsg = check_specimen_sheet(spreadsheet_file, datapath)
-    if errormsg == True:
-        return errormsg
-    errormsg = check_image_sheet(spreadsheet_file, datapath)
-    if errormsg == True:
-        return errormsg
+    # errormsg = check_funders_sheet(spreadsheet_file, datapath)
+    # if errormsg == True:
+    #     return errormsg
+    # errormsg = check_publication_sheet(spreadsheet_file, datapath)
+    # if errormsg == True:
+    #     return errormsg
+    # errormsg = check_instrument_sheet(spreadsheet_file, datapath)
+    # if errormsg == True:
+    #     return errormsg
+    # errormsg = check_dataset_sheet(spreadsheet_file, datapath)
+    # if errormsg == True:
+    #     return errormsg
+    # errormsg = check_specimen_sheet(spreadsheet_file, datapath)
+    # if errormsg == True:
+    #     return errormsg
+    # errormsg = check_image_sheet(spreadsheet_file, datapath)
+    # if errormsg == True:
+    #     return errormsg
+
     # errormsg = check_datastate_sheet(spreadsheet_file, datapath) == True:
     # if errormsg == True:
     #     return errormsg
@@ -2023,7 +2024,6 @@ def descriptive_metadata_upload(request):
         form = UploadForm(request.POST)
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
-            print(associated_collection)
             # for production
             #datapath=collection.data_path.replace("/lz/","/etc/")
             
@@ -2033,15 +2033,15 @@ def descriptive_metadata_upload(request):
             spreadsheet_file = request.FILES['spreadsheet_file']
             
             version1 = metadata_version_check(spreadsheet_file, datapath)
-            print (version1)
-            # if version1 == True:
-            #     error = upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath)
-            #     if error:
-            #         return redirect('ingest:descriptive_metadata_upload')
-            #     else:         
-            #         return redirect('ingest:descriptive_metadata_list')
-            # elif version1 == False:
-            #     errormsg = check_all_sheets(spreadsheet_file, datapath)
+            if version1 == True:
+                error = upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath)
+                if error:
+                    return redirect('ingest:descriptive_metadata_upload')
+                else:         
+                    return redirect('ingest:descriptive_metadata_list')
+            elif version1 == False:
+                errormsg = check_all_sheets(spreadsheet_file, datapath)
+                print (errormsg)
             #     if errormsg == True:
             #         return redirect('ingest:descriptive_metadata_upload')
             #     else:
