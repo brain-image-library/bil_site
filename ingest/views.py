@@ -942,7 +942,7 @@ def check_contributors_sheet(spreadsheet_file, datapath, request):
     errormsg=""
     workbook=xlrd.open_workbook(filename)
     contributors_sheet = workbook.sheet_by_name('Contributors')
-    missing = False
+    # missing = False
     colheads=['contributorName (2)','Creator','contributorType',
                  'nameType','nameIdentifier(1)','nameIdentifierScheme(1)',
                  'affiliation', 'affiliationIdentifier', 'affiliationIdentifierScheme(1)']
@@ -957,10 +957,10 @@ def check_contributors_sheet(spreadsheet_file, datapath, request):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Contributors" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-            missing = True
-            messages.error(request, errormsg)
+            # missing = True
+            # messages.error(request, errormsg)
     if errormsg != "":
-        missing = True
+        # missing = True
         return [ True, errormsg ]
         # return messages.error(request, errormsg)
     #Need to figure out how to get this to stop everything and display the error message
@@ -968,61 +968,62 @@ def check_contributors_sheet(spreadsheet_file, datapath, request):
         cols=contributors_sheet.row_values(i)
         if cols[0] == "":
             errormsg = errormsg + 'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
-            missing = True
+            # missing = True
             # messages.error(request, errormsg)
         if cols[1] == "":
             errormsg = errormsg + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-            missing = True
+            # missing = True
             # messages.error(request, errormsg)
         if cols[1] not in creator:
             errormsg = errormsg + 'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
-            missing = True
+            # missing = True
             # messages.error(request, errormsg)
         if cols[2] == "":
             errormsg = errormsg + 'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
-            missing = True
+            # missing = True
             # messages.error(request, errormsg)
         if cols[2] not in contributortype:
             errormsg = errormsg + 'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
-            missing = True
+            # missing = True
             # messages.error(request, errormsg)
         if cols[3] == "":
             errormsg = errormsg + 'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-            missing = True
+            # missing = True
             # messages.error(request, errormsg)
         if cols[3] not in nametype:
             errormsg = errormsg + 'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
-            missing = True
+            # missing = True
             # messages.error(request, errormsg)
         if cols[3] == "Personal":
             if cols[4] == "":
                 errormsg = errormsg + 'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
-                missing = True
+                # missing = True
                 # messages.error(request, errormsg)
             if cols[5] == "":
                 errormsg = errormsg + 'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
-                missing = True
+                # missing = True
                 # messages.error(request, errormsg)
             if cols[5] not in nameidentifierscheme:
                 errormsg = errormsg + 'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
-                missing = True
+                # missing = True
                 # messages.error(request, errormsg)
         if cols[6] == "":
             errormsg = errormsg + 'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
-            missing = True
+            # missing = True
             # messages.error(request, errormsg)
         if cols[7] == "":
             errormsg = errormsg + 'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-            missing = True
+            # missing = True
             # messages.error(request, errormsg)
         if cols[8] == "":
             errormsg = errormsg + 'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
-            missing = True
+            # missing = True
             # messages.error(request, errormsg)
         if cols[8] not in affiliationidentifierscheme:
             errormsg = errormsg + 'Column: "' + colheads[8] + '" Incorrect CV value found: "' + cols[8] + '" in cell "' + cellcols[8] + str(i+1) + '". '
-            missing = True
+            # missing = True
             # messages.error(request, errormsg)
+    print('leaving check contribs')
     return errormsg
 
 def check_funders_sheet(spreadsheet_file, datapath):
@@ -1949,8 +1950,8 @@ def save_image_sheet(images, sheet):
 #         datastate.save()
 #     return
 
-def check_all_sheets(spreadsheet_file, datapath):
-    errormsg = check_contributors_sheet(spreadsheet_file, datapath)
+def check_all_sheets(spreadsheet_file, datapath, request):
+    errormsg = check_contributors_sheet(spreadsheet_file, datapath, request)
     print("return from check contributors sheet") 
     if errormsg != '':
         return errormsg
@@ -1976,6 +1977,7 @@ def check_all_sheets(spreadsheet_file, datapath):
     # errormsg = check_datastate_sheet(spreadsheet_file, datapath) == True:
     # if errormsg == True:
     #     return errormsg
+    print('leaving check all')
     return errormsg
 
 # def ingest_all_sheets(spreadsheet_file, datapath):
@@ -2057,10 +2059,11 @@ def descriptive_metadata_upload(request):
                 else:         
                     return redirect('ingest:descriptive_metadata_list')
             elif version1 == False:
-                errormsg = check_all_sheets(spreadsheet_file, datapath)
-                print (errormsg)
+                errormsg = check_all_sheets(request, spreadsheet_file, datapath)
+                print(errormsg)
+                print('inside upload, error msg ^^^^^')
                 if errormsg != '':
-                    messages.error(errormsg)
+                    messages.error(request, errormsg)
                     return redirect('ingest:descriptive_metadata_upload')
                 else:
                     print('no errors detected')
