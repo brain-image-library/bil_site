@@ -1951,9 +1951,9 @@ def save_image_sheet(images, sheet):
 #         datastate.save()
 #     return
 
-def check_all_sheets(spreadsheet_file, datapath, request):
+def check_all_sheets(filename):
     print('going into check contribs')
-    errormsg = check_contributors_sheet(spreadsheet_file, datapath, request)
+    errormsg = check_contributors_sheet(filename)
     print("return from check contributors sheet") 
     if errormsg != '':
         return errormsg
