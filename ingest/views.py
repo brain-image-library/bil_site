@@ -1934,39 +1934,31 @@ def save_image_sheet(images, sheet):
 #     return
 
 def check_all_sheets(spreadsheet_file, datapath):
-    missing = False
-    if check_contributors_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        message = 'Contributors sheet failed our check'
-        return message, missing
-    elif check_funders_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        message = 'Funders sheet failed our check'
-        return message, missing
-    elif check_publication_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        message = 'Publication sheet failed our check'
-        return message, missing
-    elif check_instrument_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        message = 'Instrument sheet failed our check'
-        return message, missing
-    elif check_dataset_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        message = 'Dataset sheet failed our check'
-        return message, missing
-    elif check_specimen_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        message = 'Specimen sheet failed our check'
-        return message, missing
-    elif check_image_sheet(spreadsheet_file, datapath) == True:
-        missing = True
-        message = 'Image sheet failed our check'
-        return message, missing
-    # elif check_datastate_sheet(spreadsheet_file, datapath) == True:
-    #     missing = True
-        # return ('DataState sheet failed our check')
-    return missing, datapath, spreadsheet_file
+    errormsg = check_contributors_sheet(spreadsheet_file, datapath) 
+    if errormsg == True:
+        return errormsg
+    errormsg = check_funders_sheet(spreadsheet_file, datapath)
+    if errormsg == True:
+        return errormsg
+    errormsg = check_publication_sheet(spreadsheet_file, datapath)
+    if errormsg == True:
+        return errormsg
+    errormsg = check_instrument_sheet(spreadsheet_file, datapath)
+    if errormsg == True:
+        return errormsg
+    errormsg = check_dataset_sheet(spreadsheet_file, datapath)
+    if errormsg == True:
+        return errormsg
+    errormsg = check_specimen_sheet(spreadsheet_file, datapath)
+    if errormsg == True:
+        return errormsg
+    errormsg = check_image_sheet(spreadsheet_file, datapath)
+    if errormsg == True:
+        return errormsg
+    # errormsg = check_datastate_sheet(spreadsheet_file, datapath) == True:
+    # if errormsg == True:
+    #     return errormsg
+    return errormsg
 
 # def ingest_all_sheets(spreadsheet_file, datapath):
 #     contributors = ingest_contributors_sheet(spreadsheet_file, datapath)
@@ -2048,8 +2040,8 @@ def descriptive_metadata_upload(request):
                 else:         
                     return redirect('ingest:descriptive_metadata_list')
             elif version1 == False:
-                missing = check_all_sheets(spreadsheet_file, datapath)
-                if missing == True:
+                errormsg = check_all_sheets(spreadsheet_file, datapath)
+                if errormsg == True:
                     return redirect('ingest:descriptive_metadata_upload')
                 else:
                     contributors = ingest_contributors_sheet(spreadsheet_file, datapath)
@@ -2062,7 +2054,6 @@ def descriptive_metadata_upload(request):
                     
                     saved = save_all_sheets(spreadsheet_file, datapath, associated_collection, request, contributors, funders, publications, instruments, datasets, specimen_sets, images)
                     if saved == True:
-                        
                         return redirect('ingest:descriptive_metadata_list')
                     else:
                         return redirect('ingest:descriptive_metadata_upload')
