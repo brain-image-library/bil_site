@@ -2065,7 +2065,7 @@ def descriptive_metadata_upload(request):
                 else:         
                     return redirect('ingest:descriptive_metadata_list')
             elif version1 == False:
-                errormsg = check_all_sheets(request, filename)
+                errormsg = check_all_sheets(filename)
                 print(errormsg)
                 print('inside upload, error msg ^^^^^')
                 if errormsg != '':
