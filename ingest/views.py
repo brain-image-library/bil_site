@@ -1949,12 +1949,11 @@ def save_image_sheet(images, sheet):
 #         datastate.save()
 #     return
 
-def check_all_sheets(spreadsheet_file, datapath, request):
-    errormsg = check_contributors_sheet(spreadsheet_file, datapath, request)
-    print(errormsg)
+def check_all_sheets(spreadsheet_file, datapath):
+    errormsg = check_contributors_sheet(spreadsheet_file, datapath)
     print("return from check contributors sheet") 
-    if errormsg == True:
-        messages.error(request, errormsg)
+    if errormsg != '':
+        return errormsg
     # errormsg = check_funders_sheet(spreadsheet_file, datapath)
     # if errormsg == True:
     #     return errormsg
@@ -2058,7 +2057,7 @@ def descriptive_metadata_upload(request):
                 else:         
                     return redirect('ingest:descriptive_metadata_list')
             elif version1 == False:
-                errormsg = check_all_sheets(spreadsheet_file, datapath, request)
+                errormsg = check_all_sheets(spreadsheet_file, datapath)
                 print (errormsg)
                 if errormsg != '':
                     messages.error(errormsg)
