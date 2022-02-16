@@ -960,6 +960,7 @@ def check_contributors_sheet(spreadsheet_file, datapath, request):
             missing = True
             messages.error(request, errormsg)
     if errormsg != "":
+        missing = True
         return messages.error(request, errormsg)
     #Need to figure out how to get this to stop everything and display the error message
     for i in range(6,contributors_sheet.nrows):
@@ -1949,7 +1950,9 @@ def save_image_sheet(images, sheet):
 #     return
 
 def check_all_sheets(spreadsheet_file, datapath, request):
-    errormsg = check_contributors_sheet(spreadsheet_file, datapath, request) 
+    errormsg = check_contributors_sheet(spreadsheet_file, datapath, request)
+    print(errormsg)
+    print("return from check contributors sheet") 
     if errormsg == True:
         messages.error(request, errormsg)
     # errormsg = check_funders_sheet(spreadsheet_file, datapath)
@@ -2055,7 +2058,7 @@ def descriptive_metadata_upload(request):
                 else:         
                     return redirect('ingest:descriptive_metadata_list')
             elif version1 == False:
-                errormsg = check_all_sheets(spreadsheet_file, datapath)
+                errormsg = check_all_sheets(spreadsheet_file, datapath, request)
                 print (errormsg)
                 if errormsg == True:
                     return redirect('ingest:descriptive_metadata_upload')
