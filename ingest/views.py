@@ -1023,7 +1023,6 @@ def check_contributors_sheet(spreadsheet_file, datapath, request):
             errormsg = errormsg + 'Column: "' + colheads[8] + '" Incorrect CV value found: "' + cols[8] + '" in cell "' + cellcols[8] + str(i+1) + '". '
             missing = True
             # messages.error(request, errormsg)
-    print(errormsg)
     return errormsg
 
 def check_funders_sheet(spreadsheet_file, datapath):
@@ -2061,7 +2060,8 @@ def descriptive_metadata_upload(request):
             elif version1 == False:
                 errormsg = check_all_sheets(spreadsheet_file, datapath, request)
                 print (errormsg)
-                if errormsg == True:
+                if errormsg != '':
+                    messages.error(errormsg)
                     return redirect('ingest:descriptive_metadata_upload')
                 else:
                     print('no errors detected')
