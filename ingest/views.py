@@ -934,10 +934,11 @@ def collection_delete(request, pk):
     return render(
         request, 'ingest/collection_delete.html', {'collection': collection, 'pi':pi})
 
-def check_contributors_sheet(spreadsheet_file, datapath, request):
-    fs = FileSystemStorage(location=datapath)
-    name_with_path=datapath + '/' + spreadsheet_file.name
-    filename = fs.save(name_with_path, spreadsheet_file)
+def check_contributors_sheet(filename):
+    # fs = FileSystemStorage(location=datapath)
+    # name_with_path=datapath + '/' + spreadsheet_file.name
+    # File(open(self.file, 'rb'))
+    # filename = fs.save(name_with_path, spreadsheet_file)
     
     errormsg=""
     workbook=xlrd.open_workbook(filename)
@@ -1026,10 +1027,10 @@ def check_contributors_sheet(spreadsheet_file, datapath, request):
     print('leaving check contribs')
     return errormsg
 
-def check_funders_sheet(spreadsheet_file, datapath):
-    fs = FileSystemStorage(location=datapath)
-    name_with_path=datapath + '/' + spreadsheet_file.name
-    filename = fs.save(name_with_path, spreadsheet_file)
+def check_funders_sheet(filename):
+    # fs = FileSystemStorage(location=datapath)
+    # name_with_path=datapath + '/' + spreadsheet_file.name
+    # filename = fs.save(name_with_path, spreadsheet_file)
     
     errormsg=""
     workbook=xlrd.open_workbook(filename)
@@ -1075,10 +1076,10 @@ def check_funders_sheet(spreadsheet_file, datapath):
     print(errormsg)
     return missing
 
-def check_publication_sheet(spreadsheet_file, datapath):
-    fs = FileSystemStorage(location=datapath)
-    name_with_path=datapath + '/' + spreadsheet_file.name
-    filename = fs.save(name_with_path, spreadsheet_file)
+def check_publication_sheet(filename):
+    # fs = FileSystemStorage(location=datapath)
+    # name_with_path=datapath + '/' + spreadsheet_file.name
+    # filename = fs.save(name_with_path, spreadsheet_file)
     
     errormsg=""
     workbook=xlrd.open_workbook(filename)
@@ -1128,10 +1129,10 @@ def check_publication_sheet(spreadsheet_file, datapath):
     print(errormsg)
     return missing
 
-def check_instrument_sheet(spreadsheet_file, datapath):
-    fs = FileSystemStorage(location=datapath)
-    name_with_path=datapath + '/' + spreadsheet_file.name
-    filename = fs.save(name_with_path, spreadsheet_file)
+def check_instrument_sheet(filename):
+    # fs = FileSystemStorage(location=datapath)
+    # name_with_path=datapath + '/' + spreadsheet_file.name
+    # filename = fs.save(name_with_path, spreadsheet_file)
     
     errormsg=""
     workbook=xlrd.open_workbook(filename)
@@ -1194,10 +1195,10 @@ def check_instrument_sheet(spreadsheet_file, datapath):
     print(errormsg)
     return missing
 
-def check_dataset_sheet(spreadsheet_file, datapath):
-    fs = FileSystemStorage(location=datapath)
-    name_with_path=datapath + '/' + spreadsheet_file.name
-    filename = fs.save(name_with_path, spreadsheet_file)
+def check_dataset_sheet(filename):
+    # fs = FileSystemStorage(location=datapath)
+    # name_with_path=datapath + '/' + spreadsheet_file.name
+    # filename = fs.save(name_with_path, spreadsheet_file)
     
     errormsg=""
     workbook=xlrd.open_workbook(filename)
@@ -1277,10 +1278,10 @@ def check_dataset_sheet(spreadsheet_file, datapath):
     print(errormsg)
     return missing
 
-def check_specimen_sheet(spreadsheet_file, datapath):
-    fs = FileSystemStorage(location=datapath)
-    name_with_path=datapath + '/' + spreadsheet_file.name
-    filename = fs.save(name_with_path, spreadsheet_file)
+def check_specimen_sheet(filename):
+    # fs = FileSystemStorage(location=datapath)
+    # name_with_path=datapath + '/' + spreadsheet_file.name
+    # filename = fs.save(name_with_path, spreadsheet_file)
     
     errormsg=""
     workbook=xlrd.open_workbook(filename)
@@ -1345,10 +1346,10 @@ def check_specimen_sheet(spreadsheet_file, datapath):
     print(errormsg)
     return missing
 
-def check_image_sheet(spreadsheet_file, datapath):
-    fs = FileSystemStorage(location=datapath)
-    name_with_path=datapath + '/' + spreadsheet_file.name
-    filename = fs.save(name_with_path, spreadsheet_file)
+def check_image_sheet(filename):
+    # fs = FileSystemStorage(location=datapath)
+    # name_with_path=datapath + '/' + spreadsheet_file.name
+    # filename = fs.save(name_with_path, spreadsheet_file)
     
     errormsg=""
     workbook=xlrd.open_workbook(filename)
@@ -1522,7 +1523,7 @@ def check_image_sheet(spreadsheet_file, datapath):
     return missing
 
 # DataState tab of the spreadsheet is being put on hold for now
-# def check_datastate_sheet(spreadsheet_file, datapath):
+# def check_datastate_sheet(filename):
 #     fs = FileSystemStorage(location=datapath)
 #     name_with_path=datapath + '/' + spreadsheet_file.name
 #     filename = fs.save(name_with_path, spreadsheet_file)
@@ -1951,6 +1952,7 @@ def save_image_sheet(images, sheet):
 #     return
 
 def check_all_sheets(spreadsheet_file, datapath, request):
+    print('going into check contribs')
     errormsg = check_contributors_sheet(spreadsheet_file, datapath, request)
     print("return from check contributors sheet") 
     if errormsg != '':
@@ -2010,11 +2012,11 @@ def save_all_sheets(sheet, contributors, funders, publications, instruments, dat
         saved = False
         return saved
 
-def metadata_version_check(spreadsheet_file, datapath):
+def metadata_version_check(filename):
     version1 = Boolean
-    fs = FileSystemStorage(location=datapath)
-    name_with_path=datapath + '/' + spreadsheet_file.name
-    filename = fs.save(name_with_path, spreadsheet_file)
+    # fs = FileSystemStorage(location=datapath)
+    # name_with_path=datapath + '/' + spreadsheet_file.name
+    # filename = fs.save(name_with_path, spreadsheet_file)
     workbook=xlrd.open_workbook(filename)
     if workbook.sheet_by_name('README'):
         version1 = False
@@ -2050,10 +2052,14 @@ def descriptive_metadata_upload(request):
             datapath = '/home/shared_bil_dev/testetc/' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
+
+            fs = FileSystemStorage(location=datapath)
+            name_with_path=datapath + '/' + spreadsheet_file.name
+            filename = fs.save(name_with_path, spreadsheet_file)
             
-            version1 = metadata_version_check(spreadsheet_file, datapath)
+            version1 = metadata_version_check(filename)
             if version1 == True:
-                error = upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath)
+                error = upload_descriptive_spreadsheet(filename, associated_collection, request)
                 if error:
                     return redirect('ingest:descriptive_metadata_upload')
                 else:         
@@ -2095,11 +2101,11 @@ def descriptive_metadata_upload(request):
     
     return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'pi':pi, 'collections':collections})
 
-def upload_descriptive_spreadsheet(spreadsheet_file, associated_collection, request, datapath):
+def upload_descriptive_spreadsheet(filename, associated_collection, request):
     """ Helper used by image_metadata_upload and collection_detail."""
-    fs = FileSystemStorage(location=datapath)
-    name_with_path=datapath + '/' + spreadsheet_file.name 
-    filename = fs.save(name_with_path, spreadsheet_file)
+    # fs = FileSystemStorage(location=datapath)
+    # name_with_path=datapath + '/' + spreadsheet_file.name 
+    # filename = fs.save(name_with_path, spreadsheet_file)
     fn = xlrd.open_workbook(filename)
     #allSheetNames = fn.sheet_names()
     #print(allSheetNames) 
