@@ -1953,7 +1953,7 @@ def check_all_sheets(spreadsheet_file, datapath, request):
     errormsg = check_contributors_sheet(spreadsheet_file, datapath, request)
     print(errormsg)
     print("return from check contributors sheet") 
-    if errormsg != "":
+    if errormsg == True:
         messages.error(request, errormsg)
     # errormsg = check_funders_sheet(spreadsheet_file, datapath)
     # if errormsg == True:
