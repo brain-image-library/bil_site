@@ -1412,181 +1412,75 @@ def ingest_contributors_sheet(filename):
     return contributors
 
 def ingest_funders_sheet(filename):
-    fn = load_workbook(filename)
-    funders_sheet = fn.get_sheet_by_name('Funders')
-
-    header = ['name',
-        'funding_reference_identifier',
-        'funding_reference_identifier_type',
-        'award_number',
-        'award_title']
-       
+    fn = xlrd.open_workbook(filename)
+    funders_sheet = fn.sheet_by_name('Funders')
+    keys = [funders_sheet.cell(3, col).value for col in range(funders_sheet.ncols)]   
     funders = []
-    
-    for row in funders_sheet.rows:
-        values = {}
-        for key, cell in zip(header, row):
-            values[key] = cell.value
-            funder = Funder(**values)
-            funders.append(funder)
-
+    for row in range(6, funders_sheet.nrows):
+        values={keys[col]: funders_sheet.cell(row,col).value
+            for col in range(funders_sheet.ncols)}
+        funders.append(values)
+    print(funders)
     return funders
 
 def ingest_publication_sheet(filename):
-    fn = load_workbook(filename)
-    publication_sheet = fn.get_sheet_by_name('Publication')
-
-    header = ['relatedIdentifier',
-        'relatedIdentifierType',
-        'pmcid',
-        'relationType',
-        'citation']
-       
+    fn = xlrd.open_workbook(filename)
+    publication_sheet = fn.sheet_by_name('Publication')
+    keys = [publication_sheet.cell(3, col).value for col in range(publication_sheet.ncols)]   
     publications = []
-    
-    for row in publication_sheet.rows:
-        values = {}
-        for key, cell in zip(header, row):
-            values[key] = cell.value
-            publication = Publication(**values)
-            publications.append(publication)
-
+    for row in range(6, publication_sheet.nrows):
+        values={keys[col]: publication_sheet.cell(row,col).value
+            for col in range(publication_sheet.ncols)}
+        publications.append(values)
+    print(publications)
     return publications
 
 def ingest_instrument_sheet(filename):
-    fn = load_workbook(filename)
-    instrument_sheet = fn.get_sheet_by_name('Instrument')
-
-    header = ['microscopeType',
-        'microscopeManufacturerAndModel',
-        'objectiveName',
-        'objectiveImmersion',
-        'objectiveNA',
-        'objectiveMagnification',
-        'detectorType',
-        'detectorModel',
-        'illuminationTypes',
-        'illuminationWavelength',
-        'detectionWavelength',
-        'sampleTemperature']
-       
+    fn = xlrd.open_workbook(filename)
+    instrument_sheet = fn.sheet_by_name('Instrument')
+    keys = [instrument_sheet.cell(3,col).value for col in range(instrument_sheet.ncols)]
     instruments = []
-    
-    for row in instrument_sheet.rows:
-        values = {}
-        for key, cell in zip(header, row):
-            values[key] = cell.value
-            instrument = Instrument(**values)
-            instruments.append(instrument)
-
-    return instrument
+    for row in range(6, instrument_sheet.nrows):
+        values={keys[col]: instrument_sheet.cell(row,col).value
+            for col in range(instrument_sheet.ncols)}
+        instruments.append(values)
+    print(instruments)
+    return instruments
 
 def ingest_dataset_sheet(filename):
-    fn = load_workbook(filename)
-    dataset_sheet = fn.get_sheet_by_name('Dataset')
-
-    header = ['bilDirectory',
-        'title',
-        'socialMedia',
-        'subject',
-        'subjectScheme',
-        'rights',
-        'rightsURI',
-        'rightsIdentifier',
-        'image',
-        'generalModality',
-        'technique',
-        'other',
-        'abstract',
-        'methods',
-        'technicalInfo']
-       
+    fn = xlrd.open_workbook(filename)
+    dataset_sheet = fn.sheet_by_name('Dataset')
+    keys = [dataset_sheet.cell(3,col).value for col in range(dataset_sheet.ncols)]
     datasets = []
-    
-    for row in dataset_sheet.rows:
-        values = {}
-        for key, cell in zip(header, row):
-            values[key] = cell.value
-            dataset = Dataset(**values)
-            datasets.append(dataset)
-
+    for row in range(6, dataset_sheet.nrows):
+        values={keys[col]: dataset_sheet.cell(row,col).value
+            for col in range(dataset_sheet.ncols)}
+        datasets.append(values)
+    print(datasets)
     return datasets
 
 def ingest_specimen_sheet(filename):
-    fn = load_workbook(filename)
-    specimen_sheet = fn.get_sheet_by_name('Specimen')
-
-    header = ['localID',
-        'species',
-        'ncbiTaxonomy',
-        'age',
-        'ageUnit',
-        'sex',
-        'genotype',
-        'organLocalID',
-        'organName',
-        'sampleLocalID',
-        'atlas',
-        'locations']
-       
+    fn = xlrd.open_workbook(filename)
+    specimen_sheet = fn.sheet_by_name('Specimen')
+    keys = [specimen_sheet.cell(3,col).value for col in range(specimen_sheet.ncols)] 
     specimen_set = []
-    
-    for row in specimen_sheet.rows:
-        values = {}
-        for key, cell in zip(header, row):
-            values[key] = cell.value
-            specimen_row = Specimen(**values)
-            specimen_set.append(specimen_row)
-
+    for row in range(6, specimen_sheet.nrows):
+        values={keys[col]: specimen_sheet.cell(row,col).value
+            for col in range(specimen_sheet.ncols)}
+        specimen_set.append(values)
+    print(specimen_set)
     return specimen_set
 
 def ingest_image_sheet(filename):
-    fn = load_workbook(filename)
-    image_sheet = fn.get_sheet_by_name('Image')
-
-    header = ['xAxis',
-        'obliqueXdim1',
-        'obliqueXdim2',
-        'obliqueXdim3',
-        'yAxis',
-        'obliqueYdim1',
-        'obliqueYdim2',
-        'obliqueYdim3',
-        'zAxis',
-        'obliqueZdim1',
-        'obliqueZdim2',
-        'obliqueZdim3',
-        'landmarkName',
-        'landmarkX',
-        'landmarkY',
-        'landmarkZ',
-        'Number',
-        'displayColor',
-        'Representation',
-        'Flurophore',
-        'stepSizeX',
-        'stepSizeY',
-        'stepSizeZ',
-        'stepSizeT',
-        'Channels',
-        'Slices',
-        'z',
-        'Xsize',
-        'Ysize',
-        'Zsize',
-        'Gbytes',
-        'Files',
-        'DimensionOrder']
-       
+    fn = xlrd.open_workbook(filename)
+    image_sheet = fn.sheet_by_name('Image')
+    keys = [image_sheet.cell(3,col).value for col in range(image_sheet.ncols)]
     images = []
-    
-    for row in image_sheet.rows:
-        values = {}
-        for key, cell in zip(header, row):
-            values[key] = cell.value
-            image = Image(**values)
-            images.append(image)
-
+    for row in range(6, image_sheet.nrows):
+        values={keys[col]: image_sheet.cell(row,col).value
+            for col in range(image_sheet.ncols)}
+        images.append(values)
+        print(images)
     return images
 
 # DataState tab of spreadsheet is on hold for now
