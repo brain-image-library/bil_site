@@ -14,7 +14,9 @@ class UUID(models.Model):
 class Sheet(models.Model):
     def __str__(self):
         return self.filename
-    filename = models.CharField(max_length=500)   
+    filename = models.CharField(max_length=500)
+    associated_collection = models.ForeignKey(Collection,
+        on_delete=models.SET_NULL, blank=False, null=True)
 
 class Project(models.Model):
     def __str__(self):

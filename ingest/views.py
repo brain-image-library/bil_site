@@ -1819,10 +1819,13 @@ def check_all_sheets(filename):
 #     # datastates = ingest_datastate_sheet(spreadsheet_file, datapath)
 #     return contributors, funders, publications, instruments, datasets, specimen_sets, images #, datastates
 
-def save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, specimen_set, images, filename, associated_collection):
+def save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_set, images, filename, associated_collection):
     saved = Boolean
+    fn = filename
     try:
         save_sheet_row(filename, associated_collection)
+        sheet_object = Sheet.objects.get(filename = fn)
+        sheet = sheet_object.id 
         save_contributors_sheet(contributors, sheet)
         save_funders_sheet(funders, sheet)
         save_publication_sheet(publications, sheet)
@@ -1900,8 +1903,8 @@ def descriptive_metadata_upload(request):
                     datasets = ingest_dataset_sheet(filename)
                     specimen_sets = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
-                    
-                    saved = save_all_sheets(spreadsheet_file, datapath, associated_collection, request, contributors, funders, publications, instruments, datasets, specimen_sets, images)
+                    print(filename)
+                    saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
                     if saved == True:
                         messages.success(request, 'Descriptive Metadata successfully uploaded!!')
                         return redirect('ingest:descriptive_metadata_list')
