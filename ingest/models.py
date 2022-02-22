@@ -11,13 +11,6 @@ class UUID(models.Model):
     # Required and the user should supply these
     useduuid = models.CharField(max_length=256, unique=True)
 
-class Sheet(models.Model):
-    def __str__(self):
-        return self.filename
-    filename = models.CharField(max_length=500)
-    associated_collection = models.ForeignKey(Collection,
-        on_delete=models.SET_NULL, blank=False, null=True)
-
 class Project(models.Model):
     def __str__(self):
         return self.name
@@ -89,7 +82,13 @@ class Collection(models.Model):
     )
     collection_type = models.CharField(
         max_length=256)
-    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+
+class Sheet(models.Model):
+    def __str__(self):
+        return self.filename
+    filename = models.CharField(max_length=500)
+    associated_collection = models.ForeignKey(Collection,
+        on_delete=models.SET_NULL, blank=False, null=True)
 
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant

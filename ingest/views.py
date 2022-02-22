@@ -939,9 +939,9 @@ def check_contributors_sheet(filename):
     workbook=xlrd.open_workbook(filename)
     sheetname = 'Contributors'
     contributors_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['contributorName (2)','Creator','contributorType',
-                 'nameType','nameIdentifier(1)','nameIdentifierScheme(1)',
-                 'affiliation', 'affiliationIdentifier', 'affiliationIdentifierScheme(1)']
+    colheads=['contributorName','Creator','contributorType',
+                 'nameType','nameIdentifier','nameIdentifierScheme',
+                 'affiliation', 'affiliationIdentifier', 'affiliationIdentifierScheme']
     creator = ['Yes', 'No']
     contributortype = ['ProjectLeader','ResearchGroup','ContactPerson', 'DataCollector', 'DataCurator', 'ProjectLeader', 'ProjectManager', 'ProjectMember','RelatedPerson', 'Researcher', 'ResearchGroup','Other' ]
     nametype = ['Personal', 'Organizational']
@@ -1035,8 +1035,8 @@ def check_publication_sheet(filename):
     workbook=xlrd.open_workbook(filename)
     sheetname = 'Publication'
     publication_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['relatedIdentifier (3)','relatedIdentifierType','PMCID',
-                 'relationType (3)','citation']
+    colheads=['relatedIdentifier','relatedIdentifierType','PMCID',
+                 'relationType','citation']
     relatedIdentifierType = ['arcXiv', 'DOI', 'PMID', 'ISBN']
     #The example we give in the spreadsheet for relationType have a capitalized first letter, maybe we should account for if it they give us something in Camel Case...
     relationType = ['IsCitedBy', 'IsDocumentedBy']
@@ -1081,7 +1081,7 @@ def check_instrument_sheet(filename):
     workbook=xlrd.open_workbook(filename)
     sheetname = 'Instrument'
     instrument_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['MicroscopeType (10)','MicroscopeManufacturerAndModel','ObjectiveName',
+    colheads=['MicroscopeType','MicroscopeManufacturerAndModel','ObjectiveName',
                  'ObjectiveImmersion','ObjectiveNA', 'ObjectiveMagnification', 'DetectorType', 'DetectorModel', 'IlluminationTypes', 'IlluminationWavelength', 'DetectionWavelength', 'SampleTemperature']
     cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
     cols=instrument_sheet.row_values(3)
@@ -1131,7 +1131,7 @@ def check_dataset_sheet(filename):
     sheetname = 'Dataset'
     dataset_sheet = workbook.sheet_by_name(sheetname)
     colheads=['BILDirectory','title','socialMedia','subject',
-                 'Subjectscheme','rights(4)', 'rightsURI', 'rightsIdentifier', 'Image', 'GeneralModality', 'Technique', 'Other', ' Abstract (7)', 'Methods (8)', 'TechnicalInfo (9)']
+                 'Subjectscheme','rights', 'rightsURI', 'rightsIdentifier', 'Image', 'GeneralModality', 'Technique', 'Other', 'Abstract', 'Methods', 'TechnicalInfo']
     GeneralModality = ['cell morphology', 'connectivity', 'population imaging', 'spatial transcriptomics', 'other', 'anatomy', 'histology imaging', 'multimodal']
     Technique = ['anterograde tracing', 'retrograde transynaptic tracing', 'TRIO tracing', 'smFISH', 'DARTFISH', 'MERFISH', 'Patch-seq', 'fMOST', 'other', 'cre-dependent anterograde tracing','enhancer virus labeling', 'FISH', 'MORF genetic sparse labeling', 'mouselight', 'neuron morphology reconstruction', 'Patch-seq', 'retrograde tracing', 'retrograde transsynaptic tracing', 'seqFISH', 'STPT', 'VISor', 'confocal microscopy']
     cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O']
@@ -1248,7 +1248,7 @@ def check_image_sheet(filename):
     sheetname = 'Image'
     image_sheet = workbook.sheet_by_name(sheetname)
     colheads=['xAxis','obliqueXdim1','obliqueXdim2',
-                 'obliqueXdim3','yAxis', 'obliqueYdim1', 'obliqueYdim2', 'obliqueYdim3', 'zAxis', 'obliqueZdim1', 'obliqueZdim2', 'obliqueZdim3', 'landmarkName', 'landmarkX', 'landmarkY', 'landmarkZ', 'Number', 'displayColor', 'Representation', 'Flurophore', 'stepSizeX', 'stepSizeY', 'stepSizeZ', 'stepSizeT', 'Channels', 'Slices (5)', 'z ', 'Xsize', 'Ysize', 'Zsize (6)', 'Gbytes', 'Files', 'DimensionOrder']
+                 'obliqueXdim3','yAxis', 'obliqueYdim1', 'obliqueYdim2', 'obliqueYdim3', 'zAxis', 'obliqueZdim1', 'obliqueZdim2', 'obliqueZdim3', 'landmarkName', 'landmarkX', 'landmarkY', 'landmarkZ', 'Number', 'displayColor', 'Representation', 'Flurophore', 'stepSizeX', 'stepSizeY', 'stepSizeZ', 'stepSizeT', 'Channels', 'Slices', 'z ', 'Xsize', 'Ysize', 'Zsize', 'Gbytes', 'Files', 'DimensionOrder']
     ObliqueZdim3 = ['Superior', 'Inferior']
     ObliqueZdim2 = ['Anterior', 'Posterior']
     ObliqueZdim1 = ['Right', 'Left']
@@ -1398,27 +1398,16 @@ def check_image_sheet(filename):
 #     return missing
 
 def ingest_contributors_sheet(filename):
-    fn = load_workbook(filename)
-    contributors_sheet = fn.get_sheet_by_name('Contributors')
-
-    header = ['contributorName',
-        'creator',
-        'contributorType',
-        'nameType',
-        'nameIdentifier',
-        'nameIdentifierScheme',
-        'affiliation',
-        'affiliationIdentifier',
-        'affiliationIdentifierScheme']
-       
+    fn = xlrd.open_workbook(filename)
+    contributors_sheet = fn.sheet_by_name('Contributors')
+    keys = [contributors_sheet.cell(2, col).value for col in range(contributors_sheet.ncols)]
     contributors = []
-    
-    for row in contributors_sheet.rows:
-        values = {}
-        for key, cell in zip(header, row):
-            values[key] = cell.value
-            contributor = Contributor(**values)
-            contributors.append(contributor)
+    for row in range(6,contributors_sheet.nrows):
+        #cols=contributors_sheet.row_values(i)
+    #for row in contributors_sheet.rows:
+        values = {keys[col]: contributors_sheet.cell(row, col).value
+            for col in range(contributors_sheet.ncols)}
+        contributors.append(values)
     print(contributors)
     return contributors
 
