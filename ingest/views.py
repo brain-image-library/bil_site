@@ -1507,7 +1507,7 @@ def ingest_image_sheet(filename):
 
 def save_sheet_row(filename, associated_collection):
     try:
-        sheet = Sheet(filename=filename, associated_collection=associated_collection)
+        sheet = Sheet(filename=filename, associated_collection_id=associated_collection.id)
         sheet.save()
     except Exception as e:
         print(e)
@@ -1682,19 +1682,6 @@ def save_image_sheet(images, sheet):
         print('save image exception')
     return
 
-# dataState tab is being put on hold for now
-# def save_datastate_sheet(datastates, sheet):
-#     for d in datastates:
-#         level = ['level'],
-#         included = ['included'],
-#         location = ['location'],
-#         attributes = ['attributes'],
-#         description = ['description']
-       
-#         datastate = DataState(level=level, included=included, location=location, attributes=attributes, description=description, sheet=sheet.id)
-#         datastate.save()
-#     return
-
 def check_all_sheets(filename):
     errormsg = check_contributors_sheet(filename)
     if errormsg != '':
@@ -1722,18 +1709,6 @@ def check_all_sheets(filename):
     # if errormsg != '':
         # return errormsg
     return errormsg
-
-# not using this rn
-# def ingest_all_sheets(filename):
-#     contributors = ingest_contributors_sheet(filename)
-#     funders = ingest_funders_sheet(filename)
-#     publications = ingest_publication_sheet(filename)
-#     instruments = ingest_instrument_sheet(filename)
-#     datasets = ingest_dataset_sheet(filename)
-#     specimen_sets = ingest_specimen_sheet(filename)
-#     images = ingest_image_sheet(filename)
-#     # datastates = ingest_datastate_sheet(spreadsheet_file, datapath)
-#     return contributors, funders, publications, instruments, datasets, specimen_sets, images #, datastates
 
 def save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_set, images, filename, associated_collection):
     saved = Boolean
@@ -1764,11 +1739,6 @@ def metadata_version_check(filename):
     else:
         version1 = True
     return version1
-
-# def upload_all_metadata_sheets(associated_collection, request):
-#     save_all_sheets(sheet, contributors, funders, publications, instruments, datasets, specimen_set, images, datastates, associated_collection)
-#     messages.success(request, 'Metadata successfully uploaded')
-#     return
 
 @login_required
 def descriptive_metadata_upload(request):
