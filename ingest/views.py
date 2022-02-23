@@ -1507,6 +1507,7 @@ def ingest_image_sheet(filename):
 
 def save_sheet_row(filename, associated_collection):
     sheet = Sheet(filename=filename, associated_collection=associated_collection)
+    sheet.save()
     return sheet
 
 def save_contributors_sheet(contributors, sheet):
