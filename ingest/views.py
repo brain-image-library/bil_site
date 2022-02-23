@@ -1506,148 +1506,180 @@ def ingest_image_sheet(filename):
 #     return datastates
 
 def save_sheet_row(filename, associated_collection):
-    sheet = Sheet(filename=filename, associated_collection=associated_collection)
-    sheet.save()
+    try:
+        sheet = Sheet(filename=filename, associated_collection=associated_collection)
+        sheet.save()
+    except Exception as e:
+        print(e)
+        print('save sheet exception')
     return sheet
 
 def save_contributors_sheet(contributors, sheet):
-    for c in contributors:
-        contributorName = c['contributorName'],
-        creator = c['creator'],
-        contributorType = c['contributorType'],
-        nameType = c['nameType'],
-        nameIdentifier = c['nameIdentifier'],
-        nameIdentifierScheme = c['nameIdentifierScheme'],
-        affiliation = c['affiliation'],
-        affiliationIdentifier = c['affiliationIdentifier'],
-        affiliationIdentifierScheme = c['affiliationIdentifierScheme']
-        
-        contributor = Contributor(contributorName=contributorName, creator=creator, contributorType=contributorType, nameType=nameType, nameIdentifier=nameIdentifier, nameIdentifierScheme=nameIdentifierScheme, affiliation=affiliation, affiliationIdentifier=affiliationIdentifier, affiliationIdentifierScheme=affiliationIdentifierScheme, sheet=sheet.id)
-        contributor.save()
+    try:
+        for c in contributors:
+            contributorName = c['contributorName'],
+            creator = c['creator'],
+            contributorType = c['contributorType'],
+            nameType = c['nameType'],
+            nameIdentifier = c['nameIdentifier'],
+            nameIdentifierScheme = c['nameIdentifierScheme'],
+            affiliation = c['affiliation'],
+            affiliationIdentifier = c['affiliationIdentifier'],
+            affiliationIdentifierScheme = c['affiliationIdentifierScheme']
+            
+            contributor = Contributor(contributorName=contributorName, creator=creator, contributorType=contributorType, nameType=nameType, nameIdentifier=nameIdentifier, nameIdentifierScheme=nameIdentifierScheme, affiliation=affiliation, affiliationIdentifier=affiliationIdentifier, affiliationIdentifierScheme=affiliationIdentifierScheme, sheet=sheet.id)
+            contributor.save()
+    except Exception as e:
+        print(e)
+        print('save contribs exception')
     return
 
 def save_funders_sheet(funders, sheet):
-    for f in funders:
-        name = f['name'],
-        funding_reference_identifier = f['funding_reference_identifier'],
-        funding_reference_identifier_type = f['funding_reference_identifier_type'],
-        award_number = f['award_number'],
-        award_title = f['award_title']
-        
-        funder = Funder(name=name, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet=sheet.id)
-        funder.save()
+    try:
+        for f in funders:
+            name = f['name'],
+            funding_reference_identifier = f['funding_reference_identifier'],
+            funding_reference_identifier_type = f['funding_reference_identifier_type'],
+            award_number = f['award_number'],
+            award_title = f['award_title']
+            
+            funder = Funder(name=name, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet=sheet.id)
+            funder.save()
+    except Exception as e:
+        print(e)
+        print('save funders exception')
     return
 
 def save_publication_sheet(publications, sheet):
-    for p in publications:
-        relatedIdentifier = p['relatedIdentifier'],
-        relatedIdentifierType = p['relatedIdentifierType'],
-        pmcid = p['pmcid'],
-        relationType = p['relationType'],
-        citation = p['citation']
-        
-        publication = Publication(relatedIdentifier=relatedIdentifier, relatedIdentifierType=relatedIdentifierType, pmcid=pmcid, relationType=relationType, citation=citation, sheet=sheet.id)
-        publication.save()
+    try:
+        for p in publications:
+            relatedIdentifier = p['relatedIdentifier'],
+            relatedIdentifierType = p['relatedIdentifierType'],
+            pmcid = p['pmcid'],
+            relationType = p['relationType'],
+            citation = p['citation']
+            
+            publication = Publication(relatedIdentifier=relatedIdentifier, relatedIdentifierType=relatedIdentifierType, pmcid=pmcid, relationType=relationType, citation=citation, sheet=sheet.id)
+            publication.save()
+    except Exception as e:
+        print(e)
+        print('save pubs exception')
     return
 
 def save_instrument_sheet(instruments, sheet):
-    for i in instruments:
-        microscopeType = i['microscopeType'],
-        microscopeManufacturerAndModel = i['microscopeManufacturerAndModel'],
-        objectiveName = i['objectiveName'],
-        objectiveImmersion = i['objectiveImmersion'],
-        objectiveNA = i['objectiveNA'],
-        objectiveMagnification = i['objectiveMagnification'],
-        detectorType = i['detectorType'],
-        detectorModel = i['detectorModel'],
-        illuminationTypes = i['illuminationTypes'],
-        illuminationWavelength = i['illuminationWavelength'],
-        detectionWavelength = i['detectionWavelength'],
-        sampleTemperature = i['sampleTemperature']
-        
-        instrument = Instrument(microscopeType=microscopeType, microscopeManufacturerAndModel=microscopeManufacturerAndModel, objectiveName=objectiveName, objectiveImmersion=objectiveImmersion, objectiveNA=objectiveNA, objectiveMagnification=objectiveMagnification, detectorType=detectorType, detectorModel=detectorModel, illuminationTypes=illuminationTypes, illuminationWavelength=illuminationWavelength, detectionWavelength=detectionWavelength, sampleTemperature=sampleTemperature, sheet=sheet.id)
-        instrument.save()
+    try:
+        for i in instruments:
+            microscopeType = i['microscopeType'],
+            microscopeManufacturerAndModel = i['microscopeManufacturerAndModel'],
+            objectiveName = i['objectiveName'],
+            objectiveImmersion = i['objectiveImmersion'],
+            objectiveNA = i['objectiveNA'],
+            objectiveMagnification = i['objectiveMagnification'],
+            detectorType = i['detectorType'],
+            detectorModel = i['detectorModel'],
+            illuminationTypes = i['illuminationTypes'],
+            illuminationWavelength = i['illuminationWavelength'],
+            detectionWavelength = i['detectionWavelength'],
+            sampleTemperature = i['sampleTemperature']
+            
+            instrument = Instrument(microscopeType=microscopeType, microscopeManufacturerAndModel=microscopeManufacturerAndModel, objectiveName=objectiveName, objectiveImmersion=objectiveImmersion, objectiveNA=objectiveNA, objectiveMagnification=objectiveMagnification, detectorType=detectorType, detectorModel=detectorModel, illuminationTypes=illuminationTypes, illuminationWavelength=illuminationWavelength, detectionWavelength=detectionWavelength, sampleTemperature=sampleTemperature, sheet=sheet.id)
+            instrument.save()
+    except Exception as e:
+        print(e)
+        print('save instruments exception')
     return
 
 def save_dataset_sheet(datasets, sheet):
-    for d in datasets:
-        bilDirectory = d['bilDirectory'],
-        title = d['title'],
-        socialMedia = d['socialMedia'],
-        subject = d['subject'],
-        subjectScheme = d['subjectScheme'],
-        rights = d['rights'],
-        rightsURI = d['rightsURI'],
-        rightsIdentifier = d['rightsIdentifier'],
-        image = d['image'],
-        generalModality = d['generalModality'],
-        technique = d['technique'],
-        other = d['other'],
-        abstract = d['abstract'],
-        methods = d['methods'],
-        technicalInfo = d['technicalInfo']
+    try:
+        for d in datasets:
+            bilDirectory = d['bilDirectory'],
+            title = d['title'],
+            socialMedia = d['socialMedia'],
+            subject = d['subject'],
+            subjectScheme = d['subjectScheme'],
+            rights = d['rights'],
+            rightsURI = d['rightsURI'],
+            rightsIdentifier = d['rightsIdentifier'],
+            image = d['image'],
+            generalModality = d['generalModality'],
+            technique = d['technique'],
+            other = d['other'],
+            abstract = d['abstract'],
+            methods = d['methods'],
+            technicalInfo = d['technicalInfo']
 
-        dataset = Dataset(bilDirectory=bilDirectory, title=title, socialMedia=socialMedia, subject=subject, subjectScheme=subjectScheme, rights=rights, rightsURI=rightsURI, rightsIdentifier=rightsIdentifier, image=image, generalModality=generalModality, technique=technique, other=other, abstract=abstract, methods=methods, technicalInfo=technicalInfo, sheet=sheet.id)
-        dataset.save()
+            dataset = Dataset(bilDirectory=bilDirectory, title=title, socialMedia=socialMedia, subject=subject, subjectScheme=subjectScheme, rights=rights, rightsURI=rightsURI, rightsIdentifier=rightsIdentifier, image=image, generalModality=generalModality, technique=technique, other=other, abstract=abstract, methods=methods, technicalInfo=technicalInfo, sheet=sheet.id)
+            dataset.save()
+    except Exception as e:
+        print(e)
+        print('save dataset exception')
     return
 
 def save_specimen_sheet(specimen_set, sheet):
-    for s in specimen_set:
-        localID = s['localID'],
-        species = s['species'],
-        ncbiTaxonomy = s['ncbiTaxonomy'],
-        age = s['age'],
-        ageUnit = s['ageUnit'],
-        sex = s['sex'],
-        genotype = s['genotype'],
-        organLocalID = s['organLocalID'],
-        organName = s['organName'],
-        sampleLocalID = s['sampleLocalID'],
-        atlas = s['atlas'],
-        locations = s['locations']
+    try:
+        for s in specimen_set:
+            localID = s['localID'],
+            species = s['species'],
+            ncbiTaxonomy = s['ncbiTaxonomy'],
+            age = s['age'],
+            ageUnit = s['ageUnit'],
+            sex = s['sex'],
+            genotype = s['genotype'],
+            organLocalID = s['organLocalID'],
+            organName = s['organName'],
+            sampleLocalID = s['sampleLocalID'],
+            atlas = s['atlas'],
+            locations = s['locations']
 
-        specimen_object = Specimen(localID=localID, species=species, ncbiTaxonomy=ncbiTaxonomy, age=age, ageUnit=ageUnit, sex=sex, genotype=genotype, organLocalID=organLocalID, organName=organName, sampleLocalID=sampleLocalID, atlas=atlas, locations=locations, sheet=sheet.id)
-        specimen_object.save()
+            specimen_object = Specimen(localID=localID, species=species, ncbiTaxonomy=ncbiTaxonomy, age=age, ageUnit=ageUnit, sex=sex, genotype=genotype, organLocalID=organLocalID, organName=organName, sampleLocalID=sampleLocalID, atlas=atlas, locations=locations, sheet=sheet.id)
+            specimen_object.save()
+    except Exception as e:
+        print(e)
+        print('save specimen exception')
     return
 
 def save_image_sheet(images, sheet):
-    for i in images:
-        xAxis = i['xAxis'],
-        obliqueXdim1 = i['obliqueXdim1'],
-        obliqueXdim2 = i['obliqueXdim2'],
-        obliqueXdim3 = i['obliqueXdim3'],
-        yAxis = i['yAxis'],
-        obliqueYdim1 = i['obliqueYdim1'],
-        obliqueYdim2 = i['obliqueYdim2'],
-        obliqueYdim3 = i['obliqueYdim3'],
-        zAxis = i['zAxis'],
-        obliqueZdim1 = i['obliqueZdim1'],
-        obliqueZdim2 = i['obliqueZdim2'],
-        obliqueZdim3 = i['obliqueZdim3'],
-        landmarkName = i['landmarkName'],
-        landmarkX = i['landmarkX'],
-        landmarkY = i['landmarkY'],
-        landmarkZ = i['landmarkY'],
-        Number = i['Number'],
-        displayColor = i['displayColor'],
-        Representation = i['Representation'],
-        Flurophore = i['Flurophore'],
-        stepSizeX = i['stepSizeX'],
-        stepSizeY = i['stepSizeY'],
-        stepSizeZ = i['stepSizeZ'],
-        stepSizeT = i['stepSizeT'],
-        Channels = i['Channels'],
-        Slices = i['Slices'],
-        z = i['z'],
-        Xsize = i['Xsize'],
-        Ysize = i['Ysize'],
-        Zsize = i['Zsize'],
-        Gbytes = i['Gbytes'],
-        Files = i['Files'],
-        DimensionOrder = i['DimensionOrder']
- 
-        image = Image(xAxis=xAxis, obliqueXdim1=obliqueXdim1, obliqueXdim2=obliqueXdim2, obliqueXdim3=obliqueXdim3, yAxis=yAxis, obliqueYdim1=obliqueYdim1, obliqueYdim2=obliqueYdim2, obliqueYdim3=obliqueYdim3, zAxis=zAxis, obliqueZdim1=obliqueZdim1, obliqueZdim2=obliqueZdim2, obliqueZdim3=obliqueZdim3,landmarkName=landmarkName, landmarkX=landmarkX, landmarkY=landmarkY, landmarkZ=landmarkZ, Number=Number, displayColor=displayColor, Representation=Representation, Flurophore=Flurophore, stepSizeX=stepSizeX, stepSizeY=stepSizeY, stepSizeZ=stepSizeZ, stepSizeT=stepSizeT, Channels=Channels, Slices=Slices, z=z, Xsize=Xsize, Ysize=Ysize, Zsize=Zsize, Gbytes=Gbytes, Files=Files, DimensionOrder=DimensionOrder, sheet=sheet.id)
-        image.save()
+    try:
+        for i in images:
+            xAxis = i['xAxis'],
+            obliqueXdim1 = i['obliqueXdim1'],
+            obliqueXdim2 = i['obliqueXdim2'],
+            obliqueXdim3 = i['obliqueXdim3'],
+            yAxis = i['yAxis'],
+            obliqueYdim1 = i['obliqueYdim1'],
+            obliqueYdim2 = i['obliqueYdim2'],
+            obliqueYdim3 = i['obliqueYdim3'],
+            zAxis = i['zAxis'],
+            obliqueZdim1 = i['obliqueZdim1'],
+            obliqueZdim2 = i['obliqueZdim2'],
+            obliqueZdim3 = i['obliqueZdim3'],
+            landmarkName = i['landmarkName'],
+            landmarkX = i['landmarkX'],
+            landmarkY = i['landmarkY'],
+            landmarkZ = i['landmarkY'],
+            Number = i['Number'],
+            displayColor = i['displayColor'],
+            Representation = i['Representation'],
+            Flurophore = i['Flurophore'],
+            stepSizeX = i['stepSizeX'],
+            stepSizeY = i['stepSizeY'],
+            stepSizeZ = i['stepSizeZ'],
+            stepSizeT = i['stepSizeT'],
+            Channels = i['Channels'],
+            Slices = i['Slices'],
+            z = i['z'],
+            Xsize = i['Xsize'],
+            Ysize = i['Ysize'],
+            Zsize = i['Zsize'],
+            Gbytes = i['Gbytes'],
+            Files = i['Files'],
+            DimensionOrder = i['DimensionOrder']
+    
+            image = Image(xAxis=xAxis, obliqueXdim1=obliqueXdim1, obliqueXdim2=obliqueXdim2, obliqueXdim3=obliqueXdim3, yAxis=yAxis, obliqueYdim1=obliqueYdim1, obliqueYdim2=obliqueYdim2, obliqueYdim3=obliqueYdim3, zAxis=zAxis, obliqueZdim1=obliqueZdim1, obliqueZdim2=obliqueZdim2, obliqueZdim3=obliqueZdim3,landmarkName=landmarkName, landmarkX=landmarkX, landmarkY=landmarkY, landmarkZ=landmarkZ, Number=Number, displayColor=displayColor, Representation=Representation, Flurophore=Flurophore, stepSizeX=stepSizeX, stepSizeY=stepSizeY, stepSizeZ=stepSizeZ, stepSizeT=stepSizeT, Channels=Channels, Slices=Slices, z=z, Xsize=Xsize, Ysize=Ysize, Zsize=Zsize, Gbytes=Gbytes, Files=Files, DimensionOrder=DimensionOrder, sheet=sheet.id)
+            image.save()
+    except Exception as e:
+        print(e)
+        print('save image exception')
     return
 
 # dataState tab is being put on hold for now
@@ -1717,7 +1749,9 @@ def save_all_sheets(contributors, funders, publications, instruments, datasets, 
         saved = True
         print(saved)
         return saved
-    except:
+    except Exception as e:
+        print(e)
+        print('save all exception')
         saved = False
         print(saved)
         return saved
