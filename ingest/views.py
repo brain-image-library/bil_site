@@ -1508,6 +1508,7 @@ def ingest_image_sheet(filename):
 def save_sheet_row(filename, associated_collection):
     try:
         sheet = Sheet(filename=filename, associated_collection_id=associated_collection.id)
+        print(sheet)
         sheet.save()
     except Exception as e:
         print(e)
