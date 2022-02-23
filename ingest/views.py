@@ -1706,9 +1706,9 @@ def save_all_sheets(contributors, funders, publications, instruments, datasets, 
     saved = Boolean
     fn = filename
     try:
-        save_sheet_row(filename, associated_collection)
-        sheet_object = Sheet.objects.get(filename = fn)
-        sheet = sheet_object.id 
+        sheet = save_sheet_row(filename, associated_collection)
+        # sheet_object = Sheet.objects.get(filename = fn)
+        # sheet = sheet_object.id 
         save_contributors_sheet(contributors, sheet)
         save_funders_sheet(funders, sheet)
         save_publication_sheet(publications, sheet)
@@ -1787,13 +1787,13 @@ def descriptive_metadata_upload(request):
                     specimen_sets = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
                     print(filename)
-                    saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
-                    if saved == True:
-                        messages.success(request, 'Descriptive Metadata successfully uploaded!!')
-                        return redirect('ingest:descriptive_metadata_list')
-                    else:
-                        messages.error(request, 'There has been an error. Please contact BIL Support')
-                        return redirect('ingest:descriptive_metadata_upload')
+                    # saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
+                    # if saved == True:
+                    #     messages.success(request, 'Descriptive Metadata successfully uploaded!!')
+                    #     return redirect('ingest:descriptive_metadata_list')
+                    # else:
+                    #     messages.error(request, 'There has been an error. Please contact BIL Support')
+                    #     return redirect('ingest:descriptive_metadata_upload')
 
 
     # This is the GET (just show the metadata upload page)
