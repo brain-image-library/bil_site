@@ -512,7 +512,7 @@ def collection_create(request):
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = CollectionForm(request.POST, request=request)
-        print(form)
+        # print(form)
         if form.is_valid():
             # remotely create the directory on some host using fabric and
             # celery
@@ -987,7 +987,7 @@ def check_contributors_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
         if cols[8] not in affiliationidentifierscheme:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" Incorrect CV value found: "' + cols[8] + '" in cell "' + cellcols[8] + str(i+1) + '". '
-    print('leaving check contribs')
+    # print('leaving check contribs')
     return errormsg
 
 def check_funders_sheet(filename):
@@ -1004,7 +1004,7 @@ def check_funders_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Funders" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        print(errormsg)
+        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
     #Need to figure out how to get this to stop everything and display the error message
@@ -1027,7 +1027,7 @@ def check_funders_sheet(filename):
         #if cols[5] == "":
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
             
-    print(errormsg)
+    # print(errormsg)
     return errormsg
 
 def check_publication_sheet(filename):
@@ -1046,7 +1046,7 @@ def check_publication_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Publication" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        print(errormsg)
+        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
     #Need to figure out how to get this to stop everything and display the error message
@@ -1073,7 +1073,7 @@ def check_publication_sheet(filename):
 #        if cols[5] == "":
 #            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
             
-    print(errormsg)
+    # print(errormsg)
     return errormsg
 
 def check_instrument_sheet(filename):
@@ -1089,7 +1089,7 @@ def check_instrument_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Instrument" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        print(errormsg)
+        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
     #Need to figure out how to get this to stop everything and display the error message
@@ -1122,7 +1122,7 @@ def check_instrument_sheet(filename):
         #if cols[12] == "":
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
             
-    print(errormsg)
+    # print(errormsg)
     return errormsg
 
 def check_dataset_sheet(filename):
@@ -1140,7 +1140,7 @@ def check_dataset_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Dataset" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        print(errormsg)
+        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
     #Need to figure out how to get this to stop everything and display the error message
@@ -1187,7 +1187,7 @@ def check_dataset_sheet(filename):
         #if cols[15] == "":
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[15] + '" value expected but not found in cell "' + cellcols[15] + str(i+1) + '". '
             
-    print(errormsg)
+    # print(errormsg)
     return errormsg
 
 def check_specimen_sheet(filename):
@@ -1203,7 +1203,7 @@ def check_specimen_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Specimen" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        print(errormsg)
+        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
     #Need to figure out how to get this to stop everything and display the error message
@@ -1239,7 +1239,7 @@ def check_specimen_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
         #if cols[12] == "":
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-    print(errormsg)
+    # print(errormsg)
     return errormsg
 
 def check_image_sheet(filename):
@@ -1268,7 +1268,7 @@ def check_image_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Image" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        print(errormsg)
+        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
     #Need to figure out how to get this to stop everything and display the error message
@@ -1390,7 +1390,7 @@ def check_image_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[32] + '" value expected but not found in cell "' + cellcols[32] + str(i+1) + '". '
         #if cols[33] == "":
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[33] + '" value expected but not found in cell "' + cellcols[33] + str(i+1) + '". '
-    print(errormsg)
+    # print(errormsg)
     return errormsg
 
 # DataState tab of the spreadsheet is being put on hold for now
@@ -1408,7 +1408,7 @@ def ingest_contributors_sheet(filename):
         values = {keys[col]: contributors_sheet.cell(row, col).value
             for col in range(contributors_sheet.ncols)}
         contributors.append(values)
-    print(contributors)
+    # print(contributors)
     return contributors
 
 def ingest_funders_sheet(filename):
@@ -1420,7 +1420,7 @@ def ingest_funders_sheet(filename):
         values={keys[col]: funders_sheet.cell(row,col).value
             for col in range(funders_sheet.ncols)}
         funders.append(values)
-    print(funders)
+    # print(funders)
     return funders
 
 def ingest_publication_sheet(filename):
@@ -1432,7 +1432,7 @@ def ingest_publication_sheet(filename):
         values={keys[col]: publication_sheet.cell(row,col).value
             for col in range(publication_sheet.ncols)}
         publications.append(values)
-    print(publications)
+    # print(publications)
     return publications
 
 def ingest_instrument_sheet(filename):
@@ -1444,7 +1444,7 @@ def ingest_instrument_sheet(filename):
         values={keys[col]: instrument_sheet.cell(row,col).value
             for col in range(instrument_sheet.ncols)}
         instruments.append(values)
-    print(instruments)
+    # print(instruments)
     return instruments
 
 def ingest_dataset_sheet(filename):
@@ -1456,7 +1456,7 @@ def ingest_dataset_sheet(filename):
         values={keys[col]: dataset_sheet.cell(row,col).value
             for col in range(dataset_sheet.ncols)}
         datasets.append(values)
-    print(datasets)
+    # print(datasets)
     return datasets
 
 def ingest_specimen_sheet(filename):
@@ -1468,7 +1468,7 @@ def ingest_specimen_sheet(filename):
         values={keys[col]: specimen_sheet.cell(row,col).value
             for col in range(specimen_sheet.ncols)}
         specimen_set.append(values)
-    print(specimen_set)
+    # print(specimen_set)
     return specimen_set
 
 def ingest_image_sheet(filename):
@@ -1480,7 +1480,7 @@ def ingest_image_sheet(filename):
         values={keys[col]: image_sheet.cell(row,col).value
             for col in range(image_sheet.ncols)}
         images.append(values)
-        print(images)
+        # print(images)
     return images
 
 # DataState tab of spreadsheet is on hold for now
@@ -1704,7 +1704,7 @@ def check_all_sheets(filename):
 
 def save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_set, images, filename, associated_collection):
     saved = Boolean
-    fn = filename
+    # fn = filename
     try:
         sheet = save_sheet_row(filename, associated_collection)
         # sheet_object = Sheet.objects.get(filename = fn)
@@ -1786,14 +1786,14 @@ def descriptive_metadata_upload(request):
                     datasets = ingest_dataset_sheet(filename)
                     specimen_sets = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
-                    print(filename)
-                    # saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
-                    # if saved == True:
-                    #     messages.success(request, 'Descriptive Metadata successfully uploaded!!')
-                    #     return redirect('ingest:descriptive_metadata_list')
-                    # else:
-                    #     messages.error(request, 'There has been an error. Please contact BIL Support')
-                    #     return redirect('ingest:descriptive_metadata_upload')
+                    # print(filename)
+                    saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
+                    if saved == True:
+                        messages.success(request, 'Descriptive Metadata successfully uploaded!!')
+                        return redirect('ingest:descriptive_metadata_list')
+                    else:
+                        messages.error(request, 'There has been an error. Please contact BIL Support')
+                        return redirect('ingest:descriptive_metadata_upload')
 
 
     # This is the GET (just show the metadata upload page)
