@@ -1705,11 +1705,8 @@ def check_all_sheets(filename):
 
 def save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_set, images, filename, associated_collection):
     saved = Boolean
-    # fn = filename
     try:
         sheet = save_sheet_row(filename, associated_collection)
-        # sheet_object = Sheet.objects.get(filename = fn)
-        # sheet = sheet_object.id 
         save_contributors_sheet(contributors, sheet)
         save_funders_sheet(funders, sheet)
         save_publication_sheet(publications, sheet)
@@ -1717,11 +1714,12 @@ def save_all_sheets(contributors, funders, publications, instruments, datasets, 
         save_dataset_sheet(datasets, sheet)
         save_specimen_sheet(specimen_set, sheet)
         save_image_sheet(images, sheet)
-        # save_datastate_sheet(datastates, sheet)
         saved = True
+        print(saved)
         return saved
     except:
         saved = False
+        print(saved)
         return saved
 
 def metadata_version_check(filename):
