@@ -1517,10 +1517,10 @@ def save_contributors_sheet(contributors, sheet):
 def save_funders_sheet(funders, sheet):
     try:
         for f in funders:
-            funderName = f['funderName'],
-            funding_reference_identifier = f['funding_reference_identifier'],
-            funding_reference_identifier_type = f['funding_reference_identifier_type'],
-            award_number = f['award_number'],
+            funderName = f['funderName']
+            funding_reference_identifier = f['funding_reference_identifier']
+            funding_reference_identifier_type = f['funding_reference_identifier_type']
+            award_number = f['award_number']
             award_title = f['award_title']
             
             funder = Funder(funderName=funderName, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet_id=sheet.id)
@@ -1533,10 +1533,10 @@ def save_funders_sheet(funders, sheet):
 def save_publication_sheet(publications, sheet):
     try:
         for p in publications:
-            relatedIdentifier = p['relatedIdentifier'],
-            relatedIdentifierType = p['relatedIdentifierType'],
-            pmcid = p['pmcid'],
-            relationType = p['relationType'],
+            relatedIdentifier = p['relatedIdentifier']
+            relatedIdentifierType = p['relatedIdentifierType']
+            pmcid = p['pmcid']
+            relationType = p['relationType']
             citation = p['citation']
             
             publication = Publication(relatedIdentifier=relatedIdentifier, relatedIdentifierType=relatedIdentifierType, pmcid=pmcid, relationType=relationType, citation=citation, sheet_id=sheet.id)
@@ -1549,17 +1549,17 @@ def save_publication_sheet(publications, sheet):
 def save_instrument_sheet(instruments, sheet):
     try:
         for i in instruments:
-            microscopeType = i['microscopeType'],
-            microscopeManufacturerAndModel = i['microscopeManufacturerAndModel'],
-            objectiveName = i['objectiveName'],
-            objectiveImmersion = i['objectiveImmersion'],
-            objectiveNA = i['objectiveNA'],
-            objectiveMagnification = i['objectiveMagnification'],
-            detectorType = i['detectorType'],
-            detectorModel = i['detectorModel'],
-            illuminationTypes = i['illuminationTypes'],
-            illuminationWavelength = i['illuminationWavelength'],
-            detectionWavelength = i['detectionWavelength'],
+            microscopeType = i['microscopeType']
+            microscopeManufacturerAndModel = i['microscopeManufacturerAndModel']
+            objectiveName = i['objectiveName']
+            objectiveImmersion = i['objectiveImmersion']
+            objectiveNA = i['objectiveNA']
+            objectiveMagnification = i['objectiveMagnification']
+            detectorType = i['detectorType']
+            detectorModel = i['detectorModel']
+            illuminationTypes = i['illuminationTypes']
+            illuminationWavelength = i['illuminationWavelength']
+            detectionWavelength = i['detectionWavelength']
             sampleTemperature = i['sampleTemperature']
             
             instrument = Instrument(microscopeType=microscopeType, microscopeManufacturerAndModel=microscopeManufacturerAndModel, objectiveName=objectiveName, objectiveImmersion=objectiveImmersion, objectiveNA=objectiveNA, objectiveMagnification=objectiveMagnification, detectorType=detectorType, detectorModel=detectorModel, illuminationTypes=illuminationTypes, illuminationWavelength=illuminationWavelength, detectionWavelength=detectionWavelength, sampleTemperature=sampleTemperature, sheet=sheet.id)
@@ -1572,20 +1572,20 @@ def save_instrument_sheet(instruments, sheet):
 def save_dataset_sheet(datasets, sheet):
     try:
         for d in datasets:
-            bilDirectory = d['bilDirectory'],
-            title = d['title'],
-            socialMedia = d['socialMedia'],
-            subject = d['subject'],
-            subjectScheme = d['subjectScheme'],
-            rights = d['rights'],
-            rightsURI = d['rightsURI'],
-            rightsIdentifier = d['rightsIdentifier'],
-            image = d['image'],
-            generalModality = d['generalModality'],
-            technique = d['technique'],
-            other = d['other'],
-            abstract = d['abstract'],
-            methods = d['methods'],
+            bilDirectory = d['bilDirectory']
+            title = d['title']
+            socialMedia = d['socialMedia']
+            subject = d['subject']
+            subjectScheme = d['subjectScheme']
+            rights = d['rights']
+            rightsURI = d['rightsURI']
+            rightsIdentifier = d['rightsIdentifier']
+            image = d['image']
+            generalModality = d['generalModality']
+            technique = d['technique']
+            other = d['other']
+            abstract = d['abstract']
+            methods = d['methods']
             technicalInfo = d['technicalInfo']
 
             dataset = Dataset(bilDirectory=bilDirectory, title=title, socialMedia=socialMedia, subject=subject, subjectScheme=subjectScheme, rights=rights, rightsURI=rightsURI, rightsIdentifier=rightsIdentifier, image=image, generalModality=generalModality, technique=technique, other=other, abstract=abstract, methods=methods, technicalInfo=technicalInfo, sheet=sheet.id)
@@ -1598,17 +1598,17 @@ def save_dataset_sheet(datasets, sheet):
 def save_specimen_sheet(specimen_set, sheet):
     try:
         for s in specimen_set:
-            localID = s['localID'],
-            species = s['species'],
-            ncbiTaxonomy = s['ncbiTaxonomy'],
-            age = s['age'],
-            ageUnit = s['ageUnit'],
-            sex = s['sex'],
-            genotype = s['genotype'],
-            organLocalID = s['organLocalID'],
-            organName = s['organName'],
-            sampleLocalID = s['sampleLocalID'],
-            atlas = s['atlas'],
+            localID = s['localID']
+            species = s['species']
+            ncbiTaxonomy = s['ncbiTaxonomy']
+            age = s['age']
+            ageUnit = s['ageUnit']
+            sex = s['sex']
+            genotype = s['genotype']
+            organLocalID = s['organLocalID']
+            organName = s['organName']
+            sampleLocalID = s['sampleLocalID']
+            atlas = s['atlas']
             locations = s['locations']
 
             specimen_object = Specimen(localID=localID, species=species, ncbiTaxonomy=ncbiTaxonomy, age=age, ageUnit=ageUnit, sex=sex, genotype=genotype, organLocalID=organLocalID, organName=organName, sampleLocalID=sampleLocalID, atlas=atlas, locations=locations, sheet=sheet.id)
@@ -1621,38 +1621,38 @@ def save_specimen_sheet(specimen_set, sheet):
 def save_image_sheet(images, sheet):
     try:
         for i in images:
-            xAxis = i['xAxis'],
-            obliqueXdim1 = i['obliqueXdim1'],
-            obliqueXdim2 = i['obliqueXdim2'],
-            obliqueXdim3 = i['obliqueXdim3'],
-            yAxis = i['yAxis'],
-            obliqueYdim1 = i['obliqueYdim1'],
-            obliqueYdim2 = i['obliqueYdim2'],
-            obliqueYdim3 = i['obliqueYdim3'],
-            zAxis = i['zAxis'],
-            obliqueZdim1 = i['obliqueZdim1'],
-            obliqueZdim2 = i['obliqueZdim2'],
-            obliqueZdim3 = i['obliqueZdim3'],
-            landmarkName = i['landmarkName'],
-            landmarkX = i['landmarkX'],
-            landmarkY = i['landmarkY'],
-            landmarkZ = i['landmarkY'],
-            Number = i['Number'],
-            displayColor = i['displayColor'],
-            Representation = i['Representation'],
-            Flurophore = i['Flurophore'],
-            stepSizeX = i['stepSizeX'],
-            stepSizeY = i['stepSizeY'],
-            stepSizeZ = i['stepSizeZ'],
-            stepSizeT = i['stepSizeT'],
-            Channels = i['Channels'],
-            Slices = i['Slices'],
-            z = i['z'],
-            Xsize = i['Xsize'],
-            Ysize = i['Ysize'],
-            Zsize = i['Zsize'],
-            Gbytes = i['Gbytes'],
-            Files = i['Files'],
+            xAxis = i['xAxis']
+            obliqueXdim1 = i['obliqueXdim1']
+            obliqueXdim2 = i['obliqueXdim2']
+            obliqueXdim3 = i['obliqueXdim3']
+            yAxis = i['yAxis']
+            obliqueYdim1 = i['obliqueYdim1']
+            obliqueYdim2 = i['obliqueYdim2']
+            obliqueYdim3 = i['obliqueYdim3']
+            zAxis = i['zAxis']
+            obliqueZdim1 = i['obliqueZdim1']
+            obliqueZdim2 = i['obliqueZdim2']
+            obliqueZdim3 = i['obliqueZdim3']
+            landmarkName = i['landmarkName']
+            landmarkX = i['landmarkX']
+            landmarkY = i['landmarkY']
+            landmarkZ = i['landmarkY']
+            Number = i['Number']
+            displayColor = i['displayColor']
+            Representation = i['Representation']
+            Flurophore = i['Flurophore']
+            stepSizeX = i['stepSizeX']
+            stepSizeY = i['stepSizeY']
+            stepSizeZ = i['stepSizeZ']
+            stepSizeT = i['stepSizeT']
+            Channels = i['Channels']
+            Slices = i['Slices']
+            z = i['z']
+            Xsize = i['Xsize']
+            Ysize = i['Ysize']
+            Zsize = i['Zsize']
+            Gbytes = i['Gbytes']
+            Files = i['Files']
             DimensionOrder = i['DimensionOrder']
     
             image = Image(xAxis=xAxis, obliqueXdim1=obliqueXdim1, obliqueXdim2=obliqueXdim2, obliqueXdim3=obliqueXdim3, yAxis=yAxis, obliqueYdim1=obliqueYdim1, obliqueYdim2=obliqueYdim2, obliqueYdim3=obliqueYdim3, zAxis=zAxis, obliqueZdim1=obliqueZdim1, obliqueZdim2=obliqueZdim2, obliqueZdim3=obliqueZdim3,landmarkName=landmarkName, landmarkX=landmarkX, landmarkY=landmarkY, landmarkZ=landmarkZ, Number=Number, displayColor=displayColor, Representation=Representation, Flurophore=Flurophore, stepSizeX=stepSizeX, stepSizeY=stepSizeY, stepSizeZ=stepSizeZ, stepSizeT=stepSizeT, Channels=Channels, Slices=Slices, z=z, Xsize=Xsize, Ysize=Ysize, Zsize=Zsize, Gbytes=Gbytes, Files=Files, DimensionOrder=DimensionOrder, sheet=sheet.id)
