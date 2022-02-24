@@ -387,7 +387,7 @@ class Image(models.Model):
     number = models.CharField(max_length=256)
     displaycolor = models.CharField(max_length=256)
     representation = models.CharField(max_length=256)
-    rlurophore = models.CharField(max_length=256)
+    flurophore = models.CharField(max_length=256)
     stepsizex = models.CharField(max_length=256)
     stepsizey = models.CharField(max_length=256)
     stepsizez = models.CharField(max_length=256)
