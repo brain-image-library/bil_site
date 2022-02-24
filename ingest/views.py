@@ -1517,13 +1517,13 @@ def save_contributors_sheet(contributors, sheet):
 def save_funders_sheet(funders, sheet):
     try:
         for f in funders:
-            name = f['name'],
+            funderName = f['funderName'],
             funding_reference_identifier = f['funding_reference_identifier'],
             funding_reference_identifier_type = f['funding_reference_identifier_type'],
             award_number = f['award_number'],
             award_title = f['award_title']
             
-            funder = Funder(name=name, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet_id=sheet.id)
+            funder = Funder(funderName=funderName, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet_id=sheet.id)
             funder.save()
     except Exception as e:
         print(repr(e))
