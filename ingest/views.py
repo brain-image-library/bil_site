@@ -1656,6 +1656,7 @@ def save_image_sheet(images, sheet):
     
             image = Image(xaxis=xaxis, obliquexdim1=obliquexdim1, obliquexdim2=obliquexdim2, obliquexdim3=obliquexdim3, yaxis=yaxis, obliqueydim1=obliqueydim1, obliqueydim2=obliqueydim2, obliqueydim3=obliqueydim3, zaxis=zaxis, obliquezdim1=obliquezdim1, obliquezdim2=obliquezdim2, obliquezdim3=obliquezdim3,landmarkname=landmarkname, landmarkx=landmarkx, landmarky=landmarky, landmarkz=landmarkz, number=number, displaycolor=displaycolor, representation=representation, flurophore=flurophore, stepsizex=stepsizex, stepsizey=stepsizey, stepsizez=stepsizez, stepsizet=stepsizet, channels=channels, slices=slices, z=z, xsize=xsize, ysize=ysize, zsize=zsize, gbytes=gbytes, files=files, dimensionorder=dimensionorder, sheet_id=sheet.id)
             image.save()
+
     except Exception as e:
         print(repr(e))
         print('save image exception')
@@ -1688,10 +1689,6 @@ def check_all_sheets(filename):
     errormsg = check_image_sheet(filename)
     if errormsg != '':
         return errormsg
-
-    # errormsg = check_datastate_sheet(filename)
-    # if errormsg != '':
-        # return errormsg
     return errormsg
 
 def save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_set, images, filename, associated_collection):
