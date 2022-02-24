@@ -1494,7 +1494,6 @@ def save_sheet_row(filename):
     return sheet
 
 def save_contributors_sheet(contributors, sheet):
-    print(contributors)
     try:
         for c in contributors:
             contributorname = c['contributorName']
