@@ -1518,10 +1518,10 @@ def save_funders_sheet(funders, sheet):
     try:
         for f in funders:
             funderName = f['funderName']
-            funding_reference_identifier = f['funding_reference_identifier']
-            funding_reference_identifier_type = f['funding_reference_identifier_type']
-            award_number = f['award_number']
-            award_title = f['award_title']
+            funding_reference_identifier = f['fundingReferenceIdentifier']
+            funding_reference_identifier_type = f['fundingReferenceIdentifierType']
+            award_number = f['awardNumber']
+            award_title = f['awardTitle']
             
             funder = Funder(funderName=funderName, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet_id=sheet.id)
             funder.save()
