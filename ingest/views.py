@@ -398,7 +398,6 @@ def descriptive_metadata_list(request):
     # The user is trying to delete the selected metadata
     for key in request.POST:
         messages.success(request, key) 
-        print(key)     
         messages.success(request, request.POST[key])
         print (request.POST[key])      
     if request.method == "POST":
@@ -431,7 +430,6 @@ class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
 @login_required
 def collection_send(request):
     content = json.loads(request.body)
-    print(content)
     items = []
     user_name = request.user
     for item in content:
@@ -455,8 +453,6 @@ def collection_send(request):
         sender,
         recipient
              )
-        print(message)
-        print(user_name)
     messages.success(request, 'Request succesfully sent')
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
 
@@ -512,7 +508,6 @@ def collection_create(request):
     if request.method == "POST":
         # We need to pass in request here, so we can use it to get the user
         form = CollectionForm(request.POST, request=request)
-        # print(form)
         if form.is_valid():
             # remotely create the directory on some host using fabric and
             # celery
@@ -1400,7 +1395,6 @@ def ingest_image_sheet(filename):
 def save_sheet_row(filename):
     try:
         sheet = Sheet(filename=filename)
-        print(sheet)
         sheet.save()
     except Exception as e:
         print(e)
@@ -1562,22 +1556,18 @@ def save_image_sheet(images, sheet):
             dimensionorder = i['DimensionOrder']
     
             image = Image(xaxis=xaxis, obliquexdim1=obliquexdim1, obliquexdim2=obliquexdim2, obliquexdim3=obliquexdim3, yaxis=yaxis, obliqueydim1=obliqueydim1, obliqueydim2=obliqueydim2, obliqueydim3=obliqueydim3, zaxis=zaxis, obliquezdim1=obliquezdim1, obliquezdim2=obliquezdim2, obliquezdim3=obliquezdim3,landmarkname=landmarkname, landmarkx=landmarkx, landmarky=landmarky, landmarkz=landmarkz, number=number, displaycolor=displaycolor, representation=representation, flurophore=flurophore, stepsizex=stepsizex, stepsizey=stepsizey, stepsizez=stepsizez, stepsizet=stepsizet, channels=channels, slices=slices, z=z, xsize=xsize, ysize=ysize, zsize=zsize, gbytes=gbytes, files=files, dimensionorder=dimensionorder, sheet_id=sheet.id)
-
             image.save()
-
     except Exception as e:
         print(repr(e))
     return
 
 def save_sheet_to_collection(sheet, associated_collection):
     try:
-        print(sheet.id)
         collection = Collection.objects.get(id=associated_collection.id)
         collection.sheet_id = sheet.id
         collection.save()
     except Exception as e:
         print(repr(e))
-        print('saved sheet to collection bad')
     return
 
 def check_all_sheets(filename):
@@ -1617,13 +1607,10 @@ def save_all_sheets(contributors, funders, publications, instruments, datasets, 
         save_image_sheet(images, sheet)
         save_sheet_to_collection(sheet, associated_collection)
         saved = True
-        print(saved)
         return saved
     except Exception as e:
         print(repr(e))
-        print('save all exception')
         saved = False
-        print(saved)
         return saved
 
 def metadata_version_check(filename):
@@ -1676,7 +1663,6 @@ def descriptive_metadata_upload(request):
                     messages.error(request, errormsg)
                     return redirect('ingest:descriptive_metadata_upload')
                 else:
-                    print('no errors detected')
                     contributors = ingest_contributors_sheet(filename)
                     funders = ingest_funders_sheet(filename)
                     publications = ingest_publication_sheet(filename)
@@ -1811,7 +1797,6 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
             error = True
             if missing_fields[0] == '[]':
                 for badcells in missing_cells:
-                    print(badcells)
                     error_msg = 'Missing Required Information or Extra Field found in spreadsheet in row,column "{}"'.format(badcells)
                     messages.error(request, error_msg)
             else:
