@@ -280,7 +280,7 @@ class ProjectPeople(models.Model):
     doi_role = models.CharField(max_length=256)
 
 class Funder(models.Model):
-    funderName = models.CharField(max_length=256)
+    fundername = models.CharField(max_length=256)
     funding_reference_identifier = models.CharField(max_length=256)
     funding_reference_identifier_type = models.CharField(max_length=256)
     award_number = models.CharField(max_length=256)
