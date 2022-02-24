@@ -1576,6 +1576,7 @@ def save_sheet_to_collection(sheet, associated_collection):
         collection.save()
     except Exception as e:
         print(repr(e))
+        print('saved sheet to collection bad')
     return
 
 def check_all_sheets(filename):
@@ -1618,7 +1619,7 @@ def save_all_sheets(contributors, funders, publications, instruments, datasets, 
         print(saved)
         return saved
     except Exception as e:
-        print(e)
+        print(repr(e))
         print('save all exception')
         saved = False
         print(saved)
@@ -1683,13 +1684,17 @@ def descriptive_metadata_upload(request):
                     specimen_sets = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
 
-                    saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
-                    if saved == True:
-                        messages.success(request, 'Descriptive Metadata successfully uploaded!!')
-                        return redirect('ingest:descriptive_metadata_list')
-                    else:
-                        messages.error(request, 'There has been an error. Please contact BIL Support')
-                        return redirect('ingest:descriptive_metadata_upload')
+                    try:
+                        saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
+                    
+                    except Exception as e:
+                        print(repr(e))
+                        # if saved == True:
+                        #     messages.success(request, 'Descriptive Metadata successfully uploaded!!')
+                        #     return redirect('ingest:descriptive_metadata_list')
+                        # else:
+                        #     messages.error(request, 'There has been an error. Please contact BIL Support')
+                        #     return redirect('ingest:descriptive_metadata_upload')
 
 
     # This is the GET (just show the metadata upload page)
