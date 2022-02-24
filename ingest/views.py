@@ -1535,7 +1535,7 @@ def save_publication_sheet(publications, sheet):
         for p in publications:
             relatedIdentifier = p['relatedIdentifier']
             relatedIdentifierType = p['relatedIdentifierType']
-            pmcid = p['pmcid']
+            pmcid = p['PMCID']
             relationType = p['relationType']
             citation = p['citation']
             
@@ -1549,18 +1549,18 @@ def save_publication_sheet(publications, sheet):
 def save_instrument_sheet(instruments, sheet):
     try:
         for i in instruments:
-            microscopeType = i['microscopeType']
-            microscopeManufacturerAndModel = i['microscopeManufacturerAndModel']
-            objectiveName = i['objectiveName']
-            objectiveImmersion = i['objectiveImmersion']
-            objectiveNA = i['objectiveNA']
-            objectiveMagnification = i['objectiveMagnification']
-            detectorType = i['detectorType']
-            detectorModel = i['detectorModel']
-            illuminationTypes = i['illuminationTypes']
-            illuminationWavelength = i['illuminationWavelength']
-            detectionWavelength = i['detectionWavelength']
-            sampleTemperature = i['sampleTemperature']
+            microscopeType = i['MicroscopeType']
+            microscopeManufacturerAndModel = i['MicroscopeManufacturerAndModel']
+            objectiveName = i['ObjectiveName']
+            objectiveImmersion = i['ObjectiveImmersion']
+            objectiveNA = i['ObjectiveNA']
+            objectiveMagnification = i['ObjectiveMagnification']
+            detectorType = i['DetectorType']
+            detectorModel = i['DetectorModel']
+            illuminationTypes = i['IlluminationTypes']
+            illuminationWavelength = i['IlluminationWavelength']
+            detectionWavelength = i['DetectionWavelength']
+            sampleTemperature = i['SampleTemperature']
             
             instrument = Instrument(microscopeType=microscopeType, microscopeManufacturerAndModel=microscopeManufacturerAndModel, objectiveName=objectiveName, objectiveImmersion=objectiveImmersion, objectiveNA=objectiveNA, objectiveMagnification=objectiveMagnification, detectorType=detectorType, detectorModel=detectorModel, illuminationTypes=illuminationTypes, illuminationWavelength=illuminationWavelength, detectionWavelength=detectionWavelength, sampleTemperature=sampleTemperature, sheet=sheet.id)
             instrument.save()
@@ -1572,23 +1572,23 @@ def save_instrument_sheet(instruments, sheet):
 def save_dataset_sheet(datasets, sheet):
     try:
         for d in datasets:
-            bilDirectory = d['bilDirectory']
+            bilDirectory = d['BILDirectory']
             title = d['title']
             socialMedia = d['socialMedia']
             subject = d['subject']
-            subjectScheme = d['subjectScheme']
+            subjectScheme = d['Subjectscheme']
             rights = d['rights']
             rightsURI = d['rightsURI']
             rightsIdentifier = d['rightsIdentifier']
-            image = d['image']
-            generalModality = d['generalModality']
-            technique = d['technique']
-            other = d['other']
-            abstract = d['abstract']
-            methods = d['methods']
-            technicalInfo = d['technicalInfo']
+            image = d['Image']
+            generalModality = d['GeneralModality']
+            technique = d['Technique']
+            other = d['Other']
+            abstract = d['Abstract']
+            methods = d['Methods']
+            technicalInfo = d['TechnicalInfo']
 
-            dataset = Dataset(bilDirectory=bilDirectory, title=title, socialMedia=socialMedia, subject=subject, subjectScheme=subjectScheme, rights=rights, rightsURI=rightsURI, rightsIdentifier=rightsIdentifier, image=image, generalModality=generalModality, technique=technique, other=other, abstract=abstract, methods=methods, technicalInfo=technicalInfo, sheet=sheet.id)
+            dataset = Dataset(bilDirectory=bilDirectory, title=title, socialMedia=socialMedia, subject=subject, subjectScheme=subjectScheme, rights=rights, rightsURI=rightsURI, rightsIdentifier=rightsIdentifier, image=image, generalModality=generalModality, technique=technique, other=other, abstract=abstract, methods=methods, technicalInfo=technicalInfo, sheet_id=sheet.id)
             dataset.save()
     except Exception as e:
         print(repr(e))
@@ -1598,20 +1598,20 @@ def save_dataset_sheet(datasets, sheet):
 def save_specimen_sheet(specimen_set, sheet):
     try:
         for s in specimen_set:
-            localID = s['localID']
-            species = s['species']
-            ncbiTaxonomy = s['ncbiTaxonomy']
-            age = s['age']
-            ageUnit = s['ageUnit']
-            sex = s['sex']
-            genotype = s['genotype']
-            organLocalID = s['organLocalID']
-            organName = s['organName']
-            sampleLocalID = s['sampleLocalID']
-            atlas = s['atlas']
-            locations = s['locations']
+            localID = s['LocalID']
+            species = s['Species']
+            ncbiTaxonomy = s['NCBITaxonomy']
+            age = s['Age']
+            ageUnit = s['Ageunit']
+            sex = s['Sex']
+            genotype = s['Genotype']
+            organLocalID = s['OrganLocalID']
+            organName = s['OrganName']
+            sampleLocalID = s['SampleLocalID']
+            atlas = s['Atlas']
+            locations = s['Locations']
 
-            specimen_object = Specimen(localID=localID, species=species, ncbiTaxonomy=ncbiTaxonomy, age=age, ageUnit=ageUnit, sex=sex, genotype=genotype, organLocalID=organLocalID, organName=organName, sampleLocalID=sampleLocalID, atlas=atlas, locations=locations, sheet=sheet.id)
+            specimen_object = Specimen(localID=localID, species=species, ncbiTaxonomy=ncbiTaxonomy, age=age, ageUnit=ageUnit, sex=sex, genotype=genotype, organLocalID=organLocalID, organName=organName, sampleLocalID=sampleLocalID, atlas=atlas, locations=locations, sheet_id=sheet.id)
             specimen_object.save()
     except Exception as e:
         print(repr(e))
