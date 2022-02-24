@@ -280,7 +280,7 @@ class ProjectPeople(models.Model):
     doi_role = models.CharField(max_length=256)
 
 class Funder(models.Model):
-    name = models.CharField(max_length=256, null=False)
+    name = models.CharField(max_length=256)
     funding_reference_identifier = models.CharField(max_length=256)
     funding_reference_identifier_type = models.CharField(max_length=256)
     award_number = models.CharField(max_length=256)
@@ -301,7 +301,7 @@ class EventsLog(models.Model):
 
 class Contributor(models.Model):
     contributorName = models.CharField(max_length=256)
-    creator = models.BooleanField(default=False)
+    creator = models.CharField(max_length=100)
     contributorType = models.CharField(max_length=256)
     nameType = models.CharField(max_length=256)
     nameIdentifier = models.CharField(max_length=256)
