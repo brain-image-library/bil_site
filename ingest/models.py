@@ -18,6 +18,10 @@ class Project(models.Model):
     funded_by = models.CharField(max_length=256)
     is_biccn = models.BooleanField(default=False)
 
+class Sheet(models.Model):
+    def __str__(self):
+        return self.filename
+    filename = models.CharField(max_length=500)
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
     def __str__(self):
@@ -82,14 +86,8 @@ class Collection(models.Model):
     )
     collection_type = models.CharField(
         max_length=256)
-
-class Sheet(models.Model):
-    def __str__(self):
-        return self.filename
-    filename = models.CharField(max_length=500)
-    associated_collection = models.ForeignKey(Collection,
+    sheet = models.ForeignKey(Sheet,
         on_delete=models.SET_NULL, blank=False, null=True)
-
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
     # information about a given set of imaging data.
