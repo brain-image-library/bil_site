@@ -1505,9 +1505,9 @@ def ingest_image_sheet(filename):
 
 #     return datastates
 
-def save_sheet_row(filename, associated_collection):
+def save_sheet_row(filename):
     try:
-        sheet = Sheet(filename=filename, associated_collection_id=associated_collection.id)
+        sheet = Sheet(filename=filename)
         print(sheet)
         sheet.save()
     except Exception as e:
@@ -1683,6 +1683,11 @@ def save_image_sheet(images, sheet):
         print('save image exception')
     return
 
+def save_sheet_to_collection(sheet, associated_collection):
+    collection = Collection.objects.filter(id=associated_collection.id)
+    collection.sheet = sheet.id
+    collection.save()
+
 def check_all_sheets(filename):
     errormsg = check_contributors_sheet(filename)
     if errormsg != '':
@@ -1714,7 +1719,7 @@ def check_all_sheets(filename):
 def save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_set, images, filename, associated_collection):
     saved = Boolean
     try:
-        sheet = save_sheet_row(filename, associated_collection)
+        sheet = save_sheet_row(filename)
         save_contributors_sheet(contributors, sheet)
         save_funders_sheet(funders, sheet)
         save_publication_sheet(publications, sheet)
@@ -1722,6 +1727,7 @@ def save_all_sheets(contributors, funders, publications, instruments, datasets, 
         save_dataset_sheet(datasets, sheet)
         save_specimen_sheet(specimen_set, sheet)
         save_image_sheet(images, sheet)
+        save_sheet_to_collection(sheet, associated_collection)
         saved = True
         print(saved)
         return saved
