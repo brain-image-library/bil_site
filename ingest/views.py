@@ -1685,17 +1685,14 @@ def descriptive_metadata_upload(request):
                     specimen_sets = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
 
-                    try:
-                        saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
+                    saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
                     
-                    except Exception as e:
-                        print(repr(e))
-                        # if saved == True:
-                        #     messages.success(request, 'Descriptive Metadata successfully uploaded!!')
-                        #     return redirect('ingest:descriptive_metadata_list')
-                        # else:
-                        #     messages.error(request, 'There has been an error. Please contact BIL Support')
-                        #     return redirect('ingest:descriptive_metadata_upload')
+                    if saved == True:
+                        messages.success(request, 'Descriptive Metadata successfully uploaded!!')
+                        return redirect('ingest:descriptive_metadata_list')
+                    else:
+                        messages.error(request, 'There has been an error. Please contact BIL Support')
+                        return redirect('ingest:descriptive_metadata_upload')
 
 
     # This is the GET (just show the metadata upload page)
