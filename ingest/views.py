@@ -1497,21 +1497,20 @@ def save_contributors_sheet(contributors, sheet):
     print(contributors)
     try:
         for c in contributors:
-            contributorName = c['contributorName'],
-            print(contributorName)
-            creator = c['creator'],
-            contributorType = c['contributorType'],
-            nameType = c['nameType'],
-            nameIdentifier = c['nameIdentifier'],
-            nameIdentifierScheme = c['nameIdentifierScheme'],
-            affiliation = c['affiliation'],
-            affiliationIdentifier = c['affiliationIdentifier'],
+            contributorName = c['contributorName']
+            creator = c['creator']
+            contributorType = c['contributorType']
+            nameType = c['nameType']
+            nameIdentifier = c['nameIdentifier']
+            nameIdentifierScheme = c['nameIdentifierScheme']
+            affiliation = c['affiliation']
+            affiliationIdentifier = c['affiliationIdentifier']
             affiliationIdentifierScheme = c['affiliationIdentifierScheme']
             
             contributor = Contributor(contributorName=contributorName, creator=creator, contributorType=contributorType, nameType=nameType, nameIdentifier=nameIdentifier, nameIdentifierScheme=nameIdentifierScheme, affiliation=affiliation, affiliationIdentifier=affiliationIdentifier, affiliationIdentifierScheme=affiliationIdentifierScheme, sheet=sheet.id)
             contributor.save()
     except Exception as e:
-        print(e)
+        print(repr(e))
         print('save contribs exception')
     return
 
