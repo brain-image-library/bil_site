@@ -1195,7 +1195,7 @@ def check_specimen_sheet(filename):
     workbook=xlrd.open_workbook(filename)
     sheetname = 'Specimen'
     specimen_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['LocalID', 'Species', 'NCBITaxonomy', 'Age', 'Ageunit', 'Sex', 'Genotype', 'LocalID', 'OrganName', 'LocalID', 'Atlas', 'Locations']
+    colheads=['LocalID', 'Species', 'NCBITaxonomy', 'Age', 'Ageunit', 'Sex', 'Genotype', 'OrganLocalID', 'OrganName', 'SampleLocalID', 'Atlas', 'Locations']
     Sex = ['Male', 'Female', 'Unknown']
     cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
     cols=specimen_sheet.row_values(3)
