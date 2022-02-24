@@ -1507,7 +1507,7 @@ def save_contributors_sheet(contributors, sheet):
             affiliationidentifier = c['affiliationIdentifier']
             affiliationidentifierscheme = c['affiliationIdentifierScheme']
             
-            contributor = Contributor(contributorname=contributorname, creator=creator, contributorType=contributortype, nameType=nametype, nameIdentifier=nameidentifier, nameIdentifierScheme=nameidentifierscheme, affiliation=affiliation, affiliationIdentifier=affiliationidentifier, affiliationIdentifierScheme=affiliationidentifierscheme, sheet_id=sheet.id)
+            contributor = Contributor(contributorname=contributorname, creator=creator, contributortype=contributortype, nametype=nametype, nameidentifier=nameidentifier, nameidentifierscheme=nameidentifierscheme, affiliation=affiliation, affiliationidentifier=affiliationidentifier, affiliationidentifierscheme=affiliationidentifierscheme, sheet_id=sheet.id)
             contributor.save()
     except Exception as e:
         print(repr(e))

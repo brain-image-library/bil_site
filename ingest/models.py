@@ -302,13 +302,13 @@ class EventsLog(models.Model):
 class Contributor(models.Model):
     contributorname = models.CharField(max_length=256)
     creator = models.CharField(max_length=100)
-    contributorType = models.CharField(max_length=256)
-    nameType = models.CharField(max_length=256)
-    nameIdentifier = models.CharField(max_length=256)
-    nameIdentifierScheme = models.CharField(max_length=256)
+    contributortype = models.CharField(max_length=256)
+    nametype = models.CharField(max_length=256)
+    nameidentifier = models.CharField(max_length=256)
+    nameidentifierscheme = models.CharField(max_length=256)
     affiliation = models.CharField(max_length=256)
-    affiliationIdentifier = models.CharField(max_length=256)
-    affiliationIdentifierScheme = models.CharField(max_length=256)
+    affiliationidentifier = models.CharField(max_length=256)
+    affiliationidentifierscheme = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
 
 class Publication(models.Model):
