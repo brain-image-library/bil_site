@@ -1553,7 +1553,7 @@ def save_instrument_sheet(instruments, sheet):
             microscopemanufacturerandmodel = i['MicroscopeManufacturerAndModel']
             objectivename = i['ObjectiveName']
             objectiveimmersion = i['ObjectiveImmersion']
-            objectivenn = i['ObjectiveNA']
+            objectivena = i['ObjectiveNA']
             objectivemagnification = i['ObjectiveMagnification']
             detectortype = i['DetectorType']
             detectormodel = i['DetectorModel']
@@ -1562,7 +1562,7 @@ def save_instrument_sheet(instruments, sheet):
             detectionwavelength = i['DetectionWavelength']
             sampletemperature = i['SampleTemperature']
             
-            instrument = Instrument(microscopetype=microscopetype, microscopemanufacturerandmodel=microscopemanufacturerandmodel, objectivename=objectivename, objectiveimmersion=objectiveimmersion, objectivenn=objectivenn, objectivemagnification=objectivemagnification, detectortype=detectortype, detectormodel=detectormodel, illuminationtypes=illuminationtypes, illuminationwavelength=illuminationwavelength, detectionwavelength=detectionwavelength, sampletemperature=sampletemperature, sheet_id=sheet.id)
+            instrument = Instrument(microscopetype=microscopetype, microscopemanufacturerandmodel=microscopemanufacturerandmodel, objectivename=objectivename, objectiveimmersion=objectiveimmersion, objectivena=objectivena, objectivemagnification=objectivemagnification, detectortype=detectortype, detectormodel=detectormodel, illuminationtypes=illuminationtypes, illuminationwavelength=illuminationwavelength, detectionwavelength=detectionwavelength, sampletemperature=sampletemperature, sheet_id=sheet.id)
             instrument.save()
     except Exception as e:
         print(repr(e))
