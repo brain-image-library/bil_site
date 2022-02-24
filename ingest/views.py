@@ -1498,7 +1498,7 @@ def save_contributors_sheet(contributors, sheet):
     try:
         for c in contributors:
             contributorName = c['contributorName']
-            creator = c['creator']
+            creator = c['Creator']
             contributorType = c['contributorType']
             nameType = c['nameType']
             nameIdentifier = c['nameIdentifier']
