@@ -1523,7 +1523,7 @@ def save_funders_sheet(funders, sheet):
             award_number = f['award_number'],
             award_title = f['award_title']
             
-            funder = Funder(name=name, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet=sheet.id)
+            funder = Funder(name=name, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet_id=sheet.id)
             funder.save()
     except Exception as e:
         print(e)
@@ -1539,7 +1539,7 @@ def save_publication_sheet(publications, sheet):
             relationType = p['relationType'],
             citation = p['citation']
             
-            publication = Publication(relatedIdentifier=relatedIdentifier, relatedIdentifierType=relatedIdentifierType, pmcid=pmcid, relationType=relationType, citation=citation, sheet=sheet.id)
+            publication = Publication(relatedIdentifier=relatedIdentifier, relatedIdentifierType=relatedIdentifierType, pmcid=pmcid, relationType=relationType, citation=citation, sheet_id=sheet.id)
             publication.save()
     except Exception as e:
         print(e)
