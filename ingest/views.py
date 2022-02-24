@@ -1570,9 +1570,13 @@ def save_image_sheet(images, sheet):
     return
 
 def save_sheet_to_collection(sheet, associated_collection):
-    collection = Collection.objects.filter(id=associated_collection.id)
-    collection.sheet = sheet.id
-    collection.save()
+    try:
+        collection = Collection.objects.filter(id=associated_collection.id)
+        collection.sheet = sheet.id
+        collection.save()
+    except Exception as e:
+        print(repr(e))
+    return
 
 def check_all_sheets(filename):
     errormsg = check_contributors_sheet(filename)
