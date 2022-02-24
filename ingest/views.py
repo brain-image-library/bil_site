@@ -1526,7 +1526,7 @@ def save_funders_sheet(funders, sheet):
             funder = Funder(name=name, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet_id=sheet.id)
             funder.save()
     except Exception as e:
-        print(e)
+        print(repr(e))
         print('save funders exception')
     return
 
@@ -1542,7 +1542,7 @@ def save_publication_sheet(publications, sheet):
             publication = Publication(relatedIdentifier=relatedIdentifier, relatedIdentifierType=relatedIdentifierType, pmcid=pmcid, relationType=relationType, citation=citation, sheet_id=sheet.id)
             publication.save()
     except Exception as e:
-        print(e)
+        print(repr(e))
         print('save pubs exception')
     return
 
@@ -1565,7 +1565,7 @@ def save_instrument_sheet(instruments, sheet):
             instrument = Instrument(microscopeType=microscopeType, microscopeManufacturerAndModel=microscopeManufacturerAndModel, objectiveName=objectiveName, objectiveImmersion=objectiveImmersion, objectiveNA=objectiveNA, objectiveMagnification=objectiveMagnification, detectorType=detectorType, detectorModel=detectorModel, illuminationTypes=illuminationTypes, illuminationWavelength=illuminationWavelength, detectionWavelength=detectionWavelength, sampleTemperature=sampleTemperature, sheet=sheet.id)
             instrument.save()
     except Exception as e:
-        print(e)
+        print(repr(e))
         print('save instruments exception')
     return
 
@@ -1591,7 +1591,7 @@ def save_dataset_sheet(datasets, sheet):
             dataset = Dataset(bilDirectory=bilDirectory, title=title, socialMedia=socialMedia, subject=subject, subjectScheme=subjectScheme, rights=rights, rightsURI=rightsURI, rightsIdentifier=rightsIdentifier, image=image, generalModality=generalModality, technique=technique, other=other, abstract=abstract, methods=methods, technicalInfo=technicalInfo, sheet=sheet.id)
             dataset.save()
     except Exception as e:
-        print(e)
+        print(repr(e))
         print('save dataset exception')
     return
 
@@ -1614,7 +1614,7 @@ def save_specimen_sheet(specimen_set, sheet):
             specimen_object = Specimen(localID=localID, species=species, ncbiTaxonomy=ncbiTaxonomy, age=age, ageUnit=ageUnit, sex=sex, genotype=genotype, organLocalID=organLocalID, organName=organName, sampleLocalID=sampleLocalID, atlas=atlas, locations=locations, sheet=sheet.id)
             specimen_object.save()
     except Exception as e:
-        print(e)
+        print(repr(e))
         print('save specimen exception')
     return
 
@@ -1658,7 +1658,7 @@ def save_image_sheet(images, sheet):
             image = Image(xAxis=xAxis, obliqueXdim1=obliqueXdim1, obliqueXdim2=obliqueXdim2, obliqueXdim3=obliqueXdim3, yAxis=yAxis, obliqueYdim1=obliqueYdim1, obliqueYdim2=obliqueYdim2, obliqueYdim3=obliqueYdim3, zAxis=zAxis, obliqueZdim1=obliqueZdim1, obliqueZdim2=obliqueZdim2, obliqueZdim3=obliqueZdim3,landmarkName=landmarkName, landmarkX=landmarkX, landmarkY=landmarkY, landmarkZ=landmarkZ, Number=Number, displayColor=displayColor, Representation=Representation, Flurophore=Flurophore, stepSizeX=stepSizeX, stepSizeY=stepSizeY, stepSizeZ=stepSizeZ, stepSizeT=stepSizeT, Channels=Channels, Slices=Slices, z=z, Xsize=Xsize, Ysize=Ysize, Zsize=Zsize, Gbytes=Gbytes, Files=Files, DimensionOrder=DimensionOrder, sheet=sheet.id)
             image.save()
     except Exception as e:
-        print(e)
+        print(repr(e))
         print('save image exception')
     return
 
