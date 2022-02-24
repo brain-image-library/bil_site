@@ -1483,28 +1483,6 @@ def ingest_image_sheet(filename):
         # print(images)
     return images
 
-# DataState tab of spreadsheet is on hold for now
-# def ingest_datastate_sheet(filename):
-#     fn = load_workbook(filename)
-#     datastate_sheet = fn.get_sheet_by_name('DataState')
-
-#     header = ['level',
-#         'included',
-#         'location',
-#         'attributes',
-#         'description']
-       
-#     datastates = []
-    
-#     for row in datastate_sheet.rows:
-#         values = {}
-#         for key, cell in zip(header, row):
-#             values[key] = cell.value
-#             datastate = DataState(**values)
-#             datastates.append(datastate)
-
-#     return datastates
-
 def save_sheet_row(filename):
     try:
         sheet = Sheet(filename=filename)
@@ -1516,6 +1494,7 @@ def save_sheet_row(filename):
     return sheet
 
 def save_contributors_sheet(contributors, sheet):
+    print(contributors)
     try:
         for c in contributors:
             contributorName = c['contributorName'],
@@ -1797,6 +1776,7 @@ def descriptive_metadata_upload(request):
                     specimen_sets = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
                     # print(filename)
+
                     saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
                     if saved == True:
                         messages.success(request, 'Descriptive Metadata successfully uploaded!!')
