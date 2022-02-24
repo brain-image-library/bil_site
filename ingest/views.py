@@ -1572,7 +1572,7 @@ def save_image_sheet(images, sheet):
 def save_sheet_to_collection(sheet, associated_collection):
     try:
         collection = Collection.objects.filter(id=associated_collection.id)
-        collection.sheet = sheet.id
+        collection.sheet_id = sheet.id
         collection.save()
     except Exception as e:
         print(repr(e))
