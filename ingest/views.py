@@ -955,7 +955,6 @@ def check_contributors_sheet(filename):
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
     if errormsg != "":
         return [ True, errormsg ]
-    #Need to figure out how to get this to stop everything and display the error message
     for i in range(6,contributors_sheet.nrows):
         cols=contributors_sheet.row_values(i)
         if cols[0] == "":
@@ -987,7 +986,6 @@ def check_contributors_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
         if cols[8] not in affiliationidentifierscheme:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" Incorrect CV value found: "' + cols[8] + '" in cell "' + cellcols[8] + str(i+1) + '". '
-    # print('leaving check contribs')
     return errormsg
 
 def check_funders_sheet(filename):
@@ -1004,10 +1002,8 @@ def check_funders_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Funders" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
-    #Need to figure out how to get this to stop everything and display the error message
     for i in range(6,funders_sheet.nrows):
         cols=funders_sheet.row_values(i)
         if cols[0] == "":
@@ -1020,14 +1016,8 @@ def check_funders_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
         if cols[3] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-        #if cols[3] not in fundingReferenceIdentifierType:
-         #   errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
         if cols[4] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
-        #if cols[5] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
-            
-    # print(errormsg)
     return errormsg
 
 def check_publication_sheet(filename):
@@ -1038,7 +1028,6 @@ def check_publication_sheet(filename):
     colheads=['relatedIdentifier','relatedIdentifierType','PMCID',
                  'relationType','citation']
     relatedIdentifierType = ['arcXiv', 'DOI', 'PMID', 'ISBN']
-    #The example we give in the spreadsheet for relationType have a capitalized first letter, maybe we should account for if it they give us something in Camel Case...
     relationType = ['IsCitedBy', 'IsDocumentedBy']
     cellcols=['A','B','C','D','E']
     cols=publication_sheet.row_values(3)
@@ -1046,10 +1035,8 @@ def check_publication_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Publication" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
-    #Need to figure out how to get this to stop everything and display the error message
     for i in range(6,publication_sheet.nrows):
         cols=publication_sheet.row_values(i)
         if cols[0] == "":
@@ -1060,20 +1047,12 @@ def check_publication_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
         if cols[2] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
-        #if cols[2] not in relatedIdentifierType:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
         if cols[3] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
         if cols[3] not in relationType:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
         if cols[4] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
-        #if cols[4] not in relationType:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" incorrect CV value found: "' + cols[4] + '" in cell "' + cellcols[4] + str(i+1) + '". '
-#        if cols[5] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
-            
-    # print(errormsg)
     return errormsg
 
 def check_instrument_sheet(filename):
@@ -1089,10 +1068,8 @@ def check_instrument_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Instrument" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
-    #Need to figure out how to get this to stop everything and display the error message
     for i in range(6,instrument_sheet.nrows):
         cols=instrument_sheet.row_values(i)
         if cols[0] == "":
@@ -1119,10 +1096,6 @@ def check_instrument_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
         if cols[11] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
-        #if cols[12] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-            
-    # print(errormsg)
     return errormsg
 
 def check_dataset_sheet(filename):
@@ -1140,10 +1113,8 @@ def check_dataset_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Dataset" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
-    #Need to figure out how to get this to stop everything and display the error message
     for i in range(6,dataset_sheet.nrows):
         cols=dataset_sheet.row_values(i)
         if cols[0] == "":
@@ -1172,22 +1143,14 @@ def check_dataset_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
         if cols[10] not in Technique:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
-        #if cols[10] not in GeneralModality:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
         if cols[11] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
-        #if cols[11] not in Technique:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" incorrect CV value found: "' + cols[11] + '" in cell "' + cellcols[11] + str(i+1) + '". '
         if cols[12] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
         if cols[13] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[13] + '" value expected but not found in cell "' + cellcols[13] + str(i+1) + '". '
         if cols[14] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[14] + '" value expected but not found in cell "' + cellcols[14] + str(i+1) + '". '
-        #if cols[15] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[15] + '" value expected but not found in cell "' + cellcols[15] + str(i+1) + '". '
-            
-    # print(errormsg)
     return errormsg
 
 def check_specimen_sheet(filename):
@@ -1203,10 +1166,8 @@ def check_specimen_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Specimen" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
-    #Need to figure out how to get this to stop everything and display the error message
     for i in range(6,specimen_sheet.nrows):
         cols=specimen_sheet.row_values(i)
         if cols[0] == "":
@@ -1225,8 +1186,6 @@ def check_specimen_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[6] + str(i+1) + '". '
         if cols[6] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
-        #if cols[6] not in Sex:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[6] + str(i+1) + '". '
         if cols[7] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
         if cols[8] == "":
@@ -1237,9 +1196,6 @@ def check_specimen_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
         if cols[11] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
-        #if cols[12] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-    # print(errormsg)
     return errormsg
 
 def check_image_sheet(filename):
@@ -1268,10 +1224,8 @@ def check_image_sheet(filename):
         if cols[i] != colheads[i]:
             errormsg = errormsg + ' Tab: "Image" cell heading found: "' + cols[i] + \
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-        # print(errormsg)
     if errormsg != "":
         return [ True, errormsg ]
-    #Need to figure out how to get this to stop everything and display the error message
     for i in range(6,image_sheet.nrows):
         cols=image_sheet.row_values(i)
         if cols[0] == "":
@@ -1282,72 +1236,48 @@ def check_image_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
         if cols[1] not in obliqueXdim1:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
-        #if cols[1] not in xAxis:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
         if cols[2] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[2] + str(i+1) + '". '
         if cols[2] not in obliqueXdim2:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
-        #if cols[2] not in obliqueXdim1:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
         if cols[3] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
         if cols[3] not in obliqueXdim3:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
-        #if cols[3] not in obliqueXdim2:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
         if cols[4] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
         if cols[4] not in yAxis:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" incorrect CV value found: "' + cols[4] + '" in cell "' + cellcols[4] + str(i+1) + '". '
-        #if cols[4] not in obliqueXdim3:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" incorrect CV value found: "' + cols[4] + '" in cell "' + cellcols[4] + str(i+1) + '". '
         if cols[5] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
         if cols[5] not in obliqueYdim1:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
-        #if cols[5] not in yAxis:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
         if cols[6] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
         if cols[6] not in obliqueYdim2:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" incorrect CV value found: "' + cols[6] + '" in cell "' + cellcols[6] + str(i+1) + '". '
-        #if cols[6] not in obliqueYdim1:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" incorrect CV value found: "' + cols[6] + '" in cell "' + cellcols[6] + str(i+1) + '". '
         if cols[7] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
         if cols[7] not in obliqueYdim3:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" incorrect CV value found: "' + cols[7] + '" in cell "' + cellcols[7] + str(i+1) + '". '
-        #if cols[7] not in obliqueYdim2:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" incorrect CV value found: "' + cols[7] + '" in cell "' + cellcols[7] + str(i+1) + '". '
         if cols[8] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
         if cols[8] not in zAxis:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" incorrect CV value found: "' + cols[8] + '" in cell "' + cellcols[8] + str(i+1) + '". '
-        #if cols[8] not in obliqueYdim3:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" incorrect CV value found: "' + cols[8] + '" in cell "' + cellcols[8] + str(i+1) + '". '
         if cols[9] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
         if cols[9] not in ObliqueZdim1:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" incorrect CV value found: "' + cols[9] + '" in cell "' + cellcols[9] + str(i+1) + '". '
-        #if cols[9] not in zAxis:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" incorrect CV value found: "' + cols[9] + '" in cell "' + cellcols[9] + str(i+1) + '". '
         if cols[10] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
         if cols[10] not in ObliqueZdim2:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
-        #if cols[10] not in ObliqueZdim1:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
         if cols[11] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
         if cols[11] not in ObliqueZdim3:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" incorrect CV value found: "' + cols[11] + '" in cell "' + cellcols[11] + str(i+1) + '". '
-        #if cols[11] not in ObliqueZdim2:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" incorrect CV value found: "' + cols[11] + '" in cell "' + cellcols[11] + str(i+1) + '". '
         if cols[12] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-        #if cols[11] not in ObliqueZdim3:
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" incorrect CV value found: "' + cols[11] + '" in cell "' + cellcols[11] + str(i+1) + '". '
         if cols[13] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[13] + '" value expected but not found in cell "' + cellcols[13] + str(i+1) + '". '
         if cols[14] == "":
@@ -1388,14 +1318,7 @@ def check_image_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[31] + '" value expected but not found in cell "' + cellcols[31] + str(i+1) + '". '
         if cols[32] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[32] + '" value expected but not found in cell "' + cellcols[32] + str(i+1) + '". '
-        #if cols[33] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[33] + '" value expected but not found in cell "' + cellcols[33] + str(i+1) + '". '
-    # print(errormsg)
     return errormsg
-
-# DataState tab of the spreadsheet is being put on hold for now
-# def check_datastate_sheet(filename):
-#     return missing
 
 def ingest_contributors_sheet(filename):
     fn = xlrd.open_workbook(filename)
@@ -1403,12 +1326,9 @@ def ingest_contributors_sheet(filename):
     keys = [contributors_sheet.cell(2, col).value for col in range(contributors_sheet.ncols)]
     contributors = []
     for row in range(6,contributors_sheet.nrows):
-        #cols=contributors_sheet.row_values(i)
-    #for row in contributors_sheet.rows:
         values = {keys[col]: contributors_sheet.cell(row, col).value
             for col in range(contributors_sheet.ncols)}
         contributors.append(values)
-    # print(contributors)
     return contributors
 
 def ingest_funders_sheet(filename):
@@ -1420,7 +1340,6 @@ def ingest_funders_sheet(filename):
         values={keys[col]: funders_sheet.cell(row,col).value
             for col in range(funders_sheet.ncols)}
         funders.append(values)
-    # print(funders)
     return funders
 
 def ingest_publication_sheet(filename):
@@ -1432,7 +1351,6 @@ def ingest_publication_sheet(filename):
         values={keys[col]: publication_sheet.cell(row,col).value
             for col in range(publication_sheet.ncols)}
         publications.append(values)
-    # print(publications)
     return publications
 
 def ingest_instrument_sheet(filename):
@@ -1444,7 +1362,6 @@ def ingest_instrument_sheet(filename):
         values={keys[col]: instrument_sheet.cell(row,col).value
             for col in range(instrument_sheet.ncols)}
         instruments.append(values)
-    # print(instruments)
     return instruments
 
 def ingest_dataset_sheet(filename):
@@ -1456,7 +1373,6 @@ def ingest_dataset_sheet(filename):
         values={keys[col]: dataset_sheet.cell(row,col).value
             for col in range(dataset_sheet.ncols)}
         datasets.append(values)
-    # print(datasets)
     return datasets
 
 def ingest_specimen_sheet(filename):
@@ -1468,7 +1384,6 @@ def ingest_specimen_sheet(filename):
         values={keys[col]: specimen_sheet.cell(row,col).value
             for col in range(specimen_sheet.ncols)}
         specimen_set.append(values)
-    # print(specimen_set)
     return specimen_set
 
 def ingest_image_sheet(filename):
@@ -1480,7 +1395,6 @@ def ingest_image_sheet(filename):
         values={keys[col]: image_sheet.cell(row,col).value
             for col in range(image_sheet.ncols)}
         images.append(values)
-        # print(images)
     return images
 
 def save_sheet_row(filename):
@@ -1490,7 +1404,6 @@ def save_sheet_row(filename):
         sheet.save()
     except Exception as e:
         print(e)
-        print('save sheet exception')
     return sheet
 
 def save_contributors_sheet(contributors, sheet):
@@ -1510,7 +1423,6 @@ def save_contributors_sheet(contributors, sheet):
             contributor.save()
     except Exception as e:
         print(repr(e))
-        print('save contribs exception')
     return
 
 def save_funders_sheet(funders, sheet):
@@ -1526,7 +1438,6 @@ def save_funders_sheet(funders, sheet):
             funder.save()
     except Exception as e:
         print(repr(e))
-        print('save funders exception')
     return
 
 def save_publication_sheet(publications, sheet):
@@ -1542,7 +1453,6 @@ def save_publication_sheet(publications, sheet):
             publication.save()
     except Exception as e:
         print(repr(e))
-        print('save pubs exception')
     return
 
 def save_instrument_sheet(instruments, sheet):
@@ -1565,7 +1475,6 @@ def save_instrument_sheet(instruments, sheet):
             instrument.save()
     except Exception as e:
         print(repr(e))
-        print('save instruments exception')
     return
 
 def save_dataset_sheet(datasets, sheet):
@@ -1591,7 +1500,6 @@ def save_dataset_sheet(datasets, sheet):
             dataset.save()
     except Exception as e:
         print(repr(e))
-        print('save dataset exception')
     return
 
 def save_specimen_sheet(specimen_set, sheet):
@@ -1614,7 +1522,6 @@ def save_specimen_sheet(specimen_set, sheet):
             specimen_object.save()
     except Exception as e:
         print(repr(e))
-        print('save specimen exception')
     return
 
 def save_image_sheet(images, sheet):
@@ -1654,12 +1561,12 @@ def save_image_sheet(images, sheet):
             files = i['Files']
             dimensionorder = i['DimensionOrder']
     
-            image = Image(xaxis=xaxis, obliquexdim1=obliquexdim1, obliquexdim2=obliquexdim2, obliquexdim3=obliquexdim3, yaxis=yaxis, obliqueydim1=obliqueydim1, obliqueydim2=obliqueydim2, obliqueydim3=obliqueydim3, zaxis=zaxis, obliquezdim1=obliquezdim1, obliquezdim2=obliquezdim2, obliquezdim3=obliquezdim3,landmarkname=landmarkname, landmarkx=landmarkx, landmarky=landmarky, landmarkz=landmarkz, number=number, displaycolor=displaycolor, representation=representation, flurophore=flurophore, stepsizex=stepsizex, stepsizey=stepsizey, stepsizez=stepsizez, stepsizet=stepsizet, channels=channels, slices=slices, z=z, xsize=xsize, ysize=ysize, zsize=zsize, gbytes=gbytes, files=files, dimensionorder=dimensionorder, sheet=sheet.id)
+            image = Image(xaxis=xaxis, obliquexdim1=obliquexdim1, obliquexdim2=obliquexdim2, obliquexdim3=obliquexdim3, yaxis=yaxis, obliqueydim1=obliqueydim1, obliqueydim2=obliqueydim2, obliqueydim3=obliqueydim3, zaxis=zaxis, obliquezdim1=obliquezdim1, obliquezdim2=obliquezdim2, obliquezdim3=obliquezdim3,landmarkname=landmarkname, landmarkx=landmarkx, landmarky=landmarky, landmarkz=landmarkz, number=number, displaycolor=displaycolor, representation=representation, flurophore=flurophore, stepsizex=stepsizex, stepsizey=stepsizey, stepsizez=stepsizez, stepsizet=stepsizet, channels=channels, slices=slices, z=z, xsize=xsize, ysize=ysize, zsize=zsize, gbytes=gbytes, files=files, dimensionorder=dimensionorder, sheet_id=sheet.id)
+
             image.save()
 
     except Exception as e:
         print(repr(e))
-        print('save image exception')
     return
 
 def save_sheet_to_collection(sheet, associated_collection):
@@ -1771,7 +1678,6 @@ def descriptive_metadata_upload(request):
                     datasets = ingest_dataset_sheet(filename)
                     specimen_sets = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
-                    # print(filename)
 
                     saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
                     if saved == True:
