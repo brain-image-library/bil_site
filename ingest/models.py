@@ -313,7 +313,7 @@ class Contributor(models.Model):
 
 class Publication(models.Model):
     relatedidentifier = models.CharField(max_length=256)
-    relatedidentifierType = models.CharField(max_length=256)
+    relatedidentifiertype = models.CharField(max_length=256)
     pmcid = models.CharField(max_length=256)
     relationtype = models.CharField(max_length=256)
     citation = models.CharField(max_length=256)
