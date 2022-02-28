@@ -29,6 +29,12 @@
 
     </br>
     <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
+    
+    <button class="btn btn-primary" type="button" disabled>
+      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+      <span class="visually-hidden">Loading...</span>
+    </button>
+
     <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();" />
     </br>
   </form>
