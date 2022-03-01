@@ -39,6 +39,9 @@
   </div>
 {% endif %}
 <hr>
+
+{% include 'ingest/new_metadata_sheet.html' %}
+
 <a href="{% url 'ingest:descriptive_metadata_upload' %}" class="btn btn-primary">
   <span class="glyphicon glyphicon-plus"></span> Create Metadata
 </a>

@@ -18,10 +18,14 @@ class Project(models.Model):
     funded_by = models.CharField(max_length=256)
     is_biccn = models.BooleanField(default=False)
 
-class Sheet(models.Model):
-    def __str__(self):
-        return self.filename
-    filename = models.CharField(max_length=500)
+class People(models.Model):
+    name = models.CharField(max_length=256)
+    orcid = models.CharField(max_length=256)
+    affiliation = models.CharField(max_length=256)
+    affiliation_identifier = models.CharField(max_length=256)
+    is_bil_admin = models.BooleanField(default=False)
+    auth_user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank=True)
+
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
     def __str__(self):
@@ -50,7 +54,6 @@ class Collection(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL, blank=True, null=True)
-    #sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
     # This is how we're initially tracking validation. Ultimately, we'll
     # probably want to break up validation into multiple tasks (e.g. checking
     # dataset size, verifying valid TIFF/JPEG2000 files, etc), in which case
@@ -86,8 +89,15 @@ class Collection(models.Model):
     )
     collection_type = models.CharField(
         max_length=256)
-    sheet = models.ForeignKey(Sheet,
+
+class Sheet(models.Model):
+    def __str__(self):
+        return self.filename
+    filename = models.CharField(max_length=500)
+    date_uploaded = models.DateTimeField(auto_now_add=True, blank=True)
+    collection = models.ForeignKey(Collection,
         on_delete=models.SET_NULL, blank=False, null=True)
+
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
     # information about a given set of imaging data.
@@ -261,14 +271,6 @@ class DataGroup(models.Model):
     data_group_list_id = models.IntegerField()
     dm_id = models.ForeignKey(DescriptiveMetadata, on_delete=models.CASCADE, null = False)
 
-class People(models.Model):
-    name = models.CharField(max_length=256)
-    orcid = models.CharField(max_length=256)
-    affiliation = models.CharField(max_length=256)
-    affiliation_identifier = models.CharField(max_length=256)
-    is_bil_admin = models.BooleanField(default=False)
-    auth_user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank=True)
-  
 class ProjectPeople(models.Model):
     def __str__(self):
         return self.project_id.name

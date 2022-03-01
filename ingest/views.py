@@ -416,10 +416,22 @@ def descriptive_metadata_list(request):
             DescriptiveMetadata.objects.filter(user=request.user), exclude=['user'])
         RequestConfig(request).configure(table)
         descriptive_metadata = DescriptiveMetadata.objects.filter(user=request.user)
+    
+        collections_with_new_metadata = []
+        collections = Collection.objects.filter(user=request.user)
+        for c in collections:
+            if c.sheet_id is not None:
+                # get all datasets of that collection
+                for n in collections_with_new_metadata:
+                    c.datasets = Dataset.objects.filter(sheet_id = c.sheet_id).all()
+                collections_with_new_metadata.append(c)
+
+        # new_metadata(request, collections_with_new_metadata)
+
         return render(
             request,
             'ingest/descriptive_metadata_list.html',
-            {'table': table, 'descriptive_metadata': descriptive_metadata, 'pi':pi})
+            {'table': table, 'descriptive_metadata': descriptive_metadata, 'pi':pi, 'collections':collections_with_new_metadata})
 
 class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
     """ A detailed view of a single piece of metadata. """
@@ -1392,9 +1404,9 @@ def ingest_image_sheet(filename):
         images.append(values)
     return images
 
-def save_sheet_row(filename):
+def save_sheet_row(filename, collection):
     try:
-        sheet = Sheet(filename=filename)
+        sheet = Sheet(filename=filename, date_uploaded=datetime.now(), collection_id=collection.id)
         sheet.save()
     except Exception as e:
         print(e)
@@ -1561,15 +1573,6 @@ def save_image_sheet(images, sheet):
         print(repr(e))
     return
 
-def save_sheet_to_collection(sheet, associated_collection):
-    try:
-        collection = Collection.objects.get(id=associated_collection.id)
-        collection.sheet_id = sheet.id
-        collection.save()
-    except Exception as e:
-        print(repr(e))
-    return
-
 def check_all_sheets(filename):
     errormsg = check_contributors_sheet(filename)
     if errormsg != '':
@@ -1594,10 +1597,10 @@ def check_all_sheets(filename):
         return errormsg
     return errormsg
 
-def save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_set, images, filename, associated_collection):
+def save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_set, images, filename, collection):
     saved = Boolean
     try:
-        sheet = save_sheet_row(filename)
+        sheet = save_sheet_row(filename, collection)
         save_contributors_sheet(contributors, sheet)
         save_funders_sheet(funders, sheet)
         save_publication_sheet(publications, sheet)
@@ -1605,7 +1608,6 @@ def save_all_sheets(contributors, funders, publications, instruments, datasets, 
         save_dataset_sheet(datasets, sheet)
         save_specimen_sheet(specimen_set, sheet)
         save_image_sheet(images, sheet)
-        save_sheet_to_collection(sheet, associated_collection)
         saved = True
         return saved
     except Exception as e:
@@ -1626,6 +1628,7 @@ def metadata_version_check(filename):
 def descriptive_metadata_upload(request):
     current_user = request.user
     people = People.objects.get(auth_user_id_id = current_user.id)
+    print(people.id)
     project_person = ProjectPeople.objects.filter(people_id = people.id).all()
     for attribute in project_person:
         if attribute.is_pi:
@@ -1638,6 +1641,7 @@ def descriptive_metadata_upload(request):
         form = UploadForm(request.POST)
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
+            print(associated_collection)
             # for production
             #datapath=collection.data_path.replace("/lz/","/etc/")
             
@@ -1666,6 +1670,7 @@ def descriptive_metadata_upload(request):
                     messages.error(request, errormsg)
                     return redirect('ingest:descriptive_metadata_upload')
                 else:
+                    collection = Collection.objects.get(name=associated_collection)
                     contributors = ingest_contributors_sheet(filename)
                     funders = ingest_funders_sheet(filename)
                     publications = ingest_publication_sheet(filename)
@@ -1674,7 +1679,7 @@ def descriptive_metadata_upload(request):
                     specimen_sets = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
 
-                    saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, associated_collection)
+                    saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, collection)
                     
                     if saved == True:
                         messages.success(request, 'Descriptive Metadata successfully uploaded!!')
