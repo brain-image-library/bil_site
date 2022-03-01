@@ -1,4 +1,4 @@
-{% if collections %}
+{% if datasets_list %}
   <table id="newMetadata" class="table">
     <thead>
     <tr>
@@ -9,12 +9,12 @@
     </tr>
     </thead>
     <tbody>
-    {% for d in datasets %}
+    {% for d in datasets_list %}
     <tr>
-    <td>{{ d.sheet }}</td>
-    <td>{{ c.name }}</td>
-    <td>{{ c.dataset.bildirectory }}</td>
-    <td>{{ c.sheet.date_uploaded }}</td>
+    <td>{{ d.title }}</td>
+    <td>{{ d.sheet.collection }}</td>
+    <td>{{ d.bildirectory }}</td>
+    <td>{{ d.sheet.date_uploaded }}</td>
     <td>View More</td>
     </tr>
     {% endfor %}

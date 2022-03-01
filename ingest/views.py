@@ -417,21 +417,21 @@ def descriptive_metadata_list(request):
         RequestConfig(request).configure(table)
         descriptive_metadata = DescriptiveMetadata.objects.filter(user=request.user)
     
-        collections_with_new_metadata = []
+        datasets_list = []
         collections = Collection.objects.filter(user=request.user)
         for c in collections:
-            if c.sheet_id is not None:
-                # get all datasets of that collection
-                for n in collections_with_new_metadata:
-                    c.datasets = Dataset.objects.filter(sheet_id = c.sheet_id).all()
-                collections_with_new_metadata.append(c)
+            sheets = Sheet.objects.filter(collection_id=c.id).all()
+            for s in sheets:
+                datasets = Dataset.objects.filter(sheet_id=s.id)
+                for d in datasets:
+                    datasets_list.append(d)
 
-        # new_metadata(request, collections_with_new_metadata)
+
 
         return render(
             request,
             'ingest/descriptive_metadata_list.html',
-            {'table': table, 'descriptive_metadata': descriptive_metadata, 'pi':pi, 'collections':collections_with_new_metadata})
+            {'table': table, 'descriptive_metadata': descriptive_metadata, 'pi':pi, 'datasets_list':datasets_list})
 
 class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
     """ A detailed view of a single piece of metadata. """
