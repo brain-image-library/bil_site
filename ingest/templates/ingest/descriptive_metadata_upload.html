@@ -30,11 +30,6 @@
     </br>
     <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
     
-    <button class="btn btn-primary" type="button" disabled>
-      <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-      <span class="visually-hidden">Loading...</span>
-    </button>
-
     <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();" />
     </br>
   </form>
@@ -48,5 +43,19 @@
 <a href="{% url 'ingest:index' %}">
   <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
 </a>
+
+<!-- Modal -->
+<div class="modal fade" id="loadMe" tabindex="-1" role="dialog" aria-labelledby="loadMeLabel">
+  <div class="modal-dialog modal-sm" role="document">
+    <div class="modal-content">
+      <div class="modal-body text-center">
+        <div class="loader"></div>
+        <div clas="loader-txt">
+          <p>Please wait while we upload your metadata!<br><br><small>Thanks very much for your patience.</small></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 {% endblock %}
