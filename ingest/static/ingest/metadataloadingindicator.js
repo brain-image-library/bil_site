@@ -1,9 +1,4 @@
-$(document).ready(function() {
-
-  //ajax code here (example for $.post) using test page from https://reqres.in
-  //Adding a delay so we can see the functionality of the loader while request processes
-  $("#UploadMetadata").on("click", function(e) {
-    e.preventDefault();
+function loadSpinner() {
     $("#loadMe").modal({
       backdrop: "static", //remove ability to close modal with click
       keyboard: false, //remove option to close with keyboard
@@ -27,5 +22,5 @@ $(document).ready(function() {
       },
       "json"
     );
-  });
-});
+  // });
+};

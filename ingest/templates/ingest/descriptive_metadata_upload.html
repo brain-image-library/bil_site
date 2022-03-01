@@ -1,3 +1,7 @@
+<head>
+  <script src="/static/ingest/metadataloadingindicator.js"></script>
+</head>
+
 {% extends 'ingest/narrow.html' %}
 
 {% load static %}
@@ -28,9 +32,9 @@
     </br>
 
     </br>
-    <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();UploadMetadata();" />
+    <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
     
-    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();" />
+    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();loadSpinner();" />
     </br>
   </form>
 {% else %}

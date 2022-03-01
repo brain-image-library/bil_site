@@ -257,7 +257,6 @@ class DescriptiveMetadata(models.Model):
     r24_name = models.CharField(max_length=256)
     r24_directory = models.CharField(max_length=256)
 
- 
 class DataGroup(models.Model):
     data_group_list_id = models.IntegerField()
     dm_id = models.ForeignKey(DescriptiveMetadata, on_delete=models.CASCADE, null = False)
