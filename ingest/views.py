@@ -799,7 +799,16 @@ def collection_detail(request, pk):
     # If user tries to go to a page using a collection primary key that doesn't
     # exist, give a 404
     try:
+        datasets_list = []
         collection = Collection.objects.get(id=pk)
+        sheets = Sheet.objects.filter(collection_id=collection.id).all()
+        for s in sheets:
+            datasets = Dataset.objects.filter(sheet_id=s.id)
+            for d in datasets:
+                datasets_list.append(d)
+
+        print(datasets_list)
+
     except ObjectDoesNotExist:
         raise Http404
     # the metadata associated with this collection
@@ -898,7 +907,7 @@ def collection_detail(request, pk):
         {'table': table,
          'collection': collection,
          'descriptive_metadata_queryset': descriptive_metadata_queryset,
-         'pi': pi})
+         'pi': pi, 'datasets_list':datasets_list})
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     """ Edit an existing collection ."""
