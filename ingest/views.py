@@ -806,9 +806,6 @@ def collection_detail(request, pk):
             datasets = Dataset.objects.filter(sheet_id=s.id)
             for d in datasets:
                 datasets_list.append(d)
-
-        print(datasets_list)
-
     except ObjectDoesNotExist:
         raise Http404
     # the metadata associated with this collection
