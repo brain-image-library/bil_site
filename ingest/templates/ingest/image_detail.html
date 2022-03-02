@@ -1,0 +1,86 @@
+{% if images %}		
+<h3>Images</h3>
+
+  <table class="table">    								
+    <thead>
+    <tr>
+    <th>xAxis</th>
+    <th>obliqueXdim1</th>
+    <th>obliqueXdim2</th>
+    <th>obliqueXdim3</th>
+    <th>yAxis</th>
+    <th>obliqueYdim1</th>
+    <th>obliqueYdim2</th>
+    <th>obliqueYdim3</th>
+    <th>zAxis</th>
+    <th>obliqueZdim1</th>
+    <th>obliqueZdim2</th>
+    <th>obliqueZdim3</th>
+    <th>landmarkName</th>
+    <th>landmarkX</th>
+    <th>landmarkY</th>
+    <th>landmarkZ</th>
+    <th>Number</th>
+    <th>displayColor</th>
+    <th>Representation</th>
+    <th>Flurophore</th>
+    <th>stepSizeX</th>
+    <th>stepSizeY</th>
+    <th>stepSizeZ</th>
+    <th>stepSizeT</th>
+    <th>Channels</th>
+    <th>Slices</th>
+    <th>z</th>
+    <th>Xsize</th>
+    <th>Ysize</th>
+    <th>Zsize</th>
+    <th>Gbytes</th>
+    <th>Files</th>
+    <th>DimensionOrder</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for i in images %}
+    <tr>
+    <td>{{ i.xaxis }}</td>
+    <td>{{ i.obliquexdim1 }}</td>
+    <td>{{ i.obliquexdim2 }}</td>
+    <td>{{ i.obliquexdim3 }}</td>
+    <td>{{ i.yaxis }}</td>
+    <td>{{ i.obliqueydim1 }}</td>
+    <td>{{ i.obliqueydim2 }}</td>
+    <td>{{ i.obliqueydim3 }}</td>
+    <td>{{ i.zaxis }}</td>
+    <td>{{ i.obliquezdim1 }}</td>
+    <td>{{ i.obliquezdim2 }}</td>
+    <td>{{ i.obliquezdim3 }}</td>
+    <td>{{ i.landmarkname }}</td>
+    <td>{{ i.landmarkx }}</td>
+    <td>{{ i.landmarky }}</td>
+    <td>{{ i.landmarkz }}</td>
+    <td>{{ i.number }}</td>
+    <td>{{ i.displaycolor }}</td>
+    <td>{{ i.representation }}</td>
+    <td>{{ i.flurophore }}</td>
+    <td>{{ i.stepsizex }}</td>
+    <td>{{ i.stepsizey }}</td>
+    <td>{{ i.stepsizez }}</td>
+    <td>{{ i.stepsizet }}</td>
+    <td>{{ i.channels }}</td>
+    <td>{{ i.slices }}</td>
+    <td>{{ i.z }}</td>
+    <td>{{ i.xsize }}</td>
+    <td>{{ i.ysize }}</td>
+    <td>{{ i.zsize }}</td>
+    <td>{{ i.gbytes }}</td>
+    <td>{{ i.files }}</td>
+    <td>{{ i.dimensionorder }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  
+{% else %}
+  <div class="alert alert-info">
+    <p>There is not Image data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+  </div>
+{% endif %}
