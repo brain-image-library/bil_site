@@ -1655,10 +1655,10 @@ def descriptive_metadata_upload(request):
             #datapath=collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            # datapath = '/home/shared_bil_dev/testetc/' 
+            datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
-            datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
+            #datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
 
