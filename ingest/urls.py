@@ -47,6 +47,7 @@ urlpatterns = [
     path('project_form/', views.project_form, name = 'project_form'),
     path('create_project/', views.create_project, name = 'create_project'),
     path('view_project_people/<int:pk>', views.view_project_people, name = 'view_project_people'),
+    path('new_metadata_detail/<int:pk>', views.new_metadata_detail, name = 'new_metadata_detail'),
     path('view_project_collections/<int:pk>', views.view_project_collections, name = 'view_project_collections'),
     path('no_collection/<int:pk>', views.no_collection, name = 'no_colletion'),
     path('no_people/<int:pk>', views.no_people, name = 'no_people'),

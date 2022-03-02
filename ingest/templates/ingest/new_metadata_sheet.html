@@ -15,7 +15,7 @@
     <td>{{ d.sheet.collection }}</td>
     <td>{{ d.bildirectory }}</td>
     <td>{{ d.sheet.date_uploaded }}</td>
-    <td>View More</td>
+    <td><a href="{% url 'ingest:new_metadata_detail' d.sheet_id %}">View More</td>
     </tr>
     {% endfor %}
   </table>

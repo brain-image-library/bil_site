@@ -426,12 +426,21 @@ def descriptive_metadata_list(request):
                 for d in datasets:
                     datasets_list.append(d)
 
-
-
         return render(
             request,
             'ingest/descriptive_metadata_list.html',
             {'table': table, 'descriptive_metadata': descriptive_metadata, 'pi':pi, 'datasets_list':datasets_list})
+
+def new_metadata_detail(request, pk):
+    contributors = Contributor.objects.filter(sheet_id=pk).all()
+    funders = Funder.objects.filter(sheet_id=pk).all 
+    publications = Publication.objects.filter(sheet_id=pk).all()
+    instruments = Instrument.objects.filter(sheet_id=pk).all()
+    datasets = Dataset.objects.filter(sheet_id=pk).all()
+    specimens = Specimen.objects.filter(sheet_id=pk).all()
+    images = Image.objects.filter(sheet_id=pk).all()
+    
+    return render(request, 'ingest/new_metadata_detail.html', {'contributors':contributors, 'funders':funders, 'publications':publications, 'instruments':instruments, 'datasets':datasets, 'specimens':specimens, 'images':images})
 
 class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
     """ A detailed view of a single piece of metadata. """
@@ -1616,7 +1625,7 @@ def save_all_sheets(contributors, funders, publications, instruments, datasets, 
         return saved
 
 def metadata_version_check(filename):
-    version1 = Boolean
+    version1 = False
     workbook=xlrd.open_workbook(filename)
     if workbook.sheet_by_name('README'):
         version1 = False
@@ -1704,17 +1713,7 @@ def descriptive_metadata_upload(request):
 
 def upload_descriptive_spreadsheet(filename, associated_collection, request):
     """ Helper used by image_metadata_upload and collection_detail."""
-    # fs = FileSystemStorage(location=datapath)
-    # name_with_path=datapath + '/' + spreadsheet_file.name 
-    # filename = fs.save(name_with_path, spreadsheet_file)
-    fn = xlrd.open_workbook(filename)
-    #allSheetNames = fn.sheet_names()
-    #print(allSheetNames) 
-    worksheet = fn.sheet_by_index(0)
-    #for sheet in allSheetNames:
-    #    print("Current sheet name is {}" .format(sheet))
-    #    #this is where we left off
-    #    print(sheet)
+    worksheet = filename.sheet_by_index(0)
     error = False
     try:
         missing = False
