@@ -1628,9 +1628,10 @@ def metadata_version_check(filename):
     version1 = False
     workbook=xlrd.open_workbook(filename)
     
-    if workbook.sheet_by_name('README').exists():
-        version1 = False
-    else:
+    try:
+        if workbook.sheet_by_name('README'):
+            version1 = False
+    except:
         version1 = True
     
     return version1
@@ -1715,7 +1716,8 @@ def descriptive_metadata_upload(request):
 
 def upload_descriptive_spreadsheet(filename, associated_collection, request):
     """ Helper used by image_metadata_upload and collection_detail."""
-    worksheet = filename.sheet_by_index(0)
+    workbook=xlrd.open_workbook(filename)
+    worksheet = workbook.sheet_by_index(0)
     error = False
     try:
         missing = False
