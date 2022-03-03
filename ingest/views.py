@@ -1660,7 +1660,7 @@ def descriptive_metadata_upload(request):
             associated_collection = form.cleaned_data['associated_collection']
 
             # for production
-            datapath=collection.data_path.replace("/lz/","/etc/")
+            datapath=associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
             # datapath = '/home/shared_bil_dev/testetc/' 
