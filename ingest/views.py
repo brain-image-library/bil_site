@@ -19,17 +19,16 @@ from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
 from django_tables2 import RequestConfig
 import pyexcel as pe
-from openpyxl import load_workbook
 import xlrd
 import re
 from celery.result import AsyncResult
 
 from . import tasks
-from .field_list import required_metadata, contributor_metadata, funder_metadata, publication_metadata, instrument_metadata, dataset_metadata, specimen_metadata, image_metadata, datastate_metadata
+from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, DataState, Sheet
-from .tables import CollectionTable, ImageMetadataTable, DescriptiveMetadataTable, CollectionRequestTable
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet
+from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
 import json
@@ -1659,12 +1658,12 @@ def descriptive_metadata_upload(request):
         form = UploadForm(request.POST)
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
-            print(associated_collection)
+
             # for production
-            #datapath=collection.data_path.replace("/lz/","/etc/")
+            datapath=collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            datapath = '/home/shared_bil_dev/testetc/' 
+            # datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
             #datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
@@ -1839,106 +1838,3 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
         error = True
         messages.error(request, "File type not supported")
         return error
-
-# DEPRECATED
-# @login_required
-# def image_metadata_upload(request):
-#     """ Upload a spreadsheet containing image metadata information. """
-
-#     # The POST. Auser has selected a file and associated collection to upload.
-#     if request.method == 'POST' and request.FILES['spreadsheet_file']:
-#         form = UploadForm(request.POST)
-#         if form.is_valid():
-#             collection = form.cleaned_data['associated_collection']
-#             spreadsheet_file = request.FILES['spreadsheet_file']
-#             error = upload_spreadsheet(spreadsheet_file, collection, project, request)
-#             if error:
-#                 return redirect('ingest:image_metadata_upload')
-#             else:
-#                 return redirect('ingest:image_metadata_list')
-#     # This is the GET (just show the metadata upload page)
-#     else:
-#         form = UploadForm()
-#         # Only let a user associate metadata with an unlocked collection that
-#         # they own
-#         form.fields['associated_collection'].queryset = Collection.objects.filter(
-#             locked=False, user=request.user)
-#     collections = Collection.objects.filter(locked=False, user=request.user)
-#     return render(
-#         request,
-#         'ingest/image_metadata_upload.html',
-#         {'form': form, 'collections': collections})
-
-# DEPRECATED
-# @login_required
-# def image_metadata_list(request):
-#     """ A list of all the metadata the user has created. """
-#     # The user is trying to delete the selected metadata
-#     if request.method == "POST":
-#         pks = request.POST.getlist("selection")
-#         # Get all of the checked metadata (except LOCKED metadata)
-#         selected_objects = ImageMetadata.objects.filter(
-#             pk__in=pks, locked=False)
-#         selected_objects.delete()
-#         messages.success(request, 'Metadata successfully deleted')
-#         return redirect('ingest:image_metadata_list')
-#     # This is the GET (just show the user their list of metadata)
-#     else:
-#         # XXX: This exclude is likely redundant, becaue there's already the
-#         # same exclude in the class itself. Need to test though.
-#         table = ImageMetadataTable(
-#             ImageMetadata.objects.filter(user=request.user), exclude=['user','bil_uuid'])
-#         RequestConfig(request).configure(table)
-#         image_metadata = ImageMetadata.objects.filter(user=request.user)
-#         return render(
-#             request,
-#             'ingest/image_metadata_list.html',
-#             {'table': table, 'image_metadata': image_metadata})
-
-# DEPRECATED
-# class ImageMetadataDetail(LoginRequiredMixin, DetailView):
-#     """ A detailed view of a single piece of metadata. """
-#     model = ImageMetadata
-#     template_name = 'ingest/image_metadata_detail.html'
-#     context_object_name = 'image_metadata'
-
-# DEPRECATED
-# @login_required
-# def image_metadata_create(request):
-#     """ Create new image metadata. """
-#     # The user has hit the "Save" button on the "Create Metadata" page.
-#     if request.method == "POST":
-#         # We need to pass in request here, so we can use it to get the user
-#         form = ImageMetadataForm(request.POST, user=request.user)
-#         if form.is_valid():
-#             post = form.save(commit=False)
-#             post.save()
-#             messages.success(request, 'Metadata successfully created')
-#             return redirect('ingest:image_metadata_list')
-#     # The GET. Just show the user the blank "Create Metadata" form.
-#     else:
-#         form = ImageMetadataForm(user=request.user)
-#         # Only let a user associate metadata with an unlocked collection that
-#         # they own
-#         form.fields['collection'].queryset = Collection.objects.filter(
-#             locked=False, user=request.user)
-#     return render(request, 'ingest/image_metadata_create.html', {'form': form})
-# DEPRECATED
-# class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
-#     """ Modify an existing piece of image metadata. """
-#     model = ImageMetadata
-#     template_name = 'ingest/image_metadata_update.html'
-#     success_url = reverse_lazy('ingest:image_metadata_list')
-#     form_class = ImageMetadataForm
-
-#     def get_form_kwargs(self):
-#         kwargs = super(ImageMetadataUpdate, self).get_form_kwargs()
-#         kwargs.update({'user': self.request.user})
-#         return kwargs
-
-# DEPRECATED
-# class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
-#     """ Delete an existing piece of image metadata. """
-#     model = ImageMetadata
-#     template_name = 'ingest/image_metadata_delete.html'
-#     success_url = reverse_lazy('ingest:image_metadata_list')
