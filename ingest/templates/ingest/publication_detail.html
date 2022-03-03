@@ -1,0 +1,28 @@
+{% if publications %}
+<h3>Publication</h3>
+
+  <table class="table">    								
+    <thead>
+    <tr>
+    <th>relatedIdentifier</th>
+    <th>relatedIdentifierType</th>
+    <th>PMCID</th>
+    <th>citation</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for p in publications %}
+    <tr>
+    <td>{{ p.relatedidentifier }}</td>
+    <td>{{ p.relatedidentifiertype }}</td>
+    <td>{{ p.pmcid }}</td>
+    <td>{{ p.citation }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  
+{% else %}
+  <div class="alert alert-info">
+    <p>There is not Publication data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+  </div>
+{% endif %}

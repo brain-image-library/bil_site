@@ -1,0 +1,44 @@
+{% if instruments %}
+<h3>Instrument</h3>
+
+  <table class="table">    								
+    <thead>
+    <tr>
+    <th>MicroscopeType</th>
+    <th>MicroscopeManufacturerAndModel</th>
+    <th>ObjectiveName</th>
+    <th>ObjectiveImmersion</th>
+    <th>ObjectiveNA</th>
+    <th>ObjectiveMagnification</th>
+    <th>DetectorType</th>
+    <th>DetectorModel</th>
+    <th>IlluminationTypes</th>
+    <th>IlluminationWavelength</th>
+    <th>DetectionWavelength</th>
+    <th>SampleTemperature</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for i in instrument %}
+    <tr>
+    <td>{{ i.microscopetype }}</td>
+    <td>{{ i.microscopemanufacturerandmodel }}</td>
+    <td>{{ i.objectivename }}</td>
+    <td>{{ i.objectiveimmersion }}</td>
+    <td>{{ i.objectivena }}</td>
+    <td>{{ i.objectivemagnification }}</td>
+    <td>{{ i.detectortype }}</td>
+    <td>{{ i.detectormodel }}</td>
+    <td>{{ i.illuminationtypes }}</td>
+    <td>{{ i.illuminationwavelength }}</td>
+    <td>{{ i.detectionwavelength }}</td>
+    <td>{{ i.sampletemperature }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  
+{% else %}
+  <div class="alert alert-info">
+    <p>There is not Instrument data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+  </div>
+{% endif %}

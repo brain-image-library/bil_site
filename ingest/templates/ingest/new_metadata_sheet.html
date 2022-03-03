@@ -1,0 +1,27 @@
+{% if datasets_list %}
+  <table id="newMetadata" class="table">
+    <thead>
+    <tr>
+    <th>Title</th>
+    <th>Submission</th>
+    <th>BIL Directory</th>
+    <th>Uploaded Date</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for d in datasets_list %}
+    <tr>
+    <td>{{ d.title }}</td>
+    <td>{{ d.sheet.collection }}</td>
+    <td>{{ d.bildirectory }}</td>
+    <td>{{ d.sheet.date_uploaded }}</td>
+    <td><a href="{% url 'ingest:new_metadata_detail' d.sheet_id %}">View More</td>
+    </tr>
+    {% endfor %}
+  </table>
+  
+{% else %}
+  <div class="alert alert-info">
+    <p>You haven't created any metadata (V2) yet.</p>
+  </div>
+{% endif %}

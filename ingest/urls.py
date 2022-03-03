@@ -12,12 +12,12 @@ urlpatterns = [
     re_path(r'^logout/$', views.logout, name='logout'),
     re_path(r'^signup/$', views.signup, name='signup'),
     # All the image metadata pages
-    path('metadata/<int:pk>/', views.ImageMetadataDetail.as_view(), name='image_metadata_detail'),
-    path('metadata_update/<int:pk>/', views.ImageMetadataUpdate.as_view(), name='image_metadata_update'),
-    path('metadata_delete/<int:pk>/', views.ImageMetadataDelete.as_view(), name='image_metadata_delete'),
-    re_path(r'^metadata_create/$', views.image_metadata_create, name='image_metadata_create'),
-    re_path(r'^metadata_upload/$', views.image_metadata_upload, name='image_metadata_upload'),
-    re_path(r'^metadata_list/$', views.image_metadata_list, name='image_metadata_list'),
+    #path('metadata/<int:pk>/', views.ImageMetadataDetail.as_view(), name='image_metadata_detail'),
+    #path('metadata_update/<int:pk>/', views.ImageMetadataUpdate.as_view(), name='image_metadata_update'),
+    #path('metadata_delete/<int:pk>/', views.ImageMetadataDelete.as_view(), name='image_metadata_delete'),
+    #re_path(r'^metadata_create/$', views.image_metadata_create, name='image_metadata_create'),
+    #re_path(r'^metadata_upload/$', views.image_metadata_upload, name='image_metadata_upload'),
+    #re_path(r'^metadata_list/$', views.image_metadata_list, name='image_metadata_list'),
     # All the descriptive metadata pages
     path('descriptive_metadata/<int:pk>/', views.DescriptiveMetadataDetail.as_view(), name='descriptive_metadata_detail'),
     #AJR --- NEED TO FIX THESE AND UNCOMMENT.
@@ -47,6 +47,7 @@ urlpatterns = [
     path('project_form/', views.project_form, name = 'project_form'),
     path('create_project/', views.create_project, name = 'create_project'),
     path('view_project_people/<int:pk>', views.view_project_people, name = 'view_project_people'),
+    path('new_metadata_detail/<int:pk>', views.new_metadata_detail, name = 'new_metadata_detail'),
     path('view_project_collections/<int:pk>', views.view_project_collections, name = 'view_project_collections'),
     path('no_collection/<int:pk>', views.no_collection, name = 'no_colletion'),
     path('no_people/<int:pk>', views.no_people, name = 'no_people'),

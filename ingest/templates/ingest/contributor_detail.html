@@ -1,0 +1,37 @@
+{% if contributors %}
+<h3>Contributors</h3>
+  <table class="table">    								
+    <thead>
+    <tr>
+    <th>contributorName</th>
+    <th>Creator</th>
+    <th>contributorType</th>
+    <th>nameType</th>
+    <th>nameIdentifier</th>
+    <th>nameIdentifierScheme</th>
+    <th>affiliation</th>
+    <th>affiliationIdentifier</th>
+    <th>affiliationIdentifierScheme</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for c in contributors %}
+    <tr>
+    <td>{{ c.contributorname }}</td>
+    <td>{{ c.creator }}</td>
+    <td>{{ c.contributortype }}</td>
+    <td>{{ c.nametype }}</td>
+    <td>{{ c.nameidentifier }}</td>
+    <td>{{ c.nameidentifierscheme }}</td>
+    <td>{{ c.affiliation }}</td>
+    <td>{{ c.affiliationidentifier }}</td>
+    <td>{{ c.affiliationidentifierscheme }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  
+{% else %}
+  <div class="alert alert-info">
+    <p>There is not Contributor data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+  </div>
+{% endif %}

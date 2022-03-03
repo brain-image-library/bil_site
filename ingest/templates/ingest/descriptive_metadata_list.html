@@ -24,7 +24,7 @@
 </a>
 {% endif %}
 <br>
-<h1>Your Metadata</h1>
+<h1>Your Metadata (version 1)</h1>
 {% if descriptive_metadata %}
   <form action="" method="post">{% csrf_token %}
       {% load render_table from django_tables2 %}
@@ -39,7 +39,11 @@
   </div>
 {% endif %}
 <hr>
-<a href="{% url 'ingest:image_metadata_create' %}" class="btn btn-primary">
+
+<h1>Your Metadata (version 2)</h1>
+{% include 'ingest/new_metadata_sheet.html' %}
+
+<a href="{% url 'ingest:descriptive_metadata_upload' %}" class="btn btn-primary">
   <span class="glyphicon glyphicon-plus"></span> Create Metadata
 </a>
 <a href="{% url 'ingest:index' %}">

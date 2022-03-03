@@ -253,7 +253,6 @@ class ImageMetadataTable(tables.Table):
         attrs={"th__input": {"onclick": "toggle(this)"}},
         orderable=False)
 
-
 class DescriptiveMetadataTable(tables.Table):
     """ The table used in the descriptive metadata list. """
 
