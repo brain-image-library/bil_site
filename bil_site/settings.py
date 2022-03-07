@@ -84,6 +84,7 @@ INSTALLED_APPS = [
     'django_filters',
     'bootstrap4',
     'django_pam',
+    #'core',
 ]
 
 MIDDLEWARE = [

@@ -418,8 +418,11 @@ def descriptive_metadata_list(request):
         descriptive_metadata = DescriptiveMetadata.objects.filter(user=request.user)
     
         collections_with_new_metadata = []
-        collections = Collection.objects.filter(user=request.user)
+        collections = Collection.objects.filter(user=request.user).all()
+        print(request.user)
         for c in collections:
+            collection_sheet = Sheet.objects.filter(collection = c.id)
+            print(collection_sheet)
             if c.sheet_id is not None:
                 # get all datasets of that collection
                 for n in collections_with_new_metadata:
@@ -1646,10 +1649,10 @@ def descriptive_metadata_upload(request):
             #datapath=collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            # datapath = '/home/shared_bil_dev/testetc/' 
+            datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
-            datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
+            #datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
 

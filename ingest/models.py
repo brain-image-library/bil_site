@@ -236,8 +236,8 @@ class DescriptiveMetadata(models.Model):
     # This is the exact nomenclature used by BICCN.
     # The meat of the image metadata bookkeeping. This is all the relevant
     # information about a given set of imaging data.
-    def __str__(self):
-        return self.project_name
+    #def __str__(self):
+    #    return self.project_name
 
     # These fields are required but the user shouldn't control these
     #

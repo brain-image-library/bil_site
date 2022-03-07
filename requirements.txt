@@ -1,5 +1,5 @@
 amqp==2.3.2
-asgiref==3.3.1
+asgiref==3.3.2
 asn1crypto==0.24.0
 bcrypt==3.1.4
 beautifulsoup4==4.9.3
@@ -7,7 +7,7 @@ billiard==3.5.0.3
 celery==4.2.0
 cffi==1.14.5
 cryptography==3.3.2
-Django==3.1.13
+Django==3.2
 django-bootstrap4==2.3.1
 django-celery-results==1.0.1
 django-filter==2.4.0
