@@ -19,6 +19,9 @@ the interface between NGINX and the Django app itself. RabbitMQ and Celery are
 used for asynchronous validation and submission. PostgreSQL is the database
 used to store all the Django models (i.e. collections and image metadata)
 
+### New Metadata Model
+![image](https://user-images.githubusercontent.com/30911386/157480877-2ec5ad34-dea7-41bf-aa06-7321fb4425d4.png)
+
 
 ## Installation and Setup for Development (Ubuntu 16.04 and newer)
 
