@@ -19,17 +19,16 @@ from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
 from django_tables2 import RequestConfig
 import pyexcel as pe
-from openpyxl import load_workbook
 import xlrd
 import re
 from celery.result import AsyncResult
 
 from . import tasks
-from .field_list import required_metadata, contributor_metadata, funder_metadata, publication_metadata, instrument_metadata, dataset_metadata, specimen_metadata, image_metadata, datastate_metadata
+from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, DataState, Sheet
-from .tables import CollectionTable, ImageMetadataTable, DescriptiveMetadataTable, CollectionRequestTable
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet
+from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
 import json
@@ -417,24 +416,30 @@ def descriptive_metadata_list(request):
         RequestConfig(request).configure(table)
         descriptive_metadata = DescriptiveMetadata.objects.filter(user=request.user)
     
-        collections_with_new_metadata = []
-        collections = Collection.objects.filter(user=request.user).all()
-        print(request.user)
+        datasets_list = []
+        collections = Collection.objects.filter(user=request.user)
         for c in collections:
-            collection_sheet = Sheet.objects.filter(collection = c.id)
-            print(collection_sheet)
-            if c.sheet_id is not None:
-                # get all datasets of that collection
-                for n in collections_with_new_metadata:
-                    c.datasets = Dataset.objects.filter(sheet_id = c.sheet_id).all()
-                collections_with_new_metadata.append(c)
-
-        # new_metadata(request, collections_with_new_metadata)
+            sheets = Sheet.objects.filter(collection_id=c.id).all()
+            for s in sheets:
+                datasets = Dataset.objects.filter(sheet_id=s.id)
+                for d in datasets:
+                    datasets_list.append(d)
 
         return render(
             request,
             'ingest/descriptive_metadata_list.html',
-            {'table': table, 'descriptive_metadata': descriptive_metadata, 'pi':pi, 'collections':collections_with_new_metadata})
+            {'table': table, 'descriptive_metadata': descriptive_metadata, 'pi':pi, 'datasets_list':datasets_list})
+
+def new_metadata_detail(request, pk):
+    contributors = Contributor.objects.filter(sheet_id=pk).all()
+    funders = Funder.objects.filter(sheet_id=pk).all 
+    publications = Publication.objects.filter(sheet_id=pk).all()
+    instruments = Instrument.objects.filter(sheet_id=pk).all()
+    datasets = Dataset.objects.filter(sheet_id=pk).all()
+    specimens = Specimen.objects.filter(sheet_id=pk).all()
+    images = Image.objects.filter(sheet_id=pk).all()
+    
+    return render(request, 'ingest/new_metadata_detail.html', {'contributors':contributors, 'funders':funders, 'publications':publications, 'instruments':instruments, 'datasets':datasets, 'specimens':specimens, 'images':images})
 
 class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
     """ A detailed view of a single piece of metadata. """
@@ -793,7 +798,13 @@ def collection_detail(request, pk):
     # If user tries to go to a page using a collection primary key that doesn't
     # exist, give a 404
     try:
+        datasets_list = []
         collection = Collection.objects.get(id=pk)
+        sheets = Sheet.objects.filter(collection_id=collection.id).all()
+        for s in sheets:
+            datasets = Dataset.objects.filter(sheet_id=s.id)
+            for d in datasets:
+                datasets_list.append(d)
     except ObjectDoesNotExist:
         raise Http404
     # the metadata associated with this collection
@@ -892,7 +903,7 @@ def collection_detail(request, pk):
         {'table': table,
          'collection': collection,
          'descriptive_metadata_queryset': descriptive_metadata_queryset,
-         'pi': pi})
+         'pi': pi, 'datasets_list':datasets_list})
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     """ Edit an existing collection ."""
@@ -988,6 +999,8 @@ def check_contributors_sheet(filename):
                 errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
             if cols[5] not in nameidentifierscheme:
                 errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
+        #else:
+            #check nameIdentifier and nameIdentifierScheme ensure they are empty
         if cols[6] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
         if cols[7] == "":
@@ -1018,6 +1031,7 @@ def check_funders_sheet(filename):
         cols=funders_sheet.row_values(i)
         if cols[0] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+        
         if cols[1] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
         if cols[2] == "":
@@ -1047,22 +1061,25 @@ def check_publication_sheet(filename):
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
     if errormsg != "":
         return [ True, errormsg ]
-    for i in range(6,publication_sheet.nrows):
-        cols=publication_sheet.row_values(i)
-        if cols[0] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
-        if cols[1] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        if cols[1] not in relatedIdentifierType:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
-        if cols[2] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
-        if cols[3] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-        if cols[3] not in relationType:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
-        if cols[4] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+# if 1 field is filled out the rest should be other than PMCID
+#    for i in range(6,publication_sheet.nrows):
+#        cols=publication_sheet.row_values(i)
+#        if cols[0] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+#        if cols[1] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+        if cols[1] != '':
+            if cols[1] not in relatedIdentifierType:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
+#        if cols[2] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
+#        if cols[3] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+        if cols[3] != "":
+            if cols[3] not in relationType:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
+#        if cols[4] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
     return errormsg
 
 def check_instrument_sheet(filename):
@@ -1084,28 +1101,28 @@ def check_instrument_sheet(filename):
         cols=instrument_sheet.row_values(i)
         if cols[0] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
-        if cols[1] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        if cols[2] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        if cols[3] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-        if cols[4] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
-        if cols[5] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
-        if cols[6] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
-        if cols[7] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-        if cols[8] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
-        if cols[9] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
-        if cols[10] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
-        if cols[11] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
+        #if cols[1] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+#        if cols[2] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+#        if cols[3] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+#        if cols[4] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+#        if cols[5] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
+#        if cols[6] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
+#        if cols[7] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
+#        if cols[8] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
+#        if cols[9] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
+#        if cols[10] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
+#        if cols[11] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
     return errormsg
 
 def check_dataset_sheet(filename):
@@ -1131,36 +1148,40 @@ def check_dataset_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
         if cols[1] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        if cols[2] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        if cols[3] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-        if cols[4] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+#        if cols[2] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+#        if cols[3] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+#        if cols[4] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
         if cols[5] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
         if cols[6] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
         if cols[7] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-        if cols[8] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
-        if cols[9] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
-        if cols[9] not in GeneralModality:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" incorrect CV value found: "' + cols[9] + '" in cell "' + cellcols[9] + str(i+1) + '". '
+#        if cols[8] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
+#        if cols[9] == "":
+#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
+        if cols[9] != '':
+            if cols[9] not in GeneralModality:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" incorrect CV value found: "' + cols[9] + '" in cell "' + cellcols[9] + str(i+1) + '". '
         if cols[10] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
-        if cols[10] not in Technique:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
-        if cols[11] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
+        if cols[10] != '':
+            if cols[10] not in Technique:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
+        if cols[9] == "other" or cols[10] == "other":
+            if cols[11] == "":
+        #change to if GeneralModality and Technique = other
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
         if cols[12] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-        if cols[13] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[13] + '" value expected but not found in cell "' + cellcols[13] + str(i+1) + '". '
-        if cols[14] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[14] + '" value expected but not found in cell "' + cellcols[14] + str(i+1) + '". '
+        #if cols[13] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[13] + '" value expected but not found in cell "' + cellcols[13] + str(i+1) + '". '
+        #if cols[14] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[14] + '" value expected but not found in cell "' + cellcols[14] + str(i+1) + '". '
     return errormsg
 
 def check_specimen_sheet(filename):
@@ -1180,8 +1201,8 @@ def check_specimen_sheet(filename):
         return [ True, errormsg ]
     for i in range(6,specimen_sheet.nrows):
         cols=specimen_sheet.row_values(i)
-        if cols[0] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+        #if cols[0] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
         if cols[1] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
         if cols[2] == "":
@@ -1194,18 +1215,18 @@ def check_specimen_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
         if cols[5] not in Sex:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[6] + str(i+1) + '". '
-        if cols[6] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
-        if cols[7] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-        if cols[8] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
+        #if cols[6] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
+        #if cols[7] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
+        #if cols[8] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
         if cols[9] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
-        if cols[10] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
-        if cols[11] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
+        #if cols[10] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
+        #if cols[11] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
     return errormsg
 
 def check_image_sheet(filename):
@@ -1238,96 +1259,106 @@ def check_image_sheet(filename):
         return [ True, errormsg ]
     for i in range(6,image_sheet.nrows):
         cols=image_sheet.row_values(i)
+        #if xAxis is oblique, oblique cols should reflect 
         if cols[0] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
         if cols[0] not in xAxis:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[0] + '" incorrect CV value found: "' + cols[0] + '" in cell "' + cellcols[0] + str(i+1) + '". '
-        if cols[1] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        if cols[1] not in obliqueXdim1:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
-        if cols[2] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[2] + str(i+1) + '". '
-        if cols[2] not in obliqueXdim2:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
-        if cols[3] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-        if cols[3] not in obliqueXdim3:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
+        #if cols[1] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+        if cols[1] != "":
+            if cols[1] not in obliqueXdim1:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
+        #if cols[2] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[2] + str(i+1) + '". '
+        if cols[2] != "":
+            if cols[2] not in obliqueXdim2:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
+        #if cols[3] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+        if cols[3] != "":
+            if cols[3] not in obliqueXdim3:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
         if cols[4] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
         if cols[4] not in yAxis:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" incorrect CV value found: "' + cols[4] + '" in cell "' + cellcols[4] + str(i+1) + '". '
-        if cols[5] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
-        if cols[5] not in obliqueYdim1:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
-        if cols[6] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
-        if cols[6] not in obliqueYdim2:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" incorrect CV value found: "' + cols[6] + '" in cell "' + cellcols[6] + str(i+1) + '". '
-        if cols[7] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-        if cols[7] not in obliqueYdim3:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" incorrect CV value found: "' + cols[7] + '" in cell "' + cellcols[7] + str(i+1) + '". '
+        #if cols[5] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
+        if cols[5] != "":
+            if cols[5] not in obliqueYdim1:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
+        #if cols[6] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
+        if cols[6] != "":
+            if cols[6] not in obliqueYdim2:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" incorrect CV value found: "' + cols[6] + '" in cell "' + cellcols[6] + str(i+1) + '". '
+        #if cols[7] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
+        if cols[7] != "":
+            if cols[7] not in obliqueYdim3:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" incorrect CV value found: "' + cols[7] + '" in cell "' + cellcols[7] + str(i+1) + '". '
         if cols[8] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
         if cols[8] not in zAxis:
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" incorrect CV value found: "' + cols[8] + '" in cell "' + cellcols[8] + str(i+1) + '". '
-        if cols[9] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
-        if cols[9] not in ObliqueZdim1:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" incorrect CV value found: "' + cols[9] + '" in cell "' + cellcols[9] + str(i+1) + '". '
-        if cols[10] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
-        if cols[10] not in ObliqueZdim2:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
-        if cols[11] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
-        if cols[11] not in ObliqueZdim3:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" incorrect CV value found: "' + cols[11] + '" in cell "' + cellcols[11] + str(i+1) + '". '
-        if cols[12] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-        if cols[13] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[13] + '" value expected but not found in cell "' + cellcols[13] + str(i+1) + '". '
-        if cols[14] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-        if cols[15] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[15] + '" value expected but not found in cell "' + cellcols[15] + str(i+1) + '". '
+        #if cols[9] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
+        if cols[9] != "":
+            if cols[9] not in ObliqueZdim1:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" incorrect CV value found: "' + cols[9] + '" in cell "' + cellcols[9] + str(i+1) + '". '
+        #if cols[10] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
+        if cols[10] != "":
+            if cols[10] not in ObliqueZdim2:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
+        #if cols[11] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
+        if cols[11] != "":
+            if cols[11] not in ObliqueZdim3:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" incorrect CV value found: "' + cols[11] + '" in cell "' + cellcols[11] + str(i+1) + '". '
+        #if cols[12] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        #if cols[13] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[13] + '" value expected but not found in cell "' + cellcols[13] + str(i+1) + '". '
+        #if cols[14] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+       # if cols[15] == "":
+       #     errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[15] + '" value expected but not found in cell "' + cellcols[15] + str(i+1) + '". '
         if cols[16] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
         if cols[17] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-        if cols[18] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[18] + '" value expected but not found in cell "' + cellcols[18] + str(i+1) + '". '
-        if cols[19] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+        #if cols[18] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[18] + '" value expected but not found in cell "' + cellcols[18] + str(i+1) + '". '
+        #if cols[19] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
         if cols[20] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[20] + '" value expected but not found in cell "' + cellcols[20] + str(i+1) + '". '
         if cols[21] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[21] + '" value expected but not found in cell "' + cellcols[21] + str(i+1) + '". '
-        if cols[22] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[22] + '" value expected but not found in cell "' + cellcols[22] + str(i+1) + '". '
-        if cols[23] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[23] + '" value expected but not found in cell "' + cellcols[23] + str(i+1) + '". '
-        if cols[24] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[24] + '" value expected but not found in cell "' + cellcols[24] + str(i+1) + '". '
-        if cols[25] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[25] + '" value expected but not found in cell "' + cellcols[25] + str(i+1) + '". '
-        if cols[26] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[26] + '" value expected but not found in cell "' + cellcols[26] + str(i+1) + '". '
-        if cols[27] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[27] + '" value expected but not found in cell "' + cellcols[27] + str(i+1) + '". '
-        if cols[28] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[28] + '" value expected but not found in cell "' + cellcols[28] + str(i+1) + '". '
-        if cols[29] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[29] + '" value expected but not found in cell "' + cellcols[29] + str(i+1) + '". '
-        if cols[30] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[30] + '" value expected but not found in cell "' + cellcols[30] + str(i+1) + '". '
-        if cols[31] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[31] + '" value expected but not found in cell "' + cellcols[31] + str(i+1) + '". '
-        if cols[32] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[32] + '" value expected but not found in cell "' + cellcols[32] + str(i+1) + '". '
+        #if cols[22] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[22] + '" value expected but not found in cell "' + cellcols[22] + str(i+1) + '". '
+        #if cols[23] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[23] + '" value expected but not found in cell "' + cellcols[23] + str(i+1) + '". '
+        #if cols[24] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[24] + '" value expected but not found in cell "' + cellcols[24] + str(i+1) + '". '
+        #if cols[25] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[25] + '" value expected but not found in cell "' + cellcols[25] + str(i+1) + '". '
+        #if cols[26] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[26] + '" value expected but not found in cell "' + cellcols[26] + str(i+1) + '". '
+        #if cols[27] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[27] + '" value expected but not found in cell "' + cellcols[27] + str(i+1) + '". '
+        #if cols[28] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[28] + '" value expected but not found in cell "' + cellcols[28] + str(i+1) + '". '
+        #if cols[29] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[29] + '" value expected but not found in cell "' + cellcols[29] + str(i+1) + '". '
+        #if cols[30] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[30] + '" value expected but not found in cell "' + cellcols[30] + str(i+1) + '". '
+        #if cols[31] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[31] + '" value expected but not found in cell "' + cellcols[31] + str(i+1) + '". '
+        #if cols[32] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[32] + '" value expected but not found in cell "' + cellcols[32] + str(i+1) + '". '
     return errormsg
 
 def ingest_contributors_sheet(filename):
@@ -1619,12 +1650,15 @@ def save_all_sheets(contributors, funders, publications, instruments, datasets, 
         return saved
 
 def metadata_version_check(filename):
-    version1 = Boolean
+    version1 = False
     workbook=xlrd.open_workbook(filename)
-    if workbook.sheet_by_name('README'):
-        version1 = False
-    else:
+    
+    try:
+        if workbook.sheet_by_name('README'):
+            version1 = False
+    except:
         version1 = True
+    
     return version1
 
 @login_required
@@ -1644,9 +1678,9 @@ def descriptive_metadata_upload(request):
         form = UploadForm(request.POST)
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
-            print(associated_collection)
+
             # for production
-            #datapath=collection.data_path.replace("/lz/","/etc/")
+            datapath=associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
             datapath = '/home/shared_bil_dev/testetc/' 
@@ -1707,17 +1741,8 @@ def descriptive_metadata_upload(request):
 
 def upload_descriptive_spreadsheet(filename, associated_collection, request):
     """ Helper used by image_metadata_upload and collection_detail."""
-    # fs = FileSystemStorage(location=datapath)
-    # name_with_path=datapath + '/' + spreadsheet_file.name 
-    # filename = fs.save(name_with_path, spreadsheet_file)
-    fn = xlrd.open_workbook(filename)
-    #allSheetNames = fn.sheet_names()
-    #print(allSheetNames) 
-    worksheet = fn.sheet_by_index(0)
-    #for sheet in allSheetNames:
-    #    print("Current sheet name is {}" .format(sheet))
-    #    #this is where we left off
-    #    print(sheet)
+    workbook=xlrd.open_workbook(filename)
+    worksheet = workbook.sheet_by_index(0)
     error = False
     try:
         missing = False
@@ -1733,27 +1758,12 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
             row = worksheet.row(rowidx)
             for colidx, cell in enumerate(row):
                 if rowidx == 0:
-                    #Bad Headers Check
-                    #if cell.value == 'grant_number':
-                    #    grantrow = rowidx+1
-                    #    grantcol = colidx
-                    #    grantnum = worksheet.cell(grantrow, grantcol).value
-                    #    if bool(re.match(grantpattern, grantnum)) != True:
-                    #        badgrantnum=True
-                    # this will check specifically the headers of the document for missing info.
                     if cell.value not in required_metadata:
                         missing = True
                         missingcol = colidx+1
                         missingrow = rowidx+1
                     else:
                         not_missing.append(cell.value)
-                #Escape/Illegal characters in data check        
-                #if badchar in cell.value:
-                #    has_escapes = True
-                #    bad_str.append(badchar)
-                #    errorcol = colidx
-                #    errorrow = rowidx
-                #    illegalchar = cell.value
                 if cell.value == '':
                         missing = True
                         missingcol = colidx+1
@@ -1766,44 +1776,6 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
         missing_fields.append(str(diff(required_metadata, not_missing)))
         
         records = pe.iget_records(file_name=filename)
-        # This is kinda inefficient, but we'll pre-scan the entire spreadsheet
-        # before saving entries, so we don't get half-way uploaded
-        # spreadsheets.
-        
-        #for idx, record in enumerate(records):
-            # XXX: right now, we're just checking for required fields that are
-            # missing, but we can add whatever checks we want here.
-            # XXX: blank rows in the spreadsheet that have some hidden
-            # formatting can screw up this test
-            # This is where we can probably strip \r from lines and check for header accuracy
-            #has_escapes = [j for j in record if '\r' in j]
-            #print(record)
-            
-            #missing = [k for k in record if k in required_metadata and not record[k]]
-            #missing = False
-            #missing_fields = []
-            #for i in required_metadata:
-            #    if i not in record:
-            #        missing = True
-            #        missing_fields.append(str(i))
-        
-            #has_escapes = False
-            #badchar = "\\"
-            #bad_str = []
-                    
-            #for row in range(0, currentSheet.nrows):
-            #    for column in "ABCDEFGHIJKLMNO":  # Here you can add or reduce the columns
-            #        cell_name = "{}{}".format(column, row)
-            #        if fn[cell_name].value == "\\":
-                        #print("{1} cell is located on {0}" .format(cell_name, currentSheet[cell_name].value))
-                        #print("cell position {} has escape character {}".format(cell_name, currentSheet[cell_name].value))
-                        #return cell_name
-
-            #for r, i in record.items():
-            #    result = i
-            #    if badchar in result:
-            #        has_escapes = True
-            #        bad_str.append(badchar)
         if missing:
             error = True
             if missing_fields[0] == '[]':
@@ -1824,9 +1796,6 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
             error_msg = 'Grant number does not match correct format for NIH grant number, "{}" in Row: {} Column: {}  must match the format "A-B1C-2D3E4F5G-6H"'.format(grantnum, grantrow, grantcol)
             messages.error(request, error_msg)
         if error:
-            # We have to add 2 to idx because spreadsheet rows are 1-indexed
-            # and first row is header
-            # return redirect('ingest:image_metadata_upload')
             return error
         records = pe.iget_records(file_name=filename)
         for idx, record in enumerate(records):
@@ -1835,8 +1804,6 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
                 user=request.user)
             for k in record:
                 setattr(im, k, record[k])
-                #messages.success(request, k)
-                #messages.success(request, record[k])
             im.save()
         messages.success(request, 'Descriptive Metadata successfully uploaded')
         # return redirect('ingest:image_metadata_list')
@@ -1844,7 +1811,6 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
     except pe.exceptions.FileTypeNotSupported:
         error = True
         messages.error(request, "File type not supported")
-        # return redirect('ingest:image_metadata_upload')
         return error
 
 # This gets called in the descriptive_metadata_upload function but we've commented that out to use upload_all_metadata_sheets instead, but prob will harvest some code from here. don't remove yet.
@@ -1892,106 +1858,3 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
         error = True
         messages.error(request, "File type not supported")
         return error
-
-# DEPRECATED
-# @login_required
-# def image_metadata_upload(request):
-#     """ Upload a spreadsheet containing image metadata information. """
-
-#     # The POST. Auser has selected a file and associated collection to upload.
-#     if request.method == 'POST' and request.FILES['spreadsheet_file']:
-#         form = UploadForm(request.POST)
-#         if form.is_valid():
-#             collection = form.cleaned_data['associated_collection']
-#             spreadsheet_file = request.FILES['spreadsheet_file']
-#             error = upload_spreadsheet(spreadsheet_file, collection, project, request)
-#             if error:
-#                 return redirect('ingest:image_metadata_upload')
-#             else:
-#                 return redirect('ingest:image_metadata_list')
-#     # This is the GET (just show the metadata upload page)
-#     else:
-#         form = UploadForm()
-#         # Only let a user associate metadata with an unlocked collection that
-#         # they own
-#         form.fields['associated_collection'].queryset = Collection.objects.filter(
-#             locked=False, user=request.user)
-#     collections = Collection.objects.filter(locked=False, user=request.user)
-#     return render(
-#         request,
-#         'ingest/image_metadata_upload.html',
-#         {'form': form, 'collections': collections})
-
-# DEPRECATED
-# @login_required
-# def image_metadata_list(request):
-#     """ A list of all the metadata the user has created. """
-#     # The user is trying to delete the selected metadata
-#     if request.method == "POST":
-#         pks = request.POST.getlist("selection")
-#         # Get all of the checked metadata (except LOCKED metadata)
-#         selected_objects = ImageMetadata.objects.filter(
-#             pk__in=pks, locked=False)
-#         selected_objects.delete()
-#         messages.success(request, 'Metadata successfully deleted')
-#         return redirect('ingest:image_metadata_list')
-#     # This is the GET (just show the user their list of metadata)
-#     else:
-#         # XXX: This exclude is likely redundant, becaue there's already the
-#         # same exclude in the class itself. Need to test though.
-#         table = ImageMetadataTable(
-#             ImageMetadata.objects.filter(user=request.user), exclude=['user','bil_uuid'])
-#         RequestConfig(request).configure(table)
-#         image_metadata = ImageMetadata.objects.filter(user=request.user)
-#         return render(
-#             request,
-#             'ingest/image_metadata_list.html',
-#             {'table': table, 'image_metadata': image_metadata})
-
-# DEPRECATED
-# class ImageMetadataDetail(LoginRequiredMixin, DetailView):
-#     """ A detailed view of a single piece of metadata. """
-#     model = ImageMetadata
-#     template_name = 'ingest/image_metadata_detail.html'
-#     context_object_name = 'image_metadata'
-
-# DEPRECATED
-# @login_required
-# def image_metadata_create(request):
-#     """ Create new image metadata. """
-#     # The user has hit the "Save" button on the "Create Metadata" page.
-#     if request.method == "POST":
-#         # We need to pass in request here, so we can use it to get the user
-#         form = ImageMetadataForm(request.POST, user=request.user)
-#         if form.is_valid():
-#             post = form.save(commit=False)
-#             post.save()
-#             messages.success(request, 'Metadata successfully created')
-#             return redirect('ingest:image_metadata_list')
-#     # The GET. Just show the user the blank "Create Metadata" form.
-#     else:
-#         form = ImageMetadataForm(user=request.user)
-#         # Only let a user associate metadata with an unlocked collection that
-#         # they own
-#         form.fields['collection'].queryset = Collection.objects.filter(
-#             locked=False, user=request.user)
-#     return render(request, 'ingest/image_metadata_create.html', {'form': form})
-# DEPRECATED
-# class ImageMetadataUpdate(LoginRequiredMixin, UpdateView):
-#     """ Modify an existing piece of image metadata. """
-#     model = ImageMetadata
-#     template_name = 'ingest/image_metadata_update.html'
-#     success_url = reverse_lazy('ingest:image_metadata_list')
-#     form_class = ImageMetadataForm
-
-#     def get_form_kwargs(self):
-#         kwargs = super(ImageMetadataUpdate, self).get_form_kwargs()
-#         kwargs.update({'user': self.request.user})
-#         return kwargs
-
-# DEPRECATED
-# class ImageMetadataDelete(LoginRequiredMixin, DeleteView):
-#     """ Delete an existing piece of image metadata. """
-#     model = ImageMetadata
-#     template_name = 'ingest/image_metadata_delete.html'
-#     success_url = reverse_lazy('ingest:image_metadata_list')

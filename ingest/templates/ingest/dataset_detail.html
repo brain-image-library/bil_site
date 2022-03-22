@@ -1,0 +1,50 @@
+{% if datasets %}
+<h3>Datasets</h3>
+
+  <table class="table">    								
+    <thead>
+    <tr>
+    <th>BILDirectory</th>
+    <th>title</th>
+    <th>socialMedia</th>
+    <th>subject</th>
+    <th>Subjectscheme</th>
+    <th>rights</th>
+    <th>rightsURI</th>
+    <th>rightsIdentifier</th>
+    <th>Image</th>
+    <th>GeneralModality</th>
+    <th>Technique</th>
+    <th>Other</th>
+    <th>Abstract</th>
+    <th>Methods</th>
+    <th>TechnicalInfo</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for d in datasets %}
+    <tr>
+    <td>{{ d.bildirectory }}</td>
+    <td>{{ d.title }}</td>
+    <td>{{ d.socialmedia }}</td>
+    <td>{{ d.subject }}</td>
+    <td>{{ d.subjectscheme }}</td>
+    <td>{{ d.rights }}</td>
+    <td>{{ d.rightsuri }}</td>
+    <td>{{ d.rightsidentifier }}</td>
+    <td>{{ d.image }}</td>
+    <td>{{ d.generalmodality }}</td>
+    <td>{{ d.technique }}</td>
+    <td>{{ d.other }}</td>
+    <td>{{ d.abstract }}</td>
+    <td>{{ d.methods }}</td>
+    <td>{{ d.technicalinfo }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  
+{% else %}
+  <div class="alert alert-info">
+    <p>There is not Dataset data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+  </div>
+{% endif %}

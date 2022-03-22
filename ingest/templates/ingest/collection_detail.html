@@ -64,7 +64,7 @@
         {% endif %}
       {% else %}
         <div class="alert alert-info">
-          <strong>This submission doesn't have any metadata yet.</strong>
+          <strong>This submission doesn't have any Metadata Version 1.</strong>
         </div>
       {% endif %}
 
@@ -95,6 +95,7 @@
       </table>
       </p>
       <br><br>
+      {% include 'ingest/new_metadata_sheet.html' %}
       {% include 'ingest/messages.html' %}
 
     </div>

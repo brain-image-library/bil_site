@@ -1,0 +1,30 @@
+{% if funders %}
+<h3>Funders</h3>
+
+  <table class="table">    								
+    <thead>
+    <tr>
+    <th>funderName</th>
+    <th>fundingReferenceIdentifier</th>
+    <th>fundingReferenceIdentifierType</th>
+    <th>awardNumber</th>
+    <th>awardTitle</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for f in funders %}
+    <tr>
+    <td>{{ f.fundername }}</td>
+    <td>{{ f.funding_reference_identifier }}</td>
+    <td>{{ f.funding_reference_identifier_type }}</td>
+    <td>{{ f.award_number }}</td>
+    <td>{{ f.award_title }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  
+{% else %}
+  <div class="alert alert-info">
+    <p>There is not Funder data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+  </div>
+{% endif %}

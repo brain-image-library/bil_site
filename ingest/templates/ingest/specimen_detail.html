@@ -1,0 +1,44 @@
+{% if specimens %}
+<h3>Specimens</h3>
+
+  <table class="table">    								
+    <thead>
+    <tr>
+    <th>LocalID</th>
+    <th>Species</th>
+    <th>NCBITaxonomy</th>
+    <th>Age</th>
+    <th>Ageunit</th>
+    <th>Sex</th>
+    <th>Genotype</th>
+    <th>OrganLocalID</th>
+    <th>OrganName</th>
+    <th>SampleLocalID</th>
+    <th>Atlas</th>
+    <th>Locations</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for s in specimens %}
+    <tr>
+    <td>{{ s.localid }}</td>
+    <td>{{ s.species }}</td>
+    <td>{{ s.ncbitaxonomy }}</td>
+    <td>{{ s.age }}</td>
+    <td>{{ s.ageunit }}</td>
+    <td>{{ s.sex }}</td>
+    <td>{{ s.genotype }}</td>
+    <td>{{ s.organlocalid }}</td>
+    <td>{{ s.organname }}</td>
+    <td>{{ s.samplelocalid }}</td>
+    <td>{{ s.atlas }}</td>
+    <td>{{ s.locations }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  
+{% else %}
+  <div class="alert alert-info">
+    <p>There is not Specimen data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+  </div>
+{% endif %}
