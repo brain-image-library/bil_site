@@ -1172,9 +1172,10 @@ def check_dataset_sheet(filename):
         if cols[10] != '':
             if cols[10] not in Technique:
                 errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
-        if cols[11] == "":
+        if cols[9] == "other" or cols[10] == "other":
+            if cols[11] == "":
         #change to if GeneralModality and Technique = other
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
         if cols[12] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
         #if cols[13] == "":
