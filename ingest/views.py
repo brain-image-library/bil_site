@@ -1519,10 +1519,9 @@ def check_all_sheets(filename):
         return errormsg
     return errormsg
 
-def save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_set, images, filename, collection, dataset):
+def save_all_sheets(contributors, funders, publications, instruments, specimen_set, images, filename, collection, dataset, sheet):
     saved = Boolean
     try:
-        sheet = save_sheet_row(filename, collection)
         save_contributors_sheet(contributors, sheet)
         save_funders_sheet(funders, sheet)
         save_publication_sheet(publications, sheet)
@@ -1603,9 +1602,11 @@ def descriptive_metadata_upload(request):
                     specimen_sets = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
                     
-                    dataset = save_dataset_sheet(datasets) #this is pulled out so we can get fk to pass to saving images/specimens/eventually datastate
+                    sheet = save_sheet_row(filename, collection)
 
-                    saved = save_all_sheets(contributors, funders, publications, instruments, specimen_sets, images, filename, collection, dataset)
+                    dataset = save_dataset_sheet(datasets, sheet) #this is pulled out so we can get fk to pass to saving images/specimens/eventually datastate
+
+                    saved = save_all_sheets(contributors, funders, publications, instruments, specimen_sets, images, filename, collection, dataset, sheet)
                     
                     if saved == True:
                         messages.success(request, 'Descriptive Metadata successfully uploaded!!')
