@@ -344,7 +344,7 @@ class Dataset(models.Model):
     rights = models.CharField(max_length=256)
     rightsuri = models.CharField(max_length=256)
     rightsidentifier = models.CharField(max_length=256)
-    image = models.CharField(max_length=256)
+    dataset_image = models.CharField(max_length=256)
     generalmodality = models.CharField(max_length=256)
     technique = models.CharField(max_length=256)
     other = models.CharField(max_length=256)
