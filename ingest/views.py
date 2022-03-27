@@ -1542,7 +1542,7 @@ def save_dataset_sheet(datasets, sheet):
         print(repr(e))
     return
 
-def save_specimen_sheet(specimen_set, sheet):
+def save_specimen_sheet(specimen_set, sheet, dataset):
     try:
         for s in specimen_set:
             localid = s['LocalID']
@@ -1564,7 +1564,7 @@ def save_specimen_sheet(specimen_set, sheet):
         print(repr(e))
     return
 
-def save_image_sheet(images, sheet):
+def save_image_sheet(images, sheet, dataset):
     try:
         for i in images:
             xaxis = i['xAxis']
