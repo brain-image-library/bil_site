@@ -1558,7 +1558,7 @@ def save_specimen_sheet(specimen_set, sheet):
             atlas = s['Atlas']
             locations = s['Locations']
 
-            specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id)
+            specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id, data_set_id=dataset.id)
             specimen_object.save()
     except Exception as e:
         print(repr(e))
@@ -1601,7 +1601,7 @@ def save_image_sheet(images, sheet):
             files = i['Files']
             dimensionorder = i['DimensionOrder']
     
-            image = Image(xaxis=xaxis, obliquexdim1=obliquexdim1, obliquexdim2=obliquexdim2, obliquexdim3=obliquexdim3, yaxis=yaxis, obliqueydim1=obliqueydim1, obliqueydim2=obliqueydim2, obliqueydim3=obliqueydim3, zaxis=zaxis, obliquezdim1=obliquezdim1, obliquezdim2=obliquezdim2, obliquezdim3=obliquezdim3,landmarkname=landmarkname, landmarkx=landmarkx, landmarky=landmarky, landmarkz=landmarkz, number=number, displaycolor=displaycolor, representation=representation, flurophore=flurophore, stepsizex=stepsizex, stepsizey=stepsizey, stepsizez=stepsizez, stepsizet=stepsizet, channels=channels, slices=slices, z=z, xsize=xsize, ysize=ysize, zsize=zsize, gbytes=gbytes, files=files, dimensionorder=dimensionorder, sheet_id=sheet.id)
+            image = Image(xaxis=xaxis, obliquexdim1=obliquexdim1, obliquexdim2=obliquexdim2, obliquexdim3=obliquexdim3, yaxis=yaxis, obliqueydim1=obliqueydim1, obliqueydim2=obliqueydim2, obliqueydim3=obliqueydim3, zaxis=zaxis, obliquezdim1=obliquezdim1, obliquezdim2=obliquezdim2, obliquezdim3=obliquezdim3,landmarkname=landmarkname, landmarkx=landmarkx, landmarky=landmarky, landmarkz=landmarkz, number=number, displaycolor=displaycolor, representation=representation, flurophore=flurophore, stepsizex=stepsizex, stepsizey=stepsizey, stepsizez=stepsizez, stepsizet=stepsizet, channels=channels, slices=slices, z=z, xsize=xsize, ysize=ysize, zsize=zsize, gbytes=gbytes, files=files, dimensionorder=dimensionorder, sheet_id=sheet.id, data_set_id=dataset.id)
             image.save()
     except Exception as e:
         print(repr(e))
@@ -1631,17 +1631,15 @@ def check_all_sheets(filename):
         return errormsg
     return errormsg
 
-def save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_set, images, filename, collection):
+def save_all_sheets(contributors, funders, publications, instruments, specimen_set, images, dataset, sheet):
     saved = Boolean
     try:
-        sheet = save_sheet_row(filename, collection)
         save_contributors_sheet(contributors, sheet)
         save_funders_sheet(funders, sheet)
         save_publication_sheet(publications, sheet)
         save_instrument_sheet(instruments, sheet)
-        save_dataset_sheet(datasets, sheet)
-        save_specimen_sheet(specimen_set, sheet)
-        save_image_sheet(images, sheet)
+        save_specimen_sheet(specimen_set, sheet, dataset)
+        save_image_sheet(images, sheet, dataset)
         saved = True
         return saved
     except Exception as e:
@@ -1683,10 +1681,10 @@ def descriptive_metadata_upload(request):
             # datapath=associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            # datapath = '/home/shared_bil_dev/testetc/' 
+            datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
-            datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
+            #datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
 
@@ -1716,8 +1714,10 @@ def descriptive_metadata_upload(request):
                     specimen_sets = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
 
-                    saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, collection)
-                    
+                    sheet = save_sheet_row(filename, collection)
+
+                    dataset = save_dataset_sheet(datasets, sheet) #this is pulled out so we can get fk to pass to saving images/specimens/eventually datastate
+                    saved = save_all_sheets(contributors, funders, publications, instruments, specimen_sets, images, dataset, sheet)
                     if saved == True:
                         messages.success(request, 'Descriptive Metadata successfully uploaded!!')
                         return redirect('ingest:descriptive_metadata_list')

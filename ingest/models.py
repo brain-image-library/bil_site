@@ -98,6 +98,24 @@ class Sheet(models.Model):
     collection = models.ForeignKey(Collection,
         on_delete=models.SET_NULL, blank=False, null=True)
 
+class Dataset(models.Model):
+    bildirectory = models.CharField(max_length=256)
+    title = models.CharField(max_length=256)
+    socialmedia = models.CharField(max_length=256)
+    subject = models.CharField(max_length=256)
+    subjectscheme = models.CharField(max_length=256)
+    rights = models.CharField(max_length=256)
+    rightsuri = models.CharField(max_length=256)
+    rightsidentifier = models.CharField(max_length=256)
+    dataset_image = models.CharField(max_length=256)
+    generalmodality = models.CharField(max_length=256)
+    technique = models.CharField(max_length=256)
+    other = models.CharField(max_length=256)
+    abstract = models.CharField(max_length=1000)
+    methods = models.CharField(max_length=256)
+    technicalinfo = models.CharField(max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
     # information about a given set of imaging data.
@@ -335,24 +353,6 @@ class Instrument(models.Model):
     sampletemperature = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
 
-class Dataset(models.Model):
-    bildirectory = models.CharField(max_length=256)
-    title = models.CharField(max_length=256)
-    socialmedia = models.CharField(max_length=256)
-    subject = models.CharField(max_length=256)
-    subjectscheme = models.CharField(max_length=256)
-    rights = models.CharField(max_length=256)
-    rightsuri = models.CharField(max_length=256)
-    rightsidentifier = models.CharField(max_length=256)
-    dataset_image = models.CharField(max_length=256)
-    generalmodality = models.CharField(max_length=256)
-    technique = models.CharField(max_length=256)
-    other = models.CharField(max_length=256)
-    abstract = models.CharField(max_length=1000)
-    methods = models.CharField(max_length=256)
-    technicalinfo = models.CharField(max_length=256)
-    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-
 class Specimen(models.Model):
     localid = models.CharField(max_length=256)
     species = models.CharField(max_length=256)
@@ -367,6 +367,7 @@ class Specimen(models.Model):
     atlas = models.CharField(max_length=256)
     locations = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
 
 class Image(models.Model):
     xaxis = models.CharField(max_length=256)
@@ -403,6 +404,7 @@ class Image(models.Model):
     files = models.CharField(max_length=256)
     dimensionorder = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
 
 class DataState(models.Model):
     level = models.CharField(max_length=256)
@@ -411,4 +413,4 @@ class DataState(models.Model):
     attributes = models.CharField(max_length=256)
     description = models.CharField(max_length=1000)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
