@@ -1744,7 +1744,7 @@ def descriptive_metadata_upload(request):
                     # sheet = save_sheet_row(filename, collection)
 
                     # saved_dataset = save_dataset_sheet(datasets, sheet) #this is pulled out so we can get fk to pass to saving images/specimens/eventually datastate
-                    saved = save_all_sheets(contributors, funders, publications, instruments, specimen_sets, images, datasets)
+                    saved = save_all_sheets(contributors, funders, publications, instruments, specimen_sets, images, datasets, filename, collection)
                     if saved == True:
                         messages.success(request, 'Descriptive Metadata successfully uploaded!!')
                         return redirect('ingest:descriptive_metadata_list')
