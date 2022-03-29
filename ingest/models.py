@@ -367,7 +367,6 @@ class Specimen(models.Model):
     atlas = models.CharField(max_length=256)
     locations = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-    # data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
 
 class Image(models.Model):
     xaxis = models.CharField(max_length=256)
@@ -404,7 +403,6 @@ class Image(models.Model):
     files = models.CharField(max_length=256)
     dimensionorder = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-    # data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
 
 class DataState(models.Model):
     level = models.CharField(max_length=256)
@@ -413,4 +411,3 @@ class DataState(models.Model):
     attributes = models.CharField(max_length=256)
     description = models.CharField(max_length=1000)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-    # data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
