@@ -6,7 +6,7 @@
 
 {% load static %}
 
-{% block content %}
+{% block narrow %}
 
 {% if pi %}
 <a href="{% url 'ingest:index' %}">
@@ -18,9 +18,7 @@
 <h1>Upload Metadata Spreadsheet</h1>
 <h3>Please note that BIL has adopted a new metadata schema. Please use the template provided below.</h3>
 
-{% include 'ingest/metadata_questions.html' %}
-
-<h3>Step 3 of 3: Upload metdata for associated submission</h3>
+<h3>Step 2 of 2: Upload metdata for associated submission</h3>
 {% if collections %}
 <ul class="list-group">
   <li class="list-group-item">Download and fill out either the <a href="{% static 'ingest/BILMetadataV2Template.xlsx' %}">Excel</a> or <a href="{% static '/ingest/BILMetadataV2Template.ods' %}">LibreOffice Calc</a> template. </li>
