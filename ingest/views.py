@@ -1565,7 +1565,7 @@ def save_dataset_sheet(datasets, sheet):
         print(repr(e))
     return
 
-def save_specimen_sheet(specimen_set, sheet, saved_dataset):
+def save_specimen_sheet(specimen_set, sheet):
     try:
         for s in specimen_set:
             localid = s['LocalID']
@@ -1581,14 +1581,14 @@ def save_specimen_sheet(specimen_set, sheet, saved_dataset):
             atlas = s['Atlas']
             locations = s['Locations']
 
-            specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id, data_set_id=saved_dataset.id)
+            specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id)
             specimen_object.save()
         print('SAVED SPECIMEN*****')
     except Exception as e:
         print(repr(e))
     return
 
-def save_image_sheet(images, sheet, saved_dataset):
+def save_image_sheet(images, sheet):
     try:
         for i in images:
             xaxis = i['xAxis']
@@ -1625,7 +1625,7 @@ def save_image_sheet(images, sheet, saved_dataset):
             files = i['Files']
             dimensionorder = i['DimensionOrder']
     
-            image = Image(xaxis=xaxis, obliquexdim1=obliquexdim1, obliquexdim2=obliquexdim2, obliquexdim3=obliquexdim3, yaxis=yaxis, obliqueydim1=obliqueydim1, obliqueydim2=obliqueydim2, obliqueydim3=obliqueydim3, zaxis=zaxis, obliquezdim1=obliquezdim1, obliquezdim2=obliquezdim2, obliquezdim3=obliquezdim3,landmarkname=landmarkname, landmarkx=landmarkx, landmarky=landmarky, landmarkz=landmarkz, number=number, displaycolor=displaycolor, representation=representation, flurophore=flurophore, stepsizex=stepsizex, stepsizey=stepsizey, stepsizez=stepsizez, stepsizet=stepsizet, channels=channels, slices=slices, z=z, xsize=xsize, ysize=ysize, zsize=zsize, gbytes=gbytes, files=files, dimensionorder=dimensionorder, sheet_id=sheet.id, data_set_id=saved_dataset.id)
+            image = Image(xaxis=xaxis, obliquexdim1=obliquexdim1, obliquexdim2=obliquexdim2, obliquexdim3=obliquexdim3, yaxis=yaxis, obliqueydim1=obliqueydim1, obliqueydim2=obliqueydim2, obliqueydim3=obliqueydim3, zaxis=zaxis, obliquezdim1=obliquezdim1, obliquezdim2=obliquezdim2, obliquezdim3=obliquezdim3,landmarkname=landmarkname, landmarkx=landmarkx, landmarky=landmarky, landmarkz=landmarkz, number=number, displaycolor=displaycolor, representation=representation, flurophore=flurophore, stepsizex=stepsizex, stepsizey=stepsizey, stepsizez=stepsizez, stepsizet=stepsizet, channels=channels, slices=slices, z=z, xsize=xsize, ysize=ysize, zsize=zsize, gbytes=gbytes, files=files, dimensionorder=dimensionorder, sheet_id=sheet.id)
             image.save()
         print('SAVED IMAGE********')
     except Exception as e:
@@ -1656,35 +1656,16 @@ def check_all_sheets(filename):
         return errormsg
     return errormsg
 
-def save_all_sheets(contributors, funders, publications, instruments, specimen_set, images, saved_dataset, sheet):
+def save_all_sheets(contributors, funders, publications, instruments, specimen_set, images, datasets, sheet):
     saved = Boolean
     try:
+        save_dataset_sheet(datasets, sheet)
         save_contributors_sheet(contributors, sheet)
-    except Exception as e:
-        print(repr(e))
-        saved = False
-    try:
         save_funders_sheet(funders, sheet)
-    except Exception as e:
-        print(repr(e))
-        saved = False
-    try:
         save_publication_sheet(publications, sheet)
-    except Exception as e:
-        print(repr(e))
-        saved = False
-    try:        
         save_instrument_sheet(instruments, sheet)
-    except Exception as e:
-        print(repr(e))
-        saved = False
-    try:    
-        save_specimen_sheet(specimen_set, sheet, saved_dataset)
-    except Exception as e:
-        print(repr(e))
-        saved = False        
-    try:
-        save_image_sheet(images, sheet, saved_dataset)
+        save_specimen_sheet(specimen_set, sheet)
+        save_image_sheet(images, sheet)
     except Exception as e:
         print(repr(e))
         saved = False
@@ -1759,8 +1740,8 @@ def descriptive_metadata_upload(request):
 
                     sheet = save_sheet_row(filename, collection)
 
-                    saved_dataset = save_dataset_sheet(datasets, sheet) #this is pulled out so we can get fk to pass to saving images/specimens/eventually datastate
-                    saved = save_all_sheets(contributors, funders, publications, instruments, specimen_sets, images, saved_dataset, sheet)
+                    # saved_dataset = save_dataset_sheet(datasets, sheet) #this is pulled out so we can get fk to pass to saving images/specimens/eventually datastate
+                    saved = save_all_sheets(contributors, funders, publications, instruments, specimen_sets, images, datasets, sheet)
                     if saved == True:
                         messages.success(request, 'Descriptive Metadata successfully uploaded!!')
                         return redirect('ingest:descriptive_metadata_list')

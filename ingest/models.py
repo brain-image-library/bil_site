@@ -107,7 +107,7 @@ class Dataset(models.Model):
     rights = models.CharField(max_length=256)
     rightsuri = models.CharField(max_length=256)
     rightsidentifier = models.CharField(max_length=256)
-    dataset_image = models.CharField(max_length=256)
+    image = models.CharField(max_length=256)
     generalmodality = models.CharField(max_length=256)
     technique = models.CharField(max_length=256)
     other = models.CharField(max_length=256)
@@ -367,7 +367,7 @@ class Specimen(models.Model):
     atlas = models.CharField(max_length=256)
     locations = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+    # data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
 
 class Image(models.Model):
     xaxis = models.CharField(max_length=256)
@@ -404,7 +404,7 @@ class Image(models.Model):
     files = models.CharField(max_length=256)
     dimensionorder = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+    # data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
 
 class DataState(models.Model):
     level = models.CharField(max_length=256)
@@ -413,4 +413,4 @@ class DataState(models.Model):
     attributes = models.CharField(max_length=256)
     description = models.CharField(max_length=1000)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+    # data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
