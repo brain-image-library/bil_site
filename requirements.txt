@@ -24,7 +24,7 @@ kombu==5.2.0rc1
 lml==0.0.1
 lxml==4.6.5
 openpyxl==2.5.3
-paramiko==2.4.2
+paramiko==2.10.1
 pretty-dump==3.0
 psycopg2==2.7.5
 pyasn1==0.4.3
