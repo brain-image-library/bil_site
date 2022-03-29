@@ -1550,7 +1550,7 @@ def save_dataset_sheet(datasets, sheet):
             rights = d['rights']
             rightsuri = d['rightsURI']
             rightsidentifier = d['rightsIdentifier']
-            dataset_image = d['Image']
+            image = d['Image']
             generalmodality = d['GeneralModality']
             technique = d['Technique']
             other = d['Other']
@@ -1558,7 +1558,7 @@ def save_dataset_sheet(datasets, sheet):
             methods = d['Methods']
             technicalinfo = d['TechnicalInfo']
 
-            dataset = Dataset(bildirectory=bildirectory, title=title, socialmedia=socialmedia, subject=subject, subjectscheme=subjectscheme, rights=rights, rightsuri=rightsuri, rightsidentifier=rightsidentifier, dataset_image=dataset_image, generalmodality=generalmodality, technique=technique, other=other, abstract=abstract, methods=methods, technicalinfo=technicalinfo, sheet_id=sheet.id)
+            dataset = Dataset(bildirectory=bildirectory, title=title, socialmedia=socialmedia, subject=subject, subjectscheme=subjectscheme, rights=rights, rightsuri=rightsuri, rightsidentifier=rightsidentifier, image=image, generalmodality=generalmodality, technique=technique, other=other, abstract=abstract, methods=methods, technicalinfo=technicalinfo, sheet_id=sheet.id)
             dataset.save()
         print('****SAVED DATASET')
     except Exception as e:
