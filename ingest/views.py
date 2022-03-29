@@ -1061,25 +1061,25 @@ def check_publication_sheet(filename):
                        '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
     if errormsg != "":
         return [ True, errormsg ]
-# if 1 field is filled out the rest should be other than PMCID
-#    for i in range(6,publication_sheet.nrows):
-#        cols=publication_sheet.row_values(i)
-#        if cols[0] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
-#        if cols[1] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+    # if 1 field is filled out the rest should be other than PMCID
+    for i in range(6,publication_sheet.nrows):
+        cols=publication_sheet.row_values(i)
+        #if cols[0] == "":
+        #     errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+        #if cols[1] == "":
+        #     errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
         if cols[1] != '':
             if cols[1] not in relatedIdentifierType:
                 errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
-#        if cols[2] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
-#        if cols[3] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+        #if cols[2] == "":
+            #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
+        #if cols[3] == "":
+             #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
         if cols[3] != "":
             if cols[3] not in relationType:
                 errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
-#        if cols[4] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+        #if cols[4] == "":
+           #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
     return errormsg
 
 def check_instrument_sheet(filename):
@@ -1103,26 +1103,26 @@ def check_instrument_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
         #if cols[1] == "":
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-#        if cols[2] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-#        if cols[3] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-#        if cols[4] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
-#        if cols[5] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
-#        if cols[6] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
-#        if cols[7] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-#        if cols[8] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
-#        if cols[9] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
-#        if cols[10] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
-#        if cols[11] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
+        #if cols[2] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+        #if cols[3] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+        #if cols[4] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+        #if cols[5] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
+        #if cols[6] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
+        #if cols[7] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
+        #if cols[8] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
+        #if cols[9] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
+        #if cols[10] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
+        #if cols[11] == "":
+        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
     return errormsg
 
 def check_dataset_sheet(filename):
@@ -1148,22 +1148,22 @@ def check_dataset_sheet(filename):
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
         if cols[1] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-#        if cols[2] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-#        if cols[3] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-#        if cols[4] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+        #if cols[2] == "":
+             #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+        #if cols[3] == "":
+            #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+        #if cols[4] == "":
+            #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
         if cols[5] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
         if cols[6] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
         if cols[7] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-#        if cols[8] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
-#        if cols[9] == "":
-#            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
+        #if cols[8] == "":
+            #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
+        #if cols[9] == "":
+            #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
         if cols[9] != '':
             if cols[9] not in GeneralModality:
                 errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" incorrect CV value found: "' + cols[9] + '" in cell "' + cellcols[9] + str(i+1) + '". '
@@ -1323,8 +1323,8 @@ def check_image_sheet(filename):
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[13] + '" value expected but not found in cell "' + cellcols[13] + str(i+1) + '". '
         #if cols[14] == "":
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-       # if cols[15] == "":
-       #     errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[15] + '" value expected but not found in cell "' + cellcols[15] + str(i+1) + '". '
+        # if cols[15] == "":
+        #     errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[15] + '" value expected but not found in cell "' + cellcols[15] + str(i+1) + '". '
         if cols[16] == "":
             errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
         if cols[17] == "":
@@ -1370,6 +1370,8 @@ def ingest_contributors_sheet(filename):
         values = {keys[col]: contributors_sheet.cell(row, col).value
             for col in range(contributors_sheet.ncols)}
         contributors.append(values)
+    print('CONTRIBS')
+    print(contributors)
     return contributors
 
 def ingest_funders_sheet(filename):
@@ -1381,6 +1383,8 @@ def ingest_funders_sheet(filename):
         values={keys[col]: funders_sheet.cell(row,col).value
             for col in range(funders_sheet.ncols)}
         funders.append(values)
+    print('FUNDERs')
+    print(funders)
     return funders
 
 def ingest_publication_sheet(filename):
@@ -1392,6 +1396,9 @@ def ingest_publication_sheet(filename):
         values={keys[col]: publication_sheet.cell(row,col).value
             for col in range(publication_sheet.ncols)}
         publications.append(values)
+
+    print('PUBS')
+    print(publications)
     return publications
 
 def ingest_instrument_sheet(filename):
@@ -1403,6 +1410,9 @@ def ingest_instrument_sheet(filename):
         values={keys[col]: instrument_sheet.cell(row,col).value
             for col in range(instrument_sheet.ncols)}
         instruments.append(values)
+
+    print('INSSTRUMENTS')
+    print(instruments)
     return instruments
 
 def ingest_dataset_sheet(filename):
@@ -1414,6 +1424,8 @@ def ingest_dataset_sheet(filename):
         values={keys[col]: dataset_sheet.cell(row,col).value
             for col in range(dataset_sheet.ncols)}
         datasets.append(values)
+    print('****DATASETS')
+    print(datasets)
     return datasets
 
 def ingest_specimen_sheet(filename):
@@ -1425,6 +1437,9 @@ def ingest_specimen_sheet(filename):
         values={keys[col]: specimen_sheet.cell(row,col).value
             for col in range(specimen_sheet.ncols)}
         specimen_set.append(values)
+
+    print('*****SPECIMEN SET')
+    print(specimen_set)
     return specimen_set
 
 def ingest_image_sheet(filename):
@@ -1436,12 +1451,15 @@ def ingest_image_sheet(filename):
         values={keys[col]: image_sheet.cell(row,col).value
             for col in range(image_sheet.ncols)}
         images.append(values)
+    print('*****IMAGES')
+    print(images)
     return images
 
 def save_sheet_row(filename, collection):
     try:
         sheet = Sheet(filename=filename, date_uploaded=datetime.now(), collection_id=collection.id)
         sheet.save()
+        print('**SAVED SHEET')
     except Exception as e:
         print(e)
     return sheet
@@ -1461,6 +1479,7 @@ def save_contributors_sheet(contributors, sheet):
             
             contributor = Contributor(contributorname=contributorname, creator=creator, contributortype=contributortype, nametype=nametype, nameidentifier=nameidentifier, nameidentifierscheme=nameidentifierscheme, affiliation=affiliation, affiliationidentifier=affiliationidentifier, affiliationidentifierscheme=affiliationidentifierscheme, sheet_id=sheet.id)
             contributor.save()
+        print('**** SAVED CONTRIBS')
     except Exception as e:
         print(repr(e))
     return
@@ -1476,6 +1495,7 @@ def save_funders_sheet(funders, sheet):
             
             funder = Funder(fundername=fundername, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet_id=sheet.id)
             funder.save()
+        print('***SAVED FUNDERS')
     except Exception as e:
         print(repr(e))
     return
@@ -1491,6 +1511,7 @@ def save_publication_sheet(publications, sheet):
             
             publication = Publication(relatedidentifier=relatedidentifier, relatedidentifiertype=relatedidentifiertype, pmcid=pmcid, relationtype=relationtype, citation=citation, sheet_id=sheet.id)
             publication.save()
+        print('SAVED PUBS******')
     except Exception as e:
         print(repr(e))
     return
@@ -1513,6 +1534,7 @@ def save_instrument_sheet(instruments, sheet):
             
             instrument = Instrument(microscopetype=microscopetype, microscopemanufacturerandmodel=microscopemanufacturerandmodel, objectivename=objectivename, objectiveimmersion=objectiveimmersion, objectivena=objectivena, objectivemagnification=objectivemagnification, detectortype=detectortype, detectormodel=detectormodel, illuminationtypes=illuminationtypes, illuminationwavelength=illuminationwavelength, detectionwavelength=detectionwavelength, sampletemperature=sampletemperature, sheet_id=sheet.id)
             instrument.save()
+        print('***SAVED INSTRUMENTS')
     except Exception as e:
         print(repr(e))
     return
@@ -1538,6 +1560,7 @@ def save_dataset_sheet(datasets, sheet):
 
             dataset = Dataset(bildirectory=bildirectory, title=title, socialmedia=socialmedia, subject=subject, subjectscheme=subjectscheme, rights=rights, rightsuri=rightsuri, rightsidentifier=rightsidentifier, image=image, generalmodality=generalmodality, technique=technique, other=other, abstract=abstract, methods=methods, technicalinfo=technicalinfo, sheet_id=sheet.id)
             dataset.save()
+        print('****SAVED DATASET')
     except Exception as e:
         print(repr(e))
     return
@@ -1560,6 +1583,7 @@ def save_specimen_sheet(specimen_set, sheet):
 
             specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id)
             specimen_object.save()
+        print('SAVED SPECIMEN*****')
     except Exception as e:
         print(repr(e))
     return
@@ -1603,6 +1627,7 @@ def save_image_sheet(images, sheet):
     
             image = Image(xaxis=xaxis, obliquexdim1=obliquexdim1, obliquexdim2=obliquexdim2, obliquexdim3=obliquexdim3, yaxis=yaxis, obliqueydim1=obliqueydim1, obliqueydim2=obliqueydim2, obliqueydim3=obliqueydim3, zaxis=zaxis, obliquezdim1=obliquezdim1, obliquezdim2=obliquezdim2, obliquezdim3=obliquezdim3,landmarkname=landmarkname, landmarkx=landmarkx, landmarky=landmarky, landmarkz=landmarkz, number=number, displaycolor=displaycolor, representation=representation, flurophore=flurophore, stepsizex=stepsizex, stepsizey=stepsizey, stepsizez=stepsizez, stepsizet=stepsizet, channels=channels, slices=slices, z=z, xsize=xsize, ysize=ysize, zsize=zsize, gbytes=gbytes, files=files, dimensionorder=dimensionorder, sheet_id=sheet.id)
             image.save()
+        print('SAVED IMAGE********')
     except Exception as e:
         print(repr(e))
     return
@@ -1631,15 +1656,15 @@ def check_all_sheets(filename):
         return errormsg
     return errormsg
 
-def save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_set, images, filename, collection):
+def save_all_sheets(contributors, funders, publications, instruments, specimen_set, images, datasets, filename, collection):
     saved = Boolean
     try:
         sheet = save_sheet_row(filename, collection)
+        save_dataset_sheet(datasets, sheet)
         save_contributors_sheet(contributors, sheet)
         save_funders_sheet(funders, sheet)
         save_publication_sheet(publications, sheet)
         save_instrument_sheet(instruments, sheet)
-        save_dataset_sheet(datasets, sheet)
         save_specimen_sheet(specimen_set, sheet)
         save_image_sheet(images, sheet)
         saved = True
@@ -1647,7 +1672,7 @@ def save_all_sheets(contributors, funders, publications, instruments, datasets, 
     except Exception as e:
         print(repr(e))
         saved = False
-        return saved
+    # return saved
 
 def metadata_version_check(filename):
     version1 = False
@@ -1680,10 +1705,10 @@ def descriptive_metadata_upload(request):
             associated_collection = form.cleaned_data['associated_collection']
 
             # for production
-            datapath=associated_collection.data_path.replace("/lz/","/etc/")
+            # datapath=associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            # datapath = '/home/shared_bil_dev/testetc/' 
+            datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
             #datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
@@ -1716,8 +1741,10 @@ def descriptive_metadata_upload(request):
                     specimen_sets = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
 
-                    saved = save_all_sheets(contributors, funders, publications, instruments, datasets, specimen_sets, images, filename, collection)
-                    
+                    # sheet = save_sheet_row(filename, collection)
+
+                    # saved_dataset = save_dataset_sheet(datasets, sheet) #this is pulled out so we can get fk to pass to saving images/specimens/eventually datastate
+                    saved = save_all_sheets(contributors, funders, publications, instruments, specimen_sets, images, datasets, filename, collection)
                     if saved == True:
                         messages.success(request, 'Descriptive Metadata successfully uploaded!!')
                         return redirect('ingest:descriptive_metadata_list')
