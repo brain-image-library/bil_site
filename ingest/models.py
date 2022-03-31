@@ -411,4 +411,3 @@ class DataState(models.Model):
     attributes = models.CharField(max_length=256)
     description = models.CharField(max_length=1000)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-
