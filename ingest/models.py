@@ -405,6 +405,7 @@ class Image(models.Model):
     dimensionorder = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
     data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+    specimen = models.ForeignKey(Specimen, on_delete=models.SET_NULL, blank=True, null=True)
 
 class DataState(models.Model):
     level = models.CharField(max_length=256)
@@ -414,4 +415,4 @@ class DataState(models.Model):
     description = models.CharField(max_length=1000)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
     data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
-
+    specimen = models.ForeignKey(Specimen, on_delete=models.SET_NULL, blank=True, null=True)
