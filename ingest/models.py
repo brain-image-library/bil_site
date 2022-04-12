@@ -337,21 +337,7 @@ class Publication(models.Model):
     relationtype = models.CharField(max_length=256)
     citation = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-
-class Instrument(models.Model):
-    microscopetype = models.CharField(max_length=256)
-    microscopemanufacturerandmodel = models.CharField(max_length=1000)
-    objectivename = models.CharField(max_length=256)
-    objectiveimmersion = models.CharField(max_length=256)
-    objectivena = models.CharField(max_length=256)
-    objectivemagnification = models.CharField(max_length=256)
-    detectortype = models.CharField(max_length=256)
-    detectormodel = models.CharField(max_length=256)
-    illuminationtypes = models.CharField(max_length=256)
-    illuminationwavelength = models.CharField(max_length=256)
-    detectionwavelength = models.CharField(max_length=256)
-    sampletemperature = models.CharField(max_length=256)
-    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
 
 class Specimen(models.Model):
     localid = models.CharField(max_length=256)
@@ -416,3 +402,22 @@ class DataState(models.Model):
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
     data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
     specimen = models.ForeignKey(Specimen, on_delete=models.SET_NULL, blank=True, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+
+class Instrument(models.Model):
+    microscopetype = models.CharField(max_length=256)
+    microscopemanufacturerandmodel = models.CharField(max_length=1000)
+    objectivename = models.CharField(max_length=256)
+    objectiveimmersion = models.CharField(max_length=256)
+    objectivena = models.CharField(max_length=256)
+    objectivemagnification = models.CharField(max_length=256)
+    detectortype = models.CharField(max_length=256)
+    detectormodel = models.CharField(max_length=256)
+    illuminationtypes = models.CharField(max_length=256)
+    illuminationwavelength = models.CharField(max_length=256)
+    detectionwavelength = models.CharField(max_length=256)
+    sampletemperature = models.CharField(max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+    specimen = models.ForeignKey(Specimen, on_delete=models.SET_NULL, blank=True, null=True)
+    
