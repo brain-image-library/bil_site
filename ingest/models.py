@@ -40,10 +40,10 @@ class Collection(models.Model):
         max_length=256, help_text="The lab or department subgroup")
     project_funder_id = models.CharField(
         max_length=256, help_text="The grant number")
-    project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=True, null=True)
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=False, null=True)
     # Optional fields. The user doesn't need to supply these.
     project_funder = models.CharField(
-        max_length=256, blank=True, default="NIH")
+        max_length=256, blank=False, default="NIH")
     modality = models.CharField(max_length=256, blank=True, default="NIH")
     collection_type = models.CharField(max_length=256, blank=True, default="NIH")
     bil_uuid = models.CharField(max_length=256)
