@@ -2,11 +2,11 @@
   <script src="/static/ingest/metadataloadingindicator.js"></script>
 </head>
 
-{% extends 'ingest/narrow.html' %}
+{% extends 'ingest/wide.html' %}
 
+{% block wide %}
 {% load static %}
 
-{% block narrow %}
 
 {% if pi %}
 <a href="{% url 'ingest:index' %}">
