@@ -1578,13 +1578,72 @@ def save_dataset_sheet(datasets, sheet):
         print(repr(e))
     return saved_datasets
 
-def save_specimen_sheet_method_1(specimen_set, sheet, saved_datasets):
+def save_specimen_sheet_method_1_or_3(specimen_set, sheet, saved_datasets):
+    # multiple datasets, multple specimens, multiple images (1:1)
+    # single instrument
+    
     saved_specimens = []
     try:
         for d_index, d in enumerate(saved_datasets):
             data_set_id = d.id
             
             s = specimen_set[d_index]
+            localid = s['LocalID']
+            species = s['Species']
+            ncbitaxonomy = s['NCBITaxonomy']
+            age = s['Age']
+            ageunit = s['Ageunit']
+            sex = s['Sex']
+            genotype = s['Genotype']
+            organlocalid = s['OrganLocalID']
+            organname = s['OrganName']
+            samplelocalid = s['SampleLocalID']
+            atlas = s['Atlas']
+            locations = s['Locations']
+
+            specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id, data_set_id=data_set_id)
+            specimen_object.save()
+            saved_specimens.append(specimen_object)
+    except Exception as e:
+        print(repr(e))
+    return saved_specimens
+
+def save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets):
+    # multiple specimens, single dataset, single instrument
+    saved_specimens = []
+    try:
+        for s in specimen_set:
+            data_set_id = saved_datasets.id
+
+            localid = s['LocalID']
+            species = s['Species']
+            ncbitaxonomy = s['NCBITaxonomy']
+            age = s['Age']
+            ageunit = s['Ageunit']
+            sex = s['Sex']
+            genotype = s['Genotype']
+            organlocalid = s['OrganLocalID']
+            organname = s['OrganName']
+            samplelocalid = s['SampleLocalID']
+            atlas = s['Atlas']
+            locations = s['Locations']
+
+            specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id, data_set_id=data_set_id)
+            specimen_object.save()
+            saved_specimens.append(specimen_object)
+    except Exception as e:
+        print(repr(e))
+    return saved_specimens
+
+def save_specimen_sheet_method_4(specimen_set, sheet, saved_datasets):
+    # multile datasets, multiple instruments, multiple images all 1:1
+    # single specimen
+    
+    saved_specimens = []
+    try:
+        for s in specimen_set:
+            data_set_id = saved_datasets.id
+
             localid = s['LocalID']
             species = s['Species']
             ncbitaxonomy = s['NCBITaxonomy']
@@ -1779,7 +1838,7 @@ def descriptive_metadata_upload(request):
                     print(sheet.id)
 
                     saved_datasets = save_dataset_sheet(datasets, sheet) #this is pulled out so we can get fk to pass to saving images/specimens/eventually datastate
-                    saved_specimens = save_specimen_sheet_method_1(specimen_set, sheet, saved_datasets)
+                    saved_specimens = save_specimen_sheet_method_1_or_3(specimen_set, sheet, saved_datasets)
                     saved_images = save_image_sheet_method_1(images, sheet, saved_datasets)
 
                     for d in saved_datasets:
