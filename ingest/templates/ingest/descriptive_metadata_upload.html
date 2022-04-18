@@ -17,7 +17,7 @@
 <br>
 <h1>Upload Metadata Spreadsheet</h1>
 <h3>Please note that BIL has adopted a new metadata schema. Please use the template provided below.</h3>
-
+<form method="post" enctype="multipart/form-data">
 {% include 'ingest/metadata_questions.html' %}
 
 <h3>Step 3 of 3: Upload metdata for associated submission</h3>
@@ -30,7 +30,7 @@
 
   <hr>
 
-  <form method="post" enctype="multipart/form-data">
+  
     {% csrf_token %}
     {{ form }}
     </br>
@@ -38,7 +38,7 @@
     </br>
     <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
     
-    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();loadSpinner();" />
+    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();loadSpinner();document.querySelector('input[name="ingest_method"]:checked').value;" />
     </br>
   </form>
 {% else %}
