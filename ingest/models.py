@@ -19,6 +19,8 @@ class Project(models.Model):
     is_biccn = models.BooleanField(default=False)
 
 class People(models.Model):
+    def __str__(self):
+        return self.name
     name = models.CharField(max_length=256)
     orcid = models.CharField(max_length=256)
     affiliation = models.CharField(max_length=256)
@@ -29,7 +31,7 @@ class People(models.Model):
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
     def __str__(self):
-        return self.name
+        return self.bil_uuid
 
     # Required and the user should supply these
     name = models.CharField(max_length=256, unique=True)

@@ -17,8 +17,24 @@ from .models import Specimen
 from .models import Image
 from .models import EventsLog
 from .models import Sheet 
-
+from .models import ProjectPeople
+from .models import Funder
+from .models import Publication
 #admin.site.register(Collection)
+class ContributorsInline(admin.TabularInline):
+    model = Contributor
+class FundersInline(admin.TabularInline):
+    model = Funder
+class PublicationsInline(admin.TabularInline):
+    model = Publication
+class InstrumentsInline(admin.TabularInline):
+    model = Instrument
+class DatasetsInline(admin.TabularInline):
+    model = Dataset
+class SpecimensInline(admin.TabularInline):
+    model = Specimen
+class ImagesInline(admin.TabularInline):
+    model = Image
 admin.site.disable_action('delete_selected')
 @admin.action(description='Mark selected Collection(s) as Validated and Submitted')
 def mark_as_validated_and_submitted(modeladmin, request, queryset):
@@ -47,18 +63,18 @@ class CollectionAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{} Metadata Instances</a>', url, count)
     view_descriptivemetadatas_link.short_description = "MetadataV1(s)"
     def view_sheets_link(self, obj):
-        contributors = []
+        #contributors = []
         count = obj.sheet_set.count()
-        sheets = Sheet.objects.filter(collection_id = obj.id).all()
-        for s in sheets:
-            contrib = Contributor.objects.filter(sheet_id = s.id).all()
-            contributors.append(contrib)
+        #sheets = Sheet.objects.filter(collection_id = obj.id).all()
+        #for s in sheets:
+        #    contrib = Contributor.objects.filter(sheet_id = s.id).all()
+        #    contributors.append(contrib)
         url = (
             reverse("admin:ingest_sheet_changelist")
             + "?"
             +urlencode({"collection__id": f"{obj.id}"})
         )
-        return format_html('<a href="{}">{} Sheet Instances</a>', url, count, contributors)
+        return format_html('<a href="{}">{} Sheet Instances</a>', url, count)
     view_sheets_link.short_description = "MetadataV2(s)"
     def view_eventslogs_link(self, obj):
         count = obj.eventslog_set.count()
@@ -70,25 +86,39 @@ class CollectionAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{} Events</a>', url, count)
     view_eventslogs_link.short_description = "EventsLogs"
 admin.site.register(ImageMetadata)
-admin.site.register(People)
-admin.site.register(Project)
-#admin.site.register(DescriptiveMetadata)
+@admin.register(People)
+class People(admin.ModelAdmin):
+    list_display = ("id", "name", "orcid", "affiliation", "affiliation_identifier", "is_bil_admin", "auth_user_id")
+@admin.register(Project)
+class Project(admin.ModelAdmin):
+    list_display = ("id", "name", "funded_by", "is_biccn")
 @admin.register(DescriptiveMetadata)
 class DescriptiveMetadataAdmin(admin.ModelAdmin):
     list_display = ("r24_directory", "sample_id","collection")
 #admin.site.register(Contributor)
 @admin.register(Contributor)
 class Contributor(admin.ModelAdmin):
-    list_display = ("contributorname", "creator", "contributortype", "nametype", "nameidentifier", "nameidentifierscheme", "affiliation", "affiliationidentifier", "affiliationidentifierscheme", "sheet")
-admin.site.register(Instrument)
-admin.site.register(Dataset)
+    list_display = ("id", "contributorname", "creator", "contributortype", "nametype", "nameidentifier", "nameidentifierscheme", "affiliation", "affiliationidentifier", "affiliationidentifierscheme", "sheet")
+@admin.register(Instrument)
+class Instrument(admin.ModelAdmin):
+    list_display = ("id", "microscopetype", "microscopemanufacturerandmodel", "objectivename", "objectiveimmersion", "objectivena", "objectivemagnification", "detectortype", "detectormodel", "illuminationtypes", "illuminationwavelength", "detectionwavelength", "sampletemperature", "sheet")
+@admin.register(Dataset)
+class Dataset(admin.ModelAdmin):
+    list_display = ("id", "bildirectory", "socialmedia", "subject", "subjectscheme", "rights", "rightsuri", "rightsidentifier", "image", "generalmodality", "technique", "other", "abstract", "methods", "technicalinfo", "sheet")
 admin.site.register(Specimen)
-admin.site.register(Image)
+@admin.register(Image)
+class Image(admin.ModelAdmin):
+    list_display = ("id", "xaxis", "obliquexdim1", "obliquexdim2", "obliquexdim3", "yaxis", "obliqueydim1", "obliqueydim2", "obliqueydim3", "zaxis", "obliquezdim1", "obliquezdim2", "obliquezdim3", "landmarkname", "landmarkx", "landmarky", "landmarkz", "number", "displaycolor", "representation", "flurophore", "stepsizex", "stepsizey", "stepsizez", "stepsizet", "channels", "slices", "z", "xsize", "ysize", "zsize", "gbytes", "files", "dimensionorder", "sheet")
 #admin.site.register(Sheet)
 @admin.register(Sheet)
 class SheetAdmin(admin.ModelAdmin):
-    list_display = ("filename", "date_uploaded", "collection")
+    list_display = ("id","filename", "date_uploaded", "collection")
+    inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline,  ]
+
 #admin.site.register(EventsLog) #collection_id, notes, timestamp
 @admin.register(EventsLog)
 class EventsLogAdmin(admin.ModelAdmin):
     list_display = ("collection_id", "notes", "event_type","timestamp")
+@admin.register(ProjectPeople)
+class ProjectPeople(admin.ModelAdmin):
+    list_display = ("id", "project_id", "people_id", "is_po", "is_po", "doi_role")
