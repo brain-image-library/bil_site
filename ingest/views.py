@@ -1742,11 +1742,12 @@ def save_multiple_images_sheet(images, sheet, saved_datasets):
 def save_all_generic_sheets(contributors, funders, publications, sheet):
     saved = Boolean
     try:
-        save_contributors_sheet(contributors, sheet)
-        save_funders_sheet(funders, sheet)
-        save_publication_sheet(publications, sheet)
-        saved = True
-        return saved
+        saved = save_contributors_sheet(contributors, sheet)
+        if saved:
+            saved = save_funders_sheet(funders, sheet)
+            if saved:
+                saved = save_publication_sheet(publications, sheet)
+                return saved
     except Exception as e:
         print(repr(e))
         saved = False
@@ -1795,29 +1796,28 @@ def save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet)
         print(repr(e))
         saved = False
 
-def choose_data_method(request):
-    upload_method = json.loads(request.body)
-    print(upload_method)
-    return upload_method
-    # return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
-
 def save_method_decider(instruments, specimen_set, images, datasets, sheet, upload_method):
-    if upload_method == 'ingest_1'  or upload_method == 'ingest_3':
-        saved = save_all_sheets_method_1_or_3(instruments, specimen_set, images, datasets, sheet)
-    if upload_method == 'ingest_2':
-        saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet)
-    if upload_method == 'ingest_4':
-        saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet)
-
-def multipath_save():
     saved = False
+    if ingest_method == 'ingest_1'  or ingest_method == 'ingest_3':
+        saved = save_all_sheets_method_1_or_3(instruments, specimen_set, images, datasets, sheet)
+    if ingest_method == 'ingest_2':
+        saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet)
+    if ingest_method == 'ingest_4':
+        saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet)
+    return saved
+
+def multipath_save(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications):
+    saved = Boolean
     try:
-        s = save_method_decider(instruments, specimen_set, images, datasets, sheet)
-        g = save_all_generic_sheets(contributors, funders, publications, sheet)
-        return saved
+        sheet = save_sheet_row(filename, collection)
+        if sheet == integer:
+            saved = save_method_decider(instruments, specimen_set, images, datasets, sheet)
+            if saved:
+                saved = save_all_generic_sheets(contributors, funders, publications, sheet)
+                return saved
     except Exception as e:
         print(repr(e))
-        return saved
+        saved = False
 
 def metadata_version_check(filename):
     version1 = False
@@ -1907,15 +1907,14 @@ def descriptive_metadata_upload(request):
                     specimen_set = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
         
-                    sheet = save_sheet_row(filename, collection)
-                    # saved = multipath_save()
+                    saved = multipath_save(filename, collection)
 
-                    # if saved == True:
-                    #     messages.success(request, 'Descriptive Metadata successfully uploaded!!')
-                    #     return redirect('ingest:descriptive_metadata_list')
-                    # else:
-                    #     messages.error(request, 'There has been an error. Please contact BIL Support')
-                    #     return redirect('ingest:descriptive_metadata_upload')
+                    if saved == True:
+                        messages.success(request, 'Descriptive Metadata successfully uploaded!!')
+                        return redirect('ingest:descriptive_metadata_list')
+                    else:
+                        messages.error(request, 'There has been an error. Please contact BIL Support')
+                        return redirect('ingest:descriptive_metadata_upload')
 
 
     # This is the GET (just show the metadata upload page)

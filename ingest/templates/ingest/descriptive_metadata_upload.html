@@ -27,10 +27,7 @@
   <li class="list-group-item">Choose a collection, then upload your metadata.</li>.
   <p> If the project you are looking for is not in this list, it must be added by the PI of your project. </p>
 </ul>
-
-  <hr>
-
-  
+  <hr>  
     {% csrf_token %}
     {{ form }}
     </br>
@@ -38,7 +35,7 @@
     </br>
     <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
     
-    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();loadSpinner();document.querySelector('input[name="ingest_method"]:checked').value;" />
+    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();loadSpinner();" />
     </br>
   </form>
 {% else %}
