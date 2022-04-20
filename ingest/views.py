@@ -1465,16 +1465,16 @@ def ingest_image_sheet(filename):
     print(images)
     return images
 
-def save_sheet_row(filename, collection):
+def save_sheet_row(ingest_method, filename, collection):
     try:
-        sheet = Sheet(filename=filename, date_uploaded=datetime.now(), collection_id=collection.id)
+        sheet = Sheet(filename=filename, date_uploaded=datetime.now(), collection_id=collection.id, ingest_method = ingest_method)
         sheet.save()
-        print('**SAVED SHEET')
     except Exception as e:
         print(e)
     return sheet
 
 def save_contributors_sheet(contributors, sheet):
+    saved_contributors = []
     try:
         for c in contributors:
             contributorname = c['contributorName']
@@ -1489,12 +1489,14 @@ def save_contributors_sheet(contributors, sheet):
             
             contributor = Contributor(contributorname=contributorname, creator=creator, contributortype=contributortype, nametype=nametype, nameidentifier=nameidentifier, nameidentifierscheme=nameidentifierscheme, affiliation=affiliation, affiliationidentifier=affiliationidentifier, affiliationidentifierscheme=affiliationidentifierscheme, sheet_id=sheet.id)
             contributor.save()
-        print('**** SAVED CONTRIBS')
+            contributors.append(contributor)
+        return saved_contributors
     except Exception as e:
         print(repr(e))
-    return
+        return False
 
 def save_funders_sheet(funders, sheet):
+    saved_funders = []
     try:
         for f in funders:
             fundername = f['funderName']
@@ -1505,12 +1507,14 @@ def save_funders_sheet(funders, sheet):
             
             funder = Funder(fundername=fundername, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet_id=sheet.id)
             funder.save()
-        print('***SAVED FUNDERS')
+            saved_funders.append(funder)
+        return saved_funders
     except Exception as e:
         print(repr(e))
-    return
+        return False
 
 def save_publication_sheet(publications, sheet):
+    saved_pubs = []
     try:
         for p in publications:
             relatedidentifier = p['relatedIdentifier']
@@ -1521,13 +1525,15 @@ def save_publication_sheet(publications, sheet):
             
             publication = Publication(relatedidentifier=relatedidentifier, relatedidentifiertype=relatedidentifiertype, pmcid=pmcid, relationtype=relationtype, citation=citation, sheet_id=sheet.id)
             publication.save()
-        print('SAVED PUBS******')
+            saved_pubs.append(publication)
+        return saved_pubs
     except Exception as e:
         print(repr(e))
-    return
+        return False
 
 def save_instrument_sheet(instruments, sheet, saved_datasets):
     # there should be 1 line in the instrument tab for methods 1, 2, 3
+    saved_instruments = []
     try:
         for i in instruments:
             microscopetype = i['MicroscopeType']
@@ -1546,9 +1552,11 @@ def save_instrument_sheet(instruments, sheet, saved_datasets):
             
             instrument = Instrument(microscopetype=microscopetype, microscopemanufacturerandmodel=microscopemanufacturerandmodel, objectivename=objectivename, objectiveimmersion=objectiveimmersion, objectivena=objectivena, objectivemagnification=objectivemagnification, detectortype=detectortype, detectormodel=detectormodel, illuminationtypes=illuminationtypes, illuminationwavelength=illuminationwavelength, detectionwavelength=detectionwavelength, sampletemperature=sampletemperature, data_set_id=data_set_id, sheet_id=sheet.id)
             instrument.save()
+            saved_instruments.append(instrument)
+        return saved_instruments
     except Exception as e:
         print(repr(e))
-    return
+        return False
 
 def save_instrument_sheet_method_4(instruments, sheet, saved_datasets):
     # instrument:dataset are 1:1. 1 entry in specimen tab
@@ -1600,10 +1608,10 @@ def save_dataset_sheet(datasets, sheet):
             dataset = Dataset(bildirectory=bildirectory, title=title, socialmedia=socialmedia, subject=subject, subjectscheme=subjectscheme, rights=rights, rightsuri=rightsuri, rightsidentifier=rightsidentifier, dataset_image=dataset_image, generalmodality=generalmodality, technique=technique, other=other, abstract=abstract, methods=methods, technicalinfo=technicalinfo, sheet_id=sheet.id)
             dataset.save()
             saved_datasets.append(dataset)
-        print("length of saved_datasets is: ", len(saved_datasets))
+        return saved_datasets
     except Exception as e:
         print(repr(e))
-    return saved_datasets
+        return False
 
 def save_specimen_sheet_method_1_or_3(specimen_set, sheet, saved_datasets):
     # multiple datasets, multple specimens, multiple images (1:1)
@@ -1631,9 +1639,10 @@ def save_specimen_sheet_method_1_or_3(specimen_set, sheet, saved_datasets):
             specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id, data_set_id=data_set_id)
             specimen_object.save()
             saved_specimens.append(specimen_object)
+        return saved_specimens
     except Exception as e:
         print(repr(e))
-    return saved_specimens
+        return False
 
 def save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets):
     # multiple specimens, single dataset, single instrument
@@ -1658,9 +1667,10 @@ def save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets):
             specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id, data_set_id=data_set_id)
             specimen_object.save()
             saved_specimens.append(specimen_object)
+        return saved_specimens
     except Exception as e:
         print(repr(e))
-    return saved_specimens
+        return False
 
 def save_specimen_sheet_method_4(specimen_set, sheet):
     # multile datasets, multiple instruments, multiple images all 1:1
@@ -1685,9 +1695,10 @@ def save_specimen_sheet_method_4(specimen_set, sheet):
             specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id)
             specimen_object.save()
             saved_specimens.append(specimen_object)
+        return saved_specimens
     except Exception as e:
         print(repr(e))
-    return saved_specimens
+        return False
 
 def save_multiple_images_sheet(images, sheet, saved_datasets):
     # 1:1:1 dataset to image to specimen, only one row in instrument tab
@@ -1735,89 +1746,102 @@ def save_multiple_images_sheet(images, sheet, saved_datasets):
             image.save()
 
             saved_images.append(image)
+        return saved_images
     except Exception as e:
         print(repr(e))
-    return saved_images
+        return False
 
 def save_all_generic_sheets(contributors, funders, publications, sheet):
-    saved = Boolean
     try:
-        saved = save_contributors_sheet(contributors, sheet)
-        if saved:
-            saved = save_funders_sheet(funders, sheet)
-            if saved:
-                saved = save_publication_sheet(publications, sheet)
-                return saved
+        saved_contribs = save_contributors_sheet(contributors, sheet)
+        if saved_contribs:
+            saved_funders = save_funders_sheet(funders, sheet)
+            if saved_funders:
+                saved_pubs = save_publication_sheet(publications, sheet)
+                if saved_pubs:
+                    return True
     except Exception as e:
         print(repr(e))
-        saved = False
+        return False
 
-def save_all_sheets_method_1_or_3(instruments, specimen_set, images, datasets, sheet):
+
+def save_all_sheets_method_1_or_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications):
     # 1 dataset : 1 specimen : 1 image
     # only 1 single instrument row
-    saved = Boolean
+
     try:
         saved_datasets = save_dataset_sheet(datasets, sheet)
-        save_instrument_sheet(instruments, sheet, saved_datasets)
-        save_specimen_sheet_method_1_or_3(specimen_set, sheet, saved_datasets)
-        save_multiple_images_sheet(images, sheet, saved_datasets)
-        saved = True
-        return saved
+        if saved_datasets:
+            saved_instruments = save_instrument_sheet(instruments, sheet, saved_datasets)
+            if saved_instruments:
+                saved_specimens = save_specimen_sheet_method_1_or_3(specimen_set, sheet, saved_datasets)
+                if saved_specimens:
+                    saved_images = save_multiple_images_sheet(images, sheet, saved_datasets)
+                    if saved_images:
+                        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
+                        if saved_generic:
+                            return True
     except Exception as e:
         print(repr(e))
-        saved = False
+        return False
 
-def save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet):
+def save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications):
     # 1 dataset row, 1 instrument row, multiple specimens(have dataset FK)
-    saved = Boolean
+
     try:
         saved_datasets = save_dataset_sheet(datasets, sheet)
-        save_instrument_sheet(instruments, sheet, saved_datasets)
-        save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets)
-        save_multiple_images_sheet(images, sheet, saved_datasets) # unclear of how many images should be expected
-        saved = True
-        return saved
+        if saved_datasets:
+            saved_instruments = save_instrument_sheet(instruments, sheet, saved_datasets)
+            if saved_instruments:
+                saved_specimens = save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets)
+                if saved_specimens:
+                    saved_images = save_multiple_images_sheet(images, sheet, saved_datasets) # unclear of how many images should be expected
+                    if saved_images:
+                        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
+                        if saved_generic:
+                            return True
     except Exception as e:
         print(repr(e))
-        saved = False
+        return False
 
-def save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet):
+def save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications):
     # instrument:dataset:images are 1:1:1 
     # 1 entry in specimen tab so each dataset gets a specimen fk
-    saved = Boolean
+
     try:
         saved_specimens = save_specimen_sheet_method_4(specimen_set, sheet)
-        saved_datasets = save_dataset_sheet_method_4(datasets, saved_specimens, sheet)
-        save_instrument_sheet_method_4(instruments, sheet, saved_datasets)
-        save_multiple_images_sheet(images, sheet, saved_datasets)
-        saved = True
-        return saved
+        if saved_specimens:
+            saved_datasets = save_dataset_sheet_method_4(datasets, saved_specimens, sheet)
+            if saved_datasets:
+                saved_instruments = save_instrument_sheet_method_4(instruments, sheet, saved_datasets)
+                if saved_instruments:
+                    saved_images = save_multiple_images_sheet(images, sheet, saved_datasets)
+                    if saved_images:
+                        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
+                        return True
     except Exception as e:
         print(repr(e))
         saved = False
 
-def save_method_decider(instruments, specimen_set, images, datasets, sheet, upload_method):
-    saved = False
-    if ingest_method == 'ingest_1'  or ingest_method == 'ingest_3':
-        saved = save_all_sheets_method_1_or_3(instruments, specimen_set, images, datasets, sheet)
-    if ingest_method == 'ingest_2':
-        saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet)
-    if ingest_method == 'ingest_4':
-        saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet)
-    return saved
+# def save_method_decider(ingest_method):
+#     if ingest_method == 'ingest_1' or ingest_method == 'ingest_3':
+#         saved = save_all_sheets_method_1_or_3(instruments, specimen_set, images, datasets, sheet)
+#     if ingest_method == 'ingest_2':
+#         saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet)
+#     if ingest_method == 'ingest_4':
+#         saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet)
+#     return saved
 
-def multipath_save(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications):
-    saved = Boolean
-    try:
-        sheet = save_sheet_row(filename, collection)
-        if sheet == integer:
-            saved = save_method_decider(instruments, specimen_set, images, datasets, sheet)
-            if saved:
-                saved = save_all_generic_sheets(contributors, funders, publications, sheet)
-                return saved
-    except Exception as e:
-        print(repr(e))
-        saved = False
+# def multipath_save(ingest_method, instruments, specimen_set, images, datasets, sheet, contributors, funders, publications):
+#     saved = Boolean
+#     try:
+#         saved = save_method_decider(ingest_method, instruments, specimen_set, images, datasets, sheet)
+#         if saved:
+#             saved = save_all_generic_sheets(contributors, funders, publications, sheet)
+#             return saved
+#     except Exception as e:
+#         print(repr(e))
+#         saved = False
 
 def metadata_version_check(filename):
     version1 = False
@@ -1898,6 +1922,7 @@ def descriptive_metadata_upload(request):
                     messages.error(request, errormsg)
                     return redirect('ingest:descriptive_metadata_upload')
                 else:
+                    saved = False
                     collection = Collection.objects.get(name=associated_collection)
                     contributors = ingest_contributors_sheet(filename)
                     funders = ingest_funders_sheet(filename)
@@ -1906,8 +1931,21 @@ def descriptive_metadata_upload(request):
                     datasets = ingest_dataset_sheet(filename)
                     specimen_set = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
-        
-                    saved = multipath_save(filename, collection)
+
+                    sheet = save_sheet_row(ingest_method, filename, collection)
+
+                    # choose save method depending on ingest_method value from radio button
+                    # want to pull this out into a helper function
+                    if ingest_method == 'ingest_1' or ingest_method == 'ingest_3':
+                        saved = save_all_sheets_method_1_or_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    elif ingest_method == 'ingest_2':
+                        saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    elif ingest_method == 'ingest_4':
+                        saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    elif ingest_method == None or ingest_method == '':
+                        saved = False
+                        messages.error(request, 'You must choose a value from "What Does Your Data Look Like')
+                        return redirect('ingest:descriptive_metadata_upload')
 
                     if saved == True:
                         messages.success(request, 'Descriptive Metadata successfully uploaded!!')

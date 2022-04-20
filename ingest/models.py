@@ -97,6 +97,7 @@ class Sheet(models.Model):
     date_uploaded = models.DateTimeField(auto_now_add=True, blank=True)
     collection = models.ForeignKey(Collection,
         on_delete=models.SET_NULL, blank=False, null=True)
+    ingest_method = models.CharField(max_length=10, blank=False, null=True)
 
 class Dataset(models.Model):
     bildirectory = models.CharField(max_length=256)
