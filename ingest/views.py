@@ -1940,7 +1940,7 @@ def descriptive_metadata_upload(request):
                             saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
                         elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4':
                             saved = False
-                            messages.error(request, 'You must choose a value from "What Does Your Data Look Like')
+                            messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')
                             return redirect('ingest:descriptive_metadata_upload')
 
                         if saved == True:
@@ -1955,12 +1955,10 @@ def descriptive_metadata_upload(request):
     else:
         user = request.user
         form = UploadForm()
-        # Only let a user associate metadata with an unlocked collection that
-        # they own
+        # Only let a user associate metadata with an unlocked collection that they own
         form.fields['associated_collection'].queryset = Collection.objects.filter(
             locked=False, user=request.user)
         collections = form.fields['associated_collection'].queryset
-        # upload_method = 
     collections = Collection.objects.filter(locked=False, user=request.user)
     
     return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'pi':pi, 'collections':collections})
