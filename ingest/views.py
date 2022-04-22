@@ -398,7 +398,6 @@ def descriptive_metadata_list(request):
     for key in request.POST:
         messages.success(request, key) 
         messages.success(request, request.POST[key])
-        print (request.POST[key])      
     if request.method == "POST":
         pks = request.POST.getlist("selection")
         # Get all of the checked metadata (except LOCKED metadata)
@@ -1125,8 +1124,6 @@ def check_instrument_sheet(filename):
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
         #if cols[11] == "":
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
-    print(instrument_count)
-    print('instrument count ^^')
     return errormsg
 
 def check_dataset_sheet(filename):
@@ -1380,8 +1377,6 @@ def ingest_contributors_sheet(filename):
         values = {keys[col]: contributors_sheet.cell(row, col).value
             for col in range(contributors_sheet.ncols)}
         contributors.append(values)
-    print('CONTRIBS')
-    print(contributors)
     return contributors
 
 def ingest_funders_sheet(filename):
@@ -1393,8 +1388,6 @@ def ingest_funders_sheet(filename):
         values={keys[col]: funders_sheet.cell(row,col).value
             for col in range(funders_sheet.ncols)}
         funders.append(values)
-    print('FUNDERs')
-    print(funders)
     return funders
 
 def ingest_publication_sheet(filename):
@@ -1407,8 +1400,6 @@ def ingest_publication_sheet(filename):
             for col in range(publication_sheet.ncols)}
         publications.append(values)
 
-    print('PUBS')
-    print(publications)
     return publications
 
 def ingest_instrument_sheet(filename):
@@ -1421,8 +1412,6 @@ def ingest_instrument_sheet(filename):
             for col in range(instrument_sheet.ncols)}
         instruments.append(values)
 
-    print('INSSTRUMENTS')
-    print(instruments)
     return instruments
 
 def ingest_dataset_sheet(filename):
@@ -1434,8 +1423,6 @@ def ingest_dataset_sheet(filename):
         values={keys[col]: dataset_sheet.cell(row,col).value
             for col in range(dataset_sheet.ncols)}
         datasets.append(values)
-    print('****DATASETS')
-    print(datasets)
     return datasets
 
 def ingest_specimen_sheet(filename):
@@ -1448,8 +1435,6 @@ def ingest_specimen_sheet(filename):
             for col in range(specimen_sheet.ncols)}
         specimen_set.append(values)
 
-    print('*****SPECIMEN SET')
-    print(specimen_set)
     return specimen_set
 
 def ingest_image_sheet(filename):
@@ -1461,8 +1446,6 @@ def ingest_image_sheet(filename):
         values={keys[col]: image_sheet.cell(row,col).value
             for col in range(image_sheet.ncols)}
         images.append(values)
-    print('*****IMAGES')
-    print(images)
     return images
 
 def save_sheet_row(ingest_method, filename, collection):
@@ -1474,7 +1457,7 @@ def save_sheet_row(ingest_method, filename, collection):
     return sheet
 
 def save_contributors_sheet(contributors, sheet):
-    saved_contributors = []
+    # saved_contributors = []
     try:
         for c in contributors:
             contributorname = c['contributorName']
@@ -1489,8 +1472,8 @@ def save_contributors_sheet(contributors, sheet):
             
             contributor = Contributor(contributorname=contributorname, creator=creator, contributortype=contributortype, nametype=nametype, nameidentifier=nameidentifier, nameidentifierscheme=nameidentifierscheme, affiliation=affiliation, affiliationidentifier=affiliationidentifier, affiliationidentifierscheme=affiliationidentifierscheme, sheet_id=sheet.id)
             contributor.save()
-            contributors.append(contributor)
-        return saved_contributors
+            # contributors.append(contributor)
+        return True
     except Exception as e:
         print(repr(e))
         return False
@@ -1548,9 +1531,8 @@ def save_instrument_sheet(instruments, sheet, saved_datasets):
             illuminationwavelength = i['IlluminationWavelength']
             detectionwavelength = i['DetectionWavelength']
             sampletemperature = i['SampleTemperature']
-            data_set_id = saved_datasets
             
-            instrument = Instrument(microscopetype=microscopetype, microscopemanufacturerandmodel=microscopemanufacturerandmodel, objectivename=objectivename, objectiveimmersion=objectiveimmersion, objectivena=objectivena, objectivemagnification=objectivemagnification, detectortype=detectortype, detectormodel=detectormodel, illuminationtypes=illuminationtypes, illuminationwavelength=illuminationwavelength, detectionwavelength=detectionwavelength, sampletemperature=sampletemperature, data_set_id=data_set_id, sheet_id=sheet.id)
+            instrument = Instrument(microscopetype=microscopetype, microscopemanufacturerandmodel=microscopemanufacturerandmodel, objectivename=objectivename, objectiveimmersion=objectiveimmersion, objectivena=objectivena, objectivemagnification=objectivemagnification, detectortype=detectortype, detectormodel=detectormodel, illuminationtypes=illuminationtypes, illuminationwavelength=illuminationwavelength, detectionwavelength=detectionwavelength, sampletemperature=sampletemperature, sheet_id=sheet.id)
             instrument.save()
             saved_instruments.append(instrument)
         return saved_instruments
@@ -1559,7 +1541,7 @@ def save_instrument_sheet(instruments, sheet, saved_datasets):
         return False
 
 def save_instrument_sheet_method_4(instruments, sheet, saved_datasets):
-    # instrument:dataset are 1:1. 1 entry in specimen tab
+    # instrument:dataset:images are 1:1. only 1 entry in specimen tab
     try:
         for d_index, d in enumerate(saved_datasets):
             data_set_id = d.id
@@ -1604,7 +1586,6 @@ def save_dataset_sheet(datasets, sheet):
             methods = d['Methods']
             technicalinfo = d['TechnicalInfo']
 
-            print('about to save')
             dataset = Dataset(bildirectory=bildirectory, title=title, socialmedia=socialmedia, subject=subject, subjectscheme=subjectscheme, rights=rights, rightsuri=rightsuri, rightsidentifier=rightsidentifier, dataset_image=dataset_image, generalmodality=generalmodality, technique=technique, other=other, abstract=abstract, methods=methods, technicalinfo=technicalinfo, sheet_id=sheet.id)
             dataset.save()
             saved_datasets.append(dataset)
@@ -1645,7 +1626,7 @@ def save_specimen_sheet_method_1_or_3(specimen_set, sheet, saved_datasets):
         return False
 
 def save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets):
-    # multiple specimens, single dataset, single instrument
+    # multiple specimens, single dataset, single instrument, single image
     saved_specimens = []
     try:
         for s in specimen_set:
@@ -1702,6 +1683,7 @@ def save_specimen_sheet_method_4(specimen_set, sheet):
 
 def save_multiple_images_sheet(images, sheet, saved_datasets):
     # 1:1:1 dataset to image to specimen, only one row in instrument tab
+    # images always are 1:1 with datasets
     saved_images = []
     try:
         for d_index, d in enumerate(saved_datasets):
@@ -1795,7 +1777,7 @@ def save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet,
             if saved_instruments:
                 saved_specimens = save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets)
                 if saved_specimens:
-                    saved_images = save_multiple_images_sheet(images, sheet, saved_datasets) # unclear of how many images should be expected
+                    saved_images = save_multiple_images_sheet(images, sheet, saved_datasets)
                     if saved_images:
                         saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
                         if saved_generic:
@@ -1932,12 +1914,21 @@ def descriptive_metadata_upload(request):
                         if ingest_method == 'ingest_1' or ingest_method == 'ingest_3':
                             sheet = save_sheet_row(ingest_method, filename, collection)
                             saved = save_all_sheets_method_1_or_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+
+                            print('sheet id')
+                            print(sheet)
                         elif ingest_method == 'ingest_2':
                             sheet = save_sheet_row(ingest_method, filename, collection)
                             saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+
+                            print('sheet id')
+                            print(sheet)
                         elif ingest_method == 'ingest_4':
                             sheet = save_sheet_row(ingest_method, filename, collection)
                             saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+
+                            print('sheet id')
+                            print(sheet)
                         elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4':
                             saved = False
                             messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')
