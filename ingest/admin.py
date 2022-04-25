@@ -4,10 +4,13 @@ from django.utils.http import urlencode
 from django.utils.html import format_html
 from django.core import serializers
 from django.http import HttpResponse
+from django.contrib.admin import AdminSite
+from django.utils.translation import ugettext_lazy
 
 from django.db.models import F
 from .models import ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor, Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder, Publication
 #admin.site.register(Collection)
+admin.site.site_header = 'Brain Image Library Admin Portal'
 class ContributorsInline(admin.TabularInline):
     model = Contributor
 class FundersInline(admin.TabularInline):
