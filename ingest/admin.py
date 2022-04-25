@@ -5,6 +5,7 @@ from django.utils.html import format_html
 from django.core import serializers
 from django.http import HttpResponse
 
+from django.db.models import F
 from .models import ImageMetadata
 from .models import Collection
 from .models import People
@@ -104,7 +105,7 @@ class Instrument(admin.ModelAdmin):
     list_display = ("id", "microscopetype", "microscopemanufacturerandmodel", "objectivename", "objectiveimmersion", "objectivena", "objectivemagnification", "detectortype", "detectormodel", "illuminationtypes", "illuminationwavelength", "detectionwavelength", "sampletemperature", "sheet")
 @admin.register(Dataset)
 class Dataset(admin.ModelAdmin):
-    list_display = ("id", "bildirectory", "socialmedia", "subject", "subjectscheme", "rights", "rightsuri", "rightsidentifier", "image", "generalmodality", "technique", "other", "abstract", "methods", "technicalinfo", "sheet")
+    list_display = ("id", "bildirectory", "socialmedia", "subject", "subjectscheme", "rights", "rightsuri", "rightsidentifier", "image", "generalmodality", "technique", "other", "methods", "technicalinfo", "sheet")
 admin.site.register(Specimen)
 @admin.register(Image)
 class Image(admin.ModelAdmin):
@@ -113,7 +114,7 @@ class Image(admin.ModelAdmin):
 @admin.register(Sheet)
 class SheetAdmin(admin.ModelAdmin):
     list_display = ("id","filename", "date_uploaded", "collection")
-    inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline,  ]
+    inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline, ]
 
 #admin.site.register(EventsLog) #collection_id, notes, timestamp
 @admin.register(EventsLog)
