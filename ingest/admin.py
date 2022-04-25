@@ -6,21 +6,7 @@ from django.core import serializers
 from django.http import HttpResponse
 
 from django.db.models import F
-from .models import ImageMetadata
-from .models import Collection
-from .models import People
-from .models import Project
-from .models import DescriptiveMetadata
-from .models import Contributor
-from .models import Instrument
-from .models import Dataset
-from .models import Specimen
-from .models import Image
-from .models import EventsLog
-from .models import Sheet 
-from .models import ProjectPeople
-from .models import Funder
-from .models import Publication
+from .models import ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor, Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder, Publication
 #admin.site.register(Collection)
 class ContributorsInline(admin.TabularInline):
     model = Contributor
