@@ -31,7 +31,8 @@ class People(models.Model):
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
     def __str__(self):
-        return self.bil_uuid
+        collreturn = "Collection Name: " + self.name + ' : BIL UUID: ' + self.bil_uuid
+        return collreturn
 
     # Required and the user should supply these
     name = models.CharField(max_length=256, unique=True)

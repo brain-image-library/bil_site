@@ -9,7 +9,6 @@ from django.utils.translation import ugettext_lazy
 
 from django.db.models import F
 from .models import ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor, Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder, Publication
-#admin.site.register(Collection)
 admin.site.site_header = 'Brain Image Library Admin Portal'
 class ContributorsInline(admin.TabularInline):
     model = Contributor
@@ -43,6 +42,7 @@ class CollectionAdmin(admin.ModelAdmin):
     list_display = ("bil_uuid","name","submission_status","validation_status", "view_descriptivemetadatas_link", "view_sheets_link","view_eventslogs_link")
     list_filter = ('submission_status', 'validation_status', 'lab_name', 'project')
     actions = [mark_as_validated_and_submitted, export_as_json]
+    ordering = ('bil_uuid',)
     def view_descriptivemetadatas_link(self, obj):
         count = obj.descriptivemetadata_set.count()
         url = (
@@ -53,12 +53,7 @@ class CollectionAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{} Metadata Instances</a>', url, count)
     view_descriptivemetadatas_link.short_description = "MetadataV1(s)"
     def view_sheets_link(self, obj):
-        #contributors = []
         count = obj.sheet_set.count()
-        #sheets = Sheet.objects.filter(collection_id = obj.id).all()
-        #for s in sheets:
-        #    contrib = Contributor.objects.filter(sheet_id = s.id).all()
-        #    contributors.append(contrib)
         url = (
             reverse("admin:ingest_sheet_changelist")
             + "?"
@@ -85,7 +80,6 @@ class Project(admin.ModelAdmin):
 @admin.register(DescriptiveMetadata)
 class DescriptiveMetadataAdmin(admin.ModelAdmin):
     list_display = ("r24_directory", "sample_id","collection")
-#admin.site.register(Contributor)
 @admin.register(Contributor)
 class Contributor(admin.ModelAdmin):
     list_display = ("id", "contributorname", "creator", "contributortype", "nametype", "nameidentifier", "nameidentifierscheme", "affiliation", "affiliationidentifier", "affiliationidentifierscheme", "sheet")
@@ -99,13 +93,11 @@ admin.site.register(Specimen)
 @admin.register(Image)
 class Image(admin.ModelAdmin):
     list_display = ("id", "xaxis", "obliquexdim1", "obliquexdim2", "obliquexdim3", "yaxis", "obliqueydim1", "obliqueydim2", "obliqueydim3", "zaxis", "obliquezdim1", "obliquezdim2", "obliquezdim3", "landmarkname", "landmarkx", "landmarky", "landmarkz", "number", "displaycolor", "representation", "flurophore", "stepsizex", "stepsizey", "stepsizez", "stepsizet", "channels", "slices", "z", "xsize", "ysize", "zsize", "gbytes", "files", "dimensionorder", "sheet")
-#admin.site.register(Sheet)
 @admin.register(Sheet)
 class SheetAdmin(admin.ModelAdmin):
     list_display = ("id","filename", "date_uploaded", "collection")
     inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline, ]
 
-#admin.site.register(EventsLog) #collection_id, notes, timestamp
 @admin.register(EventsLog)
 class EventsLogAdmin(admin.ModelAdmin):
     list_display = ("collection_id", "notes", "event_type","timestamp")
