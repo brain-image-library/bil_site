@@ -121,6 +121,7 @@ WSGI_APPLICATION = 'bil_site.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
+DEFAULT_AUTO_FIELD='django.db.models.BigAutoField'
 DATABASE = config['Security']['DATABASE']
 
 if DATABASE == "postgres":
