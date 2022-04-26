@@ -2153,6 +2153,10 @@ def save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet,
 
 def metadata_version_check(filename):
     version1 = False
+    f = open("/tmp/djangoout.txt", "a")
+    f.write("Filename " + filename)
+    f.close()
+
     workbook=xlrd.open_workbook(filename)
     try:
         if workbook.sheet_by_name('README'):
@@ -2160,6 +2164,9 @@ def metadata_version_check(filename):
     except:
         version1 = True
     return version1
+
+
+
 
 def ingest_method_check(ingest_method):
     if ingest_method == 'ingest_1' or ingest_method == 'ingest_2' or ingest_method == 'ingest_3' or ingest_method == 'ingest_4':
@@ -2205,14 +2212,15 @@ def descriptive_metadata_upload(request):
     # The POST. A user has selected a file and associated collection to upload.
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
         form = UploadForm(request.POST)
+        ingest_method = request.POST['ingest_method']
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
 
             # for production
-            # datapath=associated_collection.data_path.replace("/lz/","/etc/")
+            datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            datapath = '/home/shared_bil_dev/testetc/' 
+            # datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
             #datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
@@ -2220,9 +2228,13 @@ def descriptive_metadata_upload(request):
             spreadsheet_file = request.FILES['spreadsheet_file']
 
             fs = FileSystemStorage(location=datapath)
-            name_with_path=datapath + '/' + spreadsheet_file.name
-            filename = fs.save(name_with_path, spreadsheet_file)
-            
+            name_with_path = datapath + '/' + spreadsheet_file.name
+            fs.save(name_with_path, spreadsheet_file)
+            filename = name_with_path
+            f = open("/tmp/djangoout.txt", "a")
+            f.write("Filename " + filename + "Name With Path " + name_with_path)
+            f.close()
+
             version1 = metadata_version_check(filename)
             # using old metadata model for any old submissions (will eventually be deprecated)
             if version1 == True:
