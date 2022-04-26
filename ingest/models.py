@@ -19,6 +19,8 @@ class Project(models.Model):
     is_biccn = models.BooleanField(default=False)
 
 class People(models.Model):
+    def __str__(self):
+        return self.name
     name = models.CharField(max_length=256)
     orcid = models.CharField(max_length=256)
     affiliation = models.CharField(max_length=256)
@@ -29,7 +31,8 @@ class People(models.Model):
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
     def __str__(self):
-        return self.name
+        collreturn = "Collection Name: " + self.name + ' : BIL UUID: ' + self.bil_uuid
+        return collreturn
 
     # Required and the user should supply these
     name = models.CharField(max_length=256, unique=True)
@@ -40,10 +43,10 @@ class Collection(models.Model):
         max_length=256, help_text="The lab or department subgroup")
     project_funder_id = models.CharField(
         max_length=256, help_text="The grant number")
-    project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=True, null=True)
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=False, null=True)
     # Optional fields. The user doesn't need to supply these.
     project_funder = models.CharField(
-        max_length=256, blank=True, default="NIH")
+        max_length=256, blank=False, default="NIH")
     modality = models.CharField(max_length=256, blank=True, default="NIH")
     collection_type = models.CharField(max_length=256, blank=True, default="NIH")
     bil_uuid = models.CharField(max_length=256)
@@ -97,6 +100,26 @@ class Sheet(models.Model):
     date_uploaded = models.DateTimeField(auto_now_add=True, blank=True)
     collection = models.ForeignKey(Collection,
         on_delete=models.SET_NULL, blank=False, null=True)
+    ingest_method = models.CharField(max_length=10, blank=False, null=True)
+
+class Dataset(models.Model):
+    bildirectory = models.CharField(max_length=256)
+    title = models.CharField(max_length=256)
+    socialmedia = models.CharField(max_length=256)
+    subject = models.CharField(max_length=256)
+    subjectscheme = models.CharField(max_length=256)
+    rights = models.CharField(max_length=256)
+    rightsuri = models.CharField(max_length=256)
+    rightsidentifier = models.CharField(max_length=256)
+    dataset_image = models.CharField(max_length=256)
+    generalmodality = models.CharField(max_length=256)
+    technique = models.CharField(max_length=256)
+    other = models.CharField(max_length=256)
+    abstract = models.CharField(max_length=1000)
+    methods = models.CharField(max_length=256)
+    technicalinfo = models.CharField(max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+    specimen_ingest_method_4 = models.IntegerField(blank=True, null=True) # this is not a proper fk. this is just to avoid adding a join table.
 
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
@@ -236,8 +259,8 @@ class DescriptiveMetadata(models.Model):
     # This is the exact nomenclature used by BICCN.
     # The meat of the image metadata bookkeeping. This is all the relevant
     # information about a given set of imaging data.
-    def __str__(self):
-        return self.project_name
+    #def __str__(self):
+    #    return self.project_name
 
     # These fields are required but the user shouldn't control these
     #
@@ -298,7 +321,7 @@ class EventsLog(models.Model):
     project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null = True, blank=True)
     notes = models.CharField(max_length=256)
     timestamp = models.DateTimeField()
-    event_type = models.CharField(max_length=64, default="", choices=[('mail_tapes_to_bil', 'Mail Tapes To BIL'), ('tapes_received', 'Tapes Received'), ('tapes_ready_for_qc', 'Tapes Ready For QC'), ('move_to_collection', 'Move To Collection'), ('request_brainball', 'Request Brainball'), ('Mail_brainball_from_bil', 'Mail Brainball From BIL'), ('mail_brainball_to_bil', 'Mail Brainball To BIL'), ('received_brainball', 'Received Brainball'), ('collection_created', 'Collection Created'), ('metadata_uploaded', 'Metadata Uploaded'), ('request_validation', 'Request Validation'), ('request_submission', 'Request Submission'), ('request_embargo', 'Request Embargo'), ('collection_public', 'Collection Public'), ('request_withdrawal', 'Request Withdrawal')])
+    event_type = models.CharField(max_length=64, default="", choices=[('mail_tapes_to_bil', 'Mail Tapes To BIL'), ('tapes_received', 'Tapes Received'), ('tapes_ready_for_qc', 'Tapes Ready For QC'), ('move_to_collection', 'Move To Collection'), ('request_brainball', 'Request Brainball'), ('Mail_brainball_from_bil', 'Mail Brainball From BIL'), ('mail_brainball_to_bil', 'Mail Brainball To BIL'), ('received_brainball', 'Received Brainball'), ('collection_created', 'Collection Created'), ('metadata_uploaded', 'Metadata Uploaded'), ('request_validation', 'Request Validation'), ('request_submission', 'Request Submission'), ('request_embargo', 'Request Embargo'), ('collection_public', 'Collection Public'), ('request_withdrawal', 'Request Withdrawal'), ('data_curated', 'Data Curated'), ('collection_validated', 'Collected Validated'), ('user_action_required', 'User Action Required'),])
 
 class Contributor(models.Model):
     contributorname = models.CharField(max_length=256)
@@ -319,39 +342,7 @@ class Publication(models.Model):
     relationtype = models.CharField(max_length=256)
     citation = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-
-class Instrument(models.Model):
-    microscopetype = models.CharField(max_length=256)
-    microscopemanufacturerandmodel = models.CharField(max_length=1000)
-    objectivename = models.CharField(max_length=256)
-    objectiveimmersion = models.CharField(max_length=256)
-    objectivena = models.CharField(max_length=256)
-    objectivemagnification = models.CharField(max_length=256)
-    detectortype = models.CharField(max_length=256)
-    detectormodel = models.CharField(max_length=256)
-    illuminationtypes = models.CharField(max_length=256)
-    illuminationwavelength = models.CharField(max_length=256)
-    detectionwavelength = models.CharField(max_length=256)
-    sampletemperature = models.CharField(max_length=256)
-    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-
-class Dataset(models.Model):
-    bildirectory = models.CharField(max_length=256)
-    title = models.CharField(max_length=256)
-    socialmedia = models.CharField(max_length=256)
-    subject = models.CharField(max_length=256)
-    subjectscheme = models.CharField(max_length=256)
-    rights = models.CharField(max_length=256)
-    rightsuri = models.CharField(max_length=256)
-    rightsidentifier = models.CharField(max_length=256)
-    image = models.CharField(max_length=256)
-    generalmodality = models.CharField(max_length=256)
-    technique = models.CharField(max_length=256)
-    other = models.CharField(max_length=256)
-    abstract = models.CharField(max_length=1000)
-    methods = models.CharField(max_length=256)
-    technicalinfo = models.CharField(max_length=256)
-    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
 
 class Specimen(models.Model):
     localid = models.CharField(max_length=256)
@@ -367,6 +358,7 @@ class Specimen(models.Model):
     atlas = models.CharField(max_length=256)
     locations = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
 
 class Image(models.Model):
     xaxis = models.CharField(max_length=256)
@@ -403,6 +395,8 @@ class Image(models.Model):
     files = models.CharField(max_length=256)
     dimensionorder = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+    specimen = models.ForeignKey(Specimen, on_delete=models.SET_NULL, blank=True, null=True)
 
 class DataState(models.Model):
     level = models.CharField(max_length=256)
@@ -411,3 +405,24 @@ class DataState(models.Model):
     attributes = models.CharField(max_length=256)
     description = models.CharField(max_length=1000)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+    specimen = models.ForeignKey(Specimen, on_delete=models.SET_NULL, blank=True, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+
+class Instrument(models.Model):
+    microscopetype = models.CharField(max_length=256)
+    microscopemanufacturerandmodel = models.CharField(max_length=1000)
+    objectivename = models.CharField(max_length=256)
+    objectiveimmersion = models.CharField(max_length=256)
+    objectivena = models.CharField(max_length=256)
+    objectivemagnification = models.CharField(max_length=256)
+    detectortype = models.CharField(max_length=256)
+    detectormodel = models.CharField(max_length=256)
+    illuminationtypes = models.CharField(max_length=256)
+    illuminationwavelength = models.CharField(max_length=256)
+    detectionwavelength = models.CharField(max_length=256)
+    sampletemperature = models.CharField(max_length=256)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+    specimen = models.ForeignKey(Specimen, on_delete=models.SET_NULL, blank=True, null=True)
+    

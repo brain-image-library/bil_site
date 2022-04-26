@@ -10,3 +10,4 @@ tags
 static/
 !ingest/static
 gunicorn.log
+*/settings.py

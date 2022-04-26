@@ -1,12 +1,10 @@
 from django.urls import path
-from django.conf.urls import re_path
 from django.contrib.auth import views as auth_views
-
+from django.conf.urls import re_path
 from . import views
 
 app_name = 'ingest'
 urlpatterns = [
-    # Main/home page
     path('', views.index, name='index'),
     # logout and signup should probably be moved somewhere else
     re_path(r'^logout/$', views.logout, name='logout'),
