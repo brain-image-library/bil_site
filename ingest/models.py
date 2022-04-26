@@ -19,6 +19,8 @@ class Project(models.Model):
     is_biccn = models.BooleanField(default=False)
 
 class People(models.Model):
+    def __str__(self):
+        return self.name
     name = models.CharField(max_length=256)
     orcid = models.CharField(max_length=256)
     affiliation = models.CharField(max_length=256)
@@ -29,7 +31,8 @@ class People(models.Model):
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
     def __str__(self):
-        return self.name
+        collreturn = "Collection Name: " + self.name + ' : BIL UUID: ' + self.bil_uuid
+        return collreturn
 
     # Required and the user should supply these
     name = models.CharField(max_length=256, unique=True)
@@ -256,8 +259,8 @@ class DescriptiveMetadata(models.Model):
     # This is the exact nomenclature used by BICCN.
     # The meat of the image metadata bookkeeping. This is all the relevant
     # information about a given set of imaging data.
-    def __str__(self):
-        return self.project_name
+    #def __str__(self):
+    #    return self.project_name
 
     # These fields are required but the user shouldn't control these
     #
@@ -318,7 +321,7 @@ class EventsLog(models.Model):
     project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null = True, blank=True)
     notes = models.CharField(max_length=256)
     timestamp = models.DateTimeField()
-    event_type = models.CharField(max_length=64, default="", choices=[('mail_tapes_to_bil', 'Mail Tapes To BIL'), ('tapes_received', 'Tapes Received'), ('tapes_ready_for_qc', 'Tapes Ready For QC'), ('move_to_collection', 'Move To Collection'), ('request_brainball', 'Request Brainball'), ('Mail_brainball_from_bil', 'Mail Brainball From BIL'), ('mail_brainball_to_bil', 'Mail Brainball To BIL'), ('received_brainball', 'Received Brainball'), ('collection_created', 'Collection Created'), ('metadata_uploaded', 'Metadata Uploaded'), ('request_validation', 'Request Validation'), ('request_submission', 'Request Submission'), ('request_embargo', 'Request Embargo'), ('collection_public', 'Collection Public'), ('request_withdrawal', 'Request Withdrawal')])
+    event_type = models.CharField(max_length=64, default="", choices=[('mail_tapes_to_bil', 'Mail Tapes To BIL'), ('tapes_received', 'Tapes Received'), ('tapes_ready_for_qc', 'Tapes Ready For QC'), ('move_to_collection', 'Move To Collection'), ('request_brainball', 'Request Brainball'), ('Mail_brainball_from_bil', 'Mail Brainball From BIL'), ('mail_brainball_to_bil', 'Mail Brainball To BIL'), ('received_brainball', 'Received Brainball'), ('collection_created', 'Collection Created'), ('metadata_uploaded', 'Metadata Uploaded'), ('request_validation', 'Request Validation'), ('request_submission', 'Request Submission'), ('request_embargo', 'Request Embargo'), ('collection_public', 'Collection Public'), ('request_withdrawal', 'Request Withdrawal'), ('data_curated', 'Data Curated'), ('collection_validated', 'Collected Validated'), ('user_action_required', 'User Action Required'),])
 
 class Contributor(models.Model):
     contributorname = models.CharField(max_length=256)
