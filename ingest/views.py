@@ -2201,21 +2201,25 @@ def descriptive_metadata_upload(request):
             pi = True
         else:
             pi = False    
+
     """ Upload a spreadsheet containing image metadata information. """
     # The POST. A user has selected a file and associated collection to upload.
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
+        # ingest_method is used in function to plan the path of ingestion
+        ingest_method = request.POST.get('ingest_method')
+
         form = UploadForm(request.POST)
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
-
+            
             # for production
             # datapath=associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            datapath = '/home/shared_bil_dev/testetc/' 
+            # datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
-            #datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
+            datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
 
