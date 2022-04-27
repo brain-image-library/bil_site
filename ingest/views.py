@@ -2161,12 +2161,6 @@ def metadata_version_check(filename):
         version1 = True
     return version1
 
-def ingest_method_check(ingest_method):
-    if ingest_method == 'ingest_1' or ingest_method == 'ingest_2' or ingest_method == 'ingest_3' or ingest_method == 'ingest_4':
-        return True
-    else:
-        return False
-
 def check_all_sheets(filename):
     errormsg = check_contributors_sheet(filename)
     if errormsg != '':
@@ -2205,14 +2199,9 @@ def descriptive_metadata_upload(request):
     # The POST. A user has selected a file and associated collection to upload.
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
         form = UploadForm(request.POST)
-        ingest_method = ''
 
-        if request.POST['ingest_method']:
-            ingest_method = request.POST['ingest_method']
-        else:
-            messages.error(request, 'You must choose a value from "What Does Your Data Look Like"')
-            return redirect('ingest:descriptive_metadata_upload')
-
+        ingest_method = request.POST.get('ingest_method', False)
+	
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
 
@@ -2233,6 +2222,7 @@ def descriptive_metadata_upload(request):
             filename = name_with_path
 
             version1 = metadata_version_check(filename)
+            
             # using old metadata model for any old submissions (will eventually be deprecated)
             if version1 == True:
                 error = upload_descriptive_spreadsheet(filename, associated_collection, request)
@@ -2243,56 +2233,46 @@ def descriptive_metadata_upload(request):
             
             # using new metadata model
             elif version1 == False:
-                #method_present = ingest_method_check(ingest_method)
-                 
-                f = open("/tmp/djangoout.txt", "a")
-                f.write('Method present? ' +  method_present + ',')
-                f.close()
+                errormsg = check_all_sheets(filename)
+                if errormsg != '':
+                    messages.error(request, errormsg)
+                    return redirect('ingest:descriptive_metadata_upload')
 
-                #if method_present == False:
-                #    messages.error(request, 'You must choose a value from "What Does Your Data Look Like"')
-                #    return redirect('ingest:descriptive_metadata_upload')
-                #else:
-                    errormsg = check_all_sheets(filename)
-                    if errormsg != '':
-                        messages.error(request, errormsg)
-                        return redirect('ingest:descriptive_metadata_upload')
+                else:
+                    saved = False
+                    collection = Collection.objects.get(name=associated_collection)
+                    contributors = ingest_contributors_sheet(filename)
+                    funders = ingest_funders_sheet(filename)
+                    publications = ingest_publication_sheet(filename)
+                    instruments = ingest_instrument_sheet(filename)
+                    datasets = ingest_dataset_sheet(filename)
+                    specimen_set = ingest_specimen_sheet(filename)
+                    images = ingest_image_sheet(filename)
 
+                    # choose save method depending on ingest_method value from radio button
+                    # want to pull this out into a helper function
+                    if ingest_method == 'ingest_1':
+                        sheet = save_sheet_row(ingest_method, filename, collection)
+                        saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    elif ingest_method == 'ingest_2':
+                        sheet = save_sheet_row(ingest_method, filename, collection)
+                        saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    elif ingest_method == 'ingest_3':
+                        sheet = save_sheet_row(ingest_method, filename, collection)
+                        saved = save_all_sheets_method_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    elif ingest_method == 'ingest_4':
+                        sheet = save_sheet_row(ingest_method, filename, collection)
+                        saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4':
+                         saved = False
+                         messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')                         
+                         return redirect('ingest:descriptive_metadata_upload')
+                    if saved == True:
+                         messages.success(request, 'Descriptive Metadata successfully uploaded!!')
+                         return redirect('ingest:descriptive_metadata_list')
                     else:
-                        saved = False
-                        collection = Collection.objects.get(name=associated_collection)
-                        contributors = ingest_contributors_sheet(filename)
-                        funders = ingest_funders_sheet(filename)
-                        publications = ingest_publication_sheet(filename)
-                        instruments = ingest_instrument_sheet(filename)
-                        datasets = ingest_dataset_sheet(filename)
-                        specimen_set = ingest_specimen_sheet(filename)
-                        images = ingest_image_sheet(filename)
-
-                        # choose save method depending on ingest_method value from radio button
-                        # want to pull this out into a helper function
-                        if ingest_method == 'ingest_1':
-                            sheet = save_sheet_row(ingest_method, filename, collection)
-                            saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        elif ingest_method == 'ingest_2':
-                            sheet = save_sheet_row(ingest_method, filename, collection)
-                            saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        elif ingest_method == 'ingest_3':
-                            sheet = save_sheet_row(ingest_method, filename, collection)
-                            saved = save_all_sheets_method_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        elif ingest_method == 'ingest_4':
-                            sheet = save_sheet_row(ingest_method, filename, collection)
-                            saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4':
-                            saved = False
-                            messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')
-                            return redirect('ingest:descriptive_metadata_upload')
-                        if saved == True:
-                            messages.success(request, 'Descriptive Metadata successfully uploaded!!')
-                            return redirect('ingest:descriptive_metadata_list')
-                        else:
-                            messages.error(request, 'There has been an error. Please contact BIL Support')
-                            return redirect('ingest:descriptive_metadata_upload')
+                         messages.error(request, 'There has been an error. Please contact BIL Support')
+                         return redirect('ingest:descriptive_metadata_upload')
 
 
     # This is the GET (just show the metadata upload page)
