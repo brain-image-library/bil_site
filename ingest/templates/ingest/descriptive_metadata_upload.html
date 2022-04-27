@@ -1,5 +1,7 @@
 <head>
   <script src="/static/ingest/metadataloadingindicator.js"></script>
+  <script type="text/javascript" 
+    src="http://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>  
 </head>
 
 {% extends 'ingest/wide.html' %}
@@ -20,7 +22,7 @@
 <form method="post" enctype="multipart/form-data">
 {% include 'ingest/metadata_questions.html' %}
 
-<h3>Step 3 of 3: Upload metdata for associated submission</h3>
+<h3>Step 3 of 3: Upload metadata for associated submission</h3>
 {% if collections %}
 <ul class="list-group">
   <li class="list-group-item">Download and fill out either the <a href="{% static 'ingest/BILMetadataV2Template.xlsx' %}">Excel</a> or <a href="{% static '/ingest/BILMetadataV2Template.ods' %}">LibreOffice Calc</a> template. </li>
@@ -63,4 +65,40 @@
   </div>
 </div>
 
+  <script>
+    let uploadMetadataButton = document.getElementById('UploadMetadata').disabled = true;
+    let radio1 = document.getElementById('ingest_method_1');
+    let radio2 = document.getElementById('ingest_method_2');
+    let radio3 = document.getElementById('ingest_method_3');
+    let radio4 = document.getElementById('ingest_method_4');
+
+    $(radio1).on('change', () => {
+        if (radio1.checked == true) {
+        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
+        console.log('upload button is enabled');
+        }
+     });
+    
+    $(radio2).on('change', () => {
+        if (radio2.checked == true) {
+        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
+        console.log('upload button is enabled');
+        }
+     });
+
+    $(radio3).on('change', () => {
+        if (radio3.checked == true) {
+        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
+        console.log('upload button is enabled');
+        }
+     });
+
+    $(radio4).on('change', () => {
+        if (radio4.checked == true) {
+        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
+        console.log('upload button is enabled');
+        }
+     });
+
+  </script>
 {% endblock %}

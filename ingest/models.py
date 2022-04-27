@@ -31,9 +31,9 @@ class People(models.Model):
 class Collection(models.Model):
     """ A grouping of one or more datasets and associated metadata. """
     def __str__(self):
-        collreturn = "Collection Name: " + self.name + ' : BIL UUID: ' + self.bil_uuid
-        return collreturn
-
+        #collreturn = "Collection Name: " + self.name + ' : BIL UUID: ' + self.bil_uuid
+        #return collreturn
+        return self.name
     # Required and the user should supply these
     name = models.CharField(max_length=256, unique=True)
     description = models.TextField()   
@@ -310,10 +310,6 @@ class Funder(models.Model):
     award_number = models.CharField(max_length=256)
     award_title = models.CharField(max_length=256)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
-
-class ProjectFunders(models.Model):
-    project_id = models.ForeignKey(Project, on_delete=models.CASCADE, null=True, blank=True)
-    funder_id = models.ForeignKey(Funder, on_delete=models.CASCADE, null=True, blank=True)
 
 class EventsLog(models.Model):
     collection_id = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
