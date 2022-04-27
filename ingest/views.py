@@ -2153,10 +2153,6 @@ def save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet,
 
 def metadata_version_check(filename):
     version1 = False
-    f = open("/tmp/djangoout.txt", "a")
-    f.write("Filename " + filename)
-    f.close()
-
     workbook=xlrd.open_workbook(filename)
     try:
         if workbook.sheet_by_name('README'):
@@ -2164,9 +2160,6 @@ def metadata_version_check(filename):
     except:
         version1 = True
     return version1
-
-
-
 
 def ingest_method_check(ingest_method):
     if ingest_method == 'ingest_1' or ingest_method == 'ingest_2' or ingest_method == 'ingest_3' or ingest_method == 'ingest_4':
@@ -2212,7 +2205,14 @@ def descriptive_metadata_upload(request):
     # The POST. A user has selected a file and associated collection to upload.
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
         form = UploadForm(request.POST)
-        ingest_method = request.POST['ingest_method']
+        ingest_method = ''
+
+        if request.POST['ingest_method']:
+            ingest_method = request.POST['ingest_method']
+        else:
+            messages.error(request, 'You must choose a value from "What Does Your Data Look Like"')
+            return redirect('ingest:descriptive_metadata_upload')
+
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
 
@@ -2231,9 +2231,6 @@ def descriptive_metadata_upload(request):
             name_with_path = datapath + '/' + spreadsheet_file.name
             fs.save(name_with_path, spreadsheet_file)
             filename = name_with_path
-            f = open("/tmp/djangoout.txt", "a")
-            f.write("Filename " + filename + "Name With Path " + name_with_path)
-            f.close()
 
             version1 = metadata_version_check(filename)
             # using old metadata model for any old submissions (will eventually be deprecated)
@@ -2246,11 +2243,16 @@ def descriptive_metadata_upload(request):
             
             # using new metadata model
             elif version1 == False:
-                method_present = ingest_method_check(ingest_method)
-                if method_present == False:
-                    messages.error(request, 'You must choose a value from "What Does Your Data Look Like"')
-                    return redirect('ingest:descriptive_metadata_upload')
-                else:
+                #method_present = ingest_method_check(ingest_method)
+                 
+                f = open("/tmp/djangoout.txt", "a")
+                f.write('Method present? ' +  method_present + ',')
+                f.close()
+
+                #if method_present == False:
+                #    messages.error(request, 'You must choose a value from "What Does Your Data Look Like"')
+                #    return redirect('ingest:descriptive_metadata_upload')
+                #else:
                     errormsg = check_all_sheets(filename)
                     if errormsg != '':
                         messages.error(request, errormsg)
