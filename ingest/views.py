@@ -1710,18 +1710,18 @@ def save_specimen_sheet_method_1(specimen_set, sheet, saved_datasets):
             data_set_id = d.id
             
             s = specimen_set[d_index]
-            localid = s['LocalID'].lower()
-            species = s['Species'].lower()
-            ncbitaxonomy = s['NCBITaxonomy'].lower()
-            age = s['Age'].lower()
-            ageunit = s['Ageunit'].lower()
-            sex = s['Sex'].lower()
-            genotype = s['Genotype'].lower()
-            organlocalid = s['OrganLocalID'].lower()
-            organname = s['OrganName'].lower()
-            samplelocalid = s['SampleLocalID'].lower()
-            atlas = s['Atlas'].lower()
-            locations = s['Locations'].lower()
+            localid = s['LocalID']
+            species = s['Species']
+            ncbitaxonomy = s['NCBITaxonomy']
+            age = s['Age']
+            ageunit = s['Ageunit']
+            sex = s['Sex']
+            genotype = s['Genotype']
+            organlocalid = s['OrganLocalID']
+            organname = s['OrganName']
+            samplelocalid = s['SampleLocalID']
+            atlas = s['Atlas']
+            locations = s['Locations']
 
             specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id, data_set_id=data_set_id)
             specimen_object.save()
@@ -1738,18 +1738,18 @@ def save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets):
         for s in specimen_set:
             data_set_id = saved_datasets.id
 
-            localid = s['LocalID'].lower()
-            species = s['Species'].lower()
-            ncbitaxonomy = s['NCBITaxonomy'].lower()
-            age = s['Age'].lower()
-            ageunit = s['Ageunit'].lower()
-            sex = s['Sex'].lower()
-            genotype = s['Genotype'].lower()
-            organlocalid = s['OrganLocalID'].lower()
-            organname = s['OrganName'].lower()
-            samplelocalid = s['SampleLocalID'].lower()
-            atlas = s['Atlas'].lower()
-            locations = s['Locations'].lower()
+            localid = s['LocalID']
+            species = s['Species']
+            ncbitaxonomy = s['NCBITaxonomy']
+            age = s['Age']
+            ageunit = s['Ageunit']
+            sex = s['Sex']
+            genotype = s['Genotype']
+            organlocalid = s['OrganLocalID']
+            organname = s['OrganName']
+            samplelocalid = s['SampleLocalID']
+            atlas = s['Atlas']
+            locations = s['Locations']
 
             specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id, data_set_id=data_set_id)
             specimen_object.save()
@@ -1769,18 +1769,18 @@ def save_specimen_sheet_method_3(specimen_set, sheet, saved_datasets):
             data_set_id = d.id
             
             s = specimen_set[d_index]
-            localid = s['LocalID'].lower()
-            species = s['Species'].lower()
-            ncbitaxonomy = s['NCBITaxonomy'].lower()
-            age = s['Age'].lower()
-            ageunit = s['Ageunit'].lower()
-            sex = s['Sex'].lower()
-            genotype = s['Genotype'].lower()
-            organlocalid = s['OrganLocalID'].lower()
-            organname = s['OrganName'].lower()
-            samplelocalid = s['SampleLocalID'].lower()
-            atlas = s['Atlas'].lower()
-            locations = s['Locations'].lower()
+            localid = s['LocalID']
+            species = s['Species']
+            ncbitaxonomy = s['NCBITaxonomy']
+            age = s['Age']
+            ageunit = s['Ageunit']
+            sex = s['Sex']
+            genotype = s['Genotype']
+            organlocalid = s['OrganLocalID']
+            organname = s['OrganName']
+            samplelocalid = s['SampleLocalID']
+            atlas = s['Atlas']
+            locations = s['Locations']
 
             specimen_object = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id, data_set_id=data_set_id)
             specimen_object.save()
@@ -1795,18 +1795,18 @@ def save_specimen_sheet_method_4(specimen_set, sheet):
     # single specimen
     try:
         for s in specimen_set:
-            localid = s['LocalID'].lower()
-            species = s['Species'].lower()
-            ncbitaxonomy = s['NCBITaxonomy'].lower()
-            age = s['Age'].lower()
-            ageunit = s['Ageunit'].lower()
-            sex = s['Sex'].lower()
-            genotype = s['Genotype'].lower()
-            organlocalid = s['OrganLocalID'].lower()
-            organname = s['OrganName'].lower()
-            samplelocalid = s['SampleLocalID'].lower()
-            atlas = s['Atlas'].lower()
-            locations = s['Locations'].lower()
+            localid = s['LocalID']
+            species = s['Species']
+            ncbitaxonomy = s['NCBITaxonomy']
+            age = s['Age']
+            ageunit = s['Ageunit']
+            sex = s['Sex']
+            genotype = s['Genotype']
+            organlocalid = s['OrganLocalID']
+            organname = s['OrganName']
+            samplelocalid = s['SampleLocalID']
+            atlas = s['Atlas']
+            locations = s['Locations']
 
             specimen = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id)
 
