@@ -97,10 +97,10 @@ class Image(admin.ModelAdmin):
 class SheetAdmin(admin.ModelAdmin):
     list_display = ("id","filename", "date_uploaded", "collection")
     inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline, ]
-
 @admin.register(EventsLog)
 class EventsLogAdmin(admin.ModelAdmin):
     list_display = ("collection_id", "notes", "event_type","timestamp")
+    list_filter = ('event_type','timestamp')
 @admin.register(ProjectPeople)
 class ProjectPeople(admin.ModelAdmin):
     list_display = ("id", "project_id", "people_id", "is_po", "is_po", "doi_role")

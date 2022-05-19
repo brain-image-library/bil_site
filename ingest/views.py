@@ -2076,10 +2076,14 @@ def save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet,
                 if saved_specimens:
                     saved_images = save_images_sheet_method_2(images, sheet, saved_datasets)
                     if saved_images:
+                        #o = open("/tmp/submiterror.txt", "a")
+                        #o.write('save_images is true')
                         saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
                         if saved_generic:
+                            #o.write('saved_generic is true')
                             return True
                         else:
+                            #o.write('saved_generic is FALSE')
                             False
                     else:
                         False
@@ -2240,7 +2244,7 @@ def descriptive_metadata_upload(request):
 
                 else:
                     saved = False
-                    collection = Collection.objects.get(name=associated_collection)
+                    collection = Collection.objects.get(name=associated_collection.name)
                     contributors = ingest_contributors_sheet(filename)
                     funders = ingest_funders_sheet(filename)
                     publications = ingest_publication_sheet(filename)
