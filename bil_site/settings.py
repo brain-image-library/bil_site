@@ -137,7 +137,7 @@ if DATABASE == "postgres":
             'NAME': config['Security']['DATABASE_NAME'],
             'USER': config['Security']['DATABASE_USER'],
             'PASSWORD': DATABASE_PASSWORD,
-            'HOST': 'localhost',
+            'HOST': IMG_DATA_HOST,
             'PORT': '',
         }
     }
