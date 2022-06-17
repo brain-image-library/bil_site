@@ -2275,7 +2275,8 @@ def descriptive_metadata_upload(request):
                          messages.success(request, 'Descriptive Metadata successfully uploaded!!')
                          return redirect('ingest:descriptive_metadata_list')
                     else:
-                         messages.error(request, 'There has been an error. Please contact BIL Support')
+                         error_code = sheet.id
+                         messages.error(request, 'There has been an error. Please contact BIL Support. Error Code: ', error_code)
                          return redirect('ingest:descriptive_metadata_upload')
 
 
