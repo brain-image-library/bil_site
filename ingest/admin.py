@@ -97,10 +97,20 @@ class Image(admin.ModelAdmin):
 class SheetAdmin(admin.ModelAdmin):
     list_display = ("id","filename", "date_uploaded", "collection")
     inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline, ]
-
 @admin.register(EventsLog)
 class EventsLogAdmin(admin.ModelAdmin):
     list_display = ("collection_id", "notes", "event_type","timestamp")
+    list_filter = ('event_type','timestamp')
+    #def add_event(self, request, from_url='', extra_context=None):
+    #    source = FeedPost.objects.get(id=source_id)
+    #    if source_id != None:
+    #        source = FeedPost.objects.get(id=source_id)
+    #        g = request.GET.copy()
+    #        g.update({
+    #            'project_id' = source.project_id,
+    #    })
+    #    request.GET = g
+    #return super(EventsLogAdmin, self).add_event(request, from_url, extra_context)
 @admin.register(ProjectPeople)
 class ProjectPeople(admin.ModelAdmin):
     list_display = ("id", "project_id", "people_id", "is_po", "is_po", "doi_role")
