@@ -16,6 +16,7 @@ import sys
 from django.contrib import messages
 
 
+
 site_cfg_misconfigured = (
     "The site.cfg file exists but is not properly configured. The key '{}' is "
     "missing. See example.cfg as a reference.")
