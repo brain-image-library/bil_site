@@ -40,7 +40,7 @@ def export_as_json(modeladmin, request, queryset):
 class CollectionAdmin(admin.ModelAdmin):
     search_fields = ("bil_uuid__startswith", )
     list_display = ("bil_uuid","name","submission_status","validation_status", "view_descriptivemetadatas_link", "view_sheets_link","view_eventslogs_link")
-    list_filter = ('submission_status', 'validation_status', 'lab_name', 'project')
+    list_filter = ('submission_status', 'validation_status', 'lab_name', 'project', 'project_funder_id', 'user')
     actions = [mark_as_validated_and_submitted, export_as_json]
     ordering = ('bil_uuid',)
     def view_descriptivemetadatas_link(self, obj):
@@ -79,7 +79,8 @@ class Project(admin.ModelAdmin):
     list_display = ("id", "name", "funded_by", "is_biccn")
 @admin.register(DescriptiveMetadata)
 class DescriptiveMetadataAdmin(admin.ModelAdmin):
-    list_display = ("r24_directory", "sample_id","collection")
+    list_display = ("r24_directory", "investigator", "sample_id","collection")
+    list_filter = ('investigator', 'lab')
 @admin.register(Contributor)
 class Contributor(admin.ModelAdmin):
     list_display = ("id", "contributorname", "creator", "contributortype", "nametype", "nameidentifier", "nameidentifierscheme", "affiliation", "affiliationidentifier", "affiliationidentifierscheme", "sheet")
@@ -88,7 +89,7 @@ class Instrument(admin.ModelAdmin):
     list_display = ("id", "microscopetype", "microscopemanufacturerandmodel", "objectivename", "objectiveimmersion", "objectivena", "objectivemagnification", "detectortype", "detectormodel", "illuminationtypes", "illuminationwavelength", "detectionwavelength", "sampletemperature", "sheet")
 @admin.register(Dataset)
 class Dataset(admin.ModelAdmin):
-    list_display = ("id", "bildirectory", "socialmedia", "subject", "subjectscheme", "rights", "rightsuri", "rightsidentifier", "image", "generalmodality", "technique", "other", "methods", "technicalinfo", "sheet")
+    list_display = ("id", "bildirectory", "socialmedia", "subject", "subjectscheme", "rights", "rightsuri", "rightsidentifier", "dataset_image", "generalmodality", "technique", "other", "methods", "technicalinfo", "sheet")
 admin.site.register(Specimen)
 @admin.register(Image)
 class Image(admin.ModelAdmin):
