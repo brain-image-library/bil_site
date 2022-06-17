@@ -28,7 +28,7 @@ if not os.path.isfile('site.cfg'):
     sys.exit(1)
 
 essential_site_cfg_keys = [
-    'SECRET_KEY', 'DEBUG', 'IMG_DATA_HOST',
+    'SECRET_KEY', 'DEBUG', 'IMG_DATA_HOST', 'DB_HOST',
     'FAKE_STORAGE_AREA', 'DATABASE', 'STAGING_AREA_ROOT'
 ]
 
@@ -137,7 +137,7 @@ if DATABASE == "postgres":
             'NAME': config['Security']['DATABASE_NAME'],
             'USER': config['Security']['DATABASE_USER'],
             'PASSWORD': DATABASE_PASSWORD,
-            'HOST': IMG_DATA_HOST,
+            'HOST': config['Security']['DB_HOST'],
             'PORT': '',
         }
     }
