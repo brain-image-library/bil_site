@@ -1460,15 +1460,15 @@ def save_contributors_sheet(contributors, sheet):
     # saved_contributors = []
     try:
         for c in contributors:
-            contributorname = c['contributorName'].lower()
-            creator = c['Creator'].lower()
-            contributortype = c['contributorType'].lower()
-            nametype = c['nameType'].lower()
-            nameidentifier = c['nameIdentifier'].lower()
-            nameidentifierscheme = c['nameIdentifierScheme'].lower()
-            affiliation = c['affiliation'].lower()
-            affiliationidentifier = c['affiliationIdentifier'].lower()
-            affiliationidentifierscheme = c['affiliationIdentifierScheme'].lower()
+            contributorname = c['contributorName']
+            creator = c['Creator']
+            contributortype = c['contributorType']
+            nametype = c['nameType']
+            nameidentifier = c['nameIdentifier']
+            nameidentifierscheme = c['nameIdentifierScheme']
+            affiliation = c['affiliation']
+            affiliationidentifier = c['affiliationIdentifier']
+            affiliationidentifierscheme = c['affiliationIdentifierScheme']
             
             contributor = Contributor(contributorname=contributorname, creator=creator, contributortype=contributortype, nametype=nametype, nameidentifier=nameidentifier, nameidentifierscheme=nameidentifierscheme, affiliation=affiliation, affiliationidentifier=affiliationidentifier, affiliationidentifierscheme=affiliationidentifierscheme, sheet_id=sheet.id)
             contributor.save()
@@ -1483,11 +1483,11 @@ def save_contributors_sheet(contributors, sheet):
 def save_funders_sheet(funders, sheet):
     try:
         for f in funders:
-            fundername = f['funderName'].lower()
-            funding_reference_identifier = f['fundingReferenceIdentifier'].lower()
-            funding_reference_identifier_type = f['fundingReferenceIdentifierType'].lower()
-            award_number = f['awardNumber'].lower()
-            award_title = f['awardTitle'].lower()
+            fundername = f['funderName']
+            funding_reference_identifier = f['fundingReferenceIdentifier']
+            funding_reference_identifier_type = f['fundingReferenceIdentifierType']
+            award_number = f['awardNumber']
+            award_title = f['awardTitle']
             
             funder = Funder(fundername=fundername, funding_reference_identifier=funding_reference_identifier, funding_reference_identifier_type=funding_reference_identifier_type, award_number=award_number, award_title=award_title, sheet_id=sheet.id)
             funder.save()
@@ -1499,11 +1499,11 @@ def save_funders_sheet(funders, sheet):
 def save_publication_sheet(publications, sheet):
     try:
         for p in publications:
-            relatedidentifier = p['relatedIdentifier'].lower()
-            relatedidentifiertype = p['relatedIdentifierType'].lower()
-            pmcid = p['PMCID'].lower()
-            relationtype = p['relationType'].lower()
-            citation = p['citation'].lower()
+            relatedidentifier = p['relatedIdentifier']
+            relatedidentifiertype = p['relatedIdentifierType']
+            pmcid = p['PMCID']
+            relationtype = p['relationType']
+            citation = p['citation']
             
             publication = Publication(relatedidentifier=relatedidentifier, relatedidentifiertype=relatedidentifiertype, pmcid=pmcid, relationtype=relationtype, citation=citation, sheet_id=sheet.id)
             publication.save()
@@ -1516,18 +1516,18 @@ def save_instrument_sheet_method_1(instruments, sheet):
     # there should be 1 line in the instrument tab for methods 1, 2, 3
     try:
         for i in instruments:
-            microscopetype = i['MicroscopeType'].lower()
-            microscopemanufacturerandmodel = i['MicroscopeManufacturerAndModel'].lower()
-            objectivename = i['ObjectiveName'].lower()
-            objectiveimmersion = i['ObjectiveImmersion'].lower()
-            objectivena = i['ObjectiveNA'].lower()
-            objectivemagnification = i['ObjectiveMagnification'].lower()
-            detectortype = i['DetectorType'].lower()
-            detectormodel = i['DetectorModel'].lower()
-            illuminationtypes = i['IlluminationTypes'].lower()
-            illuminationwavelength = i['IlluminationWavelength'].lower()
-            detectionwavelength = i['DetectionWavelength'].lower()
-            sampletemperature = i['SampleTemperature'].lower()
+            microscopetype = i['MicroscopeType']
+            microscopemanufacturerandmodel = i['MicroscopeManufacturerAndModel']
+            objectivename = i['ObjectiveName']
+            objectiveimmersion = i['ObjectiveImmersion']
+            objectivena = i['ObjectiveNA']
+            objectivemagnification = i['ObjectiveMagnification']
+            detectortype = i['DetectorType']
+            detectormodel = i['DetectorModel']
+            illuminationtypes = i['IlluminationTypes']
+            illuminationwavelength = i['IlluminationWavelength']
+            detectionwavelength = i['DetectionWavelength']
+            sampletemperature = i['SampleTemperature']
             
             instrument = Instrument(microscopetype=microscopetype, microscopemanufacturerandmodel=microscopemanufacturerandmodel, objectivename=objectivename, objectiveimmersion=objectiveimmersion, objectivena=objectivena, objectivemagnification=objectivemagnification, detectortype=detectortype, detectormodel=detectormodel, illuminationtypes=illuminationtypes, illuminationwavelength=illuminationwavelength, detectionwavelength=detectionwavelength, sampletemperature=sampletemperature, sheet_id=sheet.id)
             instrument.save()
@@ -1540,18 +1540,18 @@ def save_instrument_sheet_method_2(instruments, sheet):
     # there should be 1 line in the instrument tab for methods 1, 2, 3
     try:
         for i in instruments:
-            microscopetype = i['MicroscopeType'].lower()
-            microscopemanufacturerandmodel = i['MicroscopeManufacturerAndModel'].lower()
-            objectivename = i['ObjectiveName'].lower()
-            objectiveimmersion = i['ObjectiveImmersion'].lower()
-            objectivena = i['ObjectiveNA'].lower()
-            objectivemagnification = i['ObjectiveMagnification'].lower()
-            detectortype = i['DetectorType'].lower()
-            detectormodel = i['DetectorModel'].lower()
-            illuminationtypes = i['IlluminationTypes'].lower()
-            illuminationwavelength = i['IlluminationWavelength'].lower()
-            detectionwavelength = i['DetectionWavelength'].lower()
-            sampletemperature = i['SampleTemperature'].lower()
+            microscopetype = i['MicroscopeType']
+            microscopemanufacturerandmodel = i['MicroscopeManufacturerAndModel']
+            objectivename = i['ObjectiveName']
+            objectiveimmersion = i['ObjectiveImmersion']
+            objectivena = i['ObjectiveNA']
+            objectivemagnification = i['ObjectiveMagnification']
+            detectortype = i['DetectorType']
+            detectormodel = i['DetectorModel']
+            illuminationtypes = i['IlluminationTypes']
+            illuminationwavelength = i['IlluminationWavelength']
+            detectionwavelength = i['DetectionWavelength']
+            sampletemperature = i['SampleTemperature']
             
             instrument = Instrument(microscopetype=microscopetype, microscopemanufacturerandmodel=microscopemanufacturerandmodel, objectivename=objectivename, objectiveimmersion=objectiveimmersion, objectivena=objectivena, objectivemagnification=objectivemagnification, detectortype=detectortype, detectormodel=detectormodel, illuminationtypes=illuminationtypes, illuminationwavelength=illuminationwavelength, detectionwavelength=detectionwavelength, sampletemperature=sampletemperature, sheet_id=sheet.id)
             instrument.save()
@@ -1564,18 +1564,18 @@ def save_instrument_sheet_method_3(instruments, sheet):
     # there should be 1 line in the instrument tab for methods 1, 2, 3
     try:
         for i in instruments:
-            microscopetype = i['MicroscopeType'].lower()
-            microscopemanufacturerandmodel = i['MicroscopeManufacturerAndModel'].lower()
-            objectivename = i['ObjectiveName'].lower()
-            objectiveimmersion = i['ObjectiveImmersion'].lower()
-            objectivena = i['ObjectiveNA'].lower()
-            objectivemagnification = i['ObjectiveMagnification'].lower()
-            detectortype = i['DetectorType'].lower()
-            detectormodel = i['DetectorModel'].lower()
-            illuminationtypes = i['IlluminationTypes'].lower()
-            illuminationwavelength = i['IlluminationWavelength'].lower()
-            detectionwavelength = i['DetectionWavelength'].lower()
-            sampletemperature = i['SampleTemperature'].lower()
+            microscopetype = i['MicroscopeType']
+            microscopemanufacturerandmodel = i['MicroscopeManufacturerAndModel']
+            objectivename = i['ObjectiveName']
+            objectiveimmersion = i['ObjectiveImmersion']
+            objectivena = i['ObjectiveNA']
+            objectivemagnification = i['ObjectiveMagnification']
+            detectortype = i['DetectorType']
+            detectormodel = i['DetectorModel']
+            illuminationtypes = i['IlluminationTypes']
+            illuminationwavelength = i['IlluminationWavelength']
+            detectionwavelength = i['DetectionWavelength']
+            sampletemperature = i['SampleTemperature']
             
             instrument = Instrument(microscopetype=microscopetype, microscopemanufacturerandmodel=microscopemanufacturerandmodel, objectivename=objectivename, objectiveimmersion=objectiveimmersion, objectivena=objectivena, objectivemagnification=objectivemagnification, detectortype=detectortype, detectormodel=detectormodel, illuminationtypes=illuminationtypes, illuminationwavelength=illuminationwavelength, detectionwavelength=detectionwavelength, sampletemperature=sampletemperature, sheet_id=sheet.id)
             instrument.save()
@@ -1591,18 +1591,18 @@ def save_instrument_sheet_method_4(instruments, sheet, saved_datasets):
             data_set_id = d.id
 
             i = instruments[d_index]
-            microscopetype = i['MicroscopeType'].lower()
-            microscopemanufacturerandmodel = i['MicroscopeManufacturerAndModel'].lower()
-            objectivename = i['ObjectiveName'].lower()
-            objectiveimmersion = i['ObjectiveImmersion'].lower()
-            objectivena = i['ObjectiveNA'].lower()
-            objectivemagnification = i['ObjectiveMagnification'].lower()
-            detectortype = i['DetectorType'].lower()
-            detectormodel = i['DetectorModel'].lower()
-            illuminationtypes = i['IlluminationTypes'].lower()
-            illuminationwavelength = i['IlluminationWavelength'].lower()
-            detectionwavelength = i['DetectionWavelength'].lower()
-            sampletemperature = i['SampleTemperature'].lower()
+            microscopetype = i['MicroscopeType']
+            microscopemanufacturerandmodel = i['MicroscopeManufacturerAndModel']
+            objectivename = i['ObjectiveName']
+            objectiveimmersion = i['ObjectiveImmersion']
+            objectivena = i['ObjectiveNA']
+            objectivemagnification = i['ObjectiveMagnification']
+            detectortype = i['DetectorType']
+            detectormodel = i['DetectorModel']
+            illuminationtypes = i['IlluminationTypes']
+            illuminationwavelength = i['IlluminationWavelength']
+            detectionwavelength = i['DetectionWavelength']
+            sampletemperature = i['SampleTemperature']
             
             instrument = Instrument(microscopetype=microscopetype, microscopemanufacturerandmodel=microscopemanufacturerandmodel, objectivename=objectivename, objectiveimmersion=objectiveimmersion, objectivena=objectivena, objectivemagnification=objectivemagnification, detectortype=detectortype, detectormodel=detectormodel, illuminationtypes=illuminationtypes, illuminationwavelength=illuminationwavelength, detectionwavelength=detectionwavelength, sampletemperature=sampletemperature, data_set_id=data_set_id, sheet_id=sheet.id)
             instrument.save()
@@ -1615,21 +1615,21 @@ def save_dataset_sheet_method_1_or_3(datasets, sheet):
     saved_datasets = []
     try:
         for d in datasets:
-            bildirectory = d['BILDirectory'].lower()
-            title = d['title'].lower()
-            socialmedia = d['socialMedia'].lower()
-            subject = d['subject'].lower()
-            subjectscheme = d['Subjectscheme'].lower()
-            rights = d['rights'].lower()
-            rightsuri = d['rightsURI'].lower()
-            rightsidentifier = d['rightsIdentifier'].lower()
-            dataset_image = d['Image'].lower()
-            generalmodality = d['GeneralModality'].lower()
-            technique = d['Technique'].lower()
-            other = d['Other'].lower()
-            abstract = d['Abstract'].lower()
-            methods = d['Methods'].lower()
-            technicalinfo = d['TechnicalInfo'].lower()
+            bildirectory = d['BILDirectory']
+            title = d['title']
+            socialmedia = d['socialMedia']
+            subject = d['subject']
+            subjectscheme = d['Subjectscheme']
+            rights = d['rights']
+            rightsuri = d['rightsURI']
+            rightsidentifier = d['rightsIdentifier']
+            dataset_image = d['Image']
+            generalmodality = d['GeneralModality']
+            technique = d['Technique']
+            other = d['Other']
+            abstract = d['Abstract']
+            methods = d['Methods']
+            technicalinfo = d['TechnicalInfo']
 
             dataset = Dataset(bildirectory=bildirectory, title=title, socialmedia=socialmedia, subject=subject, subjectscheme=subjectscheme, rights=rights, rightsuri=rightsuri, rightsidentifier=rightsidentifier, dataset_image=dataset_image, generalmodality=generalmodality, technique=technique, other=other, abstract=abstract, methods=methods, technicalinfo=technicalinfo, sheet_id=sheet.id)
             dataset.save()
@@ -1643,21 +1643,21 @@ def save_dataset_sheet_method_2(datasets, sheet):
     # only 1 dataset row expected here
     try:
         for d in datasets:
-            bildirectory = d['BILDirectory'].lower()
-            title = d['title'].lower()
-            socialmedia = d['socialMedia'].lower()
-            subject = d['subject'].lower()
-            subjectscheme = d['Subjectscheme'].lower()
-            rights = d['rights'].lower()
-            rightsuri = d['rightsURI'].lower()
-            rightsidentifier = d['rightsIdentifier'].lower()
-            dataset_image = d['Image'].lower()
-            generalmodality = d['GeneralModality'].lower()
-            technique = d['Technique'].lower()
-            other = d['Other'].lower()
-            abstract = d['Abstract'].lower()
-            methods = d['Methods'].lower()
-            technicalinfo = d['TechnicalInfo'].lower()
+            bildirectory = d['BILDirectory']
+            title = d['title']
+            socialmedia = d['socialMedia']
+            subject = d['subject']
+            subjectscheme = d['Subjectscheme']
+            rights = d['rights']
+            rightsuri = d['rightsURI']
+            rightsidentifier = d['rightsIdentifier']
+            dataset_image = d['Image']
+            generalmodality = d['GeneralModality']
+            technique = d['Technique']
+            other = d['Other']
+            abstract = d['Abstract']
+            methods = d['Methods']
+            technicalinfo = d['TechnicalInfo']
 
             dataset = Dataset(bildirectory=bildirectory, title=title, socialmedia=socialmedia, subject=subject, subjectscheme=subjectscheme, rights=rights, rightsuri=rightsuri, rightsidentifier=rightsidentifier, dataset_image=dataset_image, generalmodality=generalmodality, technique=technique, other=other, abstract=abstract, methods=methods, technicalinfo=technicalinfo, sheet_id=sheet.id)
             dataset.save()
@@ -1673,21 +1673,21 @@ def save_dataset_sheet_method_4(datasets, sheet, specimen_object_method_4):
     saved_datasets = []
     try:
         for d in datasets:
-            bildirectory = d['BILDirectory'].lower()
-            title = d['title'].lower()
-            socialmedia = d['socialMedia'].lower()
-            subject = d['subject'].lower()
-            subjectscheme = d['Subjectscheme'].lower()
-            rights = d['rights'].lower()
-            rightsuri = d['rightsURI'].lower()
-            rightsidentifier = d['rightsIdentifier'].lower()
-            dataset_image = d['Image'].lower()
-            generalmodality = d['GeneralModality'].lower()
-            technique = d['Technique'].lower()
-            other = d['Other'].lower()
-            abstract = d['Abstract'].lower()
-            methods = d['Methods'].lower()
-            technicalinfo = d['TechnicalInfo'].lower()
+            bildirectory = d['BILDirectory']
+            title = d['title']
+            socialmedia = d['socialMedia']
+            subject = d['subject']
+            subjectscheme = d['Subjectscheme']
+            rights = d['rights']
+            rightsuri = d['rightsURI']
+            rightsidentifier = d['rightsIdentifier']
+            dataset_image = d['Image']
+            generalmodality = d['GeneralModality']
+            technique = d['Technique']
+            other = d['Other']
+            abstract = d['Abstract']
+            methods = d['Methods']
+            technicalinfo = d['TechnicalInfo']
 
             dataset = Dataset(bildirectory=bildirectory, title=title, socialmedia=socialmedia, subject=subject, subjectscheme=subjectscheme, rights=rights, rightsuri=rightsuri, rightsidentifier=rightsidentifier, dataset_image=dataset_image, generalmodality=generalmodality, technique=technique, other=other, abstract=abstract, methods=methods, technicalinfo=technicalinfo, sheet_id=sheet.id, specimen_ingest_method_4=specimen_ingest_method_4)
 
