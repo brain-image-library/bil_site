@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 import os
 import configparser
 import sys
-import logging
 from django.contrib import messages
 
 
