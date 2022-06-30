@@ -1245,15 +1245,15 @@ def check_image_sheet(filename):
     ObliqueZdim3 = ['Superior', 'Inferior']
     ObliqueZdim2 = ['Anterior', 'Posterior']
     ObliqueZdim1 = ['Right', 'Left']
-    zAxis = ['right-to-left', 'left-to-right', 'anterior-to-posterior', 'posterior-to-anterior', 'superior-to-inferior', 'inferior-to-superior', 'oblique']
+    zAxis = ['right-to-left', 'left-to-right', 'anterior-to-posterior', 'posterior-to-anterior', 'superior-to-inferior', 'inferior-to-superior', 'oblique',  'NA', 'N/A', 'na', 'N/A']
     obliqueYdim3 = ['Superior', 'Inferior']
     obliqueYdim2 = ['Anterior', 'Posterior']
     obliqueYdim1 = ['Right', 'Left']
-    yAxis = ['right-to-left', 'left-to-right', 'anterior-to-posterior', 'posterior-to-anterior', 'superior-to-inferior', 'inferior-to-superior', 'oblique']
+    yAxis = ['right-to-left', 'left-to-right', 'anterior-to-posterior', 'posterior-to-anterior', 'superior-to-inferior', 'inferior-to-superior', 'oblique',  'NA', 'N/A', 'na', 'N/A']
     obliqueXdim3 = ['Superior', 'Inferior']
     obliqueXdim2 = ['Anterior', 'Posterior']
     obliqueXdim1 = ['Right', 'Left']
-    xAxis = ['right-to-left', 'left-to-right', 'anterior-to-posterior', 'posterior-to-anterior', 'superior-to-inferior', 'inferior-to-superior', 'oblique']
+    xAxis = ['right-to-left', 'left-to-right', 'anterior-to-posterior', 'posterior-to-anterior', 'superior-to-inferior', 'inferior-to-superior', 'oblique', 'NA', 'N/A', 'na', 'N/A']
 
     cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG']
     cols=image_sheet.row_values(3)
@@ -2275,7 +2275,8 @@ def descriptive_metadata_upload(request):
                          messages.success(request, 'Descriptive Metadata successfully uploaded!!')
                          return redirect('ingest:descriptive_metadata_list')
                     else:
-                         messages.error(request, 'There has been an error. Please contact BIL Support')
+                         error_code = sheet.id
+                         messages.error(request, 'There has been an error. Please contact BIL Support. Error Code: ', error_code)
                          return redirect('ingest:descriptive_metadata_upload')
 
 
