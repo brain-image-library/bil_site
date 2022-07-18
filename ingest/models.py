@@ -104,7 +104,7 @@ class Sheet(models.Model):
 
 class Dataset(models.Model):
     bildirectory = models.CharField(max_length=256)
-    title = models.CharField(max_length=256)
+    title = models.CharField(max_length=500)
     socialmedia = models.CharField(max_length=256, blank=True)
     subject = models.CharField(max_length=256, blank=True)
     subjectscheme = models.CharField(max_length=256, blank=True)
@@ -115,7 +115,7 @@ class Dataset(models.Model):
     generalmodality = models.CharField(max_length=256, blank=True)
     technique = models.CharField(max_length=256, blank=True)
     other = models.CharField(max_length=256, blank=True)
-    abstract = models.CharField(max_length=1000)
+    abstract = models.CharField(max_length=3000)
     methods = models.CharField(max_length=256, blank=True)
     technicalinfo = models.CharField(max_length=256, blank=True)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
@@ -337,7 +337,7 @@ class Publication(models.Model):
     relatedidentifiertype = models.CharField(max_length=256, blank=True)
     pmcid = models.CharField(max_length=256, blank=True)
     relationtype = models.CharField(max_length=256, blank=True)
-    citation = models.CharField(max_length=256, blank=True)
+    citation = models.CharField(max_length=1500, blank=True)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
     data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
 

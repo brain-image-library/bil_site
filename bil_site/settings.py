@@ -220,4 +220,4 @@ EMAIL_HOST_PASSWORD = config['Security']['EMAIL_PASSWORD']
 EMAIL_USE_TLS = True
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 #EMAIL_USE_SSL = False
-
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10240
