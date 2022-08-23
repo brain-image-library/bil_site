@@ -413,7 +413,7 @@ def descriptive_metadata_list(request):
         table = DescriptiveMetadataTable(
             DescriptiveMetadata.objects.filter(user=request.user), exclude=['user'])
         RequestConfig(request).configure(table)
-        descriptive_metadata = DescriptiveMetadata.objects.filter(user=request.user)
+        descriptive_metadata = DescriptiveMetadata.objects.filter(user=request.user).last()
     
         datasets_list = []
         collections = Collection.objects.filter(user=request.user)
