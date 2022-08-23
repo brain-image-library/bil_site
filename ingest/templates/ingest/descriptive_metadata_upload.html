@@ -26,8 +26,7 @@
 {% if collections %}
 <ul class="list-group">
   <li class="list-group-item">Download and fill out either the <a href="{% static 'ingest/BILMetadataV2Template.xlsx' %}">Excel</a> or <a href="{% static '/ingest/BILMetadataV2Template.ods' %}">LibreOffice Calc</a> template. </li>
-  <li class="list-group-item">Choose a collection, then upload your metadata.</li>.
-  <p> If the project you are looking for is not in this list, it must be added by the PI of your project. </p>
+  <li class="list-group-item">Choose a collection, then upload your metadata.</li>
 </ul>
   <hr>  
     {% csrf_token %}

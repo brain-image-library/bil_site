@@ -418,9 +418,10 @@ def descriptive_metadata_list(request):
         datasets_list = []
         collections = Collection.objects.filter(user=request.user)
         for c in collections:
-            sheets = Sheet.objects.filter(collection_id=c.id).all()
-            for s in sheets:
-                datasets = Dataset.objects.filter(sheet_id=s.id)
+            sheets = Sheet.objects.filter(collection_id=c.id).last()
+            #for s in sheets:
+            if sheets != None:
+                datasets = Dataset.objects.filter(sheet_id=sheets.id)
                 for d in datasets:
                     datasets_list.append(d)
 
