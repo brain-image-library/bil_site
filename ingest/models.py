@@ -318,6 +318,7 @@ class EventsLog(models.Model):
     project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null = True, blank=True)
     notes = models.CharField(max_length=256)
     timestamp = models.DateTimeField()
+    #Add field for embargo information
     event_type = models.CharField(max_length=64, default="", choices=[('mail_tapes_to_bil', 'Mail Tapes To BIL'), ('tapes_received', 'Tapes Received'), ('tapes_ready_for_qc', 'Tapes Ready For QC'), ('move_to_collection', 'Move To Collection'), ('request_brainball', 'Request Brainball'), ('Mail_brainball_from_bil', 'Mail Brainball From BIL'), ('mail_brainball_to_bil', 'Mail Brainball To BIL'), ('received_brainball', 'Received Brainball'), ('collection_created', 'Collection Created'), ('metadata_uploaded', 'Metadata Uploaded'), ('request_validation', 'Request Validation'), ('request_submission', 'Request Submission'), ('request_embargo', 'Request Embargo'), ('collection_public', 'Collection Public'), ('request_withdrawal', 'Request Withdrawal'), ('data_curated', 'Data Curated'), ('collection_validated', 'Collected Validated'), ('user_action_required', 'User Action Required'),])
 
 class Contributor(models.Model):
@@ -423,3 +424,12 @@ class Instrument(models.Model):
     data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
     specimen = models.ForeignKey(Specimen, on_delete=models.SET_NULL, blank=True, null=True)
     
+class MetadataVersion(models.Model):
+    dataset_id_dm = models.ForeignKey(DescriptiveMetadata, on_delete = models.SET_NULL, blank = True, null = True)
+    dataset_id_ds = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+    metadata_version = models.CharField(max_length=64, blank=True, null=True)
+    dataset_doi = models.CharField(max_length=512, blank=True, null=True)
+    dataset_status= models.CharField(max_length=256, blank=True, null=True)
+    event = models.ForeignKey(EventsLog, on_delete=models.SET_NULL, blank=True, null=True)
+
+
