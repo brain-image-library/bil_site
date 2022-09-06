@@ -14,7 +14,8 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.http import HttpResponse, JsonResponse, Http404
-
+from django.core import serializers
+from django.core.files import File
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
 from django_tables2 import RequestConfig
@@ -926,6 +927,16 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
         return render(request, {'pi':pi})
     template_name = 'ingest/collection_update.html'
     success_url = reverse_lazy('ingest:collection_list')
+
+@login_required
+def printMetadataReport(request): 
+    current_user = request.user
+    collections = serializers.serialize("xml", Collection.objects.filter(user = request.user))
+    f = open('content.xml', 'w')
+    myfile = File(f)
+    myfile.write(collections)
+    myfile.close()
+    return HttpResponse(open('content.xml').read(), content_type='text/xml')
 
 @login_required
 def collection_delete(request, pk):
