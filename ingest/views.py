@@ -1,4 +1,5 @@
 from calendar import c
+from fileinput import filename
 from xmlrpc.client import Boolean
 from django.conf import settings
 from django.contrib import messages, auth
@@ -23,6 +24,10 @@ import pyexcel as pe
 import xlrd
 import re
 from celery.result import AsyncResult
+import xml.etree.ElementTree as ET
+from pathlib import Path
+from django.db import connection
+
 
 from . import tasks
 from .field_list import required_metadata
@@ -33,6 +38,8 @@ from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequest
 import uuid
 import datetime
 import json
+import os
+import mimetypes
 from datetime import datetime
 
 def logout(request):
@@ -930,13 +937,55 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
 
 @login_required
 def printMetadataReport(request): 
-    current_user = request.user
-    collections = serializers.serialize("xml", Collection.objects.filter(user = request.user))
-    f = open('content.xml', 'w')
-    myfile = File(f)
-    myfile.write(collections)
-    myfile.close()
-    return HttpResponse(open('content.xml').read(), content_type='text/xml')
+   current_user = request.user.pk
+   #current_user = str(current_user)
+   #cursor = connection.cursor()
+   #cursor.execute("SELECT * FROM ingest_collection INNER JOIN ingest_sheet on ingest_collection.id = ingest_sheet.collection_id inner join ingest_contributor on ingest_sheet.id = ingest_contributor.sheet_id where user_id = " + current_user)
+   #colls = cursor.fetchall()
+   collections = Collection.objects.filter(user_id = current_user).prefetch_related('sheet_set').all()
+   #coll_ids=collectionslist.values_list('pk', flat=True)
+   #lookup = {'collection_id__in': coll_ids}
+   #sheet = Sheet.objects.filter(**lookup)
+   
+   #sheets = serializers.serialize("xml", sheet)
+   #collections = serializers.serialize("xml", Collection.objects.filter(user = request.user), fields=["name", "description", "organization_name", "lab_name", "project_funder_id"])
+   
+   collections = serializers.serialize("xml", collections)
+   
+   #f = open('content.xml', 'w')
+   #ET.write('content.xml', encoding = "utf-16")
+   #downloads_path = str(Path.home() / "Downloads")
+   #f = open(downloads_path, 'r')
+   #mydoc = ET.ElementTree(collections)
+   #mydoc.write(downloads_path + "test.xml", encoding="utf-8")
+   #metadata = f.read()
+   #metadata = ET.tostring()
+#    myfile = File(f)
+#    myfile.write(collections)
+#    myfile.close()
+   #metadata = mydoc.read()
+   response = HttpResponse(collections, content_type='application/xml')
+   #response['Content-Disposition'] = 'attachment; filename = '+filename
+   return response
+
+# @login_required
+# def printMetadataReport(request): 
+#     # Define Django project base directory
+#     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#     # Define text file name
+#     filename = 'test.txt'
+#     # Define the full file path
+#     filepath = BASE_DIR + '/' + filename
+#     # Open the file for reading content
+#     path = open(filepath, 'r')
+#     # Set the mime type
+#     mime_type, _ = mimetypes.guess_type(filepath)
+#     # Set the return value of the HttpResponse
+#     response = HttpResponse(path, content_type=mime_type)
+#     # Set the HTTP header for sending to browser
+#     response['Content-Disposition'] = "attachment; filename=%s" % filename
+#     # Return the response value
+#     return response    
 
 @login_required
 def collection_delete(request, pk):
@@ -2223,13 +2272,13 @@ def descriptive_metadata_upload(request):
             associated_collection = form.cleaned_data['associated_collection']
 
             # for production
-            datapath = associated_collection.data_path.replace("/lz/","/etc/")
+            #datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            # datapath = '/home/shared_bil_dev/testetc/' 
+            #datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
-            #datapath = '/Users/ltuite96/Desktop/bil_metadata_uploads' 
+            datapath = '/Users/ltuite96/Desktop/bil_metadata_uploads' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
 
