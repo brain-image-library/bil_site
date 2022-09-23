@@ -118,8 +118,8 @@ class CollectionTable(tables.Table):
 
     class Meta:
         model = Collection
-        exclude = ['celery_task_id_submission', 'celery_task_id_validation', 'user']
-        template_name = 'ingest/bootstrap_ingest.html'
+        exclude = ['celery_task_id_submission', 'celery_task_id_validation', 'user', 'modality',]
+        template_name = 'django_tables2/bootstrap.html'
 
 class CollectionRequestTable(tables.Table):
     """ The table used in the collection list. """

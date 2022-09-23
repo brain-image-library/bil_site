@@ -413,14 +413,15 @@ def descriptive_metadata_list(request):
         table = DescriptiveMetadataTable(
             DescriptiveMetadata.objects.filter(user=request.user), exclude=['user'])
         RequestConfig(request).configure(table)
-        descriptive_metadata = DescriptiveMetadata.objects.filter(user=request.user)
+        descriptive_metadata = DescriptiveMetadata.objects.filter(user=request.user).last()
     
         datasets_list = []
         collections = Collection.objects.filter(user=request.user)
         for c in collections:
-            sheets = Sheet.objects.filter(collection_id=c.id).all()
-            for s in sheets:
-                datasets = Dataset.objects.filter(sheet_id=s.id)
+            sheets = Sheet.objects.filter(collection_id=c.id).last()
+            #for s in sheets:
+            if sheets != None:
+                datasets = Dataset.objects.filter(sheet_id=sheets.id)
                 for d in datasets:
                     datasets_list.append(d)
 
@@ -799,16 +800,17 @@ def collection_detail(request, pk):
     try:
         datasets_list = []
         collection = Collection.objects.get(id=pk)
-        sheets = Sheet.objects.filter(collection_id=collection.id).all()
-        for s in sheets:
-            datasets = Dataset.objects.filter(sheet_id=s.id)
+        sheets = Sheet.objects.filter(collection_id=collection.id).last()
+        #for s in sheets:
+        if sheets != None:
+            datasets = Dataset.objects.filter(sheet_id=sheets.id)
             for d in datasets:
                 datasets_list.append(d)
     except ObjectDoesNotExist:
         raise Http404
     # the metadata associated with this collection
     #image_metadata_queryset = collection.imagemetadata_set.all()
-    descriptive_metadata_queryset = collection.descriptivemetadata_set.all()
+    descriptive_metadata_queryset = collection.descriptivemetadata_set.last()
     # this is what is triggered if the user hits "Upload to this Collection"
     if request.method == 'POST' and 'spreadsheet_file' in request.FILES:
         spreadsheet_file = request.FILES['spreadsheet_file']
@@ -2217,6 +2219,7 @@ def descriptive_metadata_upload(request):
 
             # for development locally
             datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
+            #datapath = '/Users/ltuite96/Desktop/bil_metadata_uploads' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
 
