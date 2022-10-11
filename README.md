@@ -234,6 +234,8 @@ In one terminal, start Celery and leave it running while the server is up:
 Note: this eventually needs to be done using systemd, so it's running in the
 background when the system starts up.
 
+Note: Celery may fail to start via systemd, if this happens start manually via ~/bin/bil_site_celery.sh. In this event, tasks will be queued and completed when celery is started.
+
 Make sure nginx, gunicorn, and postgres are running:
 
     sudo systemctl status postgresql
