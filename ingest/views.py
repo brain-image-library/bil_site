@@ -908,8 +908,10 @@ def collection_detail(request, pk):
 
 @login_required
 def sendValidation(request, pk):
-   messages.success(request, 'This is the primary key' + pk)
-   print('sending')
+   coll = Collection.objects.get(id = pk)
+   lz = coll.data_path
+   print(lz)
+   print(pk)
    return render(request, 'ingest/index.html')
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
