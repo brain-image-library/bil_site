@@ -906,6 +906,12 @@ def collection_detail(request, pk):
          'descriptive_metadata_queryset': descriptive_metadata_queryset,
          'pi': pi, 'datasets_list':datasets_list})
 
+@login_required
+def sendValidation(request, pk):
+   messages.success(request, 'This is the primary key' + pk)
+   print('sending')
+   return render(request, 'ingest/index.html')
+
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     """ Edit an existing collection ."""
     model = Collection
