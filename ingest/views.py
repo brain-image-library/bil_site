@@ -916,7 +916,7 @@ def sendValidation(request, pk):
    os.system(anaload)
    bioload = 'module load bioformats/6.12'
    os.system(bioload)
-   cmd = 'cwl-runner  --relax-path-checks /Users/luketuite/bil/test/bil-validate-2.cwl  --input_file1' + lz
+   cmd = 'cwl-runner  --relax-path-checks /Users/luketuite/bil/RL/forLuke/test/bil-validate-2.cwl --input_file1 ' + lz
    os.system(cmd)
    return render(request, 'ingest/index.html')
 
