@@ -21,6 +21,7 @@ from django_tables2 import RequestConfig
 import pyexcel as pe
 import xlrd
 import re
+import os
 from celery.result import AsyncResult
 
 from . import tasks
@@ -909,9 +910,14 @@ def collection_detail(request, pk):
 @login_required
 def sendValidation(request, pk):
    coll = Collection.objects.get(id = pk)
-   lz = coll.data_path
-   print(lz)
-   print(pk)
+   lz1 = coll.data_path
+   lz = '/Users/luketuite' + lz1 #for Luke's local testing
+   anaload = 'module load anaconda3'
+   os.system(anaload)
+   bioload = 'module load bioformats/6.12'
+   os.system(bioload)
+   cmd = 'cwl-runner  --relax-path-checks /Users/luketuite/bil/test/bil-validate-2.cwl  --input_file1' + lz
+   os.system(cmd)
    return render(request, 'ingest/index.html')
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
