@@ -85,6 +85,8 @@ INSTALLED_APPS = [
     'django_filters',
     'bootstrap4',
     'django_pam',
+    'hijack',
+    'hijack.contrib.admin',
     #'core',
 ]
 
@@ -96,6 +98,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'hijack.middleware.HijackUserMiddleware',
 ]
 
 ROOT_URLCONF = 'bil_site.urls'
