@@ -13,9 +13,10 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 import os
 import configparser
 import sys
+import mimetypes
 from django.contrib import messages
 
-
+mimetypes.add_type("text/javascript", ".js", True)
 
 site_cfg_misconfigured = (
     "The site.cfg file exists but is not properly configured. The key '{}' is "
