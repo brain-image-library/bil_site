@@ -479,8 +479,12 @@ def collection_send(request):
 @login_required
 def collection_create(request):
     current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    try:
+        people = People.objects.get(auth_user_id_id = current_user.id)
+        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    except ObjectDoesNotExist:
+        messages.info(request, 'Error: Your account is likely not fully set up. Follow along with your Sign Up ticket on bil-support and provide the appropriate Grant Name and Number to the Project you will be submitting for. If you have already done so, kindly nudge us to complete your account creation.')
+        return redirect('/')
     for attribute in project_person:
         if attribute.is_pi:
             pi = True
@@ -2194,8 +2198,12 @@ def check_all_sheets(filename):
 @login_required
 def descriptive_metadata_upload(request):
     current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    try:
+        people = People.objects.get(auth_user_id_id = current_user.id)
+        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    except: 
+        messages.info(request, 'Error: Your account is likely not fully set up. Follow along with your Sign Up ticket on bil-support and provide the appropriate Grant Name and Number to the Project you will be submitting for. If you have already done so, kindly nudge us to complete your account creation.')
+        return redirect('/')
     for attribute in project_person:
         if attribute.is_pi:
             pi = True

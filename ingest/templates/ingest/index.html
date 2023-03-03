@@ -3,8 +3,8 @@
 {% block content %}
 
 <div class="container-fluid white_on_gray">
-  <div class="row">
 
+  <div class="row">
     <div class="col-lg-12 big-row-text">
       <h1>Data Submission Portal</h1>
       <p>The Brain Image Library (BIL) is a public resource enabling
@@ -19,7 +19,13 @@
     </div>
 
   </div>
+  {% for message in messages %}
+  <div style="width: px; margin-left:0px; " class="alert alert-{{ message.tags }} " id="msg" role="alert">
+  {{ message }}
+    
+{% endfor %}
 </div>
+
 
 {% if request.user.username %}
 
