@@ -17,9 +17,16 @@
   <label for="name">Project Name:</label>
   <input type="text" id="name" name="name">
 
-
   <label for="funded_by">Funded By:</label>
   <input type="text" id="funded_by" name="funded_by">
+
+  <label for="consortia">Consortia Affiliation:</label>
+  <p><strong>Select your project's constorium affiliation. You may control-click (Windows) or command-click (Mac) to select more than one.</strong></p> 
+    <select multiple size={{consortia.count}}>
+      {% for c in consortia %}
+        <option value={{c.id}}>{{c.long_name}} ({{c.short_name}})</option> 
+      {% endfor %}
+    </select>
 </form>
 <button class="btn btn-primary" onclick="create_new_project();">Submit New Project</button>
 <hr>
