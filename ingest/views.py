@@ -222,15 +222,13 @@ def create_project(request):
     items = []
     for item in new_project:
         items.append(item['funded_by'])
-        items.append(item['is_biccn'])
         items.append(item['name'])
         
         funded_by = item['funded_by']
-        is_biccn = item['is_biccn']
         name = item['name']
         
         # write project to the project table   
-        project = Project(funded_by=funded_by, is_biccn=is_biccn, name=name)
+        project = Project(funded_by=funded_by, name=name)
         project.save()
         
         # create a project_people row for this pi so they can view project on pi dashboard

@@ -76,7 +76,7 @@ class People(admin.ModelAdmin):
     list_display = ("id", "name", "orcid", "affiliation", "affiliation_identifier", "is_bil_admin", "auth_user_id")
 @admin.register(Project)
 class Project(admin.ModelAdmin):
-    list_display = ("id", "name", "funded_by", "is_biccn")
+    list_display = ("id", "name", "funded_by")
 @admin.register(DescriptiveMetadata)
 class DescriptiveMetadataAdmin(admin.ModelAdmin):
     list_display = ("r24_directory", "investigator", "sample_id","collection")

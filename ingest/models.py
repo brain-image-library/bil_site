@@ -16,7 +16,13 @@ class Project(models.Model):
         return self.name
     name = models.CharField(max_length=256, default="Project Name")
     funded_by = models.CharField(max_length=256)
-    is_biccn = models.BooleanField(default=False)
+
+class Consortium(models.Model):
+    short_name = models.CharField(max_length=256)
+    long_name = models.CharField(max_length=1000)
+class ProjectConsortium(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=False, null=True)
+    constorium = models.ForeignKey(Consortium, on_delete=models.SET_NULL, null = True, blank=True)
 
 class People(models.Model):
     def __str__(self):

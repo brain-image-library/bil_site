@@ -3,12 +3,10 @@ function create_new_project() {
     const output_rows = [];
     
     const name = document.getElementById("name");
-    const is_biccn = document.getElementById("is_biccn");
-    const funded_my = document.getElementById("is_biccn");
+    const funded_by = document.getElementById("funded_by");
 
     output_rows.push({
         "name": name.value,
-        "is_biccn": is_biccn.value,
         "funded_by": funded_by.value
         })
   
