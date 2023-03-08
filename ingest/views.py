@@ -221,6 +221,8 @@ def project_form(request):
 @login_required
 def create_project(request):
     new_project = json.loads(request.body)
+
+    print(new_project)
     items = []
     for item in new_project:
         items.append(item['funded_by'])
