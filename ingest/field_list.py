@@ -181,3 +181,15 @@ datastate_metadata = [
     'attributes',
     'description',
 ]
+project_fields = [
+    'name',
+    'funded_by'
+]
+consortium_fields = [
+    'shortname',
+    'longname'
+]
+project_consortium_fields = [
+    'project',
+    'consortium'
+]

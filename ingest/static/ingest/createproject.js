@@ -22,7 +22,7 @@ function create_new_project() {
     output_rows.push({
         "name": name.value,
         "funded_by": funded_by.value
-        "consortia": consortia_ids
+        "consortia_ids": consortia_ids
         })
   
     console.log(output_rows)
