@@ -59,6 +59,30 @@ def index(request):
     try:
         people = People.objects.get(auth_user_id_id = current_user.id)
         project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    except ObjectDoesNotExist:
+        people = People()
+        people.name = current_user.username
+        people.orcid = ''
+        people.affiliation = ''
+        people.affiliation_identifier = ''
+        people.is_bil_admin = False
+        people.auth_user_id = current_user
+        people.save()
+        project = Project()
+        pname = current_user.username + ' Project 1'
+        project.name = pname
+        project.funded_by = ''
+        project.is_biccn = False
+        project.save()
+        project_people = ProjectPeople()
+        project_people.project_id = project
+        project_people.people_id = people
+        project_people.is_pi = False
+        project_people.is_po = False
+        project_people.save()
+    try:
+        people = People.objects.get(auth_user_id_id = current_user.id)
+        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
         if people.is_bil_admin:
             return render(request, 'ingest/bil_index.html', {'people':people})
         for attribute in project_person: 
