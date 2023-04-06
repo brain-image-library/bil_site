@@ -20,6 +20,7 @@ class Project(models.Model):
 class Consortium(models.Model):
     short_name = models.CharField(max_length=256)
     long_name = models.CharField(max_length=1000)
+    
 class ProjectConsortium(models.Model):
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=False, null=True)
     constorium = models.ForeignKey(Consortium, on_delete=models.SET_NULL, null = True, blank=True)

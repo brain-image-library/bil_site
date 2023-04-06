@@ -9,25 +9,35 @@ from django.utils.translation import ugettext_lazy
 
 from django.db.models import F
 from .models.models import ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor, Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder, Publication
+
 admin.site.site_header = 'Brain Image Library Admin Portal'
+
 class ContributorsInline(admin.TabularInline):
     model = Contributor
+
 class FundersInline(admin.TabularInline):
     model = Funder
+
 class PublicationsInline(admin.TabularInline):
     model = Publication
+
 class InstrumentsInline(admin.TabularInline):
     model = Instrument
+
 class DatasetsInline(admin.TabularInline):
     model = Dataset
+
 class SpecimensInline(admin.TabularInline):
     model = Specimen
+
 class ImagesInline(admin.TabularInline):
     model = Image
 admin.site.disable_action('delete_selected')
+
 @admin.action(description='Mark selected Collection(s) as Validated and Submitted')
 def mark_as_validated_and_submitted(modeladmin, request, queryset):
     queryset.update(submission_status = 'SUCCESS', validation_status = 'SUCCESS')
+
 @admin.action(description='Export results as JSON')
 def export_as_json(modeladmin, request, queryset):
     coll_info = Collection.objects.filter(name = queryset)
@@ -36,6 +46,7 @@ def export_as_json(modeladmin, request, queryset):
     response = HttpResponse(content_type="application/json")
     serializers.serialize("json", queryset, stream=response)
     return response
+
 @admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):
     search_fields = ("bil_uuid__startswith", )
@@ -71,22 +82,28 @@ class CollectionAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{} Events</a>', url, count)
     view_eventslogs_link.short_description = "EventsLogs"
 admin.site.register(ImageMetadata)
+
 @admin.register(People)
 class People(admin.ModelAdmin):
     list_display = ("id", "name", "orcid", "affiliation", "affiliation_identifier", "is_bil_admin", "auth_user_id")
+
 @admin.register(Project)
 class Project(admin.ModelAdmin):
     list_display = ("id", "name", "funded_by")
+
 @admin.register(DescriptiveMetadata)
 class DescriptiveMetadataAdmin(admin.ModelAdmin):
     list_display = ("r24_directory", "investigator", "sample_id","collection")
     list_filter = ('investigator', 'lab')
+
 @admin.register(Contributor)
 class Contributor(admin.ModelAdmin):
     list_display = ("id", "contributorname", "creator", "contributortype", "nametype", "nameidentifier", "nameidentifierscheme", "affiliation", "affiliationidentifier", "affiliationidentifierscheme", "sheet")
+
 @admin.register(Instrument)
 class Instrument(admin.ModelAdmin):
     list_display = ("id", "microscopetype", "microscopemanufacturerandmodel", "objectivename", "objectiveimmersion", "objectivena", "objectivemagnification", "detectortype", "detectormodel", "illuminationtypes", "illuminationwavelength", "detectionwavelength", "sampletemperature", "sheet")
+
 @admin.register(Dataset)
 class Dataset(admin.ModelAdmin):
     list_display = ("id", "bildirectory", "socialmedia", "subject", "subjectscheme", "rights", "rightsuri", "rightsidentifier", "dataset_image", "generalmodality", "technique", "other", "methods", "technicalinfo", "sheet")
@@ -94,10 +111,12 @@ admin.site.register(Specimen)
 @admin.register(Image)
 class Image(admin.ModelAdmin):
     list_display = ("id", "xaxis", "obliquexdim1", "obliquexdim2", "obliquexdim3", "yaxis", "obliqueydim1", "obliqueydim2", "obliqueydim3", "zaxis", "obliquezdim1", "obliquezdim2", "obliquezdim3", "landmarkname", "landmarkx", "landmarky", "landmarkz", "number", "displaycolor", "representation", "flurophore", "stepsizex", "stepsizey", "stepsizez", "stepsizet", "channels", "slices", "z", "xsize", "ysize", "zsize", "gbytes", "files", "dimensionorder", "sheet")
+
 @admin.register(Sheet)
 class SheetAdmin(admin.ModelAdmin):
     list_display = ("id","filename", "date_uploaded", "collection")
     inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline, ]
+
 @admin.register(EventsLog)
 class EventsLogAdmin(admin.ModelAdmin):
     list_display = ("collection_id", "notes", "event_type","timestamp")
@@ -112,6 +131,7 @@ class EventsLogAdmin(admin.ModelAdmin):
     #    })
     #    request.GET = g
     #return super(EventsLogAdmin, self).add_event(request, from_url, extra_context)
+
 @admin.register(ProjectPeople)
 class ProjectPeople(admin.ModelAdmin):
     list_display = ("id", "project_id", "people_id", "is_po", "is_po", "doi_role")
