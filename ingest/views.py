@@ -934,6 +934,20 @@ def collection_detail(request, pk):
          'descriptive_metadata_queryset': descriptive_metadata_queryset,
          'pi': pi, 'datasets_list':datasets_list})
 
+@login_required
+def ondemandSubmission(request, pk):
+    coll = Collection.objects.get(id = pk)
+    if coll.submission_status == 'SUCCESS' and coll.validation_status == 'SUCCESS':
+        sheet = Sheet.objects.filter(collection_id=coll.id).last()
+        print(sheet)
+        ds = Dataset.objects.filter(sheet = sheet.id).last()
+        p = ds.bildirectory
+        path = p[:33]
+    else:
+        path = coll.data_path
+    od = 'https://ondemand.bil.psc.edu/pun/sys/dashboard/files/fs' + path
+    return redirect(od)
+
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     """ Edit an existing collection ."""
     model = Collection
