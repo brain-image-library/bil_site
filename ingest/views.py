@@ -938,11 +938,9 @@ def collection_detail(request, pk):
 def ondemandSubmission(request, pk):
     coll = Collection.objects.get(id = pk)
     if coll.submission_status == 'SUCCESS' and coll.validation_status == 'SUCCESS':
-        sheet = Sheet.objects.filter(collection_id=coll.id).last()
-        print(sheet)
-        ds = Dataset.objects.filter(sheet = sheet.id).last()
-        p = ds.bildirectory
-        path = p[:33]
+        first2 = coll.bil_uuid[:2]
+        second2 = coll.bil_uuid[2:4]
+        path = '/bil/data/' + first2 + '/' + second2 + '/' + coll.bil_uuid + '/'
     else:
         path = coll.data_path
     od = 'https://ondemand.bil.psc.edu/pun/sys/dashboard/files/fs' + path
