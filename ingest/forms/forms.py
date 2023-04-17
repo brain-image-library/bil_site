@@ -1,6 +1,6 @@
 from django import forms
 from .field_list import metadata_fields, collection_fields, project_consortium_fields, project_fields, consortium_fields
-from .models.models import Project, Collection
+from ..models.models import Project, Collection
 
 
 class UploadForm(forms.Form):
@@ -29,10 +29,10 @@ class ProjectForm(forms.ModelForm):
         obj.save()
         return obj
 
-# class collection_send(forms.ModelForm):
-#     class Meta:
-#         model = Collection
-#         fields = collection_fields
+class collection_send(forms.ModelForm):
+    class Meta:
+        model = Collection
+        fields = collection_fields
         
 
 class CollectionForm(forms.ModelForm):
