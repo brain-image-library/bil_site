@@ -23,12 +23,12 @@ import xlrd
 import re
 from celery.result import AsyncResult
 
-from tasks import tasks
-from field_list import required_metadata
-from filters import CollectionFilter
-from forms import CollectionForm, UploadForm
-from models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium
-from tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
+from .tasks import tasks
+from .field_list import required_metadata
+from .filters import CollectionFilter
+from .forms import CollectionForm, UploadForm
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium
+from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
 import json

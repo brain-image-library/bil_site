@@ -1,8 +1,8 @@
 from django.utils.html import format_html
 
-from models import Collection
-from models import ImageMetadata
-from models import DescriptiveMetadata
+from .models import Collection
+from .models import ImageMetadata
+from .models import DescriptiveMetadata
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
 

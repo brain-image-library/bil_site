@@ -8,7 +8,7 @@ from django.contrib.admin import AdminSite
 from django.utils.translation import ugettext_lazy
 
 from django.db.models import F
-from .models.models import ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor, Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder, Publication
+from .models import ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor, Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder, Publication
 
 admin.site.site_header = 'Brain Image Library Admin Portal'
 

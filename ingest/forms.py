@@ -1,6 +1,6 @@
 from django import forms
-from field_list import metadata_fields, collection_fields, project_consortium_fields, project_fields, consortium_fields
-from models import Project, Collection
+from .field_list import metadata_fields, collection_fields, project_consortium_fields, project_fields, consortium_fields
+from .models import Project, Collection
 
 
 class UploadForm(forms.Form):
