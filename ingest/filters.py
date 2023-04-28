@@ -1,6 +1,6 @@
 import django_filters
 
-from ..models.models import Collection
+from models import Collection
 
 
 class CollectionFilter(django_filters.FilterSet):

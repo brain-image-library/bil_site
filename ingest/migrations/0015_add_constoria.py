@@ -19,10 +19,6 @@ class Migration(migrations.Migration):
                 ('long_name', models.CharField(max_length=1000)),
             ],
         ),
-        migrations.RemoveField(
-            model_name='project',
-            name='is_biccn',
-        ),
         migrations.CreateModel(
             name='ProjectConsortium',
             fields=[

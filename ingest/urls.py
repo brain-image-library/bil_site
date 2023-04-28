@@ -1,7 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from django.conf.urls import re_path
-from .views import views
+from . import views
 
 app_name = 'ingest'
 urlpatterns = [
