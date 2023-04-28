@@ -1,18 +1,36 @@
 from django import forms
 from .field_list import metadata_fields, collection_fields, project_consortium_fields, project_fields, consortium_fields
-from .models import Project, Collection
+from .models import ImageMetadata, DescriptiveMetadata, Project, Collection
 
 
 class UploadForm(forms.Form):
     associated_collection = forms.ModelChoiceField(queryset=Collection.objects.all())
 
+class DescriptiveMetadataForm(forms.ModelForm):
 
+    class Meta:	
+        model = ImageMetadata	
+        fields = metadata_fields	
 
-class ProjectForm(forms.ModelForm):
-    name = forms.IntegerField(min_value=0)
+    def __init__(self, *args, **kwargs):	
+        self.user = kwargs.pop('user')  # To get request.user. Do not use kwargs.pop('user', None) due to potential security hole	
+        super().__init__(*args, **kwargs)	
+        self.fields['submission'].queryset = Collection.objects.filter(	
+            locked=False, user=self.user)	
 
+    def save(self, *args, **kwargs):	
+        kwargs['commit'] = False	
+        obj = super().save(*args, **kwargs)	
+        if self.user:	
+            obj.user = self.user	
+        obj.save()	
+        return obj
+
+class ImageMetadataForm(forms.ModelForm):
+    age = forms.IntegerField(min_value=0)
+    
     class Meta:
-        model = Project
+        model = ImageMetadata
         fields = metadata_fields
 
     def __init__(self, *args, **kwargs):

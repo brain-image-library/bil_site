@@ -23,7 +23,7 @@ import xlrd
 import re
 from celery.result import AsyncResult
 
-from .tasks import tasks
+from . import tasks
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, UploadForm
