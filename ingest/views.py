@@ -1406,8 +1406,48 @@ def ingest_contributors_sheet(filename):
     for row in range(6,contributors_sheet.nrows):
         values = {keys[col]: contributors_sheet.cell(row, col).value
             for col in range(contributors_sheet.ncols)}
+        print(values)
+        contributors_name_checker(values)
+        contributors_affiliation_checker(values)
         contributors.append(values)
     return contributors
+def contributors_name_checker(values):
+    if 'Zhuang, Xiaowei' in values['contributorName']:
+        values['contributorName'] = 'Xiaowei Zhuang'
+    if 'Zeng, Hongkui' in values['contributorName']:
+        values['contributorName'] = 'Hongkui Zeng'
+    if 'Hongwei Dong' in values['contributorName']:
+        values['contributorName'] = 'Hong-Wei Dong'
+    if 'Dong, Hongwei' in values['contributorName']:
+        values['contributorName'] = 'Hong-Wei Dong'
+    if 'Dong, Hongwei' in values['contributorName']:
+        values['contributorName'] = 'Hong-Wei Dong'
+    if 'Yongsoo Kim Lab' in values['contributorName']:
+        values['contributorName'] = 'Yongsoo Kim'
+    if 'Tasic, Bosiljka' in values['contributorName']:
+        values['contributorName'] = 'Bosiljka Tasic'
+    if 'Guoping Fneg' in values['contributorName']:
+        values['contributorName'] = 'Guoping Feng'
+    if 'Feng, Guoping' in values['contributorName']:
+        values['contributorName'] = 'Guoping Feng'
+    if 'Lein, Ed' in values['contributorName']:
+        values['contributorName'] = 'Ed Lein'
+    return(values)
+
+def contributors_affiliation_checker(values):
+    if 'USC Mark and Mary Stevens Neuroimaging and Informatics Institute' in values['affiliation']:
+        values['affiliation'] = 'USC Mark and Mary Stevens Neuroimaging and Informatics Institute; University of Southern California'
+    if 'Penn State College of Medicine' in values['affiliation']:
+        values['affiliation'] = 'Penn State University College of Medicine'
+    if 'University of California, Los Angeles (UCLA)' in values['affiliation']:
+        values['affiliation'] = 'University of California, Los Angeles'
+    if 'Guoqiang Bi' in values['contributorName']:
+        if 'University of Southern California' in values['affiliation']:
+            values['affiliation'] = 'University of Science and Technology of China'
+    if 'Qingming Luo' in values['contributorName']:
+        if 'Cold Spring Harbor Laboratory' in values['affiliation']:
+            values['affiliation'] = 'Huazhong University of Science and Technology'
+    return(values)
 
 def ingest_funders_sheet(filename):
     fn = xlrd.open_workbook(filename)
@@ -1417,8 +1457,69 @@ def ingest_funders_sheet(filename):
     for row in range(6, funders_sheet.nrows):
         values={keys[col]: funders_sheet.cell(row,col).value
             for col in range(funders_sheet.ncols)}
+        funders_award_checker(values)
         funders.append(values)
+
     return funders
+
+def funders_award_checker(values):
+    if '1RF1MH' in values['awardNumber']:
+        substring_to_replace = '1RF1MH'
+        replacement_substring = '1-RF1-MH'
+        value = values['awardNumber']
+        new_value = value.replace(substring_to_replace, replacement_substring)
+        values['awardNumber'] = new_value
+    if '1U01MH' in values['awardNumber']:
+        substring_to_replace = '1U01MH'
+        replacement_substring = '1-U01-MH'
+        value = values['awardNumber']
+        print(value)
+        new_value = value.replace(substring_to_replace, replacement_substring)
+        values['awardNumber'] = new_value
+        print(new_value)
+    if '1UF1MH' in values['awardNumber']:
+        substring_to_replace = '1UF1MH'
+        replacement_substring = '1-UF1-MH'
+        value = values['awardNumber']
+        print(value)
+        new_value = value.replace(substring_to_replace, replacement_substring)
+        values['awardNumber'] = new_value
+        print(new_value)
+    if '1UG3MH' in values['awardNumber']:
+        substring_to_replace = '1UG3MH'
+        replacement_substring = '1-UG3-MH'
+        value = values['awardNumber']
+        print(value)
+        new_value = value.replace(substring_to_replace, replacement_substring)
+        values['awardNumber'] = new_value
+        print(new_value)
+    if 'U19MH114821' in values['awardNumber']:
+        substring_to_replace = 'U19MH114821'
+        replacement_substring = '1-U19-MH114821'
+        value = values['awardNumber']
+        print(value)
+        new_value = value.replace(substring_to_replace, replacement_substring)
+        values['awardNumber'] = new_value
+        print(new_value)
+    if 'none' in values['awardNumber']:
+        substring_to_replace = 'none'
+        replacement_substring = 'None'
+        value = values['awardNumber']
+        print(value)
+        new_value = value.replace(substring_to_replace, replacement_substring)
+        values['awardNumber'] = new_value
+        print(new_value)
+    if values['awardNumber'] == '1-U01-MH117079':
+        values['awardNumber'] = '1-U01-MH117079-01'
+    if values['awardNumber'] == '1-U19-MH114821':
+        values['awardNumber'] = '1-U19-MH114821-01'
+    if values['awardNumber'] == '5U01MH114825-05':
+        values['awardNumber'] = '5-U01-MH114825-05'
+    if values['awardNumber'] == '1-UG3-MH126869':
+        values['awardNumber'] = '1-UG3-MH126869-01'
+
+    return(values)
+
 
 def ingest_publication_sheet(filename):
     fn = xlrd.open_workbook(filename)
@@ -2244,13 +2345,13 @@ def descriptive_metadata_upload(request):
             associated_collection = form.cleaned_data['associated_collection']
 
             # for production
-            datapath = associated_collection.data_path.replace("/lz/","/etc/")
+            #datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
             # datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
-            #datapath = '/Users/ltuite96/Desktop/bil_metadata_uploads' 
+            datapath = '/Users/luketuite/Desktop/bil_metadata_uploads' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
 
