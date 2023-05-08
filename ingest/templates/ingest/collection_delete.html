@@ -6,6 +6,7 @@
   <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
 </a>
 {% endif %}
+<pre>{{ output }}</pre>
 <form action="" method="post">{% csrf_token %}
   <h3>Are you sure you want to delete "{{ collection }}"?</h3>
   <p><strong>Warning: Deleting a submission  will delete ALL metadata associated with it.</strong></p>

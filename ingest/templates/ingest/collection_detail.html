@@ -3,7 +3,7 @@
 {% block content %}
 {% if pi %}
 <a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+  <button class="cancel btn btn btn-primary" id="results" value="ignore" formnovalidate="">Return to PI Dashboard</button>
 </a>
 {% endif %}
 <div class="content container-fluid">
@@ -17,10 +17,11 @@
     </div>
   </div>
 
-    <a href="{% url 'ingest:sendValidation' collection.id %}">
-      <button class="btn btn-lg btn-primary" value="ignore" formnovalidate="">Send Validation</button>
-    </a>
 
+    <button id="myButton" class="btn btn-lg btn-primary" value="ignore" formnovalidate="">Send Validation</button>
+
+    <div id="output"></div>
+    <button class="btn btn-lg btn-primary" value="ignore" formnovalidate="">test</button>
   <div class="row">
     <div class="col-md-12">
 
@@ -106,5 +107,17 @@
     </div>
   </div>
 </div>
+<script>
+  const myButton = document.getElementById('myButton');
 
+  myButton.addEventListener('click', () => {
+    window.location.href = "{% url 'ingest:sendValidation' collection.id %}";
+    const urlParams = new URLSearchParams(window.location.search);
+    const outputValue = urlParams.get('output');
+    const decodedOutputValue = decodeURIComponent(outputValue);
+    outputDiv.innerText = decodedOutputValue;
+  });
+</script>
 {% endblock %}
+
+

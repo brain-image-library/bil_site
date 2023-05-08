@@ -13,7 +13,8 @@ from django.views.generic.edit import UpdateView, DeleteView
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.http import HttpResponse, JsonResponse, Http404
+from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
+from urllib.parse import urlencode
 
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
@@ -916,9 +917,14 @@ def sendValidation(request, pk):
    os.system(anaload)
    bioload = 'module load bioformats/6.12'
    os.system(bioload)
-   cmd = 'cwl-runner  --relax-path-checks /Users/luketuite/bil/RL/forLuke/test/bil-validate-3.cwl --input_file1 ' + lz
+   cmd = 'cwl-runner  --relax-path-checks /Users/luketuite/bil/RL/forLuke/test/bil-validate-3.cwl --input_file1 ' + lz + '> results.txt'
    os.system(cmd)
-   return render(request, 'ingest/index.html')
+   with open('results.txt', 'r') as f:
+        output = f.read()
+   base_url = reverse('ingest:collection_detail', kwargs={'pk': pk})  
+   query_string =  urlencode({'output': output})
+   url = '{}?{}'.format(base_url, query_string)
+   return redirect(url)
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     """ Edit an existing collection ."""

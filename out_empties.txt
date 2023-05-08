@@ -1,0 +1,4 @@
+date/time is 20230503115109
+log name is private_tmp_docker_tmpfy8o9jp7_stg630646d4-fdd7-4f9f-9cf4-ec9040abd91e_a74405c7708bb4aa
+log name is private/tmp/docker_tmpfy8o9jp7/stg630646d4-fdd7-4f9f-9cf4-ec9040abd91e/a74405c7708bb4aa
+1557081        0 drwxr-xr-x    2 luketuite        staff                  64 Feb 20 13:47 .
