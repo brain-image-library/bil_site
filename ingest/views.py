@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse_lazy, reverse, re_path
 from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.core.cache import cache
@@ -909,22 +909,27 @@ def collection_detail(request, pk):
          'pi': pi, 'datasets_list':datasets_list})
 
 @login_required
-def sendValidation(request, pk):
-   coll = Collection.objects.get(id = pk)
-   lz1 = coll.data_path
-   lz = '/Users/luketuite' + lz1 #for Luke's local testing
-   anaload = 'module load anaconda3'
-   os.system(anaload)
-   bioload = 'module load bioformats/6.12'
-   os.system(bioload)
-   cmd = 'cwl-runner  --relax-path-checks /Users/luketuite/bil/RL/forLuke/test/bil-validate-3.cwl --input_file1 ' + lz + '> results.txt'
-   os.system(cmd)
-   with open('results.txt', 'r') as f:
-        output = f.read()
-   base_url = reverse('ingest:collection_detail', kwargs={'pk': pk})  
-   query_string =  urlencode({'output': output})
-   url = '{}?{}'.format(base_url, query_string)
-   return redirect(url)
+def sendValidation(request):
+	collid = json.loads(request.body)
+	print(collid)
+	coll = Collection.objects.get(id = collid)
+	lz1 = coll.data_path
+	lz = '/Users/luketuite' + lz1 #for Luke's local testing
+	anaload = 'module load anaconda3'
+	os.system(anaload)
+	bioload = 'module load bioformats/6.12'
+	os.system(bioload)
+	cmd = 'cwl-runner  --relax-path-checks /Users/luketuite/bil/RL/forLuke/test/bil-validate-3.cwl --input_file1 ' + lz
+	out = os.popen(cmd).read()
+	print(out)
+	messages.success(request, out)
+	return HttpResponse(json.dumps({'url': 'ingest:collection_cwl_validation_results/' + collid}))
+	
+def collection_cwl_validation_results(request, pk):
+	collection = Collection.objects.get(id = pk)
+	#lookup results in db for validation tied to this collection
+	return render(request, 'ingest/collection_cwl_validation_results.html', {'collection':collection}) #results be something like 
+	#result1: results, result2: results
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     """ Edit an existing collection ."""

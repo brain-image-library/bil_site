@@ -18,10 +18,17 @@
   </div>
 
 
-    <button id="myButton" class="btn btn-lg btn-primary" value="ignore" formnovalidate="">Send Validation</button>
+  <button id="sendValidation" value="{{ collection.id }}" class="btn btn-lg btn-primary">Send Validation</button>
+	{% if messages %}
+		<div class="messages">
+		{% for message in messages %}
+			<div class="alert {% if message.tags %}alert-{{ message.tags }}"{% endif %}>
+				{{ message }}
+			</div>
+		{% endfor %}
+		</div>
+	{% endif %}
 
-    <div id="output"></div>
-    <button class="btn btn-lg btn-primary" value="ignore" formnovalidate="">test</button>
   <div class="row">
     <div class="col-md-12">
 
@@ -108,15 +115,33 @@
   </div>
 </div>
 <script>
-  const myButton = document.getElementById('myButton');
-
-  myButton.addEventListener('click', () => {
-    window.location.href = "{% url 'ingest:sendValidation' collection.id %}";
-    const urlParams = new URLSearchParams(window.location.search);
-    const outputValue = urlParams.get('output');
-    const decodedOutputValue = decodeURIComponent(outputValue);
-    outputDiv.innerText = decodedOutputValue;
-  });
+  const csrftoken = Cookies.get('csrftoken');
+  var button = document.getElementById("sendValidation");
+  var id = button.value;
+  var outputContainer = document.getElementById("output-container");
+  
+  button.addEventListener("click", function() {
+    fetch(`${window.origin}/ingest/collection/sendValidation/`, {
+      method: "POST",
+      credentials: "include",
+      body: JSON.stringify(id),
+      cache: "no-cache",
+      headers: new Headers({
+          "X-CSRFToken": csrftoken,
+          "content-type": "application/json"
+        })
+    })
+      .then(function(response) {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("Error: " + response.statusText);
+        }
+      })
+      .catch(function(error) {
+       console.error(error);
+      });
+});
 </script>
 {% endblock %}
 
