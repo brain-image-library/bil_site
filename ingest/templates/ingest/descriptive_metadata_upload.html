@@ -70,6 +70,7 @@
     let radio2 = document.getElementById('ingest_method_2');
     let radio3 = document.getElementById('ingest_method_3');
     let radio4 = document.getElementById('ingest_method_4');
+    let radio5 = document.getElementById('ingest_method_5');
 
     $(radio1).on('change', () => {
         if (radio1.checked == true) {
@@ -94,6 +95,13 @@
 
     $(radio4).on('change', () => {
         if (radio4.checked == true) {
+        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
+        console.log('upload button is enabled');
+        }
+     });
+
+    $(radio5).on('change', () => {
+        if (radio5.checked == true) {
         uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
         console.log('upload button is enabled');
         }
