@@ -27,7 +27,7 @@ from . import tasks
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -232,12 +232,13 @@ def project_form(request):
     current_user = request.user
     people = People.objects.get(auth_user_id_id = current_user.id)
     project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    consortia = Consortium.objects.all
     for attribute in project_person:
         if attribute.is_pi:
             pi = True
         else:
             pi = False
-    return render(request, 'ingest/project_form.html', {'pi':pi})
+    return render(request, 'ingest/project_form.html', {'pi':pi, 'consortia':consortia})
 
 # takes the data from project_form
 @login_required

@@ -17,11 +17,13 @@
   <label for="name">Project Name:</label>
   <input type="text" id="name" name="name">
 
-  <label for="is_biccn">Is BICCN?:</label>
-  <select  name="is_biccn" id="is_biccn">
-    <option value="True"> True </option>
-    <option value="False"> False </option>
-  </select>
+  <label for="consortia">Consortia Affiliation:</label>
+  <p><strong>Select your project's constorium affiliation. You may control-click (Windows) or command-click (Mac) to select more than one.</strong></p> 
+    <select multiple size={{consortia.count}}>
+      {% for c in consortia %}
+        <option value={{c.id}}>{{c.long_name}} ({{c.short_name}})</option> 
+      {% endfor %}
+    </select>
   <label for="funded_by">Funded By:</label>
   <input type="text" id="funded_by" name="funded_by">
 </form>
