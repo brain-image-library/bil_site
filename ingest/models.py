@@ -24,7 +24,7 @@ class Consortium(models.Model):
 
 class ProjectConsortium(models.Model):
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=False, null=True)
-    constorium = models.ForeignKey(Consortium, on_delete=models.SET_NULL, null = True, blank=True)
+    consortium = models.ForeignKey(Consortium, on_delete=models.SET_NULL, null = True, blank=True)
 
 class People(models.Model):
     def __str__(self):

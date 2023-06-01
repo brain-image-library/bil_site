@@ -28,7 +28,9 @@
 <tr>
  <td>{{ project.name }}</td>
  <td>{{ project.funded_by }}</td>
- <td>{{ project.is_biccn }}</td>
+ {% for c in consortia %}
+   <td>{{ c.short_name }}</td>
+ {% endfor %}
  <td><a href="{% url 'ingest:view_project_people' project.id %}">View Personnel</td>
  <td><a href="{% url 'ingest:view_project_collections' project.id %}">View Submissions</td>
 </tr>

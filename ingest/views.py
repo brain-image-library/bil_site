@@ -27,7 +27,7 @@ from . import tasks
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -202,7 +202,8 @@ def manageProjects(request):
     for row in project_person:
         project_id = row.project_id_id
         project =  Project.objects.get(id=project_id)
-        allprojects.append(project)     
+        allprojects.append(project)
+
       
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects, 'pi':pi})
 
@@ -244,19 +245,27 @@ def project_form(request):
 @login_required
 def create_project(request):
     new_project = json.loads(request.body)
+    print(new_project)
     items = []
     for item in new_project:
         items.append(item['funded_by'])
-        items.append(item['is_biccn'])
         items.append(item['name'])
-        
+        items.append(item['consortia_ids'])
+
         funded_by = item['funded_by']
-        is_biccn = item['is_biccn']
         name = item['name']
-        
+        consortia_ids = item['consortia_ids']
+
         # write project to the project table   
-        project = Project(funded_by=funded_by, is_biccn=is_biccn, name=name)
+        project = Project(funded_by=funded_by, name=name)
         project.save()
+
+        proj_id = project.id
+
+        for c in consortia_ids:
+          project_consortium = ProjectConsortium(project_id=proj_id, consortium_id=c)
+          project_consortium.save()
+
         
         # create a project_people row for this pi so they can view project on pi dashboard
         project_id_id = project.id

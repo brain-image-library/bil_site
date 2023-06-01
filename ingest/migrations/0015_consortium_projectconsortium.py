@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
             name='ProjectConsortium',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('constorium', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='ingest.consortium')),
+                ('consortium', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='ingest.consortium')),
                 ('project', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to='ingest.project')),
             ],
         ),
