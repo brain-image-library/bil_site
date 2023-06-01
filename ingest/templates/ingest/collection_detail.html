@@ -67,7 +67,9 @@
           <strong>This submission doesn't have any Metadata Version 1.</strong>
         </div>
       {% endif %}
-
+      <div><a href="{% url 'ingest:ondemandSubmission' collection.id %}">
+        <button class="btn btn-lg btn-primary" value="ignore" formnovalidate="">View Submission Directory</button>
+      </a></div>
       <p>
 
       <table>
