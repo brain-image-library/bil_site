@@ -462,8 +462,9 @@ def new_metadata_detail(request, pk):
     datasets = Dataset.objects.filter(sheet_id=pk).all()
     specimens = Specimen.objects.filter(sheet_id=pk).all()
     images = Image.objects.filter(sheet_id=pk).all()
+    swcs = SWC.objects.filter(sheet_id=pk).all()
     
-    return render(request, 'ingest/new_metadata_detail.html', {'contributors':contributors, 'funders':funders, 'publications':publications, 'instruments':instruments, 'datasets':datasets, 'specimens':specimens, 'images':images})
+    return render(request, 'ingest/new_metadata_detail.html', {'contributors':contributors, 'funders':funders, 'publications':publications, 'instruments':instruments, 'datasets':datasets, 'specimens':specimens, 'images':images, 'swcs':swcs})
 
 class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
     """ A detailed view of a single piece of metadata. """
