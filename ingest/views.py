@@ -24,6 +24,7 @@ import re
 from celery.result import AsyncResult
 
 from . import tasks
+from .mne import Mne
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
@@ -1625,7 +1626,18 @@ def save_swc_sheet(swcs, sheet, saved_datasets):
             notes = s['notes']
 
             swc = SWC(tracingFile=tracingFile, sourceData=sourceData, sourceDataSample=sourceDataSample, sourceDataSubmission=sourceDataSubmission, coordinates=coordinates, coordinatesRegistration=coordinatesRegistration,  brainRegion=brainRegion, brainRegionAtlas=brainRegionAtlas, brainRegionAtlasName=brainRegionAtlasName, brainRegionAxonalProjection=brainRegionAxonalProjection, brainRegionDendriticProjection=brainRegionDendriticProjection, neuronType=neuronType, segmentTags=segmentTags, proofreadingLevel=proofreadingLevel, notes=notes, data_set_id=data_set_id,sheet_id=sheet.id)
-            swc.save()
+            swc_no_uuid = swc.save()
+            print(swc_no_uuid.id)
+            
+
+            swc_uuid = Mne.num_to_mne(swc_no_uuid.id)
+
+            print(swc_uuid)
+
+            this_swc = SWC.objects.get(id=swc_no_uuid.id)
+            # this_swc(swc_uuid=swc_uuid)
+            # this_swc.save()
+
         return True
     except Exception as e:
         print(repr(e))
