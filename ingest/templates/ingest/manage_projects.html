@@ -18,7 +18,7 @@
 <tr>
 <th>Name</th>
 <th>Funded By</th>
-<th>Is BICCN?</th>
+<th>Consortia Affiliation</th>
 <th>Personnel</th>
 <th>Submissions</th>
 </tr>
@@ -28,7 +28,8 @@
 <tr>
  <td>{{ project.name }}</td>
  <td>{{ project.funded_by }}</td>
- <td>{{ project.is_biccn }}</td>
+ <td>{{ project.short_names }}</td>
+
  <td><a href="{% url 'ingest:view_project_people' project.id %}">View Personnel</td>
  <td><a href="{% url 'ingest:view_project_collections' project.id %}">View Submissions</td>
 </tr>

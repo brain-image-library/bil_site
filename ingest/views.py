@@ -28,7 +28,7 @@ from .mne import Mne
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, SWC
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -120,6 +120,7 @@ def modify_user(request, pk):
         else:
             pi = False
     person = People.objects.get(auth_user_id_id = pk)
+    
     all_project_people = ProjectPeople.objects.filter(people_id_id=person.id).all()   
     for project_person in all_project_people:
         try:
@@ -203,8 +204,14 @@ def manageProjects(request):
     for row in project_person:
         project_id = row.project_id_id
         project =  Project.objects.get(id=project_id)
-        allprojects.append(project)     
-      
+        allprojects.append(project)
+
+        project_consortia = ProjectConsortium.objects.filter(project_id=project.id).all()
+        project.short_names = []
+        for c in project_consortia:
+            short_name = Consortium.objects.get(id=c.id).short_name
+            project.short_names.append(short_name)
+        project.short_names = ', '.join(project.short_names)
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects, 'pi':pi})
 
 # this functions allows pi to see all the collections
@@ -233,30 +240,39 @@ def project_form(request):
     current_user = request.user
     people = People.objects.get(auth_user_id_id = current_user.id)
     project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+    consortia = Consortium.objects.all
     for attribute in project_person:
         if attribute.is_pi:
             pi = True
         else:
             pi = False
-    return render(request, 'ingest/project_form.html', {'pi':pi})
+    return render(request, 'ingest/project_form.html', {'pi':pi, 'consortia':consortia})
 
 # takes the data from project_form
 @login_required
 def create_project(request):
     new_project = json.loads(request.body)
+    print(new_project)
     items = []
     for item in new_project:
         items.append(item['funded_by'])
-        items.append(item['is_biccn'])
         items.append(item['name'])
-        
+        items.append(item['consortia_ids'])
+
         funded_by = item['funded_by']
-        is_biccn = item['is_biccn']
         name = item['name']
-        
+        consortia_ids = item['consortia_ids']
+
         # write project to the project table   
-        project = Project(funded_by=funded_by, is_biccn=is_biccn, name=name)
+        project = Project(funded_by=funded_by, name=name)
         project.save()
+
+        proj_id = project.id
+
+        for c in consortia_ids:
+          project_consortium = ProjectConsortium(project_id=proj_id, consortium_id=c)
+          project_consortium.save()
+
         
         # create a project_people row for this pi so they can view project on pi dashboard
         project_id_id = project.id
