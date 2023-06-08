@@ -119,6 +119,7 @@ def modify_user(request, pk):
         else:
             pi = False
     person = People.objects.get(auth_user_id_id = pk)
+    
     all_project_people = ProjectPeople.objects.filter(people_id_id=person.id).all()   
     for project_person in all_project_people:
         try:
@@ -204,7 +205,12 @@ def manageProjects(request):
         project =  Project.objects.get(id=project_id)
         allprojects.append(project)
 
-      
+        project_consortia = ProjectConsortium.objects.filter(project_id=project.id).all()
+        project.short_names = []
+        for c in project_consortia:
+            short_name = Consortium.objects.get(id=c.id).short_name
+            project.short_names.append(short_name)
+        project.short_names = ', '.join(project.short_names)
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects, 'pi':pi})
 
 # this functions allows pi to see all the collections
