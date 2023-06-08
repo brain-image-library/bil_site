@@ -1434,7 +1434,7 @@ def check_swc_sheet(filename):
     workbook=xlrd.open_workbook(filename)
     sheetname = 'SWC'
     swc_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['tracingFile', 'sourceData', 'sourceDataSample', 'sourceDataSubmission', 'coordinates', 'coordinatesRegistration', 'brainRegion', 'brainRegionAtlas', 'brainRegionAtlasName', 'brainRegionAxonalProjection', 'brainRegionDendriticProjection', 'neuronType', 'segmentTags', 'proofreadingLevel', 'notes']
+    colheads=['tracingFile', 'sourceData', 'sourceDataSample', 'sourceDataSubmission', 'coordinates', 'coordinatesRegistration', 'brainRegion', 'brainRegionAtlas', 'brainRegionAtlasName', 'brainRegionAxonalProjection', 'brainRegionDendriticProjection', 'neuronType', 'segmentTags', 'proofreadingLevel', 'Notes']
     cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O']
     coordinatesRegistration = ['Yes', 'No']
     cols=swc_sheet.row_values(3)
@@ -1643,12 +1643,12 @@ def save_swc_sheet(swcs, sheet, saved_datasets):
 
             swc = SWC(tracingFile=tracingFile, sourceData=sourceData, sourceDataSample=sourceDataSample, sourceDataSubmission=sourceDataSubmission, coordinates=coordinates, coordinatesRegistration=coordinatesRegistration,  brainRegion=brainRegion, brainRegionAtlas=brainRegionAtlas, brainRegionAtlasName=brainRegionAtlasName, brainRegionAxonalProjection=brainRegionAxonalProjection, brainRegionDendriticProjection=brainRegionDendriticProjection, neuronType=neuronType, segmentTags=segmentTags, proofreadingLevel=proofreadingLevel, notes=notes, data_set_id=data_set_id,sheet_id=sheet.id)
             swc_no_uuid = swc.save()
-            print(swc_no_uuid.id)
+            print('swc id: ' + swc_no_uuid.id)
             
 
             swc_uuid = Mne.num_to_mne(swc_no_uuid.id)
 
-            print(swc_uuid)
+            print('swc_uuid: '+ swc_uuid)
 
             this_swc = SWC.objects.get(id=swc_no_uuid.id)
             # this_swc(swc_uuid=swc_uuid)
@@ -2028,7 +2028,7 @@ def save_specimen_sheet_method_4(specimen_set, sheet):
 
 def save_specimen_sheet_method_5(specimen_set, sheet):
     # 1 datasets, 1 instruments, 0 images
-    # single specimen
+    # 1 specimen
     try:
         for s in specimen_set:
             localid = s['LocalID']
@@ -2392,12 +2392,12 @@ def save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet,
         saved = False
 
 def save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs):
-	  # if swc tab filled out we don't want images
-		# 1 dataset row should be filled out
-		# many SWC : 1 dataset
+	# if swc tab filled out we don't want images
+	# 1 dataset row should be filled out
+	# many SWC : 1 dataset
     # 1 specimen
     # 1 instrument
-		# 1 datasest
+	# 1 datasest
 
     try:
         specimen_object_method_5 = save_specimen_sheet_method_5(specimen_set, sheet)
@@ -2435,7 +2435,8 @@ def metadata_version_check(filename):
         version1 = True
     return version1
 
-def check_all_sheets(filename):
+def check_all_sheets(filename, ingest_method):
+    ingest_method = ingest_method
     errormsg = check_contributors_sheet(filename)
     if errormsg != '':
         return errormsg
@@ -2454,12 +2455,14 @@ def check_all_sheets(filename):
     errormsg = check_specimen_sheet(filename)
     if errormsg != '':
         return errormsg
-    errormsg = check_image_sheet(filename)
-    if errormsg != '':
-        return errormsg
-    errormsg = check_swc_sheet(filename)
-    if errormsg != '':
-        return errormsg
+    if ingest_method != 'ingest_5':
+        errormsg = check_image_sheet(filename)
+        if errormsg != '':
+            return errormsg
+    if ingest_method == 'ingest_5':
+        errormsg = check_swc_sheet(filename)
+        if errormsg != '':
+            return errormsg
     return errormsg
 
 @login_required
@@ -2493,7 +2496,7 @@ def descriptive_metadata_upload(request):
             # datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
-            datapath = '/Users/luketuite/Desktop/bil_metadata_uploads' 
+            datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
 
@@ -2514,7 +2517,7 @@ def descriptive_metadata_upload(request):
             
             # using new metadata model
             elif version1 == False:
-                errormsg = check_all_sheets(filename)
+                errormsg = check_all_sheets(filename, ingest_method)
                 if errormsg != '':
                     messages.error(request, errormsg)
                     return redirect('ingest:descriptive_metadata_upload')
