@@ -123,7 +123,7 @@ class ProjectPeople(admin.ModelAdmin):
     list_display = ("id", "project_id", "people_id", "is_po", "is_po", "doi_role")
 @admin.register(SWC)
 class SWC(admin.ModelAdmin):
-    list_display = ("id", "tracingFile", "sourceData", "sourceDataSample", "sourceDataSubmission", "coordinates", "coordinatesRegistration", "brainRegion", "brainRegionAtlas", "brainRegionAtlasName", "brainRegionAxonalProjection", "brainRegionDendriticProjection", "neuronType","segmentTags","proofreadingLevel", "notes", "sheet")
+    list_display = ("id", "tracingFile", "sourceData", "sourceDataSample", "sourceDataSubmission", "coordinates", "coordinatesRegistration", "brainRegion", "brainRegionAtlas", "brainRegionAtlasName", "brainRegionAxonalProjection", "brainRegionDendriticProjection", "neuronType","segmentTags","proofreadingLevel", "notes", "sheet", "swc_uuid")
 @admin.register(Consortium)
 class Consortium(admin.ModelAdmin):
     list_display = ("id", "short_name", "long_name")
