@@ -8,12 +8,8 @@ function link_collection_and_project() {
     output_rows.push({
         "project_id": project_id.value,
         "collection_id": collection_id.value
-        })
-  
-    console.log(output_rows)
-     
-                
-            
+        })     
+           
   fetch(`${window.origin}/ingest/descriptive_metadata_upload/`, {
        method: "POST",
        credentials: "include",

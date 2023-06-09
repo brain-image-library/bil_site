@@ -8,7 +8,9 @@ from django.contrib.admin import AdminSite
 from django.utils.translation import ugettext_lazy
 
 from django.db.models import F
-from .models import ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor, Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder, Publication, Consortium
+
+from .models import ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor, Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder, Publication, Consortium, SWC
+
 admin.site.site_header = 'Brain Image Library Admin Portal'
 class ContributorsInline(admin.TabularInline):
     model = Contributor
@@ -24,6 +26,8 @@ class SpecimensInline(admin.TabularInline):
     model = Specimen
 class ImagesInline(admin.TabularInline):
     model = Image
+class SWCSInline(admin.TabularInline):
+    model = SWC
 class ConsortiaInline(admin.TabularInline):
     model = Consortium
 admin.site.disable_action('delete_selected')
@@ -117,6 +121,9 @@ class EventsLogAdmin(admin.ModelAdmin):
 @admin.register(ProjectPeople)
 class ProjectPeople(admin.ModelAdmin):
     list_display = ("id", "project_id", "people_id", "is_po", "is_po", "doi_role")
+@admin.register(SWC)
+class SWC(admin.ModelAdmin):
+    list_display = ("id", "tracingFile", "sourceData", "sourceDataSample", "sourceDataSubmission", "coordinates", "coordinatesRegistration", "brainRegion", "brainRegionAtlas", "brainRegionAtlasName", "brainRegionAxonalProjection", "brainRegionDendriticProjection", "neuronType","segmentTags","proofreadingLevel", "notes", "sheet", "swc_uuid")
 @admin.register(Consortium)
 class Consortium(admin.ModelAdmin):
     list_display = ("id", "short_name", "long_name")

@@ -24,10 +24,11 @@ import re
 from celery.result import AsyncResult
 
 from . import tasks
+from .mne import Mne
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -251,7 +252,6 @@ def project_form(request):
 @login_required
 def create_project(request):
     new_project = json.loads(request.body)
-    print(new_project)
     items = []
     for item in new_project:
         items.append(item['funded_by'])
@@ -478,8 +478,9 @@ def new_metadata_detail(request, pk):
     datasets = Dataset.objects.filter(sheet_id=pk).all()
     specimens = Specimen.objects.filter(sheet_id=pk).all()
     images = Image.objects.filter(sheet_id=pk).all()
+    swcs = SWC.objects.filter(sheet_id=pk).all()
     
-    return render(request, 'ingest/new_metadata_detail.html', {'contributors':contributors, 'funders':funders, 'publications':publications, 'instruments':instruments, 'datasets':datasets, 'specimens':specimens, 'images':images})
+    return render(request, 'ingest/new_metadata_detail.html', {'contributors':contributors, 'funders':funders, 'publications':publications, 'instruments':instruments, 'datasets':datasets, 'specimens':specimens, 'images':images, 'swcs':swcs})
 
 class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
     """ A detailed view of a single piece of metadata. """
@@ -1426,6 +1427,44 @@ def check_image_sheet(filename):
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[32] + '" value expected but not found in cell "' + cellcols[32] + str(i+1) + '". '
     return errormsg
 
+def check_swc_sheet(filename):
+    swc_count = 0
+    errormsg=""
+    workbook=xlrd.open_workbook(filename)
+    sheetname = 'SWC'
+    swc_sheet = workbook.sheet_by_name(sheetname)
+    colheads=['tracingFile', 'sourceData', 'sourceDataSample', 'sourceDataSubmission', 'coordinates', 'coordinatesRegistration', 'brainRegion', 'brainRegionAtlas', 'brainRegionAtlasName', 'brainRegionAxonalProjection', 'brainRegionDendriticProjection', 'neuronType', 'segmentTags', 'proofreadingLevel', 'Notes']
+    cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O']
+    coordinatesRegistration = ['Yes', 'No']
+    cols=swc_sheet.row_values(3)
+    for i in range(0,len(colheads)):
+        if cols[i] != colheads[i]:
+            errormsg = errormsg + ' Tab: "SWC" cell heading found: "' + cols[i] + \
+                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
+    if errormsg != "":
+        return [ True, errormsg ]
+    for i in range(6,swc_sheet.nrows):
+        swc_count = swc_count + 1
+        cols=swc_sheet.row_values(i)
+        #if xAxis is oblique, oblique cols should reflect 
+        if cols[0] == "":
+            errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+        if cols[1] == "":
+           errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+        if cols[5] == "":
+           errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
+        if cols[5] != "":
+            if cols[5] not in coordinatesRegistration:
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
+            if cols[5] == 'Yes':
+              if cols[6] == "":
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
+              if cols[7] == "":
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
+              if cols[8] == "":
+                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
+    return errormsg
+
 def ingest_contributors_sheet(filename):
     fn = xlrd.open_workbook(filename)
     contributors_sheet = fn.sheet_by_name('Contributors')
@@ -1506,6 +1545,17 @@ def ingest_image_sheet(filename):
         images.append(values)
     return images
 
+def ingest_swc_sheet(filename):
+    fn = xlrd.open_workbook(filename)
+    swc_sheet = fn.sheet_by_name('SWC')
+    keys = [swc_sheet.cell(3,col).value for col in range(swc_sheet.ncols)]
+    swcs = []
+    for row in range(6, swc_sheet.nrows):
+        values={keys[col]: swc_sheet.cell(row,col).value
+            for col in range(swc_sheet.ncols)}
+        swcs.append(values)
+    return swcs
+
 def save_sheet_row(ingest_method, filename, collection):
     try:
         sheet = Sheet(filename=filename, date_uploaded=datetime.now(), collection_id=collection.id, ingest_method = ingest_method)
@@ -1515,7 +1565,6 @@ def save_sheet_row(ingest_method, filename, collection):
     return sheet
 
 def save_contributors_sheet(contributors, sheet):
-    # saved_contributors = []
     try:
         for c in contributors:
             contributorname = c['contributorName']
@@ -1531,8 +1580,6 @@ def save_contributors_sheet(contributors, sheet):
             contributor = Contributor(contributorname=contributorname, creator=creator, contributortype=contributortype, nametype=nametype, nameidentifier=nameidentifier, nameidentifierscheme=nameidentifierscheme, affiliation=affiliation, affiliationidentifier=affiliationidentifier, affiliationidentifierscheme=affiliationidentifierscheme, sheet_id=sheet.id)
             contributor.save()
 
-            print(contributor)
-            # contributors.append(contributor)
         return True
     except Exception as e:
         print(repr(e))
@@ -1565,6 +1612,36 @@ def save_publication_sheet(publications, sheet):
             
             publication = Publication(relatedidentifier=relatedidentifier, relatedidentifiertype=relatedidentifiertype, pmcid=pmcid, relationtype=relationtype, citation=citation, sheet_id=sheet.id)
             publication.save()
+        return True
+    except Exception as e:
+        print(repr(e))
+        return False
+
+def save_swc_sheet(swcs, sheet, saved_datasets):
+    try:
+        for s in swcs:
+            data_set_id = saved_datasets[0].id
+            tracingFile = s['tracingFile']
+            sourceData = s['sourceData']
+            sourceDataSample = s['sourceDataSample']
+            sourceDataSubmission = s['sourceDataSubmission']
+            coordinates = s['coordinates']
+            coordinatesRegistration = s['coordinatesRegistration']
+            brainRegion = s['brainRegion']
+            brainRegionAtlas = s['brainRegionAtlas']
+            brainRegionAtlasName = s['brainRegionAtlasName']
+            brainRegionAxonalProjection = s['brainRegionAxonalProjection']
+            brainRegionDendriticProjection = s['brainRegionDendriticProjection']
+            neuronType = s['neuronType']
+            segmentTags = s['segmentTags']
+            proofreadingLevel = s['proofreadingLevel']
+            notes = s['Notes']
+
+            swc = SWC(tracingFile=tracingFile, sourceData=sourceData, sourceDataSample=sourceDataSample, sourceDataSubmission=sourceDataSubmission, coordinates=coordinates, coordinatesRegistration=coordinatesRegistration,  brainRegion=brainRegion, brainRegionAtlas=brainRegionAtlas, brainRegionAtlasName=brainRegionAtlasName, brainRegionAxonalProjection=brainRegionAxonalProjection, brainRegionDendriticProjection=brainRegionDendriticProjection, neuronType=neuronType, segmentTags=segmentTags, proofreadingLevel=proofreadingLevel, notes=notes, data_set_id=data_set_id,sheet_id=sheet.id)
+            swc.save()
+
+            swc_uuid = Mne.num_to_mne(swc.id)
+            swc = SWC.objects.filter(id=swc.id).update(swc_uuid=swc_uuid)
         return True
     except Exception as e:
         print(repr(e))
@@ -1669,6 +1746,33 @@ def save_instrument_sheet_method_4(instruments, sheet, saved_datasets):
         print(repr(e))
     return
 
+def save_instrument_sheet_method_5(instruments, sheet, saved_datasets):
+    # 1 instrument to many swc
+    try:
+        for d_index, d in enumerate(saved_datasets):
+            data_set_id = d.id
+
+            i = instruments[d_index]
+            microscopetype = i['MicroscopeType']
+            microscopemanufacturerandmodel = i['MicroscopeManufacturerAndModel']
+            objectivename = i['ObjectiveName']
+            objectiveimmersion = i['ObjectiveImmersion']
+            objectivena = i['ObjectiveNA']
+            objectivemagnification = i['ObjectiveMagnification']
+            detectortype = i['DetectorType']
+            detectormodel = i['DetectorModel']
+            illuminationtypes = i['IlluminationTypes']
+            illuminationwavelength = i['IlluminationWavelength']
+            detectionwavelength = i['DetectionWavelength']
+            sampletemperature = i['SampleTemperature']
+            
+            instrument = Instrument(microscopetype=microscopetype, microscopemanufacturerandmodel=microscopemanufacturerandmodel, objectivename=objectivename, objectiveimmersion=objectiveimmersion, objectivena=objectivena, objectivemagnification=objectivemagnification, detectortype=detectortype, detectormodel=detectormodel, illuminationtypes=illuminationtypes, illuminationwavelength=illuminationwavelength, detectionwavelength=detectionwavelength, sampletemperature=sampletemperature, data_set_id=data_set_id, sheet_id=sheet.id)
+            instrument.save()
+        return True
+    except Exception as e:
+        print(repr(e))
+    return
+
 def save_dataset_sheet_method_1_or_3(datasets, sheet):
     saved_datasets = []
     try:
@@ -1748,6 +1852,39 @@ def save_dataset_sheet_method_4(datasets, sheet, specimen_object_method_4):
             technicalinfo = d['TechnicalInfo']
 
             dataset = Dataset(bildirectory=bildirectory, title=title, socialmedia=socialmedia, subject=subject, subjectscheme=subjectscheme, rights=rights, rightsuri=rightsuri, rightsidentifier=rightsidentifier, dataset_image=dataset_image, generalmodality=generalmodality, technique=technique, other=other, abstract=abstract, methods=methods, technicalinfo=technicalinfo, sheet_id=sheet.id, specimen_ingest_method_4=specimen_ingest_method_4)
+
+            dataset.save()
+            saved_datasets.append(dataset)
+
+        return saved_datasets
+    except Exception as e:
+        print(repr(e))
+        print(e)
+        return False
+
+def save_dataset_sheet_method_5(datasets, sheet, specimen_object_method_5):
+    specimen_ingest_method_5 = specimen_object_method_5
+
+    saved_datasets = []
+    try:
+        for d in datasets:
+            bildirectory = d['BILDirectory']
+            title = d['title']
+            socialmedia = d['socialMedia']
+            subject = d['subject']
+            subjectscheme = d['Subjectscheme']
+            rights = d['rights']
+            rightsuri = d['rightsURI']
+            rightsidentifier = d['rightsIdentifier']
+            dataset_image = d['Image']
+            generalmodality = d['GeneralModality']
+            technique = d['Technique']
+            other = d['Other']
+            abstract = d['Abstract']
+            methods = d['Methods']
+            technicalinfo = d['TechnicalInfo']
+
+            dataset = Dataset(bildirectory=bildirectory, title=title, socialmedia=socialmedia, subject=subject, subjectscheme=subjectscheme, rights=rights, rightsuri=rightsuri, rightsidentifier=rightsidentifier, dataset_image=dataset_image, generalmodality=generalmodality, technique=technique, other=other, abstract=abstract, methods=methods, technicalinfo=technicalinfo, sheet_id=sheet.id, specimen_ingest_method_4=specimen_ingest_method_5)
 
             dataset.save()
             saved_datasets.append(dataset)
@@ -1873,6 +2010,35 @@ def save_specimen_sheet_method_4(specimen_set, sheet):
             specimen_object_method_4 = specimen.id
             specimen_object_method_4 = int(specimen_object_method_4)
         return specimen_object_method_4
+    except Exception as e:
+        print(repr(e))
+        return False
+
+def save_specimen_sheet_method_5(specimen_set, sheet):
+    # 1 datasets, 1 instruments, 0 images
+    # 1 specimen
+    try:
+        for s in specimen_set:
+            localid = s['LocalID']
+            species = s['Species']
+            ncbitaxonomy = s['NCBITaxonomy']
+            age = s['Age']
+            ageunit = s['Ageunit']
+            sex = s['Sex']
+            genotype = s['Genotype']
+            organlocalid = s['OrganLocalID']
+            organname = s['OrganName']
+            samplelocalid = s['SampleLocalID']
+            atlas = s['Atlas']
+            locations = s['Locations']
+
+            specimen = Specimen(localid=localid, species=species, ncbitaxonomy=ncbitaxonomy, age=age, ageunit=ageunit, sex=sex, genotype=genotype, organlocalid=organlocalid, organname=organname, samplelocalid=samplelocalid, atlas=atlas, locations=locations, sheet_id=sheet.id)
+
+            specimen.save()
+
+            specimen_object_method_5 = specimen.id
+            specimen_object_method_5 = int(specimen_object_method_5)
+        return specimen_object_method_5
     except Exception as e:
         print(repr(e))
         return False
@@ -2213,6 +2379,40 @@ def save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet,
         print(repr(e))
         saved = False
 
+def save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs):
+	# if swc tab filled out we don't want images
+	# 1 dataset row should be filled out
+	# many SWC : 1 dataset
+    # 1 specimen
+    # 1 instrument
+	# 1 datasest
+
+    try:
+        specimen_object_method_5 = save_specimen_sheet_method_5(specimen_set, sheet)
+        if specimen_object_method_5:
+            saved_datasets = save_dataset_sheet_method_5(datasets, sheet, specimen_object_method_5)
+            if saved_datasets:
+                saved_instruments = save_instrument_sheet_method_5(instruments, sheet, saved_datasets)
+                if saved_instruments:
+                  saved_swc = save_swc_sheet(swcs, sheet, saved_datasets)
+                  if saved_swc:
+                      saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
+                      if saved_generic:
+                          return True
+                      else:
+                          return False
+                  else:
+                    False
+                else:
+                    False
+            else:
+                False
+        else:
+            False
+    except Exception as e:
+        print(repr(e))
+        saved = False
+
 def metadata_version_check(filename):
     version1 = False
     workbook=xlrd.open_workbook(filename)
@@ -2223,7 +2423,8 @@ def metadata_version_check(filename):
         version1 = True
     return version1
 
-def check_all_sheets(filename):
+def check_all_sheets(filename, ingest_method):
+    ingest_method = ingest_method
     errormsg = check_contributors_sheet(filename)
     if errormsg != '':
         return errormsg
@@ -2242,9 +2443,14 @@ def check_all_sheets(filename):
     errormsg = check_specimen_sheet(filename)
     if errormsg != '':
         return errormsg
-    errormsg = check_image_sheet(filename)
-    if errormsg != '':
-        return errormsg
+    if ingest_method != 'ingest_5':
+        errormsg = check_image_sheet(filename)
+        if errormsg != '':
+            return errormsg
+    if ingest_method == 'ingest_5':
+        errormsg = check_swc_sheet(filename)
+        if errormsg != '':
+            return errormsg
     return errormsg
 
 @login_required
@@ -2278,7 +2484,7 @@ def descriptive_metadata_upload(request):
             # datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
-            #datapath = '/Users/ltuite96/Desktop/bil_metadata_uploads' 
+            # datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
 
@@ -2299,7 +2505,7 @@ def descriptive_metadata_upload(request):
             
             # using new metadata model
             elif version1 == False:
-                errormsg = check_all_sheets(filename)
+                errormsg = check_all_sheets(filename, ingest_method)
                 if errormsg != '':
                     messages.error(request, errormsg)
                     return redirect('ingest:descriptive_metadata_upload')
@@ -2314,6 +2520,7 @@ def descriptive_metadata_upload(request):
                     datasets = ingest_dataset_sheet(filename)
                     specimen_set = ingest_specimen_sheet(filename)
                     images = ingest_image_sheet(filename)
+                    swcs = ingest_swc_sheet(filename)
 
                     # choose save method depending on ingest_method value from radio button
                     # want to pull this out into a helper function
@@ -2329,7 +2536,10 @@ def descriptive_metadata_upload(request):
                     elif ingest_method == 'ingest_4':
                         sheet = save_sheet_row(ingest_method, filename, collection)
                         saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                    elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4':
+                    elif ingest_method == 'ingest_5':
+                        sheet = save_sheet_row(ingest_method, filename, collection)
+                        saved = save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs)
+                    elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4' and ingest_method != 'ingest_5':
                          saved = False
                          messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')                         
                          return redirect('ingest:descriptive_metadata_upload')
