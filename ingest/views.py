@@ -252,7 +252,6 @@ def project_form(request):
 @login_required
 def create_project(request):
     new_project = json.loads(request.body)
-    print(new_project)
     items = []
     for item in new_project:
         items.append(item['funded_by'])
@@ -1566,7 +1565,6 @@ def save_sheet_row(ingest_method, filename, collection):
     return sheet
 
 def save_contributors_sheet(contributors, sheet):
-    # saved_contributors = []
     try:
         for c in contributors:
             contributorname = c['contributorName']
@@ -1582,8 +1580,6 @@ def save_contributors_sheet(contributors, sheet):
             contributor = Contributor(contributorname=contributorname, creator=creator, contributortype=contributortype, nametype=nametype, nameidentifier=nameidentifier, nameidentifierscheme=nameidentifierscheme, affiliation=affiliation, affiliationidentifier=affiliationidentifier, affiliationidentifierscheme=affiliationidentifierscheme, sheet_id=sheet.id)
             contributor.save()
 
-            print(contributor)
-            # contributors.append(contributor)
         return True
     except Exception as e:
         print(repr(e))

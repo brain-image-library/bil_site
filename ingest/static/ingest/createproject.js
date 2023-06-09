@@ -12,20 +12,14 @@ function create_new_project() {
 
         if (opt.selected) {
             consortia_ids.push(opt.value);
-            console.log(opt.value);
         }
     }
-
-    console.log(consortia_ids)
 
     output_rows.push({
         "name": name.value,
         "funded_by": funded_by.value,
         "consortia_ids": consortia_ids
-        })
-  
-    console.log(output_rows)
-     
+        })     
                 
             
   fetch(`${window.origin}/ingest/create_project/`, {

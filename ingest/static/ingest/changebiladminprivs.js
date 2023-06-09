@@ -7,11 +7,7 @@ function change_bil_admin_privs() {
     output_rows.push({
         "person_id": person_id.getAttribute('value'),
         "is_bil_admin": is_bil_admin.value,
-        })
-  
-    console.log(output_rows)
-     
-                
+        })      
             
   fetch(`${window.origin}/ingest/change_bil_admin_privs/`, {
        method: "POST",
