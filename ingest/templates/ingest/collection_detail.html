@@ -74,13 +74,13 @@
 
       <table>
       <tr>           
-      {% if descriptive_metadata_queryset %}
+      <!--{% if descriptive_metadata_queryset %}
       <form action="" method="post">{% csrf_token %}
           <button type="submit" class="cancel btn btn-primary" value="Validate" name="validate_collection">Validate</button>
           &nbsp;
           &nbsp;
       </form>       
-      {% endif %}
+      {% endif %}-->
 
       <a href="{% url 'ingest:collection_update' pk=collection.pk %}">
         <button class="cancel btn btn-primary" value="ignore" formnovalidate="">Edit</button>
