@@ -1,6 +1,7 @@
-{% extends 'ingest/base.html' %}
-{% block content %}
+{% extends 'ingest/wide.html' %}
 {% load bootstrap4 %}
+{% block wide %}
+
 <script src="/static/ingest/createproject.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
 {% if pi %}
@@ -10,25 +11,41 @@
 {% endif %}
 <br>
 <h1>Create a new project</h1>
+<hr>
+
+<br>
+<div style="min-width:600px">
 
 <form id="CreateNewProject">
 {% csrf_token %}
+  <label for="name">Project Name:</label><span style="color:red; margin-right:10px;">*</span>
+  <input type="text" id="name" name="name" placeholder="Name of project">
 
-  <label for="name">Project Name:</label>
-  <input type="text" id="name" name="name">
+  <label for="funded_by" style="margin-top:15px;margin-left:55px;margin-right:10px;">Funded By:</label>
+  <input type="text" id="funded_by" name="funded_by" placeholder="Grant number">
 
-  <label for="is_biccn">Is BICCN?:</label>
-  <select  name="is_biccn" id="is_biccn">
-    <option value="True"> True </option>
-    <option value="False"> False </option>
-  </select>
-  <label for="funded_by">Funded By:</label>
-  <input type="text" id="funded_by" name="funded_by">
+  <br>
+  <label for="consortia" style="margin-top:15px;">Consortia Affiliation:</label>
+  <p>Select your project's affiliation(s). Choose all that apply.</p>
+  <div style="margin-left: 50px;">
+    <p style="font-style:italic; margin-top: 20px;"> To choose multiple: Windows users: control-click | Mac users: command-click</p> 
+    <select multiple size={{consortia.count}} style="min-width: 540px;">
+      {% for c in consortia %}
+        <option value={{c.id}}>{{c.long_name}} ({{c.short_name}})</option> 
+      {% endfor %}
+    </select>
+  </div>
 </form>
-<button class="btn btn-primary" onclick="create_new_project();">Submit New Project</button>
-<hr>
+<div>
 
+<br>
+
+<p style="margin-top:15px;"><b>Required fields are marked with an <span style="color:red;">*</span>.</b></p>
+
+<br>
+<button class="btn btn-primary" onclick="create_new_project();">Submit New Project</button>
 <a href="{% url 'ingest:index' %}">
   <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
 </a>
+
 {% endblock %}

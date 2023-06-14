@@ -15,7 +15,6 @@ function add_users() {
                 }
             )
     });
-     console.log(output_rows);
   fetch(`${window.origin}/ingest/write_user_to_project_people/`, {
       method: "POST",
       credentials: "include",

@@ -1,0 +1,52 @@
+{% if swcs %}		
+<h3>SWC</h3>
+
+  <table class="table">    								
+    <thead>
+    <tr>
+    <th>tracingFile</th>
+    <th>sourceData</th>
+    <th>sourceDataSample</th>
+    <th>sourceDataSubmission</th>
+    <th>coordinates</th>
+    <th>coordinatesRegistration</th>
+    <th>brainRegion</th>
+    <th>brainRegionAtlas</th>
+    <th>brainRegionAtlasName</th>
+    <th>brainRegionAxonalProjection</th>
+    <th>brainRegionDendriticProjection</th>
+    <th>neuronType</th>
+    <th>segmentTags</th>
+    <th>proofreadingLevel</th>
+    <th>notes</th>
+    <th>swc_uuid</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for s in swcs %}
+    <tr>
+    <td>{{ s.tracingFile }}</td>
+    <td>{{ s.sourceData }}</td>
+    <td>{{ s.sourceDataSample }}</td>
+    <td>{{ s.sourceDataSubmission }}</td>
+    <td>{{ s.coordinates }}</td>
+    <td>{{ s.coordinatesRegistration }}</td>
+    <td>{{ s.brainRegion }}</td>
+    <td>{{ s.brainRegionAtlas }}</td>
+    <td>{{ s.brainRegionAtlasName }}</td>
+    <td>{{ s.brainRegionAxonalProjection }}</td>
+    <td>{{ s.brainRegionDendriticProjection }}</td>
+    <td>{{ s.neuronType }}</td>
+    <td>{{ s.segmentTags }}</td>
+    <td>{{ s.proofreadingLevel }}</td>
+    <td>{{ s.notes }}</td>
+    <td>{{s.swc_uuid}}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  
+{% else %}
+  <div class="alert alert-info">
+    <p>There is not SWC data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+  </div>
+{% endif %}

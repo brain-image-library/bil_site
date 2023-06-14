@@ -18,6 +18,14 @@ class Project(models.Model):
     funded_by = models.CharField(max_length=256)
     is_biccn = models.BooleanField(default=False)
 
+class Consortium(models.Model):
+    short_name = models.CharField(max_length=256)
+    long_name = models.CharField(max_length=1000)
+
+class ProjectConsortium(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=False, null=True)
+    consortium = models.ForeignKey(Consortium, on_delete=models.SET_NULL, null = True, blank=True)
+
 class People(models.Model):
     def __str__(self):
         return self.name
@@ -432,4 +440,22 @@ class MetadataVersion(models.Model):
     dataset_status= models.CharField(max_length=256, blank=True, null=True)
     event = models.ForeignKey(EventsLog, on_delete=models.SET_NULL, blank=True, null=True)
 
-
+class SWC(models.Model):
+    tracingFile = models.CharField(max_length=256, blank=True, null=True)
+    sourceData = models.CharField(max_length=256, blank=True, null=True)
+    sourceDataSample = models.CharField(max_length=256, blank=True, null=True)
+    sourceDataSubmission = models.CharField(max_length=256, blank=True, null=True)
+    coordinates = models.CharField(max_length=256, blank=True, null=True)
+    coordinatesRegistration = models.CharField(max_length=256, blank=True, null=True)
+    brainRegion = models.CharField(max_length=256, blank=True, null=True)
+    brainRegionAtlas = models.CharField(max_length=256, blank=True, null=True)
+    brainRegionAtlasName = models.CharField(max_length=256, blank=True, null=True)
+    brainRegionAxonalProjection = models.CharField(max_length=256, blank=True, null=True)
+    brainRegionDendriticProjection = models.CharField(max_length=256, blank=True, null=True)
+    neuronType = models.CharField(max_length=256, blank=True, null=True)
+    segmentTags = models.CharField(max_length=256, blank=True, null=True)
+    proofreadingLevel = models.CharField(max_length=256, blank=True, null=True)
+    notes =  models.TextField()
+    swc_uuid = models.CharField(max_length = 1000, blank=False, null=True)
+    data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
+    sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)

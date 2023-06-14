@@ -1,7 +1,6 @@
 function submit_user_changes() {
     const csrftoken = Cookies.get('csrftoken');
     let auth_id = document.getElementById("auth_id");
-    console.log(auth_id)
     let output_rows = []
     $('tbody>tr').each(function(i, e){
         let $e = $(e);
@@ -16,10 +15,7 @@ function submit_user_changes() {
             "is_pi": is_pi.val(),
             "is_po": is_po.val(),
             "is_bil_admin": is_bil_admin.val()})
-        }
-             console.log(output_rows)
-        
-                
+        }               
             
     });
   fetch(`${window.origin}/ingest/userModify/`, {
