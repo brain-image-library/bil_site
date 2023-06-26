@@ -35,6 +35,17 @@
       {% endfor %}
     </select>
   </div>
+  <br>
+  <label for="parent_project" style="margin-top:15px;">Project Affiliation:</label>
+  <p>Is this a sub-project of another project? Select your project's parent project.</p>
+  <div style="margin-left: 50px;">
+    <select style="min-width: 540px;">
+      <option></option>
+      {% for a in allprojects %}
+        <option value={{a.id}}>{{a.name}}: ({{a.funded_by}})</option> 
+      {% endfor %}
+    </select>
+  </div>
 </form>
 <div>
 

@@ -5,6 +5,7 @@ function create_new_project() {
     const name = document.getElementById("name");
     const funded_by = document.getElementById("funded_by");
     const consortia_ids = [];
+    let parent_project;
 
     let options = document.getElementsByTagName('select')[0]
     for (let i=0, length=options.length; i<length; i++) {
@@ -15,10 +16,21 @@ function create_new_project() {
         }
     }
 
+    let parent_project_options = document.getElementsByTagName('select')[1]
+    for (let i=0, length=parent_project_options.length; i<length; i++) {
+        let opt = parent_project_options[i];
+
+        if (opt.selected) {
+            parent_project = opt.value;
+        }
+    }
+
+    console.log(parent_project)
     output_rows.push({
         "name": name.value,
         "funded_by": funded_by.value,
-        "consortia_ids": consortia_ids
+        "consortia_ids": consortia_ids,
+        "parent_project": parent_project
         })     
                 
             
