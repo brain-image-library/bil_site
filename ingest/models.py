@@ -26,6 +26,10 @@ class ProjectConsortium(models.Model):
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=False, null=True)
     consortium = models.ForeignKey(Consortium, on_delete=models.SET_NULL, null = True, blank=True)
 
+class ProjectAssociation(models.Model):
+    project = models.ForeignKey(Project, related_name='project', on_delete=models.SET_NULL, blank=False, null=True)
+    parent_project = models.ForeignKey(Project, related_name='parent_project', on_delete=models.SET_NULL, blank=False, null=True)
+
 class People(models.Model):
     def __str__(self):
         return self.name
