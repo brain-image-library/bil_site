@@ -6,8 +6,10 @@ from django.core import serializers
 from django.http import HttpResponse
 from django.contrib.admin import AdminSite
 from django.utils.translation import ugettext_lazy
-
+from django.http import HttpResponseRedirect
 from django.db.models import F
+from django.shortcuts import redirect
+from django.shortcuts import get_object_or_404
 
 from .models import ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor, Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder, Publication, Consortium, SWC
 
@@ -78,7 +80,7 @@ class CollectionAdmin(admin.ModelAdmin):
     view_eventslogs_link.short_description = "EventsLogs"
 admin.site.register(ImageMetadata)
 @admin.register(People)
-class People(admin.ModelAdmin):
+class PeopleAdmin(admin.ModelAdmin):
     list_display = ("id", "name", "orcid", "affiliation", "affiliation_identifier", "is_bil_admin", "auth_user_id")
 @admin.register(Project)
 class Project(admin.ModelAdmin):
@@ -108,16 +110,28 @@ class SheetAdmin(admin.ModelAdmin):
 class EventsLogAdmin(admin.ModelAdmin):
     list_display = ("collection_id", "notes", "event_type","timestamp")
     list_filter = ('event_type','timestamp')
-    #def add_event(self, request, from_url='', extra_context=None):
-    #    source = FeedPost.objects.get(id=source_id)
-    #    if source_id != None:
-    #        source = FeedPost.objects.get(id=source_id)
-    #        g = request.GET.copy()
-    #        g.update({
-    #            'project_id' = source.project_id,
-    #    })
-    #    request.GET = g
-    #return super(EventsLogAdmin, self).add_event(request, from_url, extra_context)
+    def response_change(self, request, obj):
+        """
+        Override the default response after saving the model and redirect
+        to the "add" page with pre-populated fields.
+        """
+        response = super().response_change(request, obj)
+
+        if "_addanother" in request.POST:
+            # Extract the object's foreign key values
+            collection_id = obj.collection_id_id
+            current_user=request.user
+            people = get_object_or_404(People, auth_user_id=current_user.id)
+            people_id = people.id
+            project_id = obj.project_id_id
+
+            # Build the URL for the "add" page with pre-populated fields
+            redirect_url = f"/admin/ingest/eventslog/add/?collection_id={collection_id}&people_id={people_id}&project_id={project_id}"
+
+            return redirect(redirect_url)
+
+        return response
+admin.register(EventsLog, EventsLogAdmin)
 @admin.register(ProjectPeople)
 class ProjectPeople(admin.ModelAdmin):
     list_display = ("id", "project_id", "people_id", "is_po", "is_po", "doi_role")
