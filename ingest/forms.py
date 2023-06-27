@@ -1,6 +1,7 @@
 from django import forms
 from .field_list import metadata_fields, collection_fields
 from .models import ImageMetadata, DescriptiveMetadata, Collection
+from dal import autocomplete
 
 
 class UploadForm(forms.Form):
@@ -64,6 +65,7 @@ class CollectionForm(forms.ModelForm):
             'project_funder_id': forms.TextInput(attrs={'list': 'funder_list'}),
         }
 
+
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop('request', None)
         return super().__init__(*args, **kwargs)
@@ -75,3 +77,12 @@ class CollectionForm(forms.ModelForm):
             obj.user = self.request.user
         obj.save()
         return obj
+class AdminCollection(forms.ModelForm):
+    city = forms.ModelChoiceField(
+        queryset=Collection.objects.all(),
+        widget=autocomplete.ModelSelect2(url='collectionautocomplete')
+    )
+
+    class Meta:
+        model = Collection
+        fields = ('__all__')

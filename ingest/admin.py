@@ -10,7 +10,11 @@ from django.http import HttpResponseRedirect
 from django.db.models import F
 from django.shortcuts import redirect
 from django.shortcuts import get_object_or_404
-
+from ingest.forms import CollectionForm, AdminCollection
+from django.db import models
+from . import forms
+from django import forms
+from dal import autocomplete
 from .models import ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor, Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder, Publication, Consortium, SWC
 
 admin.site.site_header = 'Brain Image Library Admin Portal'
@@ -44,7 +48,7 @@ def export_as_json(modeladmin, request, queryset):
     response = HttpResponse(content_type="application/json")
     serializers.serialize("json", queryset, stream=response)
     return response
-@admin.register(Collection)
+#@admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):
     search_fields = ("bil_uuid__startswith", )
     list_display = ("bil_uuid","name","submission_status","validation_status", "view_descriptivemetadatas_link", "view_sheets_link","view_eventslogs_link")
@@ -78,6 +82,7 @@ class CollectionAdmin(admin.ModelAdmin):
         )
         return format_html('<a href="{}">{} Events</a>', url, count)
     view_eventslogs_link.short_description = "EventsLogs"
+admin.site.register(Collection, CollectionAdmin)
 admin.site.register(ImageMetadata)
 @admin.register(People)
 class PeopleAdmin(admin.ModelAdmin):
@@ -106,10 +111,13 @@ class Image(admin.ModelAdmin):
 class SheetAdmin(admin.ModelAdmin):
     list_display = ("id","filename", "date_uploaded", "collection")
     inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline, ]
+
+
 @admin.register(EventsLog)
 class EventsLogAdmin(admin.ModelAdmin):
     list_display = ("collection_id", "notes", "event_type","timestamp")
     list_filter = ('event_type','timestamp')
+    form = AdminCollection
     def response_change(self, request, obj):
         """
         Override the default response after saving the model and redirect

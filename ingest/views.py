@@ -14,7 +14,8 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.http import HttpResponse, JsonResponse, Http404
-
+from dal import autocomplete
+from ingest.forms import forms
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
 from django_tables2 import RequestConfig
@@ -2681,3 +2682,14 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
         error = True
         messages.error(request, "File type not supported")
         return error
+
+class collectionautocomplete(autocomplete.Select2QuerySetView):
+    def get_queryset(self):
+        qs = Collection.objects.all()
+
+        if self.q:
+            qs = qs.filter(name__icontains=self.q)
+
+        return qs
+
+

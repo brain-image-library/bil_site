@@ -12,6 +12,7 @@ click-plugins==1.1.1
 click-repl==0.2.0
 cryptography==3.3.2
 Django==3.2.18
+django-autocomplete-light
 django-bootstrap4==2.3.1
 django-celery-results==2.0.0
 django-filter==2.4.0

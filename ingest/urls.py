@@ -1,7 +1,11 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
-from django.conf.urls import re_path
+from django.conf.urls import re_path, url
 from . import views
+from django.contrib import admin
+from . import admin
+#from .views import CollectionAutocomplete
+
 
 app_name = 'ingest'
 urlpatterns = [
@@ -40,5 +44,11 @@ urlpatterns = [
     path('add_project_user/<int:pk>', views.add_project_user, name = 'add_project_user'),
     path('people_of_pi', views.people_of_pi, name = 'people_of_pi'),
     re_path(r'^write_user_to_project_people/$', views.write_user_to_project_people, name = 'write_user_to_project_people'),
-    path('collection/ondemandSubmission/<int:pk>', views.ondemandSubmission, name = 'ondemandSubmission')
+    path('collection/ondemandSubmission/<int:pk>', views.ondemandSubmission, name = 'ondemandSubmission'),
+    url(
+        r'^collectionautocomplete/$',
+        views.collectionautocomplete.as_view(),
+        name='collectionautocomplete',
+    ),
 ]
+

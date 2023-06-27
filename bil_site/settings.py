@@ -88,6 +88,9 @@ INSTALLED_APPS = [
     'django_pam',
     'hijack',
     'hijack.contrib.admin',
+    'dal',
+    'dal_select2',
+    #'grappelli',
     #'core',
 ]
 
