@@ -209,10 +209,21 @@ def manageProjects(request):
         project_consortia = ProjectConsortium.objects.filter(project_id=project.id).all()
         project.short_names = []
         for c in project_consortia:
-            short_name = Consortium.objects.get(id=c.id).short_name
+            short_name = Consortium.objects.get(id=c.consortium_id).short_name
             project.short_names.append(short_name)
         project.short_names = ', '.join(project.short_names)
-        # project.parent_project = ProjectAssociation.objects.get(project_id=project.id)
+        
+        proj_assocs = ProjectAssociation.objects.filter(project_id=project.id).all()
+        project.parent_project_names = []
+        project.child_project_names = []
+        for p in proj_assocs:
+            parent_project_name = Project.objects.get(id=p.parent_project_id).name
+            child_project_name = Project.objects.get(id=p.project_id).name
+            project.parent_project_names.append(parent_project_name)
+            project.child_project_names.append(child_project_name)
+        project.parent_project_names = ', '.join(project.parent_project_names)
+        project.child_project_names = ', '.join(project.child_project_names)
+
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects, 'pi':pi})
 
 # this functions allows pi to see all the collections
