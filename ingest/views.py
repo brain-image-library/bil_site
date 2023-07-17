@@ -214,14 +214,18 @@ def manageProjects(request):
         project.short_names = ', '.join(project.short_names)
         
         proj_assocs = ProjectAssociation.objects.filter(project_id=project.id).all()
+        parent_proj_assocs = ProjectAssociation.objects.filter(parent_project_id=project.id).all()
+
         project.parent_project_names = []
-        project.child_project_names = []
         for p in proj_assocs:
             parent_project_name = Project.objects.get(id=p.parent_project_id).name
-            child_project_name = Project.objects.get(id=p.project_id).name
             project.parent_project_names.append(parent_project_name)
-            project.child_project_names.append(child_project_name)
         project.parent_project_names = ', '.join(project.parent_project_names)
+
+        project.child_project_names = []
+        for pa in parent_proj_assocs:
+            child_project_name = Project.objects.get(id=pa.project_id).name
+            project.child_project_names.append(child_project_name)
         project.child_project_names = ', '.join(project.child_project_names)
 
     return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects, 'pi':pi})
