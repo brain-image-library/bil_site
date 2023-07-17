@@ -19,6 +19,8 @@
 <th>Name</th>
 <th>Funded By</th>
 <th>Consortia Affiliation</th>
+<th>Parent Project Affiliation</th>
+<th>Child Project Affiliations</th>
 <th>Personnel</th>
 <th>Submissions</th>
 </tr>
@@ -29,6 +31,8 @@
  <td>{{ project.name }}</td>
  <td>{{ project.funded_by }}</td>
  <td>{{ project.short_names }}</td>
+ <td>{{ project.parent_project_names }}</td>
+ <td>{{ project.child_project_names }}</td>
 
  <td><a href="{% url 'ingest:view_project_people' project.id %}">View Personnel</td>
  <td><a href="{% url 'ingest:view_project_collections' project.id %}">View Submissions</td>
