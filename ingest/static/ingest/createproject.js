@@ -25,7 +25,6 @@ function create_new_project() {
         }
     }
 
-    console.log(parent_project)
     output_rows.push({
         "name": name.value,
         "funded_by": funded_by.value,
