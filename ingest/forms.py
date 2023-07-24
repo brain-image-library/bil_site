@@ -78,9 +78,9 @@ class CollectionForm(forms.ModelForm):
         obj.save()
         return obj
 class AdminCollection(forms.ModelForm):
-    city = forms.ModelChoiceField(
+    collection = forms.ModelChoiceField(
         queryset=Collection.objects.all(),
-        widget=autocomplete.ModelSelect2(url='collectionautocomplete')
+        widget=autocomplete.ModelSelect2(url='ingest:collectionautocomplete')
     )
 
     class Meta:

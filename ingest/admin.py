@@ -82,6 +82,7 @@ class CollectionAdmin(admin.ModelAdmin):
         )
         return format_html('<a href="{}">{} Events</a>', url, count)
     view_eventslogs_link.short_description = "EventsLogs"
+
 admin.site.register(Collection, CollectionAdmin)
 admin.site.register(ImageMetadata)
 @admin.register(People)
@@ -99,25 +100,33 @@ class Contributor(admin.ModelAdmin):
     list_display = ("id", "contributorname", "creator", "contributortype", "nametype", "nameidentifier", "nameidentifierscheme", "affiliation", "affiliationidentifier", "affiliationidentifierscheme", "sheet")
 @admin.register(Instrument)
 class Instrument(admin.ModelAdmin):
+    autocomplete_fields = ["data_set", "specimen"]
     list_display = ("id", "microscopetype", "microscopemanufacturerandmodel", "objectivename", "objectiveimmersion", "objectivena", "objectivemagnification", "detectortype", "detectormodel", "illuminationtypes", "illuminationwavelength", "detectionwavelength", "sampletemperature", "sheet")
 @admin.register(Dataset)
 class Dataset(admin.ModelAdmin):
+    search_fields = ("id__startswith", )
     list_display = ("id", "bildirectory", "socialmedia", "subject", "subjectscheme", "rights", "rightsuri", "rightsidentifier", "dataset_image", "generalmodality", "technique", "other", "methods", "technicalinfo", "sheet")
-admin.site.register(Specimen)
+@admin.register(Specimen)
+class Specimen(admin.ModelAdmin):
+    search_fields = ("id__startswith", )
+    list_display = ("id", "localid", "species", "ncbitaxonomy", "age", "ageunit", "sex", "genotype", "organlocalid", "organname", "samplelocalid", "atlas", "locations", "sheet", "data_set")
 @admin.register(Image)
 class Image(admin.ModelAdmin):
     list_display = ("id", "xaxis", "obliquexdim1", "obliquexdim2", "obliquexdim3", "yaxis", "obliqueydim1", "obliqueydim2", "obliqueydim3", "zaxis", "obliquezdim1", "obliquezdim2", "obliquezdim3", "landmarkname", "landmarkx", "landmarky", "landmarkz", "number", "displaycolor", "representation", "flurophore", "stepsizex", "stepsizey", "stepsizez", "stepsizet", "channels", "slices", "z", "xsize", "ysize", "zsize", "gbytes", "files", "dimensionorder", "sheet")
-@admin.register(Sheet)
+#@admin.register(Sheet)
 class SheetAdmin(admin.ModelAdmin):
+    #list_filter = ('collection__bil_uuid', 'bil_uuid',)
+    search_fields = ('collection__bil_uuid', 'bil_uuid', )
     list_display = ("id","filename", "date_uploaded", "collection")
     inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline, ]
+admin.site.register(Sheet, SheetAdmin)
 
-
-@admin.register(EventsLog)
+#@admin.register(EventsLog)
 class EventsLogAdmin(admin.ModelAdmin):
+    #form = AdminCollection
+    autocomplete_fields = ["collection_id"]
     list_display = ("collection_id", "notes", "event_type","timestamp")
     list_filter = ('event_type','timestamp')
-    form = AdminCollection
     def response_change(self, request, obj):
         """
         Override the default response after saving the model and redirect
@@ -139,7 +148,7 @@ class EventsLogAdmin(admin.ModelAdmin):
             return redirect(redirect_url)
 
         return response
-admin.register(EventsLog, EventsLogAdmin)
+admin.site.register(EventsLog, EventsLogAdmin)
 @admin.register(ProjectPeople)
 class ProjectPeople(admin.ModelAdmin):
     list_display = ("id", "project_id", "people_id", "is_po", "is_po", "doi_role")
