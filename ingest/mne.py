@@ -89,7 +89,7 @@ class Mne:
              rstring=rstring + '-'
            rstring=rstring+dataa[element]
        #print ("R:",stack)
-
+       rstring="swc_"+rstring
        return rstring
 
   def  mne_to_num(mme):
