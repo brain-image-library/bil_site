@@ -297,8 +297,9 @@ def create_project(request):
           project_consortium = ProjectConsortium(project_id=proj_id, consortium_id=c)
           project_consortium.save()
 
-        project_association = ProjectAssociation(project_id=proj_id, parent_project_id=int(parent_project))
-        project_association.save()
+        if parent_project:
+            project_association = ProjectAssociation(project_id=proj_id, parent_project_id=int(parent_project))
+            project_association.save()
 
         
         # create a project_people row for this pi so they can view project on pi dashboard
