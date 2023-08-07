@@ -21,6 +21,8 @@ from django_tables2 import RequestConfig
 import pyexcel as pe
 import xlrd
 import re
+import configparser
+
 from celery.result import AsyncResult
 
 from . import tasks
@@ -34,6 +36,9 @@ import uuid
 import datetime
 import json
 from datetime import datetime
+
+config = configparser.ConfigParser()
+config.read('site.cfg')
 
 def logout(request):
     messages.success(request, "You've successfully logged out")
@@ -2505,13 +2510,13 @@ def descriptive_metadata_upload(request):
             associated_collection = form.cleaned_data['associated_collection']
 
             # for production
-            datapath = associated_collection.data_path.replace("/lz/","/etc/")
+            # datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
             # datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
-            # datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
+            datapath = config['Security']['DATAPATH'] 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
 
