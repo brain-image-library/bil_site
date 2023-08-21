@@ -51,6 +51,8 @@ In site.cfg, replace the value associated `SECRET_KEY` with the value you
 generated from the previous command. Note: certain characters will throw off
 the config parser. The easiest thing to do is to just generate a different key.
 
+As of August 2023, the BIL SITE is served from vm018.bil.psc.edu and lives in the `/home/bil/bil_site/` directory
+
 In production, you'll want to set the following:
 
     DEBUG = no
