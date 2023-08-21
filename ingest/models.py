@@ -134,6 +134,7 @@ class Dataset(models.Model):
     specimen_ingest_method_4 = models.IntegerField(blank=True, null=True) # this is not a proper fk. this is just to avoid adding a join table.
     doi = models.CharField(max_length=256, blank=True)
     dataset_size = models.BigIntegerField(blank=True, null=True)
+    number_of_files = models.BigIntegerField(blank=True, null=True)
 
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
