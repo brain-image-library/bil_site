@@ -133,7 +133,7 @@ class Dataset(models.Model):
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
     specimen_ingest_method_4 = models.IntegerField(blank=True, null=True) # this is not a proper fk. this is just to avoid adding a join table.
     doi = models.CharField(max_length=256, blank=True)
-    dataset_size = models.BigIntegerField(blank=True, null=True)
+    dataset_size = models.CharField(max_length=256, blank=True, null=True)
     number_of_files = models.BigIntegerField(blank=True, null=True)
 
 class ImageMetadata(models.Model):
@@ -465,3 +465,10 @@ class SWC(models.Model):
     swc_uuid = models.CharField(max_length = 1000, blank=False, null=True)
     data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
+
+class BIL_ID(models.Model):
+    bil_id = models.CharField(max_length=256, blank=True, null=True)
+    v1_ds_id = models.ForeignKey(DescriptiveMetadata, on_delete=models.SET_NULL, blank=True, null=True)
+    v2_ds_id = models.ForeignKey(Dataset,  related_name='v2_ds_id', on_delete=models.SET_NULL, blank=True, null=True)
+    metadata_version = models.IntegerField(blank=True, null=True)
+    doi = models.BooleanField(default=False)
