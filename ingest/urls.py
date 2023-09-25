@@ -40,5 +40,6 @@ urlpatterns = [
     path('add_project_user/<int:pk>', views.add_project_user, name = 'add_project_user'),
     path('people_of_pi', views.people_of_pi, name = 'people_of_pi'),
     re_path(r'^write_user_to_project_people/$', views.write_user_to_project_people, name = 'write_user_to_project_people'),
-    path('collection/ondemandSubmission/<int:pk>', views.ondemandSubmission, name = 'ondemandSubmission')
+    path('collection/ondemandSubmission/<int:pk>', views.ondemandSubmission, name = 'ondemandSubmission'),
+    path('verifyMetadata/<int:pk>', views.verifyMetadata, name = 'verifyMetadata')
 ]

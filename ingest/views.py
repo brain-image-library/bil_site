@@ -21,6 +21,7 @@ from django_tables2 import RequestConfig
 import pyexcel as pe
 import xlrd
 import re
+import os
 from celery.result import AsyncResult
 
 from . import tasks
@@ -991,6 +992,43 @@ def ondemandSubmission(request, pk):
         path = coll.data_path
     od = 'https://ondemand.bil.psc.edu/pun/sys/dashboard/files/fs' + path
     return redirect(od)
+
+@login_required
+def verifyMetadata(request, pk):
+    coll = Collection.objects.get(id = pk)
+
+    #for production this should be recommented in
+    #path = coll.data_path
+
+    #I'm just using this as a working example
+    path = '/Users/luketuite/bil/lz/luketuite/1a8f5c506eb2142e'
+
+    dir_list = []
+    errormsg=''
+    if not os.path.exists(path):
+        errormsg = errormsg + ('The specified directory ' + path + ' does not exist. Please contact bil-support@psc.edu')
+    else:
+        for root, directories, files in os.walk(path):
+            for directory in directories:
+                dir_list.append(os.path.join(root, directory))
+
+    sheet = Sheet.objects.filter(collection_id=coll.id).latest('id')
+    datasets = Dataset.objects.filter(sheet_id = sheet.id)
+
+    ds_dir_list = []
+    for ds in datasets:
+        ds_dir_list.append(ds.bildirectory)
+
+    for ds in ds_dir_list:
+        if ds not in dir_list:
+            errormsg = errormsg + ('Verification Failed' + ds + ' was found in Metadata but not in ' + path)
+    
+    if errormsg == '':
+        errormsg = errormsg + 'Metadata Has been Sucessfully Verified! You can now submit data for Validation'
+    
+    print(errormsg)
+    return render(request, 'ingest/verify_metadata.html', {'errormsg': errormsg})
+
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     """ Edit an existing collection ."""
@@ -2505,13 +2543,13 @@ def descriptive_metadata_upload(request):
             associated_collection = form.cleaned_data['associated_collection']
 
             # for production
-            datapath = associated_collection.data_path.replace("/lz/","/etc/")
+            #datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
             # datapath = '/home/shared_bil_dev/testetc/' 
 
             # for development locally
-            # datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
+            datapath = '/Users/luketuite/bil/etc' 
             
             spreadsheet_file = request.FILES['spreadsheet_file']
 
