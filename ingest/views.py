@@ -995,7 +995,10 @@ def ondemandSubmission(request, pk):
 
 @login_required
 def verifyMetadata(request, pk):
+    user_name = request.user
+    person = People.objects.get(name = user_name)
     coll = Collection.objects.get(id = pk)
+    coll_id = Collection.objects.get(id = coll.id)
 
     #for production this should be recommented in
     #path = coll.data_path
@@ -1004,14 +1007,16 @@ def verifyMetadata(request, pk):
     path = '/Users/luketuite/bil/lz/luketuite/1a8f5c506eb2142e'
 
     dir_list = []
-    errormsg=''
+    fatal_error_messages = []
+    warning_error_messages = []
+    verified_messages = []
     if not os.path.exists(path):
-        errormsg = errormsg + ('The specified directory ' + path + ' does not exist. Please contact bil-support@psc.edu')
+        fatal_error_messages.append('The specified directory ' + path + ' does not exist. Please contact bil-support@psc.edu')
     else:
         for root, directories, files in os.walk(path):
             for directory in directories:
                 dir_list.append(os.path.join(root, directory))
-
+                #also check if folders are empty?
     sheet = Sheet.objects.filter(collection_id=coll.id).latest('id')
     datasets = Dataset.objects.filter(sheet_id = sheet.id)
 
@@ -1021,14 +1026,31 @@ def verifyMetadata(request, pk):
 
     for ds in ds_dir_list:
         if ds not in dir_list:
-            errormsg = errormsg + ('Verification Failed' + ds + ' was found in Metadata but not in ' + path)
-    
-    if errormsg == '':
-        errormsg = errormsg + 'Metadata Has been Sucessfully Verified! You can now submit data for Validation'
-    
-    print(errormsg)
-    return render(request, 'ingest/verify_metadata.html', {'errormsg': errormsg})
+            fatal_error_messages.append('Verification Failed: Directory entry <span style="color: red;">{}</span> was found in Metadata but not in BIL directory: <span style="color: red;">{}</span>'.format(ds, path))
 
+    #run this check in reverse, but call these verification warnings with the option to submit anyway (example extras)
+
+    for ds in dir_list:
+        if ds not in ds_dir_list:
+            warning_error_messages.append('Verification Warning: Directory <span style="color: yellow; background-color: black">{}</span> was found on BIL but not in Metadata'.format(ds))
+            
+    if fatal_error_messages:
+        errormsg = 'Ensure all entires in BilDirectory on Metadata Dataset tab match directories found in ' + coll.name
+        fatal_error_messages.append(errormsg)
+    elif warning_error_messages:
+        errormsg = 'Review warnings before confirming Verification'
+
+        
+    else: 
+        verified_messages.append('Metadata Has been Sucessfully Verified! You can now submit data for Validation')
+        #time = datetime.now()
+        #event = EventsLog(collection_id = coll_id, people_id_id = person.id, project_id_id = coll.project_id, notes = '', timestamp = time, event_type = 'metadata_verified')
+        #event.save()
+    return render(request, 'ingest/verify_metadata.html', {'fatal_error_messages': fatal_error_messages, 'warning_error_messages': warning_error_messages, 'verified_messages': verified_messages, 'coll': coll})
+
+@login_required
+def confirmVerification(request, pk):
+    return render(request, 'ingest/index.html')
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     """ Edit an existing collection ."""

@@ -173,6 +173,12 @@ class CollectionRequestTable(tables.Table):
         elif value == "Failed":
             value = format_html('<i class="fa fa-exclamation-circle" style="color:red"></i>')
         return value
+    
+    # def render_row_class(self, record):
+    #     # Check the condition for each row and return a class name accordingly.
+    #     if not Collection.objects.filter(eventslog__event_type='metadata_verified', pk=record.pk).exists():
+    #         return 'grayed-out-row'
+    #     return ''
 
     class Meta:
         model = Collection

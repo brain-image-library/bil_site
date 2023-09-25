@@ -1,11 +1,34 @@
-{% extends 'ingest/wide.html' %}
-{% block wide %}
+{% extends 'ingest/base.html' %}
+{% load static %}
+{% block content %}
+<body>
+<br>
+<h1>Metadata Verification Results for {{coll.name}}</h1>
+{% if fatal_error_messages %}
+<div class="container-fluid" style="border:1px solid #cecece;"> 
+    {% for message in fatal_error_messages %}
+    <p>{{ message|safe }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+{% if warning_error_messages %}
+<div class="container-fluid" style="border:1px solid #cecece;"> 
+    {% for message in warning_error_messages %}
+    <p>{{ message|safe }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+{% if verified_messages %}
+<div class="container-fluid" style="border:1px solid #cecece;"> 
+    {% for message in verified_messages %}
+    <p>{{ message|safe }}</p>
+    {% endfor %}
+</div>
+{% endif %}
 
-    <div class="errormsg">
-        {{ errormsg }}
-    </div>
-    <!-- Your page content here -->
-
+{% if warning_error_messages and not fatal_error_messages %}
+<div><a href="{% url 'ingest:confirmVerification' coll.id %}">
+    <button class="btn btn-lg btn-primary" value="ignore" formnovalidate="">Confirm Anyway</button>
+</a></div>
+{% endif %}
 {% endblock %}
-
-<h1> print please </h1>
