@@ -117,7 +117,7 @@ class Sheet(models.Model):
 class Dataset(models.Model):
     bildirectory = models.CharField(max_length=256)
     title = models.CharField(max_length=500)
-    socialmedia = models.CharField(max_length=256, blank=True)
+    socialmedia = models.CharField(max_length=500, blank=True)
     subject = models.CharField(max_length=256, blank=True)
     subjectscheme = models.CharField(max_length=256, blank=True)
     rights = models.CharField(max_length=256)
