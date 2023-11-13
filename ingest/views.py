@@ -28,7 +28,7 @@ from .mne import Mne
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -2312,9 +2312,11 @@ def save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet,
                 False
         else:
             False
+
     except Exception as e:
         print(repr(e))
         return False
+    
 
 def save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications):
     # 1 dataset row, 1 instrument row, multiple specimens(have dataset FK)
@@ -2440,6 +2442,24 @@ def save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contrib
         print(repr(e))
         saved = False
 
+def save_bil_ids(datasets):
+    """
+    This function iterates through the provided list of datasets, generates and saves BIL_IDs
+    using the BIL_ID model. It also associates an MNE ID with each BIL_ID and saves the updated
+    BIL_ID object in the database.
+    """
+    for dataset in datasets:
+        #create placeholder for BIL_ID
+        bil_id = BIL_ID(v2_ds_id = dataset, metadata_version = 2, doi = False)
+        bil_id.save()
+        #grab the just created database ID and generate an mne id
+        saved_bil_id = BIL_ID.objects.get(v2_ds_id = dataset.id)
+        mne_id = Mne.dataset_num_to_mne(saved_bil_id.id)
+        saved_bil_id.bil_id = mne_id
+        #final save
+        saved_bil_id.save()
+    return
+
 def metadata_version_check(filename):
     version1 = False
     workbook=xlrd.open_workbook(filename)
@@ -2505,10 +2525,10 @@ def descriptive_metadata_upload(request):
             associated_collection = form.cleaned_data['associated_collection']
 
             # for production
-            datapath = associated_collection.data_path.replace("/lz/","/etc/")
+            #datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            # datapath = '/home/shared_bil_dev/testetc/' 
+            datapath = '/Users/luketuite/shared_bil_dev' 
 
             # for development locally
             # datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
@@ -2554,18 +2574,28 @@ def descriptive_metadata_upload(request):
                     if ingest_method == 'ingest_1':
                         sheet = save_sheet_row(ingest_method, filename, collection)
                         saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                        save_bil_ids(ingested_datasets)
                     elif ingest_method == 'ingest_2':
                         sheet = save_sheet_row(ingest_method, filename, collection)
                         saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                        save_bil_ids(ingested_datasets)
                     elif ingest_method == 'ingest_3':
                         sheet = save_sheet_row(ingest_method, filename, collection)
                         saved = save_all_sheets_method_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                        save_bil_ids(ingested_datasets)
                     elif ingest_method == 'ingest_4':
                         sheet = save_sheet_row(ingest_method, filename, collection)
                         saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                        save_bil_ids(ingested_datasets)
                     elif ingest_method == 'ingest_5':
                         sheet = save_sheet_row(ingest_method, filename, collection)
                         saved = save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs)
+                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                        save_bil_ids(ingested_datasets)
                     elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4' and ingest_method != 'ingest_5':
                          saved = False
                          messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')                         

@@ -91,6 +91,94 @@ class Mne:
        #print ("R:",stack)
        rstring="swc_"+rstring
        return rstring
+  
+  def  dataset_num_to_mne(num):
+       dataa= [           
+           "zip", "ace", "act", "add", "age",
+           "aim", "air", "and", "ant", "ape",
+           "arm", "art", "ash", "ask", "bad",
+           "bag", "ban", "bar", "bat", "bay",
+           "bed", "bet", "bid", "big", "bin",
+           "bit", "bog", "boo", "box", "bud",
+           "bug", "bun", "bus", "cab", "can",
+           "cap", "car", "cat", "cop", "cot",
+           "cow", "cry", "cub", "cup", "cut",
+           "day", "den", "did", "die", "dig",
+           "dim", "dip", "dog", "dry", "dub",
+           "dud", "dug", "ear", "eat", "eel",
+           "egg", "elf", "elk", "elm", "end",
+           "fan", "far", "fat", "fed", "few",
+           "fib", "fig", "fin", "fit", "fix",
+           "fly", "fog", "foo", "fox", "fry",
+           "fun", "gab", "gag", "gap", "gas",
+           "gel", "gem", "get", "gin", "got",
+           "gum", "gut", "had", "has", "hat",
+           "hen", "hex", "hid", "hip", "hit",
+           "hog", "hop", "hot", "how", "hub",
+           "hug", "hum", "hut", "ice", "ill",
+           "imp", "ink", "irk", "jab", "jam",
+           "jar", "jaw", "jet", "jig", "job",
+           "jog", "jot", "joy", "key", "kid",
+           "kin", "kit", "lab", "lag", "lap",
+           "law", "lax", "lay", "leg", "let",
+           "lid", "lip", "lit", "lot", "low",
+           "mad", "map", "mat", "men", "met",
+           "mix", "mob", "moo", "mop", "mud",
+           "mug", "nab", "nag", "nap", "net",
+           "new", "nil", "nip", "nod", "nor",
+           "now", "nut", "oak", "oat", "odd",
+           "off", "old", "orb", "out", "owl",
+           "own", "pad", "pal", "pan", "pay",
+           "pen", "pet", "pie", "pig", "pin",
+           "pit", "ply", "pod", "pop", "pot",
+           "pox", "pry", "pun", "pup", "put",
+           "rag", "ran", "rat", "raw", "red",
+           "rid", "rig", "rip", "rot", "row",
+           "rub", "rug", "run", "rut", "rye",
+           "sad", "sag", "sap", "sat", "saw",
+           "say", "set", "shy", "sip", "sit",
+           "ski", "sky", "sly", "sob", "soy",
+           "spa", "spy", "tab", "tag", "tan",
+           "tap", "tar", "tax", "the", "tie",
+           "tin", "tip", "top", "toy", "try",
+           "tub", "tug", "use", "van", "vat",
+           "vex", "vow", "wag", "war", "was",
+           "wax", "web", "wet", "who", "wig",
+           "win", "wit", "yes", "yet", "zoo",
+           "all"]
+       #-----------------------------------
+       #store 256 decoded elements in stack
+       #-----------------------------------
+       stack=[]
+       #print("NUM=",num)
+       q=num
+       if q < 256 :
+          q,r = divmod(num,256)
+          stack.append(r)
+          #print(q,r)       
+       else:
+           while q > 255 :
+               q,r = divmod(q,256)
+               stack.append(r)
+               #print(q,r)
+           #q,r = divmod(q,256)
+           stack.append(q)
+           #print(q,r)
+       #else:
+       #print(len(stack))
+       #----------------------
+       #Finally code the stack
+       #----------------------
+       rstring=""
+       first=True
+       for element in reversed(stack):
+           if first:
+             first=False
+           else:
+             rstring=rstring + '-'
+           rstring=rstring+dataa[element]
+       #print ("R:",stack)
+       return rstring
 
   def  mne_to_num(mme):
        datad= {
