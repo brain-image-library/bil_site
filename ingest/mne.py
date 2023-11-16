@@ -3,97 +3,8 @@
 # http://gurno.com/adam/mne/
 #---------------------------
 class Mne:
-  def  num_to_mne(num):
-       dataa= [           
-           "zip", "ace", "act", "add", "age",
-           "aim", "air", "and", "ant", "ape",
-           "arm", "art", "ash", "ask", "bad",
-           "bag", "ban", "bar", "bat", "bay",
-           "bed", "bet", "bid", "big", "bin",
-           "bit", "bog", "boo", "box", "bud",
-           "bug", "bun", "bus", "cab", "can",
-           "cap", "car", "cat", "cop", "cot",
-           "cow", "cry", "cub", "cup", "cut",
-           "day", "den", "did", "die", "dig",
-           "dim", "dip", "dog", "dry", "dub",
-           "dud", "dug", "ear", "eat", "eel",
-           "egg", "elf", "elk", "elm", "end",
-           "fan", "far", "fat", "fed", "few",
-           "fib", "fig", "fin", "fit", "fix",
-           "fly", "fog", "foo", "fox", "fry",
-           "fun", "gab", "gag", "gap", "gas",
-           "gel", "gem", "get", "gin", "got",
-           "gum", "gut", "had", "has", "hat",
-           "hen", "hex", "hid", "hip", "hit",
-           "hog", "hop", "hot", "how", "hub",
-           "hug", "hum", "hut", "ice", "ill",
-           "imp", "ink", "irk", "jab", "jam",
-           "jar", "jaw", "jet", "jig", "job",
-           "jog", "jot", "joy", "key", "kid",
-           "kin", "kit", "lab", "lag", "lap",
-           "law", "lax", "lay", "leg", "let",
-           "lid", "lip", "lit", "lot", "low",
-           "mad", "map", "mat", "men", "met",
-           "mix", "mob", "moo", "mop", "mud",
-           "mug", "nab", "nag", "nap", "net",
-           "new", "nil", "nip", "nod", "nor",
-           "now", "nut", "oak", "oat", "odd",
-           "off", "old", "orb", "out", "owl",
-           "own", "pad", "pal", "pan", "pay",
-           "pen", "pet", "pie", "pig", "pin",
-           "pit", "ply", "pod", "pop", "pot",
-           "pox", "pry", "pun", "pup", "put",
-           "rag", "ran", "rat", "raw", "red",
-           "rid", "rig", "rip", "rot", "row",
-           "rub", "rug", "run", "rut", "rye",
-           "sad", "sag", "sap", "sat", "saw",
-           "say", "set", "shy", "sip", "sit",
-           "ski", "sky", "sly", "sob", "soy",
-           "spa", "spy", "tab", "tag", "tan",
-           "tap", "tar", "tax", "the", "tie",
-           "tin", "tip", "top", "toy", "try",
-           "tub", "tug", "use", "van", "vat",
-           "vex", "vow", "wag", "war", "was",
-           "wax", "web", "wet", "who", "wig",
-           "win", "wit", "yes", "yet", "zoo",
-           "all"]
-       #-----------------------------------
-       #store 256 decoded elements in stack
-       #-----------------------------------
-       stack=[]
-       #print("NUM=",num)
-       q=num
-       if q < 256 :
-          q,r = divmod(num,256)
-          stack.append(r)
-          #print(q,r)       
-       else:
-           while q > 255 :
-               q,r = divmod(q,256)
-               stack.append(r)
-               #print(q,r)
-           #q,r = divmod(q,256)
-           stack.append(q)
-           #print(q,r)
-       #else:
-       #print(len(stack))
-       #----------------------
-       #Finally code the stack
-       #----------------------
-       rstring=""
-       first=True
-       for element in reversed(stack):
-           if first:
-             first=False
-           else:
-             rstring=rstring + '-'
-           rstring=rstring+dataa[element]
-       #print ("R:",stack)
-       rstring="swc_"+rstring
-       return rstring
   
-  def  dataset_num_to_mne(num):
-       dataa= [           
+  DATAA = [           
            "zip", "ace", "act", "add", "age",
            "aim", "air", "and", "ant", "ape",
            "arm", "art", "ash", "ask", "bad",
@@ -146,42 +57,8 @@ class Mne:
            "wax", "web", "wet", "who", "wig",
            "win", "wit", "yes", "yet", "zoo",
            "all"]
-       #-----------------------------------
-       #store 256 decoded elements in stack
-       #-----------------------------------
-       stack=[]
-       #print("NUM=",num)
-       q=num
-       if q < 256 :
-          q,r = divmod(num,256)
-          stack.append(r)
-          #print(q,r)       
-       else:
-           while q > 255 :
-               q,r = divmod(q,256)
-               stack.append(r)
-               #print(q,r)
-           #q,r = divmod(q,256)
-           stack.append(q)
-           #print(q,r)
-       #else:
-       #print(len(stack))
-       #----------------------
-       #Finally code the stack
-       #----------------------
-       rstring=""
-       first=True
-       for element in reversed(stack):
-           if first:
-             first=False
-           else:
-             rstring=rstring + '-'
-           rstring=rstring+dataa[element]
-       #print ("R:",stack)
-       return rstring
-
-  def  mne_to_num(mme):
-       datad= {
+  
+  DATAD = {
            "zip" : "000", "ace" : "001", "act" : "002", "add" : "003", "age" : "004",
            "aim" : "005", "air" : "006", "and" : "007", "ant" : "008", "ape" : "009",
            "arm" : "010", "art" : "011", "ash" : "012", "ask" : "013", "bad" : "014",
@@ -234,27 +111,77 @@ class Mne:
            "wax" : "245", "web" : "246", "wet" : "247", "who" : "248", "wig" : "249",
            "win" : "250", "wit" : "251", "yes" : "252", "yet" : "253", "zoo" : "254",
            "all" : "255" }
+  
+  def  num_to_mne(num):
+       
+       #-----------------------------------
+       #store 256 decoded elements in stack
+       #-----------------------------------
+       stack=[]
+       q=num
+       if q < 256 :
+          q,r = divmod(num,256)
+          stack.append(r)
+          #print(q,r)       
+       else:
+           while q > 255 :
+               q,r = divmod(q,256)
+               stack.append(r)
+           stack.append(q)
+       #----------------------
+       #Finally code the stack
+       #----------------------
+       rstring=""
+       first=True
+       for element in reversed(stack):
+           if first:
+             first=False
+           else:
+             rstring=rstring + '-'
+           rstring=rstring+Mne.DATAA[element]
+       #print ("R:",stack)
+       rstring="swc_"+rstring
+       return rstring
+  
+  @staticmethod
+  def  dataset_num_to_mne(num):
+       
+       #-----------------------------------
+       #store 256 decoded elements in stack
+       #-----------------------------------
+       stack=[]
+       q=num
+       if q < 256 :
+          q,r = divmod(num,256)
+          stack.append(r)     
+       else:
+           while q > 255 :
+               q,r = divmod(q,256)
+               stack.append(r)
+           stack.append(q)
+       #----------------------
+       #Finally code the stack
+       #----------------------
+       rstring=""
+       first=True
+       for element in reversed(stack):
+           if first:
+             first=False
+           else:
+             rstring=rstring + '-'
+           rstring=rstring+Mne.DATAA[element]
+       return rstring
+
+  def  mne_to_num(mme):
        stack=[]
        values=mme.split('-')
-       #lookup numbers and put on stack
        for i in values:
-          stack.append(int(datad[i]))
-       #print("F:",stack)
+          stack.append(int(Mne.DATAD[i]))
        vsum=0
        value=0
        for i in range(0,len(stack)-1,1):
-          #print ("Stack[",i,"]: ", stack[i])
-          #print("len(stack)-i-1: ",len(stack)-i-1)
           vsum=256**(len(stack)-i-1) * stack[i] + vsum
-          #vsum=value            
-          #if stack[i]==0 :
-          #else: 
-          #  value=(256**(pwr)) * stack[i]
-          #vsum=vsum+value
-          #print (i,vsum)
-       #print("Stack length=",len(stack))
        vsum=vsum+stack[len(stack)-1]
-       #print("Final VSUM: ",vsum)
        return(vsum)   
 
   def mne_test(self):
