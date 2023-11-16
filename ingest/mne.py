@@ -3,8 +3,8 @@
 # http://gurno.com/adam/mne/
 #---------------------------
 class Mne:
-  def  num_to_mne(num):
-       dataa= [           
+  
+  DATAA = [           
            "zip", "ace", "act", "add", "age",
            "aim", "air", "and", "ant", "ape",
            "arm", "art", "ash", "ask", "bad",
@@ -57,43 +57,8 @@ class Mne:
            "wax", "web", "wet", "who", "wig",
            "win", "wit", "yes", "yet", "zoo",
            "all"]
-       #-----------------------------------
-       #store 256 decoded elements in stack
-       #-----------------------------------
-       stack=[]
-       #print("NUM=",num)
-       q=num
-       if q < 256 :
-          q,r = divmod(num,256)
-          stack.append(r)
-          #print(q,r)       
-       else:
-           while q > 255 :
-               q,r = divmod(q,256)
-               stack.append(r)
-               #print(q,r)
-           #q,r = divmod(q,256)
-           stack.append(q)
-           #print(q,r)
-       #else:
-       #print(len(stack))
-       #----------------------
-       #Finally code the stack
-       #----------------------
-       rstring=""
-       first=True
-       for element in reversed(stack):
-           if first:
-             first=False
-           else:
-             rstring=rstring + '-'
-           rstring=rstring+dataa[element]
-       #print ("R:",stack)
-       rstring="swc_"+rstring
-       return rstring
-
-  def  mne_to_num(mme):
-       datad= {
+  
+  DATAD = {
            "zip" : "000", "ace" : "001", "act" : "002", "add" : "003", "age" : "004",
            "aim" : "005", "air" : "006", "and" : "007", "ant" : "008", "ape" : "009",
            "arm" : "010", "art" : "011", "ash" : "012", "ask" : "013", "bad" : "014",
@@ -146,27 +111,77 @@ class Mne:
            "wax" : "245", "web" : "246", "wet" : "247", "who" : "248", "wig" : "249",
            "win" : "250", "wit" : "251", "yes" : "252", "yet" : "253", "zoo" : "254",
            "all" : "255" }
+  
+  def  num_to_mne(num):
+       
+       #-----------------------------------
+       #store 256 decoded elements in stack
+       #-----------------------------------
+       stack=[]
+       q=num
+       if q < 256 :
+          q,r = divmod(num,256)
+          stack.append(r)
+          #print(q,r)       
+       else:
+           while q > 255 :
+               q,r = divmod(q,256)
+               stack.append(r)
+           stack.append(q)
+       #----------------------
+       #Finally code the stack
+       #----------------------
+       rstring=""
+       first=True
+       for element in reversed(stack):
+           if first:
+             first=False
+           else:
+             rstring=rstring + '-'
+           rstring=rstring+Mne.DATAA[element]
+       #print ("R:",stack)
+       rstring="swc_"+rstring
+       return rstring
+  
+  @staticmethod
+  def  dataset_num_to_mne(num):
+       
+       #-----------------------------------
+       #store 256 decoded elements in stack
+       #-----------------------------------
+       stack=[]
+       q=num
+       if q < 256 :
+          q,r = divmod(num,256)
+          stack.append(r)     
+       else:
+           while q > 255 :
+               q,r = divmod(q,256)
+               stack.append(r)
+           stack.append(q)
+       #----------------------
+       #Finally code the stack
+       #----------------------
+       rstring=""
+       first=True
+       for element in reversed(stack):
+           if first:
+             first=False
+           else:
+             rstring=rstring + '-'
+           rstring=rstring+Mne.DATAA[element]
+       return rstring
+
+  def  mne_to_num(mme):
        stack=[]
        values=mme.split('-')
-       #lookup numbers and put on stack
        for i in values:
-          stack.append(int(datad[i]))
-       #print("F:",stack)
+          stack.append(int(Mne.DATAD[i]))
        vsum=0
        value=0
        for i in range(0,len(stack)-1,1):
-          #print ("Stack[",i,"]: ", stack[i])
-          #print("len(stack)-i-1: ",len(stack)-i-1)
           vsum=256**(len(stack)-i-1) * stack[i] + vsum
-          #vsum=value            
-          #if stack[i]==0 :
-          #else: 
-          #  value=(256**(pwr)) * stack[i]
-          #vsum=vsum+value
-          #print (i,vsum)
-       #print("Stack length=",len(stack))
        vsum=vsum+stack[len(stack)-1]
-       #print("Final VSUM: ",vsum)
        return(vsum)   
 
   def mne_test(self):
