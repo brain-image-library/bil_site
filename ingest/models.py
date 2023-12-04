@@ -335,6 +335,14 @@ class EventsLog(models.Model):
     #Add field for embargo information
     event_type = models.CharField(max_length=64, default="", choices=[('mail_tapes_to_bil', 'Mail Tapes To BIL'), ('tapes_received', 'Tapes Received'), ('tapes_ready_for_qc', 'Tapes Ready For QC'), ('move_to_collection', 'Move To Collection'), ('request_brainball', 'Request Brainball'), ('Mail_brainball_from_bil', 'Mail Brainball From BIL'), ('mail_brainball_to_bil', 'Mail Brainball To BIL'), ('received_brainball', 'Received Brainball'), ('collection_created', 'Collection Created'), ('metadata_uploaded', 'Metadata Uploaded'), ('request_validation', 'Request Validation'), ('request_submission', 'Request Submission'), ('request_embargo', 'Request Embargo'), ('collection_public', 'Collection Public'), ('request_withdrawal', 'Request Withdrawal'), ('data_curated', 'Data Curated'), ('collection_validated', 'Collected Validated'), ('user_action_required', 'User Action Required'),])
 
+class DatasetEventsLog(models.Model):
+    dataset_id = models.ForeignKey(Dataset, on_delete=models.SET_NULL, null=True, blank=True)
+    collection_id = models.ForeignKey(Collection, on_delete=models.SET_NULL, null=True, blank=True)
+    project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null = True, blank=True)
+    notes = models.CharField(max_length=256)
+    timestamp = models.DateTimeField()
+    event_type = models.CharField(max_length=64, default="", choices=[('uploaded', 'Uploaded'),('validated', 'Validated'), ('curated', 'Curated'), ('doi', 'DOI'), ('public', 'Public')])
+
 class Contributor(models.Model):
     contributorname = models.CharField(max_length=256)
     creator = models.CharField(max_length=100)

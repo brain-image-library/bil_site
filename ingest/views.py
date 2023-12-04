@@ -28,7 +28,7 @@ from .mne import Mne
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -2525,10 +2525,10 @@ def descriptive_metadata_upload(request):
             associated_collection = form.cleaned_data['associated_collection']
 
             # for production
-            datapath = associated_collection.data_path.replace("/lz/","/etc/")
+            # datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            #datapath = '/Users/luketuite/shared_bil_dev' 
+            datapath = '/Users/luketuite/shared_bil_dev' 
 
             # for development locally
             # datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
@@ -2601,8 +2601,13 @@ def descriptive_metadata_upload(request):
                          messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')                         
                          return redirect('ingest:descriptive_metadata_upload')
                     if saved == True:
-                         messages.success(request, 'Descriptive Metadata successfully uploaded!!')
-                         return redirect('ingest:descriptive_metadata_list')
+                        saved_datasets = Dataset.objects.filter(sheet_id = sheet.id).all()
+                        for dataset in saved_datasets:
+                           time = datetime.now()
+                           event = DatasetEventsLog(dataset_id = dataset, collection_id = collection, project_id_id = collection.project_id, notes = '', timestamp = time, event_type = 'uploaded')
+                           event.save()
+                        messages.success(request, 'Descriptive Metadata successfully uploaded!!')
+                        return redirect('ingest:descriptive_metadata_list')
                     else:
                          error_code = sheet.id
                          messages.error(request, 'There has been an error. Please contact BIL Support. Error Code: ', error_code)
