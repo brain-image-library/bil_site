@@ -135,6 +135,16 @@ class Dataset(models.Model):
     doi = models.CharField(max_length=256, blank=True)
     dataset_size = models.CharField(max_length=256, blank=True, null=True)
     number_of_files = models.BigIntegerField(blank=True, null=True)
+    def __str__(self):
+        return self.title
+
+    class Meta:
+        verbose_name = 'Dataset'
+        verbose_name_plural = 'Datasets'
+
+    @classmethod
+    def autocomplete_search_fields(cls):
+        return ['dataset__icontains']
 
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
@@ -342,6 +352,7 @@ class DatasetEventsLog(models.Model):
     notes = models.CharField(max_length=256)
     timestamp = models.DateTimeField()
     event_type = models.CharField(max_length=64, default="", choices=[('uploaded', 'Uploaded'),('validated', 'Validated'), ('curated', 'Curated'), ('doi', 'DOI'), ('public', 'Public')])
+    
 
 class Contributor(models.Model):
     contributorname = models.CharField(max_length=256)
@@ -480,3 +491,21 @@ class BIL_ID(models.Model):
     v2_ds_id = models.ForeignKey(Dataset,  related_name='v2_ds_id', on_delete=models.SET_NULL, blank=True, null=True)
     metadata_version = models.IntegerField(blank=True, null=True)
     doi = models.BooleanField(default=False)
+    def __str__(self):
+        return self.bil_id
+
+    class Meta:
+        verbose_name = 'BIL ID'
+        verbose_name_plural = 'BIL IDs'
+
+    @classmethod
+    def autocomplete_search_fields(cls):
+        return ['bil_id__icontains']
+
+class DatasetLinkage(models.Model):
+    data_id_1_bil = models.ForeignKey(BIL_ID, on_delete=models.SET_NULL, null=True, blank=True)
+    code_id = models.CharField(max_length=64, default="", choices=[('bil', 'BIL'), ('nemo', 'Nemo'),('dandi', 'Dandi'), ('cubietissue', 'CubieTissue')]) 
+    data_id_2 = models.CharField(max_length=256, blank=True, null=True)
+    relationship = models.CharField(max_length=64, default="", choices=[('sequence data', 'Sequence Data'), ('neuron tracing', 'Neuron Tracing'), ('derived_data', 'Derived Data'), ('raw', 'Raw'), ('aligned', 'Aligned')]) 
+    description = models.TextField(blank=True, null=True)
+    linkage_date = models.DateField(null=True, blank=True)
