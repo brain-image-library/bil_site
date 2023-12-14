@@ -135,16 +135,16 @@ class Dataset(models.Model):
     doi = models.CharField(max_length=256, blank=True)
     dataset_size = models.CharField(max_length=256, blank=True, null=True)
     number_of_files = models.BigIntegerField(blank=True, null=True)
-    def __str__(self):
-        return self.title
+    #def __str__(self):
+    #    return self.title
 
-    class Meta:
-        verbose_name = 'Dataset'
-        verbose_name_plural = 'Datasets'
+    #class Meta:
+    #    verbose_name = 'Dataset'
+    #    verbose_name_plural = 'Datasets'
 
-    @classmethod
-    def autocomplete_search_fields(cls):
-        return ['dataset__icontains']
+    #@classmethod
+    #def autocomplete_search_fields(cls):
+    #    return ['dataset__icontains']
 
 class ImageMetadata(models.Model):
     # The meat of the image metadata bookkeeping. This is all the relevant
@@ -509,3 +509,4 @@ class DatasetLinkage(models.Model):
     relationship = models.CharField(max_length=64, default="", choices=[('sequence data', 'Sequence Data'), ('neuron tracing', 'Neuron Tracing'), ('derived_data', 'Derived Data'), ('raw', 'Raw'), ('aligned', 'Aligned')]) 
     description = models.TextField(blank=True, null=True)
     linkage_date = models.DateField(null=True, blank=True)
+    
