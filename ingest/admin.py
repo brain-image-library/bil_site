@@ -19,44 +19,56 @@ class ContributorsInline(admin.TabularInline):
     model = Contributor
     show_change_link = True
     raw_id_fields = ('sheet',)
+
 class FundersInline(admin.TabularInline):
     model = Funder
     show_change_link = True
     raw_id_fields = ('sheet',)
+
 class PublicationsInline(admin.TabularInline):
     model = Publication
     show_change_link = True
     raw_id_fields = ('sheet','data_set',)
+
 class InstrumentsInline(admin.TabularInline):
     model = Instrument
     show_change_link = True
     raw_id_fields = ('sheet','data_set','specimen',)
+
 class DatasetsInline(admin.TabularInline):
     model = Dataset
     show_change_link = True
     raw_id_fields = ('sheet',)
     
-
 class SpecimensInline(admin.TabularInline):
     model = Specimen
     show_change_link = True
     raw_id_fields = ('sheet','data_set',)
+
 class ImagesInline(admin.TabularInline):
     model = Image
     show_change_link = True
     raw_id_fields = ('sheet','data_set', 'specimen',)
+
 class SWCSInline(admin.TabularInline):
     model = SWC
+
 class ConsortiaInline(admin.TabularInline):
     model = Consortium
+
 class BIL_IDInline(admin.TabularInline):
     model = BIL_ID
     raw_id_fields = ('v2_ds_id',)
+
 admin.site.disable_action('delete_selected')
+
 @admin.action(description='Mark selected Collection(s) as Validated and Submitted')
+
 def mark_as_validated_and_submitted(modeladmin, request, queryset):
     queryset.update(submission_status = 'SUCCESS', validation_status = 'SUCCESS')
+
 @admin.action(description='Export results as JSON')
+
 def export_as_json(modeladmin, request, queryset):
     coll_info = Collection.objects.filter(name = queryset)
     for i in coll_info:
@@ -64,7 +76,9 @@ def export_as_json(modeladmin, request, queryset):
     response = HttpResponse(content_type="application/json")
     serializers.serialize("json", queryset, stream=response)
     return response
+
 @admin.register(Collection)
+
 class CollectionAdmin(admin.ModelAdmin):
     search_fields = ("bil_uuid__startswith", "bil_uuid")
     list_display = ("bil_uuid","name","submission_status","validation_status", "view_descriptivemetadatas_link", "view_sheets_link","view_eventslogs_link")
@@ -98,24 +112,37 @@ class CollectionAdmin(admin.ModelAdmin):
         )
         return format_html('<a href="{}">{} Events</a>', url, count)
     view_eventslogs_link.short_description = "EventsLogs"
+
 admin.site.register(ImageMetadata)
+
 @admin.register(People)
+
 class People(admin.ModelAdmin):
     list_display = ("id", "name", "orcid", "affiliation", "affiliation_identifier", "is_bil_admin", "auth_user_id")
+
 @admin.register(Project)
+
 class Project(admin.ModelAdmin):
     list_display = ("id", "name", "funded_by", "is_biccn")
+
 @admin.register(DescriptiveMetadata)
+
 class DescriptiveMetadataAdmin(admin.ModelAdmin):
     list_display = ("r24_directory", "investigator", "sample_id","collection")
     list_filter = ('investigator', 'lab')
+
 @admin.register(Contributor)
+
 class Contributor(admin.ModelAdmin):
     list_display = ("id", "contributorname", "creator", "contributortype", "nametype", "nameidentifier", "nameidentifierscheme", "affiliation", "affiliationidentifier", "affiliationidentifierscheme", "sheet")
+
 @admin.register(Instrument)
+
 class Instrument(admin.ModelAdmin):
     list_display = ("id", "microscopetype", "microscopemanufacturerandmodel", "objectivename", "objectiveimmersion", "objectivena", "objectivemagnification", "detectortype", "detectormodel", "illuminationtypes", "illuminationwavelength", "detectionwavelength", "sampletemperature", "sheet")
+
 @admin.register(Dataset)
+
 class Dataset(admin.ModelAdmin):
     search_fields = ['bildirectory']
     list_display = ("id", "bildirectory", "socialmedia", "subject", "subjectscheme", "rights", "rightsuri", "rightsidentifier", "dataset_image", "generalmodality", "technique", "other", "methods", "technicalinfo", "sheet")
@@ -123,6 +150,7 @@ class Dataset(admin.ModelAdmin):
 @admin.register(Image)
 class Image(admin.ModelAdmin):
     list_display = ("id", "xaxis", "obliquexdim1", "obliquexdim2", "obliquexdim3", "yaxis", "obliqueydim1", "obliqueydim2", "obliqueydim3", "zaxis", "obliquezdim1", "obliquezdim2", "obliquezdim3", "landmarkname", "landmarkx", "landmarky", "landmarkz", "number", "displaycolor", "representation", "flurophore", "stepsizex", "stepsizey", "stepsizez", "stepsizet", "channels", "slices", "z", "xsize", "ysize", "zsize", "gbytes", "files", "dimensionorder", "sheet")
+
 @admin.register(Sheet)
 class SheetAdmin(admin.ModelAdmin):
     list_display = ("id","filename", "date_uploaded", "collection",)
@@ -135,24 +163,33 @@ class EventsLogAdmin(admin.ModelAdmin):
     autocomplete_fields = ['collection_id']
 
 @admin.register(ProjectPeople)
+
 class ProjectPeople(admin.ModelAdmin):
     list_display = ("id", "project_id", "people_id", "is_po", "is_po", "doi_role")
+
 @admin.register(SWC)
+
 class SWC(admin.ModelAdmin):
     list_display = ("id", "tracingFile", "sourceData", "sourceDataSample", "sourceDataSubmission", "coordinates", "coordinatesRegistration", "brainRegion", "brainRegionAtlas", "brainRegionAtlasName", "brainRegionAxonalProjection", "brainRegionDendriticProjection", "neuronType","segmentTags","proofreadingLevel", "notes", "sheet", "swc_uuid")
+
 @admin.register(Consortium)
+
 class Consortium(admin.ModelAdmin):
     list_display = ("id", "short_name", "long_name")
+
 class DatasetLinkageAdmin(admin.ModelAdmin):
     list_display = ('data_id_1_bil', 'code_id', 'data_id_2', 'relationship', 'description', 'linkage_date')
     search_fields = ['data_id_1_bil__bil_id']  # Add the search field for autocomplete
     list_filter = ('code_id', 'relationship', 'linkage_date')
     autocomplete_fields = ['data_id_1_bil']
+
 class BIL_IDAdmin(admin.ModelAdmin):
     search_fields = ['bil_id']
 
 admin.site.register(DatasetLinkage, DatasetLinkageAdmin)
+
 admin.site.register(BIL_ID, BIL_IDAdmin)
+
 class SpecimenAdmin(admin.ModelAdmin):
     autocomplete_fields = ['data_set']
 

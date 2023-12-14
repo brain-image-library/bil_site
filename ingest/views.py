@@ -2525,10 +2525,10 @@ def descriptive_metadata_upload(request):
             associated_collection = form.cleaned_data['associated_collection']
 
             # for production
-            # datapath = associated_collection.data_path.replace("/lz/","/etc/")
+            datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            datapath = '/Users/luketuite/shared_bil_dev' 
+            #datapath = '/Users/luketuite/shared_bil_dev' 
 
             # for development locally
             # datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
