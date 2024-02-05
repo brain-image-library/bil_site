@@ -509,3 +509,10 @@ class DatasetLinkage(models.Model):
     relationship = models.CharField(max_length=64, default="", choices=[('sequence data', 'Sequence Data'), ('neuron tracing', 'Neuron Tracing'), ('derived_data', 'Derived Data'), ('raw', 'Raw'), ('aligned', 'Aligned')]) 
     description = models.TextField(blank=True, null=True)
     linkage_date = models.DateField(null=True, blank=True)
+
+class UserProfile(models.Model):
+    role = models.CharField(max_length=64, default="", choices=[('user', 'User'), ('pi', 'PI'), ('data manager', 'Data Manager')])
+    orcid = models.CharField(max_length=256, default="")
+    email = models.CharField(max_length=256, default="")
+    name = models.CharField(max_length=256, default="")
+    username = models.CharField(max_length=256, default="")

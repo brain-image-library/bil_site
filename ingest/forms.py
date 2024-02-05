@@ -75,3 +75,9 @@ class CollectionForm(forms.ModelForm):
             obj.user = self.request.user
         obj.save()
         return obj
+    
+class UserInfoForm(forms.Form):
+    full_name = forms.CharField(label='Full Name', max_length=100)
+    orcid = forms.CharField(label='Orcid', max_length=100)
+    organization_name = forms.CharField(label='Organization Name', max_length=100)
+    email = forms.EmailField(label='Email')

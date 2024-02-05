@@ -1,0 +1,48 @@
+{% extends 'ingest/base.html' %}
+
+{% block content %}
+  <div class="container">
+    <div class="row">
+      <div class="col-md-8 offset-md-2">
+        <h2 class="mt-4 mb-4">Confirm User Information</h2>
+        
+        <form method="post" action="{% url 'ingest:confirm_user_info' %}" class="mb-4">
+          {% csrf_token %}
+          
+          <div class="form-group">
+            <label for="{{ form.full_name.id_for_label }}">Full Name:</label>
+            {{ form.full_name }}
+          </div>
+
+          <div class="form-group">
+            <label for="{{ form.orcid.id_for_label }}">Orcid:</label>
+            {{ form.orcid }}
+          </div>
+
+          <div class="form-group">
+            <label for="{{ form.organization_name.id_for_label }}">Organization Name:</label>
+            {{ form.organization_name }}
+          </div>
+
+          <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">Email:</label>
+            {{ form.email }}
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Confirm</button>
+        </form>
+      </div>
+    </div>
+    
+    <div class="mt-4">
+      <p>Don't have an Orcid? <a href="https://orcid.org/register" target="_blank">Click Here</a> to learn more.</p>
+    </div>
+  </div>
+
+  <style>
+    /* Custom CSS for wider text boxes */
+    .form-group input {
+      width: 100%;
+    }
+  </style>
+{% endblock %}

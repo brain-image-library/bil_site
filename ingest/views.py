@@ -25,10 +25,12 @@ from celery.result import AsyncResult
 
 from . import tasks
 from .mne import Mne
+from .psc_api import Psc
+from .orcid_api import Orcid
 from .field_list import required_metadata
 from .filters import CollectionFilter
-from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog
+from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, UserInfoForm
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, UserProfile
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -57,6 +59,9 @@ def signup(request):
 def index(request):
     """ The main/home page. """
     current_user = request.user
+    username = current_user.username
+    if not UserProfile.objects.filter(username=username).exists():
+        return confirm_user_info(request)
     try:
         people = People.objects.get(auth_user_id_id = current_user.id)
         project_person = ProjectPeople.objects.filter(people_id = people.id).all()
@@ -107,6 +112,55 @@ def pi_index(request):
     except Exception as e:
         print(e)
     return render(request, 'ingest/index.html')
+
+def extract_user_information(user_info_response):
+    user_data = user_info_response.get('data', {}).get('user', {})
+
+    # Extracting name information
+    name_info = user_data.get('name', {})
+    full_name = f"{name_info.get('first', '')} {name_info.get('last', '')}"
+
+    # Extracting affiliation information
+    affiliation_info = user_data.get('affiliation', {}).get('organization', {})
+    organization_name = affiliation_info.get('name', '')
+
+    # Extracting email information
+    email_info = user_data.get('email', {}).get('primary', '')
+
+    return {
+        'full_name': full_name,
+        'organization_name': organization_name,
+        'email': email_info,
+    }
+
+def confirm_user_info(request):
+    if request.method == 'POST':
+        # Handle the form submission if needed
+        form = UserInfoForm(request.POST)
+        if form.is_valid():
+            # Process the form data
+            # You can save the updated information here
+            # Redirect to the index page
+            return render(request, 'ingest/index.html')
+    else:
+        # Display the form with the extracted user information
+        user_info_response = Psc.get_user_info(request, request.user.username)
+        first_name = user_info_response['data']['user']['name']['first']
+        last_name = user_info_response['data']['user']['name']['last']
+        orcid_info = Orcid.get_orcid(first_name, last_name)
+        user_info = extract_user_information(user_info_response)
+        try:
+            orcid = orcid_info['expanded-result'][0]['orcid-id']
+        except (KeyError, IndexError, TypeError) as e:
+            print(f"An error occurred: {e}")
+            orcid = None
+        user_info['orcid'] = orcid
+        form = UserInfoForm(initial=user_info)
+
+    context = {
+        'form': form,
+    }
+    return render(request, 'ingest/confirm_user_info.html', context)
 
 # this function presents all users for changing of PI and PO
 @login_required
