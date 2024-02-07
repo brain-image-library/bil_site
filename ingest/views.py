@@ -2525,10 +2525,10 @@ def descriptive_metadata_upload(request):
             associated_collection = form.cleaned_data['associated_collection']
 
             # for production
-            datapath = associated_collection.data_path.replace("/lz/","/etc/")
+            #datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-            #datapath = '/Users/luketuite/shared_bil_dev' 
+            datapath = '/Users/luketuite/shared_bil_dev' 
 
             # for development locally
             # datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
@@ -2553,6 +2553,11 @@ def descriptive_metadata_upload(request):
             # using new metadata model
             elif version1 == False:
                 errormsg = check_all_sheets(filename, ingest_method)
+
+                if 'SWC' not in get_sheet_names(filename):
+                    messages.error(request, 'Error: The uploaded spreadsheet is missing the required SWC tab. Your template is likely out of date, please download the latest version of the template.')
+                    return redirect('ingest:descriptive_metadata_upload')
+
                 if errormsg != '':
                     messages.error(request, errormsg)
                     return redirect('ingest:descriptive_metadata_upload')
@@ -2625,6 +2630,16 @@ def descriptive_metadata_upload(request):
     collections = Collection.objects.filter(locked=False, user=request.user)
     
     return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'pi':pi, 'collections':collections})
+
+def get_sheet_names(file_path):
+    try:
+        workbook = xlrd.open_workbook(file_path)
+        sheet_names = workbook.sheet_names()
+        return sheet_names
+    except Exception as e:
+        # Handle the exception (e.g., file not found, invalid Excel file, etc.)
+        print(f"Error while getting sheet names: {e}")
+        return []
 
 def upload_descriptive_spreadsheet(filename, associated_collection, request):
     """ Helper used by image_metadata_upload and collection_detail."""
