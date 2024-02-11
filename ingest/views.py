@@ -30,7 +30,7 @@ from .mne import Mne
 from .specimen_portal import Specimen_Portal
 from .field_list import required_metadata
 from .filters import CollectionFilter
-from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
+from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice
 from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
@@ -2678,7 +2678,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     return redirect('ingest:bican_id_upload',sheet_id = sheet.id)
                 else:
                     saved = False
-                    collection = Collection.objects.get(name=associated_collection.name)
+                    collection = Collection.objects.get(name=associated_submission.name)
                     contributors = ingest_contributors_sheet(filename)
                     funders = ingest_funders_sheet(filename)
                     publications = ingest_publication_sheet(filename)
@@ -2845,7 +2845,7 @@ def nhash_id_confirm(request):
     # Pass the nhash_info_list to the template for rendering
     return render(request, 'ingest/nhash_id_confirm.html', {'nhash_info_list': nhash_info_list})
 
-def upload_descriptive_spreadsheet(filename, associated_collection, request):
+def upload_descriptive_spreadsheet(filename, associated_submission, request):
     """ Helper used by image_metadata_upload and collection_detail."""
     workbook=xlrd.open_workbook(filename)
     worksheet = workbook.sheet_by_index(0)
@@ -2906,7 +2906,7 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
         records = pe.iget_records(file_name=filename)
         for idx, record in enumerate(records):
             im = DescriptiveMetadata(
-                collection=associated_collection,
+                collection=associated_submission,
                 user=request.user)
             for k in record:
                 setattr(im, k, record[k])
@@ -2920,7 +2920,7 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
         return error
 
 # This gets called in the descriptive_metadata_upload function but we've commented that out to use upload_all_metadata_sheets instead, but prob will harvest some code from here. don't remove yet.
-def upload_spreadsheet(spreadsheet_file, associated_collection, request):
+def upload_spreadsheet(spreadsheet_file, associated_submission, request):
     """ Helper used by metadata_upload and collection_detail."""
     fs = FileSystemStorage()
     filename = fs.save(spreadsheet_file.name, spreadsheet_file)
@@ -2952,7 +2952,7 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
             if record['age'] == '':
                 record['age'] = None
             im = ImageMetadata(
-                collection=associated_collection,
+                collection=associated_submission,
                 user=request.user)
             for k in record:
                 setattr(im, k, record[k])
