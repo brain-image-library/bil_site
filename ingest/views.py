@@ -2571,7 +2571,7 @@ def descriptive_metadata_upload(request):
         ingest_method = request.POST.get('ingest_method', False)
 	
         if form.is_valid():
-            associated_collection = form.cleaned_data['associated_collection']
+            associated_submission = form.cleaned_data['associated_submission']
 
             # for production
             #datapath = associated_collection.data_path.replace("/lz/","/etc/")
@@ -2593,7 +2593,7 @@ def descriptive_metadata_upload(request):
             
             # using old metadata model for any old submissions (will eventually be deprecated)
             if version1 == True:
-                error = upload_descriptive_spreadsheet(filename, associated_collection, request)
+                error = upload_descriptive_spreadsheet(filename, associated_submission, request)
                 if error:
                     return redirect('ingest:descriptive_metadata_upload')
                 else:         
@@ -2608,7 +2608,7 @@ def descriptive_metadata_upload(request):
 
                 else:
                     saved = False
-                    collection = Collection.objects.get(name=associated_collection.name)
+                    collection = Collection.objects.get(name=associated_submission.name)
                     contributors = ingest_contributors_sheet(filename)
                     funders = ingest_funders_sheet(filename)
                     publications = ingest_publication_sheet(filename)
@@ -2688,14 +2688,14 @@ def descriptive_metadata_upload(request):
         user = request.user
         form = UploadForm()
         # Only let a user associate metadata with an unlocked collection that they own
-        form.fields['associated_collection'].queryset = Collection.objects.filter(
+        form.fields['associated_submission'].queryset = Collection.objects.filter(
             locked=False, user=request.user)
-        collections = form.fields['associated_collection'].queryset
+        collections = form.fields['associated_submission'].queryset
     collections = Collection.objects.filter(locked=False, user=request.user)
     
     return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'pi':pi, 'collections':collections})
 
-def upload_descriptive_spreadsheet(filename, associated_collection, request):
+def upload_descriptive_spreadsheet(filename, associated_submission, request):
     """ Helper used by image_metadata_upload and collection_detail."""
     workbook=xlrd.open_workbook(filename)
     worksheet = workbook.sheet_by_index(0)
@@ -2756,7 +2756,7 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
         records = pe.iget_records(file_name=filename)
         for idx, record in enumerate(records):
             im = DescriptiveMetadata(
-                collection=associated_collection,
+                collection=associated_submission,
                 user=request.user)
             for k in record:
                 setattr(im, k, record[k])
@@ -2770,7 +2770,7 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
         return error
 
 # This gets called in the descriptive_metadata_upload function but we've commented that out to use upload_all_metadata_sheets instead, but prob will harvest some code from here. don't remove yet.
-def upload_spreadsheet(spreadsheet_file, associated_collection, request):
+def upload_spreadsheet(spreadsheet_file, associated_submission, request):
     """ Helper used by metadata_upload and collection_detail."""
     fs = FileSystemStorage()
     filename = fs.save(spreadsheet_file.name, spreadsheet_file)
@@ -2802,7 +2802,7 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
             if record['age'] == '':
                 record['age'] = None
             im = ImageMetadata(
-                collection=associated_collection,
+                collection=associated_submission,
                 user=request.user)
             for k in record:
                 setattr(im, k, record[k])
