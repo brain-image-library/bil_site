@@ -1,0 +1,11 @@
+<!-- load wagtailcore_tags by adding this: -->
+{% load wagtailcore_tags %}
+
+{% block announcements_class %}{% endblock %}
+{% block body_class %}{% endblock %}
+
+<!-- replace everything below with: -->
+{% block content %}
+    {{ page.announcements|richtext }}
+    {{ page.body|richtext }}
+{% endblock %}

@@ -75,7 +75,7 @@ ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
     'ingest.apps.IngestConfig',
-    'bil_info_site.apps.BilInfoSiteConfig',
+    'about.apps.AboutConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -31,7 +31,7 @@ urlpatterns = (
         path('hijack/', include('hijack.urls')),
         path('cms/', include(wagtailadmin_urls)),
         path('documents/', include(wagtaildocs_urls)),
-        path('pages/', include(wagtail_urls)),
+        path('about/', include(wagtail_urls)),
     ]
     + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
     + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
