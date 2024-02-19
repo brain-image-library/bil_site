@@ -11,3 +11,4 @@ static/
 !ingest/static
 gunicorn.log
 */settings.py
+.DS_Store
