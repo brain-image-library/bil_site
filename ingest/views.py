@@ -13,7 +13,7 @@ from django.views.generic.edit import UpdateView, DeleteView
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
-from django.http import HttpResponse, JsonResponse, Http404
+from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
@@ -21,14 +21,17 @@ from django_tables2 import RequestConfig
 import pyexcel as pe
 import xlrd
 import re
+import io
+import pandas as pd
 from celery.result import AsyncResult
 
 from . import tasks
 from .mne import Mne
+from .specimen_portal import Specimen_Portal
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -75,6 +78,7 @@ def index(request):
         project.funded_by = ''
         project.is_biccn = False
         project.save()
+        save_project_id(project)
         project_people = ProjectPeople()
         project_people.project_id = project
         project_people.people_id = people
@@ -290,7 +294,7 @@ def create_project(request):
         # write project to the project table   
         project = Project(funded_by=funded_by, name=name)
         project.save()
-
+        save_project_id(project)
         proj_id = project.id
 
         for c in consortia_ids:
@@ -663,6 +667,18 @@ def collection_create(request):
          'funder_list': funder_list,
          'host_and_path': host_and_path,
          'pi': pi})
+
+@login_required
+def submission_view(request):
+    if request.method == 'POST':
+        form = CollectionChoice(request.user, request.POST)
+        if form.is_valid():
+            selected_collection = form.cleaned_data['collection']
+            # Process the selected collection
+            return redirect('ingest:descriptive_metadata_upload', associated_collection=selected_collection.id)
+    else:
+        form = CollectionChoice(request.user)
+    return render(request, 'ingest/choose_submission.html', {'form': form})
 
 class SubmitValidateCollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     """ A list of all a user's collections. """
@@ -2460,6 +2476,54 @@ def save_bil_ids(datasets):
         saved_bil_id.save()
     return
 
+def save_specimen_ids(specimens):
+    """
+    This function iterates through the provided list of specimens, generates and saves bil_specimen_IDs
+    using the bil_specimen_ID model. It also associates an MNE ID with each bil_specimen_ID and saves the updated
+    bil_specimen_ID object in the database.
+    """
+    for specimen in specimens:
+        #create placeholder for BIL_specimen_ID
+        bil_spc_id = BIL_Specimen_ID(specimen_id = specimen)
+        bil_spc_id.save()
+        #grab the just created database ID and generate an mne id
+        saved_bil_spc_id = BIL_Specimen_ID.objects.get(specimen_id = specimen.id)
+        mne_id = Mne.specimen_num_to_mne(saved_bil_spc_id.id)
+        saved_bil_spc_id.bil_spc_id = mne_id
+        #final save
+        saved_bil_spc_id.save()
+    return
+
+def save_instrument_ids(instruments):
+    """
+    This function iterates through the provided list of instruments, generates and saves bil_instrument_IDs
+    using the bil_instrument_ID model. It also associates an MNE ID with each bil_instrument_ID and saves the updated
+    bil_instrument_ID object in the database.
+    """
+    for instrument in instruments:
+        #create placeholder for BIL_instrument_ID
+        bil_ins_id = BIL_Instrument_ID(instrument_id = instrument)
+        bil_ins_id.save()
+        #grab the just created database ID and generate an mne id
+        saved_bil_ins_id = BIL_Instrument_ID.objects.get(instrument_id = instrument.id)
+        mne_id = Mne.instrument_num_to_mne(saved_bil_ins_id.id)
+        saved_bil_ins_id.bil_ins_id = mne_id
+        #final save
+        saved_bil_ins_id.save()
+    return
+
+def save_project_id(project):
+    #create placeholder for BIL_instrument_ID
+    bil_prj_id = BIL_Project_ID(project_id = project)
+    bil_prj_id.save()
+    #grab the just created database ID and generate an mne id
+    saved_bil_prj_id = BIL_Project_ID.objects.get(project_id = project.id)
+    mne_id = Mne.project_num_to_mne(saved_bil_prj_id.id)
+    saved_bil_prj_id.bil_prj_id = mne_id
+    #final save
+    saved_bil_prj_id.save()
+    return
+
 def metadata_version_check(filename):
     version1 = False
     workbook=xlrd.open_workbook(filename)
@@ -2501,7 +2565,7 @@ def check_all_sheets(filename, ingest_method):
     return errormsg
 
 @login_required
-def descriptive_metadata_upload(request):
+def descriptive_metadata_upload(request, associated_collection):
     current_user = request.user
     try:
         people = People.objects.get(auth_user_id_id = current_user.id)
@@ -2517,116 +2581,199 @@ def descriptive_metadata_upload(request):
     """ Upload a spreadsheet containing image metadata information. """
     # The POST. A user has selected a file and associated collection to upload.
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
-        form = UploadForm(request.POST)
+        #form = UploadForm(request.POST)
 
         ingest_method = request.POST.get('ingest_method', False)
 	
-        if form.is_valid():
-            associated_collection = form.cleaned_data['associated_collection']
+        #if form.is_valid():
+        associated_collection = Collection.objects.get(id = associated_collection)
+        print(associated_collection)
 
-            # for production
-            datapath = associated_collection.data_path.replace("/lz/","/etc/")
-            
-            # for development on vm
-            #datapath = '/Users/luketuite/shared_bil_dev' 
+        # for production
+        #datapath = associated_collection.data_path.replace("/lz/","/etc/")
+        
+        # for development on vm
+        datapath = '/Users/luketuite/shared_bil_dev' 
 
-            # for development locally
-            # datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
-            
-            spreadsheet_file = request.FILES['spreadsheet_file']
+        # for development locally
+        # datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
+        
+        spreadsheet_file = request.FILES['spreadsheet_file']
 
-            fs = FileSystemStorage(location=datapath)
-            name_with_path = datapath + '/' + spreadsheet_file.name
-            fs.save(name_with_path, spreadsheet_file)
-            filename = name_with_path
+        fs = FileSystemStorage(location=datapath)
+        name_with_path = datapath + '/' + spreadsheet_file.name
+        fs.save(name_with_path, spreadsheet_file)
+        filename = name_with_path
 
-            version1 = metadata_version_check(filename)
-            
-            # using old metadata model for any old submissions (will eventually be deprecated)
-            if version1 == True:
-                error = upload_descriptive_spreadsheet(filename, associated_collection, request)
-                if error:
-                    return redirect('ingest:descriptive_metadata_upload')
-                else:         
-                    return redirect('ingest:descriptive_metadata_list')
-            
-            # using new metadata model
-            elif version1 == False:
-                errormsg = check_all_sheets(filename, ingest_method)
-                if errormsg != '':
-                    messages.error(request, errormsg)
-                    return redirect('ingest:descriptive_metadata_upload')
+        version1 = metadata_version_check(filename)
+        
+        # using old metadata model for any old submissions (will eventually be deprecated)
+        if version1 == True:
+            error = upload_descriptive_spreadsheet(filename, associated_collection, request)
+            if error:
+                return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
+            else:         
+                return redirect('ingest:descriptive_metadata_list')
+        
+        # using new metadata model
+        elif version1 == False:
+            errormsg = check_all_sheets(filename, ingest_method)
+            if errormsg != '':
+                messages.error(request, errormsg)
+                return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
 
+            else:
+                saved = False
+                collection = Collection.objects.get(name=associated_collection.name)
+                contributors = ingest_contributors_sheet(filename)
+                funders = ingest_funders_sheet(filename)
+                publications = ingest_publication_sheet(filename)
+                instruments = ingest_instrument_sheet(filename)
+                datasets = ingest_dataset_sheet(filename)
+                specimen_set = ingest_specimen_sheet(filename)
+                images = ingest_image_sheet(filename)
+                swcs = ingest_swc_sheet(filename)
+
+                # choose save method depending on ingest_method value from radio button
+                # want to pull this out into a helper function
+                if ingest_method == 'ingest_1':
+                    sheet = save_sheet_row(ingest_method, filename, collection)
+                    saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    save_bil_ids(ingested_datasets)
+                elif ingest_method == 'ingest_2':
+                    sheet = save_sheet_row(ingest_method, filename, collection)
+                    saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    save_bil_ids(ingested_datasets)
+                elif ingest_method == 'ingest_3':
+                    sheet = save_sheet_row(ingest_method, filename, collection)
+                    saved = save_all_sheets_method_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    save_bil_ids(ingested_datasets)
+                elif ingest_method == 'ingest_4':
+                    sheet = save_sheet_row(ingest_method, filename, collection)
+                    saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    save_bil_ids(ingested_datasets)
+                elif ingest_method == 'ingest_5':
+                    sheet = save_sheet_row(ingest_method, filename, collection)
+                    saved = save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs)
+                    ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    save_bil_ids(ingested_datasets)
+                elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4' and ingest_method != 'ingest_5':
+                        saved = False
+                        messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')                         
+                        return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
+                if saved == True:
+                    saved_datasets = Dataset.objects.filter(sheet_id = sheet.id).all()
+                    for dataset in saved_datasets:
+                        time = datetime.now()
+                        event = DatasetEventsLog(dataset_id = dataset, collection_id = collection, project_id_id = collection.project_id, notes = '', timestamp = time, event_type = 'uploaded')
+                        event.save()
+                    
+                    messages.success(request, 'Descriptive Metadata successfully uploaded!!')
+                    #return redirect('ingest:descriptive_metadata_list')
+                    return redirect('ingest:bican_id_upload',sheet_id = sheet.id)
                 else:
-                    saved = False
-                    collection = Collection.objects.get(name=associated_collection.name)
-                    contributors = ingest_contributors_sheet(filename)
-                    funders = ingest_funders_sheet(filename)
-                    publications = ingest_publication_sheet(filename)
-                    instruments = ingest_instrument_sheet(filename)
-                    datasets = ingest_dataset_sheet(filename)
-                    specimen_set = ingest_specimen_sheet(filename)
-                    images = ingest_image_sheet(filename)
-                    swcs = ingest_swc_sheet(filename)
-
-                    # choose save method depending on ingest_method value from radio button
-                    # want to pull this out into a helper function
-                    if ingest_method == 'ingest_1':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
-                        saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
-                        save_bil_ids(ingested_datasets)
-                    elif ingest_method == 'ingest_2':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
-                        saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
-                        save_bil_ids(ingested_datasets)
-                    elif ingest_method == 'ingest_3':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
-                        saved = save_all_sheets_method_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
-                        save_bil_ids(ingested_datasets)
-                    elif ingest_method == 'ingest_4':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
-                        saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
-                        save_bil_ids(ingested_datasets)
-                    elif ingest_method == 'ingest_5':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
-                        saved = save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs)
-                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
-                        save_bil_ids(ingested_datasets)
-                    elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4' and ingest_method != 'ingest_5':
-                         saved = False
-                         messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')                         
-                         return redirect('ingest:descriptive_metadata_upload')
-                    if saved == True:
-                        saved_datasets = Dataset.objects.filter(sheet_id = sheet.id).all()
-                        for dataset in saved_datasets:
-                           time = datetime.now()
-                           event = DatasetEventsLog(dataset_id = dataset, collection_id = collection, project_id_id = collection.project_id, notes = '', timestamp = time, event_type = 'uploaded')
-                           event.save()
-                        messages.success(request, 'Descriptive Metadata successfully uploaded!!')
-                        return redirect('ingest:descriptive_metadata_list')
-                    else:
-                         error_code = sheet.id
-                         messages.error(request, 'There has been an error. Please contact BIL Support. Error Code: ', error_code)
-                         return redirect('ingest:descriptive_metadata_upload')
+                        error_code = sheet.id
+                        messages.error(request, 'There has been an error. Please contact BIL Support. Error Code: ', error_code)
+                        return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
 
 
     # This is the GET (just show the metadata upload page)
     else:
         user = request.user
-        form = UploadForm()
+        #form = UploadForm()
         # Only let a user associate metadata with an unlocked collection that they own
-        form.fields['associated_collection'].queryset = Collection.objects.filter(
-            locked=False, user=request.user)
-        collections = form.fields['associated_collection'].queryset
-    collections = Collection.objects.filter(locked=False, user=request.user)
+        #form.fields['associated_collection'].queryset = Collection.objects.filter(
+        #    locked=False, user=request.user)
+        #collections = form.fields['associated_collection'].queryset
+    #this_collection = Collection.objects.filter(id = associated_collection)
+    #projCons = ProjectConsortium.objects.filter(project=this_collection.project)
+    #if projCons.consortium == 'BICAN':
     
-    return render( request, 'ingest/descriptive_metadata_upload.html',{'form': form, 'pi':pi, 'collections':collections})
+    collections = Collection.objects.filter(locked=False, user=request.user)
+    return render(request, 'ingest/descriptive_metadata_upload.html',{'pi':pi, 'collections':collections, 'associated_collection': associated_collection})
 
-def upload_descriptive_spreadsheet(filename, associated_collection, request):
+def bican_id_upload(request, sheet_id):
+    # Fetch the latest sheet_id associated with the collection
+    #latest_sheet = Sheet.objects.filter(collection_id=request.user.id).order_by('-id').first()
+    sheet_id = sheet_id
+    specimens = Specimen.objects.filter(sheet_id=sheet_id)
+    context = {'sheet_id': sheet_id, 'specimens': specimens}
+    
+    return render(request, 'ingest/specimen_bican.html', context)
+
+def specimen_bican(request, sheet_id):
+    # Retrieve Specimen Local IDs corresponding to the uploaded sheet
+    specimens = Specimen.objects.filter(sheet_id=sheet_id)
+
+    # Create an empty DataFrame
+    df_list = []
+
+    # Iterate through each Specimen object and add it to the DataFrame
+    for specimen in specimens:
+        df_list.append(pd.DataFrame({'Specimen Local ID': [specimen.localid], 'BICAN ID': ['']}))
+
+    # Concatenate the DataFrames row-wise
+    df = pd.concat(df_list, ignore_index=True)
+
+    # Create a BytesIO object to write the Excel file to
+    excel_file = io.BytesIO()
+
+    # Write the DataFrame to an Excel file
+    df.to_excel(excel_file, index=False)
+
+    # Rewind the buffer's position to the start
+    excel_file.seek(0)
+
+    # Set the appropriate content type for Excel files
+    response = HttpResponse(excel_file.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+    # Set the filename for the download
+    response['Content-Disposition'] = 'attachment; filename=specimen_local_and_bican_ids.xlsx'
+
+    return response
+
+def save_bican_ids(request):
+    if request.method == 'POST':
+        nhash_info_list = []
+        specimen_list = []
+        # Loop through the form data to retrieve BICAN IDs
+        for key, value in request.POST.items():
+            spec_id = key
+            if spec_id != 'csrfmiddlewaretoken':
+                spec_local = Specimen.objects.get(id = spec_id)
+                local_name = spec_local.localid
+                specimen_list.append(local_name)
+            bican_id = value
+            nhash_info = Specimen_Portal.get_nhash_results(bican_id)
+            nhash_info_list.append(nhash_info)
+        nhash_info_list_json = json.dumps(nhash_info_list)
+        print(nhash_info_list_json)
+        print(specimen_list)
+        nhash_specimen_list = zip(nhash_info_list, specimen_list)
+        #return render(request, 'ingest/nhash_id_confirm.html', {'nhash_info_list': nhash_info_list, 'specimen_list': specimen_list})
+        return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list})
+    else:
+        # Handle GET request, maybe render the form again
+        return render(request, '/')
+
+def nhash_id_confirm(request):
+    # Retrieve the nhash_info_list from the query parameters
+    nhash_info_list_str = request.GET.get('nhash_info_list', '')
+    
+    # Split the nhash_info_list string by comma to get individual nhash_info JSON strings
+    nhash_info_list = nhash_info_list_str.split(',')
+    
+    # Convert each nhash_info JSON string back to a dictionary
+    nhash_info_list = [json.loads(info) for info in nhash_info_list]
+    
+    # Pass the nhash_info_list to the template for rendering
+    return render(request, 'ingest/nhash_id_confirm.html', {'nhash_info_list': nhash_info_list})
+
+def upload_descriptive_spreadsheet(filename, associated_submission, request):
     """ Helper used by image_metadata_upload and collection_detail."""
     workbook=xlrd.open_workbook(filename)
     worksheet = workbook.sheet_by_index(0)
@@ -2687,7 +2834,7 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
         records = pe.iget_records(file_name=filename)
         for idx, record in enumerate(records):
             im = DescriptiveMetadata(
-                collection=associated_collection,
+                collection=associated_submission,
                 user=request.user)
             for k in record:
                 setattr(im, k, record[k])
@@ -2701,7 +2848,7 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
         return error
 
 # This gets called in the descriptive_metadata_upload function but we've commented that out to use upload_all_metadata_sheets instead, but prob will harvest some code from here. don't remove yet.
-def upload_spreadsheet(spreadsheet_file, associated_collection, request):
+def upload_spreadsheet(spreadsheet_file, associated_submission, request):
     """ Helper used by metadata_upload and collection_detail."""
     fs = FileSystemStorage()
     filename = fs.save(spreadsheet_file.name, spreadsheet_file)
@@ -2733,7 +2880,7 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
             if record['age'] == '':
                 record['age'] = None
             im = ImageMetadata(
-                collection=associated_collection,
+                collection=associated_submission,
                 user=request.user)
             for k in record:
                 setattr(im, k, record[k])

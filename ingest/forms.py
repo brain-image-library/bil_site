@@ -4,7 +4,7 @@ from .models import ImageMetadata, DescriptiveMetadata, Collection
 
 
 class UploadForm(forms.Form):
-    associated_collection = forms.ModelChoiceField(queryset=Collection.objects.all())
+    associated_submission = forms.ModelChoiceField(queryset=Collection.objects.all())
 
 class DescriptiveMetadataForm(forms.ModelForm):
 
@@ -75,3 +75,14 @@ class CollectionForm(forms.ModelForm):
             obj.user = self.request.user
         obj.save()
         return obj
+
+class CollectionChoice(forms.Form):
+    collection = forms.ModelChoiceField(
+        queryset=None,  # We'll set this dynamically in the view
+        empty_label=None  # Ensures user must select a collection
+    )
+
+    def __init__(self, user, *args, **kwargs):
+        super(CollectionChoice, self).__init__(*args, **kwargs)
+        # Dynamically filter queryset based on the logged-in user
+        self.fields['collection'].queryset = Collection.objects.filter(user=user)
