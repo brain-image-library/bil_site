@@ -47,4 +47,3 @@ urlpatterns = [
     path('save_bican_ids/', views.save_bican_ids, name='save_bican_ids'),
     path('nhash_id_confirm/', views.nhash_id_confirm, name='nhash_id_confirm'),
 ]
-

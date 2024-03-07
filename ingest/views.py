@@ -2707,7 +2707,6 @@ def save_bican_ids(request):
         nhash_specimen_list = zip(nhash_info_list, specimen_list)
         #return render(request, 'ingest/nhash_id_confirm.html', {'nhash_info_list': nhash_info_list, 'specimen_list': specimen_list})
         return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list})
-    # Handle GET requests (if needed)
     else:
         # Handle GET request, maybe render the form again
         return render(request, '/')
