@@ -30,8 +30,8 @@ from .mne import Mne
 from .specimen_portal import Specimen_Portal
 from .field_list import required_metadata
 from .filters import CollectionFilter
-from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog
+from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -78,6 +78,7 @@ def index(request):
         project.funded_by = ''
         project.is_biccn = False
         project.save()
+        save_project_id(project)
         project_people = ProjectPeople()
         project_people.project_id = project
         project_people.people_id = people
@@ -293,7 +294,7 @@ def create_project(request):
         # write project to the project table   
         project = Project(funded_by=funded_by, name=name)
         project.save()
-
+        save_project_id(project)
         proj_id = project.id
 
         for c in consortia_ids:
@@ -2475,6 +2476,54 @@ def save_bil_ids(datasets):
         saved_bil_id.save()
     return
 
+def save_specimen_ids(specimens):
+    """
+    This function iterates through the provided list of specimens, generates and saves bil_specimen_IDs
+    using the bil_specimen_ID model. It also associates an MNE ID with each bil_specimen_ID and saves the updated
+    bil_specimen_ID object in the database.
+    """
+    for specimen in specimens:
+        #create placeholder for BIL_specimen_ID
+        bil_spc_id = BIL_Specimen_ID(specimen_id = specimen)
+        bil_spc_id.save()
+        #grab the just created database ID and generate an mne id
+        saved_bil_spc_id = BIL_Specimen_ID.objects.get(specimen_id = specimen.id)
+        mne_id = Mne.specimen_num_to_mne(saved_bil_spc_id.id)
+        saved_bil_spc_id.bil_spc_id = mne_id
+        #final save
+        saved_bil_spc_id.save()
+    return
+
+def save_instrument_ids(instruments):
+    """
+    This function iterates through the provided list of instruments, generates and saves bil_instrument_IDs
+    using the bil_instrument_ID model. It also associates an MNE ID with each bil_instrument_ID and saves the updated
+    bil_instrument_ID object in the database.
+    """
+    for instrument in instruments:
+        #create placeholder for BIL_instrument_ID
+        bil_ins_id = BIL_Instrument_ID(instrument_id = instrument)
+        bil_ins_id.save()
+        #grab the just created database ID and generate an mne id
+        saved_bil_ins_id = BIL_Instrument_ID.objects.get(instrument_id = instrument.id)
+        mne_id = Mne.instrument_num_to_mne(saved_bil_ins_id.id)
+        saved_bil_ins_id.bil_ins_id = mne_id
+        #final save
+        saved_bil_ins_id.save()
+    return
+
+def save_project_id(project):
+    #create placeholder for BIL_instrument_ID
+    bil_prj_id = BIL_Project_ID(project_id = project)
+    bil_prj_id.save()
+    #grab the just created database ID and generate an mne id
+    saved_bil_prj_id = BIL_Project_ID.objects.get(project_id = project.id)
+    mne_id = Mne.project_num_to_mne(saved_bil_prj_id.id)
+    saved_bil_prj_id.bil_prj_id = mne_id
+    #final save
+    saved_bil_prj_id.save()
+    return
+
 def metadata_version_check(filename):
     version1 = False
     workbook=xlrd.open_workbook(filename)
@@ -2724,7 +2773,7 @@ def nhash_id_confirm(request):
     # Pass the nhash_info_list to the template for rendering
     return render(request, 'ingest/nhash_id_confirm.html', {'nhash_info_list': nhash_info_list})
 
-def upload_descriptive_spreadsheet(filename, associated_collection, request):
+def upload_descriptive_spreadsheet(filename, associated_submission, request):
     """ Helper used by image_metadata_upload and collection_detail."""
     workbook=xlrd.open_workbook(filename)
     worksheet = workbook.sheet_by_index(0)
@@ -2785,7 +2834,7 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
         records = pe.iget_records(file_name=filename)
         for idx, record in enumerate(records):
             im = DescriptiveMetadata(
-                collection=associated_collection,
+                collection=associated_submission,
                 user=request.user)
             for k in record:
                 setattr(im, k, record[k])
@@ -2799,7 +2848,7 @@ def upload_descriptive_spreadsheet(filename, associated_collection, request):
         return error
 
 # This gets called in the descriptive_metadata_upload function but we've commented that out to use upload_all_metadata_sheets instead, but prob will harvest some code from here. don't remove yet.
-def upload_spreadsheet(spreadsheet_file, associated_collection, request):
+def upload_spreadsheet(spreadsheet_file, associated_submission, request):
     """ Helper used by metadata_upload and collection_detail."""
     fs = FileSystemStorage()
     filename = fs.save(spreadsheet_file.name, spreadsheet_file)
@@ -2831,7 +2880,7 @@ def upload_spreadsheet(spreadsheet_file, associated_collection, request):
             if record['age'] == '':
                 record['age'] = None
             im = ImageMetadata(
-                collection=associated_collection,
+                collection=associated_submission,
                 user=request.user)
             for k in record:
                 setattr(im, k, record[k])

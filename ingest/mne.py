@@ -171,6 +171,97 @@ class Mne:
              rstring=rstring + '-'
            rstring=rstring+Mne.DATAA[element]
        return rstring
+  
+  @staticmethod
+  def  specimen_num_to_mne(num):
+       
+       #-----------------------------------
+       #store 256 decoded elements in stack
+       #-----------------------------------
+       stack=[]
+       q=num
+       if q < 256 :
+          q,r = divmod(num,256)
+          stack.append(r)     
+       else:
+           while q > 255 :
+               q,r = divmod(q,256)
+               stack.append(r)
+           stack.append(q)
+       #----------------------
+       #Finally code the stack
+       #----------------------
+       rstring=""
+       first=True
+       for element in reversed(stack):
+           if first:
+             first=False
+           else:
+             rstring=rstring + '-'
+           rstring=rstring+Mne.DATAA[element]
+       rstring = "spc_"+rstring
+       return rstring
+  
+  @staticmethod
+  def  instrument_num_to_mne(num):
+       
+       #-----------------------------------
+       #store 256 decoded elements in stack
+       #-----------------------------------
+       stack=[]
+       q=num
+       if q < 256 :
+          q,r = divmod(num,256)
+          stack.append(r)     
+       else:
+           while q > 255 :
+               q,r = divmod(q,256)
+               stack.append(r)
+           stack.append(q)
+       #----------------------
+       #Finally code the stack
+       #----------------------
+       rstring=""
+       first=True
+       for element in reversed(stack):
+           if first:
+             first=False
+           else:
+             rstring=rstring + '-'
+           rstring=rstring+Mne.DATAA[element]
+       rstring = "ins_" + rstring
+       return rstring
+
+  @staticmethod
+  def  project_num_to_mne(num):
+       
+       #-----------------------------------
+       #store 256 decoded elements in stack
+       #-----------------------------------
+       stack=[]
+       q=num
+       if q < 256 :
+          q,r = divmod(num,256)
+          stack.append(r)     
+       else:
+           while q > 255 :
+               q,r = divmod(q,256)
+               stack.append(r)
+           stack.append(q)
+       #----------------------
+       #Finally code the stack
+       #----------------------
+       rstring=""
+       first=True
+       for element in reversed(stack):
+           if first:
+             first=False
+           else:
+             rstring=rstring + '-'
+           rstring=rstring+Mne.DATAA[element]
+       rstring = "prj_" + rstring
+       return rstring
+
 
   def  mne_to_num(mme):
        stack=[]

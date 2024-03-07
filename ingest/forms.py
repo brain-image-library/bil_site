@@ -4,7 +4,7 @@ from .models import ImageMetadata, DescriptiveMetadata, Collection
 
 
 class UploadForm(forms.Form):
-    associated_collection = forms.ModelChoiceField(queryset=Collection.objects.all())
+    associated_submission = forms.ModelChoiceField(queryset=Collection.objects.all())
 
 class DescriptiveMetadataForm(forms.ModelForm):
 
