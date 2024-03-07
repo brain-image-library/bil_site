@@ -10,7 +10,7 @@ from django.db.models import F
 from .models import (
     ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor,
     Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder,
-    Publication, Consortium, SWC, DatasetLinkage, BIL_ID
+    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium
 )
 
 
@@ -55,6 +55,9 @@ class SWCSInline(admin.TabularInline):
 
 class ConsortiaInline(admin.TabularInline):
     model = Consortium
+
+class ProjectConsortiumInline(admin.TabularInline):
+    model = ProjectConsortium
 
 class BIL_IDInline(admin.TabularInline):
     model = BIL_ID
@@ -194,3 +197,8 @@ class SpecimenAdmin(admin.ModelAdmin):
     autocomplete_fields = ['data_set']
 
 admin.site.register(Specimen, SpecimenAdmin)
+
+#class ProjectConsortiumAdmin(admin.ModelAdmin):
+
+
+admin.site.register(ProjectConsortium)
