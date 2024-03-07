@@ -1,0 +1,19 @@
+{% include 'ingest/wide.html' %}
+
+<body>
+  <br>
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <form method="post">
+          {% csrf_token %}
+          <div class="form-group">
+            <label for="{{ form.collection.id_for_label }}">Choose a Collection:</label>
+            {{ form.collection }}
+          </div>
+          <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
