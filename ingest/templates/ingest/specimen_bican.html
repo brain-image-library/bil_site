@@ -1,4 +1,12 @@
+<head>
+    <script src="/static/ingest/metadataloadingindicator.js"></script>
+    <script type="text/javascript" 
+      src="http://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>  
+  </head>
+
 {% include 'ingest/wide.html' %}
+
+
 <body>
     <div class="container">
         <div class="row">
@@ -6,7 +14,7 @@
                 <h1 class="mt-5 mb-4">BICAN ID Upload</h1>
                 <p class="lead">Upload your file and download the Specimen Local IDs Excel file:</p>
 
-                <div class="mb-4">
+                <!--<div class="mb-4">
                     {% if sheet_id %}
                         <a href="{% url 'ingest:specimen_bican' sheet_id=sheet_id %}" class="btn btn-primary">Download Specimen Local IDs</a>
                     {% else %}
@@ -22,10 +30,10 @@
 
                     <button type="submit" class="btn btn-primary">Upload</button>
                 </form>
-
+                !-->
                 <div class="mt-5">
                     <h2>Enter BICAN IDs for Specimens:</h2>
-                    <form method="post" action="{% url 'ingest:save_bican_ids' %}" class="mt-3">                    {% csrf_token %}
+                    <form method="post" action="{% url 'ingest:save_bican_ids' %}" class="mt-3">
                         {% csrf_token %}
                         <table class="table">
                             <thead>
@@ -43,10 +51,24 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-                        <button type="submit" class="btn btn-primary">Save BICAN IDs</button>
+                        <button type="submit" class="btn btn-primary" onclick="loadSpinner()">Save BICAN IDs</button>
                     </form>
+                    <a href="{% url 'ingest:collection_list' %}" class="btn btn-secondary mt-3">Not Now</a>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="loadMe" tabindex="-1" role="dialog" aria-labelledby="loadMeLabel">
+        <div class="modal-dialog modal-sm" role="document">
+          <div class="modal-content">
+            <div class="modal-body text-center">
+              <div class="loader"></div>
+              <div clas="loader-txt">
+                <p>Please wait while we load specimen information!<br><br><small>Thanks very much for your patience.</small></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 </body>

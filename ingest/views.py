@@ -38,6 +38,8 @@ import datetime
 import json
 from datetime import datetime
 import os
+from django.middleware.csrf import get_token
+
 
 def logout(request):
     messages.success(request, "You've successfully logged out")
@@ -2812,21 +2814,29 @@ def save_bican_ids(request):
     if request.method == 'POST':
         nhash_info_list = []
         specimen_list = []
+        
+        # Get the CSRF token to filter it out
+        csrf_token = get_token(request)
+        
         # Loop through the form data to retrieve BICAN IDs
         for key, value in request.POST.items():
+            # Skip CSRF token
+            if key == 'csrfmiddlewaretoken':
+                continue
+            
             spec_id = key
-            if spec_id != 'csrfmiddlewaretoken':
-                spec_local = Specimen.objects.get(id = spec_id)
-                local_name = spec_local.localid
-                specimen_list.append(local_name)
+            spec_local = Specimen.objects.get(id=spec_id)
+            local_name = spec_local.localid
+            specimen_list.append(local_name)
             bican_id = value
             nhash_info = Specimen_Portal.get_nhash_results(bican_id)
             nhash_info_list.append(nhash_info)
+        
         nhash_info_list_json = json.dumps(nhash_info_list)
         print(nhash_info_list_json)
         print(specimen_list)
         nhash_specimen_list = zip(nhash_info_list, specimen_list)
-        #return render(request, 'ingest/nhash_id_confirm.html', {'nhash_info_list': nhash_info_list, 'specimen_list': specimen_list})
+        
         return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list})
     else:
         # Handle GET request, maybe render the form again

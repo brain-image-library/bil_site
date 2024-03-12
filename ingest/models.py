@@ -509,9 +509,6 @@ class DatasetLinkage(models.Model):
     relationship = models.CharField(max_length=64, default="", choices=[('sequence data', 'Sequence Data'), ('neuron tracing', 'Neuron Tracing'), ('derived_data', 'Derived Data'), ('raw', 'Raw'), ('aligned', 'Aligned')]) 
     description = models.TextField(blank=True, null=True)
     linkage_date = models.DateField(null=True, blank=True)
-<<<<<<< HEAD
-    
-=======
 
 class BIL_Specimen_ID(models.Model):
     bil_spc_id = models.CharField(max_length=256, blank=True, null=True)
@@ -524,4 +521,3 @@ class BIL_Instrument_ID(models.Model):
 class BIL_Project_ID(models.Model):
     bil_prj_id = models.CharField(max_length=256, blank=True, null=True)
     project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null = True, blank=True)
->>>>>>> 2da5833 (Added new tables for additional BIL identifiers pertaining to Instruments, Specimens, and Projects)
