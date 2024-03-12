@@ -510,6 +510,7 @@ class DatasetLinkage(models.Model):
     description = models.TextField(blank=True, null=True)
     linkage_date = models.DateField(null=True, blank=True)
 
+
 class BIL_Specimen_ID(models.Model):
     bil_spc_id = models.CharField(max_length=256, blank=True, null=True)
     specimen_id = models.ForeignKey(Specimen, on_delete=models.SET_NULL, null = True, blank=True)
@@ -521,3 +522,7 @@ class BIL_Instrument_ID(models.Model):
 class BIL_Project_ID(models.Model):
     bil_prj_id = models.CharField(max_length=256, blank=True, null=True)
     project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null = True, blank=True)
+
+class SpecimenLinkage(models.Model):
+    specimen_id = models.ForeignKey(BIL_Specimen_ID, on_delete=models.SET_NULL, null=True, blank=True)
+    specimen_id_2 = models.CharField(max_length=256, blank=True, null=True)

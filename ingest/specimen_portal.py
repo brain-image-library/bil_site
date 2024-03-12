@@ -11,14 +11,14 @@ lab_name = ''
 NHASH_URL = f'https://brain-specimenportal.org/api/v1/nhash_ids/ancestors?id='
 #LOCAL_URL = f'https://brain-specimenportal.org/api/v1/nhash_ids/nemo?type:TYPE&amp;name={local_name}&amp;lab={lab_name}&amp;format=csv'
 #TOKEN = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMjIsImV4cCI6MTcwNTY5NDUxNn0.qVNiYKUOPw2nwIEtalF4405Q5vw9G8BEyOQsdNgzo8c'  # Replace
-jwt_token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMjIsImV4cCI6MTcwOTg0NTY3Mn0.wHaQCmY7S_VGW0050hXh82GxIgtUpyHnCCtCQwuh7z8'
+jwt_token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMjIsImV4cCI6MTcxMDE4MTQwOH0.kfNyw6Q3cRTUo_-8q_mKvRzQIMc7E9DJrvrRDl_u3wc'
 headers = {
     'Authorization': f'Bearer {jwt_token}'
 }
 
 class Specimen_Portal:
     def get_nhash_results(nhashid):
-        jwt_token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMjIsImV4cCI6MTcwOTg0NTY3Mn0.wHaQCmY7S_VGW0050hXh82GxIgtUpyHnCCtCQwuh7z8'
+        jwt_token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMjIsImV4cCI6MTcxMDE4MTQwOH0.kfNyw6Q3cRTUo_-8q_mKvRzQIMc7E9DJrvrRDl_u3wc'
         headers = {'Authorization': f'Bearer {jwt_token}'}
         NHASH_URL = f'https://brain-specimenportal.org/api/v1/nhash_ids/ancestors?id='
         NHASH_URL = NHASH_URL + nhashid
