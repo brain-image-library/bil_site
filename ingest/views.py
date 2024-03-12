@@ -34,6 +34,7 @@ import uuid
 import datetime
 import json
 from datetime import datetime
+import os
 
 def logout(request):
     messages.success(request, "You've successfully logged out")
@@ -2523,7 +2524,6 @@ def descriptive_metadata_upload(request):
 	
         if form.is_valid():
             associated_collection = form.cleaned_data['associated_collection']
-
             # for production
             datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
@@ -2532,15 +2532,27 @@ def descriptive_metadata_upload(request):
 
             # for development locally
             # datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
-            
             spreadsheet_file = request.FILES['spreadsheet_file']
-
             fs = FileSystemStorage(location=datapath)
+            
+            # Construct the full path for the file
             name_with_path = datapath + '/' + spreadsheet_file.name
+            
+            # Check if a file with the same name already exists
+            if os.path.exists(name_with_path):
+                # If it exists, find a unique filename by appending a number to the filename
+                file_name, file_extension = os.path.splitext(spreadsheet_file.name)
+                count = 1
+                while os.path.exists(os.path.join(datapath, f"{file_name}_{count}{file_extension}")):
+                    count += 1
+                # Append the count to the filename
+                filename = f"{file_name}_{count}{file_extension}"
+                name_with_path = os.path.join(datapath, filename)
+            
+            # Save the file with the unique name
             fs.save(name_with_path, spreadsheet_file)
-            filename = name_with_path
 
-            version1 = metadata_version_check(filename)
+            version1 = metadata_version_check(name_with_path)
             
             # using old metadata model for any old submissions (will eventually be deprecated)
             if version1 == True:
@@ -2552,7 +2564,7 @@ def descriptive_metadata_upload(request):
             
             # using new metadata model
             elif version1 == False:
-                errormsg = check_all_sheets(filename, ingest_method)
+                errormsg = check_all_sheets(name_with_path, ingest_method)
                 if errormsg != '':
                     messages.error(request, errormsg)
                     return redirect('ingest:descriptive_metadata_upload')
@@ -2560,39 +2572,39 @@ def descriptive_metadata_upload(request):
                 else:
                     saved = False
                     collection = Collection.objects.get(name=associated_collection.name)
-                    contributors = ingest_contributors_sheet(filename)
-                    funders = ingest_funders_sheet(filename)
-                    publications = ingest_publication_sheet(filename)
-                    instruments = ingest_instrument_sheet(filename)
-                    datasets = ingest_dataset_sheet(filename)
-                    specimen_set = ingest_specimen_sheet(filename)
-                    images = ingest_image_sheet(filename)
-                    swcs = ingest_swc_sheet(filename)
+                    contributors = ingest_contributors_sheet(name_with_path)
+                    funders = ingest_funders_sheet(name_with_path)
+                    publications = ingest_publication_sheet(name_with_path)
+                    instruments = ingest_instrument_sheet(name_with_path)
+                    datasets = ingest_dataset_sheet(name_with_path)
+                    specimen_set = ingest_specimen_sheet(name_with_path)
+                    images = ingest_image_sheet(name_with_path)
+                    swcs = ingest_swc_sheet(name_with_path)
 
                     # choose save method depending on ingest_method value from radio button
                     # want to pull this out into a helper function
                     if ingest_method == 'ingest_1':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
+                        sheet = save_sheet_row(ingest_method, name_with_path, collection)
                         saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
                         ingested_datasets = Dataset.objects.filter(sheet = sheet)
                         save_bil_ids(ingested_datasets)
                     elif ingest_method == 'ingest_2':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
+                        sheet = save_sheet_row(ingest_method, name_with_path, collection)
                         saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
                         ingested_datasets = Dataset.objects.filter(sheet = sheet)
                         save_bil_ids(ingested_datasets)
                     elif ingest_method == 'ingest_3':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
+                        sheet = save_sheet_row(ingest_method, name_with_path, collection)
                         saved = save_all_sheets_method_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
                         ingested_datasets = Dataset.objects.filter(sheet = sheet)
                         save_bil_ids(ingested_datasets)
                     elif ingest_method == 'ingest_4':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
+                        sheet = save_sheet_row(ingest_method, name_with_path, collection)
                         saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
                         ingested_datasets = Dataset.objects.filter(sheet = sheet)
                         save_bil_ids(ingested_datasets)
                     elif ingest_method == 'ingest_5':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
+                        sheet = save_sheet_row(ingest_method, name_with_path, collection)
                         saved = save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs)
                         ingested_datasets = Dataset.objects.filter(sheet = sheet)
                         save_bil_ids(ingested_datasets)
