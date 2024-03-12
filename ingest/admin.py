@@ -4,7 +4,7 @@ from django.utils.http import urlencode
 from django.utils.html import format_html
 from django.core import serializers
 from django.http import HttpResponse
-from django.utils.translation import ugettext_lazy
+from django.utils.translation import gettext_lazy
 from django.db.models import F
 
 from .models import (
