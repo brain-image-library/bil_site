@@ -633,7 +633,7 @@ def collection_create(request):
             cache.delete('bil_uuid')
             cache.delete('bil_user')
             messages.success(request, 'Collection successfully created!! Please proceed with metadata upload')
-            return redirect('ingest:descriptive_metadata_upload')
+            return redirect('ingest:descriptive_metadata_upload', coll_id.id)
     else:
         form = CollectionForm()
 
@@ -2702,6 +2702,8 @@ def bican_id_upload(request, sheet_id):
     # Fetch the latest sheet_id associated with the collection
     #latest_sheet = Sheet.objects.filter(collection_id=request.user.id).order_by('-id').first()
     sheet_id = sheet_id
+    #sheet_id = Sheet.objects.filter(collection_id=sheet_id).last()
+    #print(sheet_id)
     specimens = Specimen.objects.filter(sheet_id=sheet_id)
     context = {'sheet_id': sheet_id, 'specimens': specimens}
     

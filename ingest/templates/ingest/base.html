@@ -64,7 +64,7 @@
           </ul>
           {% if request.user.username %}
           <ul class="nav navbar-nav navbar-right">
-            <li><a href="#"><span class="glyphicon glyphicon-user"></span> {{ request.user.username }}</a></li>
+          <li><a href="#"><span class="glyphicon glyphicon-user"></span> {{ request.user.username }}</a></li>
             <li><a href="{%url 'ingest:logout' %}"><span class="glyphicon glyphicon-log-out"></span> Log out</a></li>
           </ul>
           {% else %}
