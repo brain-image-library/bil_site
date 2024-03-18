@@ -31,7 +31,7 @@ from .specimen_portal import Specimen_Portal
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -634,7 +634,7 @@ def collection_create(request):
             cache.delete('bil_uuid')
             cache.delete('bil_user')
             messages.success(request, 'Collection successfully created!! Please proceed with metadata upload')
-            return redirect('ingest:descriptive_metadata_upload')
+            return redirect('ingest:descriptive_metadata_upload', coll_id.id)
     else:
         form = CollectionForm()
 
@@ -2774,6 +2774,8 @@ def bican_id_upload(request, sheet_id):
     # Fetch the latest sheet_id associated with the collection
     #latest_sheet = Sheet.objects.filter(collection_id=request.user.id).order_by('-id').first()
     sheet_id = sheet_id
+    #sheet_id = Sheet.objects.filter(collection_id=sheet_id).last()
+    #print(sheet_id)
     specimens = Specimen.objects.filter(sheet_id=sheet_id)
     context = {'sheet_id': sheet_id, 'specimens': specimens}
     
@@ -2833,14 +2835,32 @@ def save_bican_ids(request):
             nhash_info_list.append(nhash_info)
         
         nhash_info_list_json = json.dumps(nhash_info_list)
-        print(nhash_info_list_json)
-        print(specimen_list)
         nhash_specimen_list = zip(nhash_info_list, specimen_list)
         
         return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list})
     else:
         # Handle GET request, maybe render the form again
         return render(request, '/')
+
+def save_nhash_specimen_list(request):
+    if request.method == 'POST':
+        # Retrieve the nhash_specimen_list from the POST data
+        nhash_specimen_list = request.POST.get('nhash_specimen_list', '')
+
+        # Unzip the zipped object to access its elements
+        print(nhash_specimen_list)
+        #nhash_info_list, specimen_list = zip(*nhash_specimen_list)
+        
+        # Process and save the nhash_specimen_list as needed
+        for item in nhash_specimen_list:
+            # Perform saving operation for each item
+            pass  # Placeholder for actual saving logic
+
+        # Return a JSON response indicating success
+        return JsonResponse({'message': 'Data saved successfully'})
+    else:
+        # Return an error response if accessed via GET request
+        return JsonResponse({'error': 'POST method required'})
 
 def nhash_id_confirm(request):
     # Retrieve the nhash_info_list from the query parameters

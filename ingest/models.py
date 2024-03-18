@@ -521,3 +521,9 @@ class BIL_Instrument_ID(models.Model):
 class BIL_Project_ID(models.Model):
     bil_prj_id = models.CharField(max_length=256, blank=True, null=True)
     project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null = True, blank=True)
+
+class SpecimenLinkage(models.Model):
+    specimen_id = models.ForeignKey(BIL_Specimen_ID, on_delete=models.SET_NULL, null=True, blank=True)
+    specimen_id_2 = models.CharField(max_length=256, blank=True, null=True)
+    code_id = models.CharField(max_length=64, default="", choices=[('cubie_tissue', 'Cubie Tissue')])
+    specimen_category = models.CharField(max_length=64, default="", choices=[('tissue', 'Tissue'), ('roi', 'ROI'), ('slab', 'Slab'), ('donor', 'Donor')]) 
