@@ -92,6 +92,7 @@ class CollectionTable(tables.Table):
         self.dynamic_args()
 
     def dynamic_args(self):
+        #need to add extra layer of granularity here that identifies if the project of the submission is BICAN associated
         for record in self.data:
             most_recent_sheet = Sheet.objects.filter(collection_id=record.id).last()
             if most_recent_sheet:
