@@ -10,7 +10,7 @@ from django.db.models import F
 from .models import (
     ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor,
     Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder,
-    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium
+    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium, BIL_Specimen_ID, SpecimenLinkage
 )
 
 
@@ -62,6 +62,9 @@ class ProjectConsortiumInline(admin.TabularInline):
 class BIL_IDInline(admin.TabularInline):
     model = BIL_ID
     raw_id_fields = ('v2_ds_id',)
+
+class BIL_Specimen_IDInline(admin.TabularInline):
+    model = BIL_Specimen_ID
 
 admin.site.disable_action('delete_selected')
 
@@ -192,6 +195,18 @@ class BIL_IDAdmin(admin.ModelAdmin):
 admin.site.register(DatasetLinkage, DatasetLinkageAdmin)
 
 admin.site.register(BIL_ID, BIL_IDAdmin)
+
+class Specimen_linkageAdmin(admin.ModelAdmin):
+    list_display = ("specimen_id", "specimen_id_2", "code_id", "specimen_category")
+    search_fields = ['specimen_id__bil_spc_id']
+    autocomplete_fields = ['specimen_id']
+
+class BIL_Specimen_IDAdmin(admin.ModelAdmin):
+    search_fields = ['bil_spc_id']
+
+admin.site.register(SpecimenLinkage, Specimen_linkageAdmin)
+
+admin.site.register(BIL_Specimen_ID, BIL_Specimen_IDAdmin)
 
 class SpecimenAdmin(admin.ModelAdmin):
     autocomplete_fields = ['data_set']

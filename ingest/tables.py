@@ -4,7 +4,7 @@ from django.utils.safestring import mark_safe
 from .models import Collection
 from .models import ImageMetadata
 from .models import DescriptiveMetadata
-from .models import Sheet
+from .models import Sheet, Project, ProjectConsortium, Specimen, BIL_Specimen_ID, SpecimenLinkage
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
 
@@ -92,11 +92,19 @@ class CollectionTable(tables.Table):
         self.dynamic_args()
 
     def dynamic_args(self):
-        #need to add extra layer of granularity here that identifies if the project of the submission is BICAN associated
         for record in self.data:
             most_recent_sheet = Sheet.objects.filter(collection_id=record.id).last()
+            specimens = Specimen.objects.filter(sheet = most_recent_sheet)
+            bil_specimen_ids = BIL_Specimen_ID.objects.filter(specimen_id__in=specimens)
+            linked_bil_specimen_ids = SpecimenLinkage.objects.filter(specimen_id__in=bil_specimen_ids)
             if most_recent_sheet:
-                record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-primary">Add Bican IDs</a>'.format(reverse('ingest:bican_id_upload', args=[most_recent_sheet.pk])))
+                if ProjectConsortium.objects.filter(project=record.project, consortium__short_name='BICAN').exists():
+                    if linked_bil_specimen_ids.exists():
+                        record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-info">Request Publication</a>'.format(reverse('ingest:submit_request_collection_list')))
+                    else:
+                        record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-primary">Add Bican IDs</a>'.format(reverse('ingest:bican_id_upload', args=[most_recent_sheet.pk])))
+                else:
+                    record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-info">Request Publication</a>'.format(reverse('ingest:submit_request_collection_list')))
             else:
                 record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-danger">Needs Metadata</a>'.format(reverse('ingest:descriptive_metadata_upload', args=[record.id])))
 
