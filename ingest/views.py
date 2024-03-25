@@ -2643,27 +2643,37 @@ def descriptive_metadata_upload(request, associated_collection):
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     save_bil_ids(ingested_datasets)
+                    save_specimen_ids(ingested_specimens)
                 elif ingest_method == 'ingest_2':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     save_bil_ids(ingested_datasets)
+                    save_specimen_ids(ingested_specimens)
                 elif ingest_method == 'ingest_3':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     save_bil_ids(ingested_datasets)
+                    save_specimen_ids(ingested_specimens)
                 elif ingest_method == 'ingest_4':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     save_bil_ids(ingested_datasets)
+                    save_specimen_ids(ingested_specimens)
                 elif ingest_method == 'ingest_5':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs)
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     save_bil_ids(ingested_datasets)
+                    save_specimen_ids(ingested_specimens)
                 elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4' and ingest_method != 'ingest_5':
                         saved = False
                         messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')                         
@@ -2816,6 +2826,7 @@ def save_bican_ids(request):
     if request.method == 'POST':
         nhash_info_list = []
         specimen_list = []
+        specimen_id_list = []
         
         # Get the CSRF token to filter it out
         csrf_token = get_token(request)
@@ -2827,20 +2838,80 @@ def save_bican_ids(request):
                 continue
             
             spec_id = key
+            spec_bil = BIL_Specimen_ID.objects.get(specimen_id = spec_id)
+            spec_bil_id = spec_bil.id
+            print(spec_bil_id)
+            specimen_id_list.append(spec_bil_id)
             spec_local = Specimen.objects.get(id=spec_id)
             local_name = spec_local.localid
             specimen_list.append(local_name)
             bican_id = value
             nhash_info = Specimen_Portal.get_nhash_results(bican_id)
             nhash_info_list.append(nhash_info)
-        
-        nhash_info_list_json = json.dumps(nhash_info_list)
+        extracted_ids = extract_ids(nhash_info)
+        processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)
+        processed_ids_json = json.dumps(processed_ids)
+        #for key, value in processed_ids.items():
+        #    print(key, value)
+
         nhash_specimen_list = zip(nhash_info_list, specimen_list)
         
-        return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list})
+        return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list, 'processed_ids_json': processed_ids_json})
     else:
         # Handle GET request, maybe render the form again
         return render(request, '/')
+    
+def extract_ids(nhash_info):
+    ids = []
+    # Check if the input is a dictionary
+    if isinstance(nhash_info, dict):
+        # Iterate over the key-value pairs
+        for key, value in nhash_info.items():
+            # If the key is 'data' or 'has_parent', add the value to the list
+            if key == 'data' or key == 'has_parent':
+                ids.extend(value.keys())
+            # Recursively call the function for nested dictionaries
+            else:
+                ids.extend(extract_ids(value))
+    
+    # If the input is a list, recursively call the function for each element
+    elif isinstance(nhash_info, list):
+        for item in nhash_info:
+            ids.extend(extract_ids(item))
+    
+    return ids
+    
+def specimen_list_mapping(ids, specimen_list):
+    specimen_ids_mapping = {}
+    for specimen in specimen_list:
+        specimen_ids_mapping[specimen] = ids
+    return specimen_ids_mapping
+
+def process_ids(request):
+    if request.method == 'POST':
+        # Process the received processed_ids list
+        processed_ids = request.POST.get('processed_ids_json')
+        processed_ids = json.loads(processed_ids)
+        for specimen, nhash_ids in processed_ids.items():
+            print(specimen)
+            bil_specimen_id = BIL_Specimen_ID.objects.get(id = specimen)
+            for id in nhash_ids:
+                print(id)
+                if id.startswith('TI'):
+                    linkage = SpecimenLinkage(specimen_id = bil_specimen_id, specimen_id_2 = id, code_id = 'cubie_tissue', specimen_category = 'tissue')
+                elif id.startswith('RI'):
+                    linkage = SpecimenLinkage(specimen_id = bil_specimen_id, specimen_id_2 = id, code_id = 'cubie_tissue', specimen_category = 'roi')
+                elif id.startswith('SL'):
+                    linkage = SpecimenLinkage(specimen_id = bil_specimen_id, specimen_id_2 = id, code_id = 'cubie_tissue', specimen_category = 'slab')
+                elif id.startswith('DO'):
+                    linkage = SpecimenLinkage(specimen_id = bil_specimen_id, specimen_id_2 = id, code_id = 'cubie_tissue', specimen_category = 'donor')
+                linkage.save()
+        # Redirect to a different view or do other processing
+        return redirect('ingest:collection_list')  # Redirect to success page
+    else:
+        # Handle GET request, maybe render an error page
+        print('failed')
+        return redirect('ingest:collection_list')  # Redirect to error page
 
 def save_nhash_specimen_list(request):
     if request.method == 'POST':

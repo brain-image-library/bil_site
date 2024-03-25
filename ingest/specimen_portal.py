@@ -18,7 +18,7 @@ headers = {
 
 class Specimen_Portal:
     def get_nhash_results(nhashid):
-        jwt_token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMjIsImV4cCI6MTcxMTM0NTE5M30.dWhWgCszfzWfY7RBoA4q-Jie39wTNr8jpRxdHW9jZkc'
+        jwt_token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMjIsImV4cCI6MTcxMTM5Mjg0OH0.PfT16wwLzE9vdgb03W4mgL3LovBu6rLEie_IwivloD8'
         headers = {'Authorization': f'Bearer {jwt_token}'}
         NHASH_URL = f'https://brain-specimenportal.org/api/v1/nhash_ids/ancestors?id='
         NHASH_URL = NHASH_URL + nhashid

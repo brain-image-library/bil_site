@@ -59,8 +59,11 @@
                 {% endif %}
             {% endfor %}
         </ul>
+
+        <form id="confirm-form" method="post" action="{% url 'ingest:process_ids' %}">
+            {% csrf_token %}
+            <input type="hidden" name="processed_ids_json" value="{{ processed_ids_json }}">
             <button type="submit" id="confirm-button" class="btn btn-primary confirm-button">Confirm</button>
-
-
+        </form>
 </body>
 </html>

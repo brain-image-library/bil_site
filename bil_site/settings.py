@@ -88,6 +88,7 @@ INSTALLED_APPS = [
     'django_pam',
     'hijack',
     'hijack.contrib.admin',
+    'django.contrib.humanize',
     #'core',
 ]
 
