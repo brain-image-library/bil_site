@@ -513,6 +513,8 @@ class DatasetLinkage(models.Model):
 class BIL_Specimen_ID(models.Model):
     bil_spc_id = models.CharField(max_length=256, blank=True, null=True)
     specimen_id = models.ForeignKey(Specimen, on_delete=models.SET_NULL, null = True, blank=True)
+    def __str__(self):
+        return self.bil_spc_id
 
 class BIL_Instrument_ID(models.Model):
     bil_ins_id = models.CharField(max_length=256, blank=True, null=True)

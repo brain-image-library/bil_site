@@ -2687,7 +2687,10 @@ def descriptive_metadata_upload(request, associated_collection):
                     
                     messages.success(request, 'Descriptive Metadata successfully uploaded!!')
                     #return redirect('ingest:descriptive_metadata_list')
-                    return redirect('ingest:bican_id_upload',sheet_id = sheet.id)
+                    if ProjectConsortium.objects.filter(project=associated_collection.project, consortium__short_name='BICAN').exists():
+                        return redirect('ingest:bican_id_upload',sheet_id = sheet.id)
+                    else:
+                        return redirect('ingest:descriptive_metadata_list')
                 else:
                     saved = False
                     collection = Collection.objects.get(name=associated_submission.name)
