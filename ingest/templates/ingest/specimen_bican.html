@@ -12,6 +12,11 @@
         <div class="row">
             <div class="col-md-8 col-md-offset-2">
                 <h1 class="mt-5 mb-4">BICAN ID Upload</h1>
+                {% if error_message %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ error_message }}
+                    </div>
+                {% endif %}
                 <p class="lead">Upload your file and download the Specimen Local IDs Excel file:</p>
 
                 <!--<div class="mb-4">
@@ -32,7 +37,7 @@
                 </form>
                 !-->
                 <div class="mt-5">
-                    <h2>Enter BICAN IDs for Specimens:</h2>
+                    <h2>Enter BICAN NHASH Indentifiers for Specimen Tissue:</h2>
                     <form method="post" action="{% url 'ingest:save_bican_ids' %}" class="mt-3">
                         {% csrf_token %}
                         <table class="table">
@@ -51,6 +56,7 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                        <input type="hidden" name="sheet_id" value="{{ sheet_id }}">
                         <button type="submit" class="btn btn-primary" onclick="loadSpinner()">Save BICAN IDs</button>
                     </form>
                     <a href="{% url 'ingest:collection_list' %}" class="btn btn-secondary mt-3">Not Now</a>

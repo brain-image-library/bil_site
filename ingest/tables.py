@@ -97,8 +97,11 @@ class CollectionTable(tables.Table):
             specimens = Specimen.objects.filter(sheet = most_recent_sheet)
             bil_specimen_ids = BIL_Specimen_ID.objects.filter(specimen_id__in=specimens)
             linked_bil_specimen_ids = SpecimenLinkage.objects.filter(specimen_id__in=bil_specimen_ids)
+
             if most_recent_sheet:
-                if ProjectConsortium.objects.filter(project=record.project, consortium__short_name='BICAN').exists():
+                if record.submission_status == 'SUCCESS':
+                    record.most_recent_sheet_pk = mark_safe('<div class="alert alert-success" role="alert">Data Public</div>')
+                elif ProjectConsortium.objects.filter(project=record.project, consortium__short_name='BICAN').exists():
                     if linked_bil_specimen_ids.exists():
                         record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-info">Request Publication</a>'.format(reverse('ingest:submit_request_collection_list')))
                     else:

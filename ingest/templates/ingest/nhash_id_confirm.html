@@ -1,69 +1,74 @@
 {% include 'ingest/wide.html' %}
+{% load template_tags %}
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NHASH ID Confirmation</title>
-    <!-- Bootstrap 3 CSS -->
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <!-- ... other head elements ... -->
+    <!-- Bootstrap 3 CSS and JavaScript includes -->
     <style>
-        .node {
-            border: 1px solid #000;
-            padding: 10px;
-            margin: 10px;
-            display: inline-block;
+        /* ... your other styles ... */
+        .panel-heading {
+            position: relative;
         }
-        .arrow {
-            border-left: 1px solid #000;
-            height: 50px;
-            margin: 0 10px;
-            display: inline-block;
-        }
-        .confirm-button {
-            margin-top: 20px;
+        .collapse-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>NHASH ID Confirmation</h1>
-        <ul class="list-unstyled">
-            {% for nhash_info, specimen in nhash_specimen_list %}
-                <strong>Specimen:</strong> {{ specimen }}
-                {% if 'data' in nhash_info %}
-                    {% for key, value in nhash_info.items %}
-                        {% if key != 'disclaimer' %}
-                            {% if 'data' in key %}
-                                <div class="node panel panel-default">
-                                    <div class="panel-heading"><strong>Specimen Data</strong></div>
-                                    <div class="panel-body">
-                                        {% for data_key, data_value in value.items %}
-                                            <div class="arrow"></div>
-                                            <strong>{{ data_key }}:</strong> {{ data_value }}<br>
-                                            {% if 'edges' in data_key %}
-                                                {% for edge_key, edge_value in data_value.items %}
-                                                    <div class="arrow"></div>
-                                                    <strong>{{ edge_key }}:</strong> {{ edge_value }}
-                                                {% endfor %}
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                        
-                            {% else %}
-                                <strong>{{key}}</strong>
-                            {% endif %}
+<div class="container">
+    <h2>Confirm NHASH Results</h2>
+    <!-- Start loop for each specimen -->
+    {% for nhash_info, specimen in nhash_specimen_list %}
+        <!-- Specimen Header -->
+        <div class="panel-group">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="panel-title">Specimen: 
+                        {{ specimen }}
+                        <!-- Collapsible toggle button -->
+                        <button class="btn btn-default collapse-btn" type="button" data-toggle="collapse" data-target="#collapse{{ forloop.counter }}">
+                            Collapse
+                        </button>
+                    </h4>
+                </div>
+                <!-- Collapsible content -->
+                <div id="collapse{{ forloop.counter }}" class="panel-collapse collapse in">
+                    <div class="panel-body">
+                        <!-- Table for NHASH and Info -->
+                        {% if 'data' in nhash_info %}
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>NHASH</th>
+                                        <th>Info</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for key, value in nhash_info.data.items %}
+                                        <tr>
+                                            <td><strong>{{ key }}</strong></td>
+                                            <td>{{ value|pretty_print }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         {% endif %}
-                    {% endfor %}
-                {% endif %}
-            {% endfor %}
-        </ul>
-
-        <form id="confirm-form" method="post" action="{% url 'ingest:process_ids' %}">
-            {% csrf_token %}
-            <input type="hidden" name="processed_ids_json" value="{{ processed_ids_json }}">
-            <button type="submit" id="confirm-button" class="btn btn-primary confirm-button">Confirm</button>
-        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+    <!-- Confirm Form -->
+    <form id="confirm-form" method="post" action="{% url 'ingest:process_ids' %}">
+        {% csrf_token %}
+        <input type="hidden" name="processed_ids_json" value="{{ processed_ids_json }}">
+        <button type="submit" id="confirm-button" class="btn btn-primary confirm-button">Confirm</button>
+    </form>
+</div>
+<br>
 </body>
 </html>

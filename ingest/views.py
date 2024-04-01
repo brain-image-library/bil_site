@@ -2784,13 +2784,23 @@ def descriptive_metadata_upload(request, associated_collection):
     return render(request, 'ingest/descriptive_metadata_upload.html',{'pi':pi, 'collections':collections, 'associated_collection': associated_collection})
 
 def bican_id_upload(request, sheet_id):
-    # Fetch the latest sheet_id associated with the collection
-    #latest_sheet = Sheet.objects.filter(collection_id=request.user.id).order_by('-id').first()
-    sheet_id = sheet_id
-    #sheet_id = Sheet.objects.filter(collection_id=sheet_id).last()
-    #print(sheet_id)
-    specimens = Specimen.objects.filter(sheet_id=sheet_id)
-    context = {'sheet_id': sheet_id, 'specimens': specimens}
+    if request.method == 'GET':
+        specimens = Specimen.objects.filter(sheet_id=sheet_id)
+        context = {'sheet_id': sheet_id, 'specimens': specimens}
+        
+        # Get error message from query parameter if exists
+        error_message = request.GET.get('error_message', None)
+        if error_message:
+            messages.error(request, error_message)
+        
+        form_data = request.POST.copy() if request.method == 'POST' else None
+        context['form_data'] = form_data
+
+        return render(request, 'ingest/specimen_bican.html', context)
+    else:
+        sheet_id = sheet_id
+        specimens = Specimen.objects.filter(sheet_id=sheet_id)
+        context = {'sheet_id': sheet_id, 'specimens': specimens}
     
     return render(request, 'ingest/specimen_bican.html', context)
 
@@ -2827,6 +2837,8 @@ def specimen_bican(request, sheet_id):
 
 def save_bican_ids(request):
     if request.method == 'POST':
+        sheet_id = request.POST.get('sheet_id')
+        print(sheet_id)
         nhash_info_list = []
         specimen_list = []
         specimen_id_list = []
@@ -2836,20 +2848,29 @@ def save_bican_ids(request):
         
         # Loop through the form data to retrieve BICAN IDs
         for key, value in request.POST.items():
+            print(key)
             # Skip CSRF token
-            if key == 'csrfmiddlewaretoken':
+            if key == 'csrfmiddlewaretoken' or key == 'sheet_id':
                 continue
             
             spec_id = key
-            spec_bil = BIL_Specimen_ID.objects.get(specimen_id = spec_id)
-            spec_bil_id = spec_bil.id
-            print(spec_bil_id)
+            if spec_id != 'sheet_id':
+                spec_bil = BIL_Specimen_ID.objects.get(specimen_id=spec_id)
+                spec_bil_id = spec_bil.id
+                # Proceed with other operations like adding to lists and making API call
+            else:
+                # Handle the case when spec_id is the same as sheet_id (optional)
+                continue
             specimen_id_list.append(spec_bil_id)
             spec_local = Specimen.objects.get(id=spec_id)
             local_name = spec_local.localid
             specimen_list.append(local_name)
             bican_id = value
             nhash_info = Specimen_Portal.get_nhash_results(bican_id)
+            #print(nhash_info)
+            if nhash_info == {'error': 'No data found'}:
+                error_message = f"We couldn't find any information for the BICAN ID: {bican_id}. Please make sure you've entered the correct BICAN ID and try again."
+                return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_message}')
             nhash_info_list.append(nhash_info)
         extracted_ids = extract_ids(nhash_info)
         processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)
