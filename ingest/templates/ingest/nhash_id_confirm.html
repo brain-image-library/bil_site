@@ -67,8 +67,15 @@
         {% csrf_token %}
         <input type="hidden" name="processed_ids_json" value="{{ processed_ids_json }}">
         <button type="submit" id="confirm-button" class="btn btn-primary confirm-button">Confirm</button>
+        <button type="button" id="cancel-button" class="btn btn-secondary" onclick="handleCancel()">Cancel</button>
     </form>
 </div>
 <br>
+<script>
+    function handleCancel() {
+        // Redirect to a different page or perform other actions
+        window.location.href = '{% url "ingest:collection_list" %}'; // Change 'desired_cancel_url' to the actual URL
+    }
+</script>
 </body>
 </html>

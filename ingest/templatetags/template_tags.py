@@ -1,6 +1,5 @@
 from django import template
 from django.utils.safestring import mark_safe
-
 import json
 
 register = template.Library()
@@ -14,11 +13,15 @@ def pretty_print(value):
     try:
         category = value.get('category', 'No category')
         record = value.get('record', {})
-        study_id = record.get('study_id', 'No study ID')
-        
         # Initialize the HTML string with category and study_id.
-        html_string = f'Category: <strong>{category}</strong><br>Study ID: <strong>{study_id}</strong>'
-
+        html_string = f'Category: <strong>{category}</strong>'
+        
+        # Iterate over the key-value pairs in the record dictionary.
+        for key, val in record.items():
+            # Skip key-value pairs where the value is 'None'.
+            if val is not None:
+                html_string += f'<br>{key.capitalize().replace("_", " ")}: <strong>{val}</strong>'
+        
         # Check for and append 'Has Parent' if it exists.
         edges = value.get('edges', {})
         has_parent = edges.get('has_parent', [])

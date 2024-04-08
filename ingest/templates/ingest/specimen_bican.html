@@ -2,6 +2,75 @@
     <script src="/static/ingest/metadataloadingindicator.js"></script>
     <script type="text/javascript" 
       src="http://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>  
+    
+      <script type="text/javascript">
+        $(document).ready(function() {
+            // Initially disable the upload button
+            $('#uploadButton').prop('disabled', true);
+
+            // Event listener for the file input
+            $('#file').change(function() {
+                // Check if a file is selected
+                if ($(this).val()) {
+                    $('#uploadButton').prop('disabled', false).removeClass('disabled');
+                } else {
+                    $('#uploadButton').prop('disabled', true).addClass('disabled');
+                }
+            });
+        });
+    </script>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        // Function to check the input in all text boxes
+        function checkInputs() {
+            var allFilled = true;
+            $('input[type="text"]').each(function() { 
+                if ($(this).val() === '') {
+                    allFilled = false;
+                    return false;
+                }
+            });
+
+            // Enable or disable the submit button based on the fields being filled
+            if(allFilled) {
+                $('#submitButton').prop('disabled', false).removeClass('disabled').prop('title', '');
+            } else {
+                $('#submitButton').prop('disabled', true).addClass('disabled').prop('title', 'Please fill out all text boxes in the form to submit');
+            }
+        }
+
+        // Attach an input event listener to all text inputs
+        $('input[type="text"]').on('input', checkInputs);
+
+        // Initial check on page load
+        checkInputs();
+    });
+</script>
+
+<script type="text/javascript">
+    $(document).ready(function() {
+        $('#file').change(function() {
+            // Get the file name
+            var fileName = $(this).val().split('\\').pop();
+            // Replace the "Choose a file" label
+            $('#file-chosen').text(fileName);
+        });
+    });
+</script>
+
+    <style>
+        /* CSS class for the disabled button */
+        .disabled {
+            background-color: #cccccc; /* Grey color */
+            color: #666666;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+
+
+    
   </head>
 
 {% include 'ingest/wide.html' %}
@@ -17,25 +86,30 @@
                         {{ error_message }}
                     </div>
                 {% endif %}
-                <p class="lead">Upload your file and download the Specimen Local IDs Excel file:</p>
-
-                <!--<div class="mb-4">
+                <p class="lead">On this page, provide BICAN Tissue NHASH Identifiers corresponding specimen information uploaded in your metadata.</br>Visit <a href="https://specimenportal.com/">specimenportal.com</a> for more information on generating these IDs.</p>
+                <p class="lead">Download excel template, provide corresponding BICAN NHASH IDs, and upload spreadsheet.</p>
+                <div class="mb-4">
                     {% if sheet_id %}
-                        <a href="{% url 'ingest:specimen_bican' sheet_id=sheet_id %}" class="btn btn-primary">Download Specimen Local IDs</a>
+                        <a href="{% url 'ingest:specimen_bican' sheet_id=sheet_id %}" class="btn btn-primary">Download Specimen Spreadsheet</a>
                     {% else %}
                         <p>No sheet available for download.</p>
                     {% endif %}
                 </div>
-
-                <form method="post" action="{% url 'ingest:save_bican_ids' %}" class="mt-3">                    {% csrf_token %}
-
+                <br>
+                <form method="post" action="{% url 'ingest:save_bican_spreadsheet' %}" enctype="multipart/form-data" class="mt-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="sheet_id" value="{{ sheet_id }}">
                     <div class="form-group">
-                        <input type="file" id="file" name="file">
+                        <input type="file" id="file" name="file" style="display: none;">
+                        <label for="file" class="btn btn-primary">
+                            <i class="fa fa-upload"></i> Choose File
+                        </label>
+                        <span id="file-chosen">No file chosen</span>
                     </div>
+                    <button type="submit" id="uploadButton" class="btn btn-primary disabled" onclick="loadSpinner()">Upload Spreadsheet</button>
 
-                    <button type="submit" class="btn btn-primary">Upload</button>
                 </form>
-                !-->
+                <h1>OR</h1>
                 <div class="mt-5">
                     <h2>Enter BICAN NHASH Indentifiers for Specimen Tissue:</h2>
                     <form method="post" action="{% url 'ingest:save_bican_ids' %}" class="mt-3">
@@ -57,9 +131,13 @@
                             </tbody>
                         </table>
                         <input type="hidden" name="sheet_id" value="{{ sheet_id }}">
-                        <button type="submit" class="btn btn-primary" onclick="loadSpinner()">Save BICAN IDs</button>
+                        <button type="submit" id="submitButton" class="btn btn-primary disabled" title="Please fill out all text boxes in the form to submit" onclick="loadSpinner()">Save BICAN IDs</button>
+
+
                     </form>
                     <a href="{% url 'ingest:collection_list' %}" class="btn btn-secondary mt-3">Not Now</a>
+                    <br>
+                    <br>
                 </div>
             </div>
         </div>
