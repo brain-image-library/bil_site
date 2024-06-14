@@ -281,7 +281,6 @@ def project_form(request):
 @login_required
 def create_project(request):
     new_project = json.loads(request.body)
-    print(new_project)
     items = []
     for item in new_project:
         items.append(item['funded_by'])
@@ -2590,7 +2589,6 @@ def descriptive_metadata_upload(request, associated_collection):
 	
         #if form.is_valid():
         associated_collection = Collection.objects.get(id = associated_collection)
-        print(associated_collection)
 
             # for production
             #datapath = associated_collection.data_path.replace("/lz/","/etc/")
@@ -2923,7 +2921,6 @@ def save_bican_ids(request):
     
 def extract_post_data(request):
     sheet_id = request.POST.get('sheet_id')
-    print(sheet_id)
     csrf_token = get_token(request)
     data_items = [(key, value) for key, value in request.POST.items() if key not in ['csrfmiddlewaretoken', 'sheet_id']]
     return sheet_id, csrf_token, data_items
@@ -2971,7 +2968,6 @@ def process_ids(request):
         processed_ids = request.POST.get('processed_ids_json')
         processed_ids = json.loads(processed_ids)
         for specimen, nhash_ids in processed_ids.items():
-            print(specimen)
             bil_specimen_id = BIL_Specimen_ID.objects.get(id = specimen)
             for id in nhash_ids:
                 if id.startswith('TI'):
@@ -2996,7 +2992,6 @@ def save_nhash_specimen_list(request):
         nhash_specimen_list = request.POST.get('nhash_specimen_list', '')
 
         # Unzip the zipped object to access its elements
-        print(nhash_specimen_list)
         #nhash_info_list, specimen_list = zip(*nhash_specimen_list)
         
         # Process and save the nhash_specimen_list as needed
