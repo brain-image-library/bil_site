@@ -1,16 +1,11 @@
 import requests
 import json
+from django.conf import settings
 
-NHASH_URL = f'https://brain-specimenportal.org/api/v1/nhash_ids/ancestors?id='
-
-jwt_token = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxMjIsImV4cCI6MTcxMjYwMTE2NX0.Gf4SpzAetC7CeMGx7SVGQEgTTOBlRmCKvQDw4v_xKqA'
-headers = {
-    'Authorization': f'Bearer {jwt_token}'
-}
 
 class Specimen_Portal:
     def get_nhash_results(nhashid):
-        jwt_token = 'eyJhbGciOiJIUzI1NiJ9.eyJhcHBfaWQiOjIsImFwcF9zZWNyZXQiOiJiaWxzZWNyZXQifQ.-NwPpu0oN6tkLPTNeiKm-Lxpsr9NMUcfNEeMOL1FDUw'
+        jwt_token = settings.SPECIMEN_PORTAL_JWT
         headers = {'Authorization': f'Bearer {jwt_token}'}
         NHASH_URL = f'https://brain-specimenportal.org/api/v1/nhash_ids/ancestors?id_only=false&id='
         NHASH_URL = NHASH_URL + nhashid
