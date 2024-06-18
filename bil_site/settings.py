@@ -67,6 +67,10 @@ STAGING_AREA_ROOT = config['Security']['STAGING_AREA_ROOT']
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
+# JWT for Specimen Portal
+
+SPECIMEN_PORTAL_JWT = config['Security']['SPECIMEN_PORTAL_JWT']
+
 LOGIN_REDIRECT_URL = '/'
 
 ALLOWED_HOSTS = ['*']
@@ -88,6 +92,7 @@ INSTALLED_APPS = [
     'django_pam',
     'hijack',
     'hijack.contrib.admin',
+    'django.contrib.humanize',
     #'core',
 ]
 

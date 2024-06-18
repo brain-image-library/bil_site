@@ -1,0 +1,69 @@
+{% include 'ingest/wide.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Collection Selection</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .collection-form-container {
+    font-family: 'Roboto', sans-serif;
+    background-color: #ffffff;
+    padding: 20px;
+    margin-top: 30px; /* Adjust this value as necessary to fit with your navbar */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .collection-form-container .form-group label {
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: #333333;
+    display: block;
+  }
+
+  .collection-form-container .btn-primary {
+  background-color: #007bff;
+  border: none;
+  padding: 10px 15px; /* Reduced padding */
+  border-radius: 6px;
+  font-size: 16px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  display: inline-block; /* Adjust this to 'inline-block' so it doesn't stretch full width */
+  width: auto; /* Set width to 'auto' instead of '100%' */
+  /* You can also add max-width if you want to limit how wide the button can get */
+}
+
+  .collection-form-container .btn-primary:hover {
+    background-color: #0056b3;
+  }
+
+  .collection-form-container select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #ced4da;
+    font-size: 16px;
+    margin-bottom: 20px; /* Spacing after the dropdown */
+    appearance: none; /* To remove default styling in some browsers */
+    background-color: #ffffff;
+    color: #333333;
+  }
+</style>
+</head>
+<body>
+  <div class="collection-form-container">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="{{ form.collection.id_for_label }}">Choose a Collection:</label>
+        {{ form.collection }}
+      </div>
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+  </div>
+</body>
+</html>

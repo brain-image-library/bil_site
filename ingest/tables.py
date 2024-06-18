@@ -1,8 +1,10 @@
 from django.utils.html import format_html
-
+from django.urls import reverse
+from django.utils.safestring import mark_safe
 from .models import Collection
 from .models import ImageMetadata
 from .models import DescriptiveMetadata
+from .models import Sheet, Project, ProjectConsortium, Specimen, BIL_Specimen_ID, SpecimenLinkage
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
 
@@ -78,6 +80,43 @@ class CollectionTable(tables.Table):
         #attrs={'a': {'class': "btn btn-info", 'role': "button"}})
     description = tables.Column()
 
+    bican_ids_button = tables.Column(
+        verbose_name="",
+        accessor='most_recent_sheet_pk',
+        orderable=False,
+        empty_values=(),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(CollectionTable, self).__init__(*args, **kwargs)
+        self.dynamic_args()
+
+    def dynamic_args(self):
+        for record in self.data:
+            most_recent_sheet = Sheet.objects.filter(collection_id=record.id).last()
+            specimens = Specimen.objects.filter(sheet = most_recent_sheet)
+            bil_specimen_ids = BIL_Specimen_ID.objects.filter(specimen_id__in=specimens)
+            linked_bil_specimen_ids = SpecimenLinkage.objects.filter(specimen_id__in=bil_specimen_ids)
+
+            if most_recent_sheet:
+                if record.submission_status == 'SUCCESS':
+                    record.most_recent_sheet_pk = mark_safe('<div class="alert alert-success" role="alert">Data Public</div>')
+                elif ProjectConsortium.objects.filter(project=record.project, consortium__short_name='BICAN').exists():
+                    if linked_bil_specimen_ids.exists():
+                        record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-info">Request Publication</a>'.format(reverse('ingest:submit_request_collection_list')))
+                    else:
+                        record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-primary">Add Bican IDs</a>'.format(reverse('ingest:bican_id_upload', args=[most_recent_sheet.pk])))
+                else:
+                    record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-info">Request Publication</a>'.format(reverse('ingest:submit_request_collection_list')))
+            else:
+                record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-danger">Needs Metadata</a>'.format(reverse('ingest:descriptive_metadata_upload', args=[record.id])))
+
+    class Meta:
+        model = Collection
+        exclude = ['celery_task_id_submission', 'celery_task_id_validation', 'user', 'modality']
+        template_name = 'django_tables2/bootstrap.html'
+
+
     def render_project_description(self, value):
         """ Ellipsize the project description if it's too long. """
         limit_len = 32
@@ -118,7 +157,7 @@ class CollectionTable(tables.Table):
 
     class Meta:
         model = Collection
-        exclude = ['celery_task_id_submission', 'celery_task_id_validation', 'user', 'modality',]
+        exclude = ['celery_task_id_submission', 'celery_task_id_validation', 'user', 'modality','collection_type']
         template_name = 'django_tables2/bootstrap.html'
 
 class CollectionRequestTable(tables.Table):
