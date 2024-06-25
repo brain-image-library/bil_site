@@ -529,3 +529,10 @@ class SpecimenLinkage(models.Model):
     specimen_id_2 = models.CharField(max_length=256, blank=True, null=True)
     code_id = models.CharField(max_length=64, default="", choices=[('cubie_tissue', 'Cubie Tissue')])
     specimen_category = models.CharField(max_length=64, default="", choices=[('tissue', 'Tissue'), ('roi', 'ROI'), ('slab', 'Slab'), ('donor', 'Donor')]) 
+
+class DatasetTag(models.Model):
+    tag = models.CharField(max_length=256)
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='tags')
+
+    def __str__(self):
+        return self.tag

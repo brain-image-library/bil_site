@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
@@ -31,7 +31,7 @@ from .specimen_portal import Specimen_Portal
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -876,53 +876,43 @@ def collection_submission_results(request, pk):
          'invalid_metadata_directories': invalid_metadata_directories,
          'pi': pi})
 
+
 @login_required
 def collection_detail(request, pk):
     current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-    for attribute in project_person:
-        if attribute.is_pi:
-            pi = True
-        else:
-            pi = False
-    """ View, edit, delete, create a particular collection. """
-    # If user tries to go to a page using a collection primary key that doesn't
-    # exist, give a 404
+    people = People.objects.get(auth_user_id_id=current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id=people.id).all()
+    pi = any(attribute.is_pi for attribute in project_person)
+
     try:
         datasets_list = []
         collection = Collection.objects.get(id=pk)
+        project = collection.project
+        project_consortium = ProjectConsortium.objects.filter(project=project).first()
+        consortium = project_consortium.consortium if project_consortium else None
+        consortium_tags = settings.CONSORTIUM_TAGS.get(consortium.short_name, []) if consortium else []
+
         sheets = Sheet.objects.filter(collection_id=collection.id).last()
-        #for s in sheets:
-        if sheets != None:
+        if sheets:
             datasets = Dataset.objects.filter(sheet_id=sheets.id)
             for d in datasets:
                 datasets_list.append(d)
     except ObjectDoesNotExist:
         raise Http404
-    # the metadata associated with this collection
-    #image_metadata_queryset = collection.imagemetadata_set.all()
+
     descriptive_metadata_queryset = collection.descriptivemetadata_set.last()
-    # this is what is triggered if the user hits "Upload to this Collection"
+
     if request.method == 'POST' and 'spreadsheet_file' in request.FILES:
         spreadsheet_file = request.FILES['spreadsheet_file']
         upload_spreadsheet(spreadsheet_file, collection, request)
         return redirect('ingest:collection_detail', pk=pk)
-    # this is what is triggered if the user hits "Submit collection"
     elif request.method == 'POST' and 'validate_collection' in request.POST:
-        #---trying to model validate_collection this after submit_collection
-        # lock everything (collection and associated image metadata) during
-        # submission and validation. if successful, keep it locked
         collection.locked = False
         metadata_dirs = []
         for im in descriptive_metadata_queryset:
-        #for im in image_metadata_queryset:
             im.locked = True
             im.save()
             metadata_dirs.append(im.r24_directory)
-            #metadata_dirs.append(im.directory)
-        # This is just a very simple test, which will be replaced with some
-        # real validation and analysis in the future
         if not settings.FAKE_STORAGE_AREA:
             data_path = collection.data_path.__str__()
             task = tasks.run_validate.delay(data_path, metadata_dirs)
@@ -930,26 +920,26 @@ def collection_detail(request, pk):
         collection.save()
         return redirect('ingest:collection_detail', pk=pk)
     elif request.method == 'POST' and 'submit_collection' in request.POST:
-        # lock everything (collection and associated image metadata) during
-        # submission and validation. if successful, keep it locked
         collection.locked = True
         metadata_dirs = []
         for im in descriptive_metadata_queryset:
-        #for im in image_metadata_queryset:
             im.locked = True
             im.save()
             metadata_dirs.append(im.r24_directory)
-        #    metadata_dirs.append(im.directory)
-        # This is just a very simple test, which will be replaced with some
-        # real validation and analysis in the future
         if not settings.FAKE_STORAGE_AREA:
             data_path = collection.data_path.__str__()
             task = tasks.run_analysis.delay(data_path, metadata_dirs)
             collection.celery_task_id_submission = task.task_id
         collection.save()
         return redirect('ingest:collection_detail', pk=pk)
+    elif request.method == 'POST' and 'add_tag' in request.POST:
+        tag_text = request.POST.get('tag_text')
+        dataset_id = request.POST.get('dataset_id')
+        if tag_text and dataset_id:
+            dataset = Dataset.objects.get(id=dataset_id)
+            DatasetTag.objects.create(tag=tag_text, dataset=dataset)
+        return redirect('ingest:collection_detail', pk=pk)
 
-    # check submission status
     if collection.celery_task_id_submission:
         result = AsyncResult(collection.celery_task_id_submission)
         state = result.state
@@ -959,9 +949,7 @@ def collection_detail(request, pk):
                 collection.submission_status = "SUCCESS"
             else:
                 collection.submission_status = "FAILED"
-                # need to unlock, so user can fix problem
                 collection.locked = False
-                #for im in image_metadata_queryset:
                 for im in descriptive_metadata_queryset:
                     im.locked = False
                     im.save()
@@ -969,7 +957,6 @@ def collection_detail(request, pk):
             collection.submission_status = "PENDING"
     collection.save()
 
-   # check validation status
     if collection.celery_task_id_validation:
         result = AsyncResult(collection.celery_task_id_validation)
         state = result.state
@@ -979,9 +966,7 @@ def collection_detail(request, pk):
                 collection.validation_status = "SUCCESS"
             else:
                 collection.validation_status = "FAILED"
-                # need to unlock, so user can fix problem
                 collection.locked = False
-                #for im in image_metadata_queryset:
                 for im in descriptive_metadata_queryset:
                     im.locked = False
                     im.save()
@@ -996,7 +981,8 @@ def collection_detail(request, pk):
         {'table': table,
          'collection': collection,
          'descriptive_metadata_queryset': descriptive_metadata_queryset,
-         'pi': pi, 'datasets_list':datasets_list})
+         'pi': pi, 'datasets_list': datasets_list, 'consortium_tags': consortium_tags})
+
 
 @login_required
 def ondemandSubmission(request, pk):
@@ -1009,6 +995,8 @@ def ondemandSubmission(request, pk):
         path = coll.data_path
     od = 'https://ondemand.bil.psc.edu/pun/sys/dashboard/files/fs' + path
     return redirect(od)
+
+
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     """ Edit an existing collection ."""

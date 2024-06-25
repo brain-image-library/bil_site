@@ -44,7 +44,7 @@
         {% elif collection.submission_status == "SUCCESS" %}
         <a href="{% url 'ingest:collection_submission_results' pk=collection.pk %}" class="list-group-item list-group-item-success"><h4 class="list-group-item-heading">Submission Status</h4> Submission successful. [Click to view submission log].</a>
         {% elif collection.submission_status == "FAILED" %}
-        <a href="{% url 'ingest:collection_submission_results' pk=collection.pk %}" class="list-group-item list-group-item-danger"><h4 class="list-group-item-heading">Submission Status</h4> Submission failed. [Click to view submission log].</a>
+        <a href="{% url 'ingest:collection_submission_results' pk=collection.pk %}" class="list-group-item list-group-item-danger"><h4 class="list-group-item-heading">Submission Status</h4> Submission failed. [Click to view submission log]</a>
         {% endif %}
 
       </div>
@@ -97,6 +97,34 @@
       </table>
       </p>
       <br><br>
+      {% for dataset in datasets_list %}
+        <div class="panel panel-default">
+          <div class="panel-heading">{{ dataset.title }}</div>
+          <div class="panel-body">
+            <!--p>{{ dataset.abstract }}</p-->
+            <form action="" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="dataset_id" value="{{ dataset.id }}">
+              <div class="input-group">
+                <select name="tag_text" class="form-control">
+                  {% for tag in consortium_tags %}
+                    <option value="{{ tag }}">{{ tag }}</option>
+                  {% endfor %}
+                </select>
+                <span class="input-group-btn">
+                  <button class="btn btn-primary" type="submit" name="add_tag">Add Tag</button>
+                </span>
+              </div>
+            </form>
+            <ul>
+              {% for tag in dataset.tags.all %}
+                <li>{{ tag.tag }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      {% endfor %}
+
       {% include 'ingest/new_metadata_sheet.html' %}
       {% include 'ingest/messages.html' %}
 
