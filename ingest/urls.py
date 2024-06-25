@@ -49,4 +49,6 @@ urlpatterns = [
     path('ingest/save_nhash_specimen_list/', views.save_nhash_specimen_list, name='save_nhash_specimen_list'),
     path('process_ids/', views.process_ids, name='process_ids'),
     path('save_bican_spreadsheet', views.save_bican_spreadsheet, name='save_bican_spreadsheet'),
+    path('add_tags/', views.add_tags, name='add_tags'),
+    path('delete_tag/', views.delete_tag, name='delete_tag'),
 ]

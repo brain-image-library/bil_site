@@ -932,13 +932,6 @@ def collection_detail(request, pk):
             collection.celery_task_id_submission = task.task_id
         collection.save()
         return redirect('ingest:collection_detail', pk=pk)
-    elif request.method == 'POST' and 'add_tag' in request.POST:
-        tag_text = request.POST.get('tag_text')
-        dataset_id = request.POST.get('dataset_id')
-        if tag_text and dataset_id:
-            dataset = Dataset.objects.get(id=dataset_id)
-            DatasetTag.objects.create(tag=tag_text, dataset=dataset)
-        return redirect('ingest:collection_detail', pk=pk)
 
     if collection.celery_task_id_submission:
         result = AsyncResult(collection.celery_task_id_submission)
@@ -982,6 +975,27 @@ def collection_detail(request, pk):
          'collection': collection,
          'descriptive_metadata_queryset': descriptive_metadata_queryset,
          'pi': pi, 'datasets_list': datasets_list, 'consortium_tags': consortium_tags})
+
+@login_required
+def add_tags(request):
+    if request.method == 'POST':
+        dataset_id = request.POST.get('dataset_id')
+        selected_tags = request.POST.getlist('tag_text[]')
+        if selected_tags and dataset_id:
+            dataset = Dataset.objects.get(id=dataset_id)
+            for tag_text in selected_tags:
+                DatasetTag.objects.create(tag=tag_text, dataset=dataset)
+            return JsonResponse({'status': 'success', 'message': 'Tags added successfully.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+
+@login_required
+def delete_tag(request):
+    if request.method == 'POST':
+        tag_id = request.POST.get('tag_id')
+        if tag_id:
+            DatasetTag.objects.filter(id=tag_id).delete()
+            return JsonResponse({'status': 'success', 'message': 'Tag deleted successfully.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
 
 
 @login_required
