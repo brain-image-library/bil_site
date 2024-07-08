@@ -2691,7 +2691,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         return redirect('ingest:descriptive_metadata_list')
                 else:
                     saved = False
-                    collection = Collection.objects.get(name=associated_submission.name)
+                    collection = Collection.objects.get(name=associated_collection.name)
                     contributors = ingest_contributors_sheet(filename)
                     funders = ingest_funders_sheet(filename)
                     publications = ingest_publication_sheet(filename)
@@ -2751,7 +2751,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4' and ingest_method != 'ingest_5':
                          saved = False
                          messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')                         
-                         return redirect('ingest:descriptive_metadata_upload')
+                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
                     if saved == True:
                         saved_datasets = Dataset.objects.filter(sheet_id = sheet.id).all()
                         for dataset in saved_datasets:
@@ -2763,7 +2763,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     else:
                          error_code = sheet.id
                          messages.error(request, 'There has been an error. Please contact BIL Support. Error Code: ', error_code)
-                         return redirect('ingest:descriptive_metadata_upload')
+                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
 
 
     # This is the GET (just show the metadata upload page)
