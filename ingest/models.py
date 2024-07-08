@@ -533,6 +533,7 @@ class SpecimenLinkage(models.Model):
 class DatasetTag(models.Model):
     tag = models.CharField(max_length=256)
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='tags')
+    bil_id = models.ForeignKey(BIL_ID, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return self.tag

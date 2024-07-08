@@ -892,6 +892,10 @@ def collection_detail(request, pk):
         consortium = project_consortium.consortium if project_consortium else None
         consortium_tags = settings.CONSORTIUM_TAGS.get(consortium.short_name, []) if consortium else []
 
+        # Include BIL tags for all datasets
+        bil_tags = settings.CONSORTIUM_TAGS.get('BIL', [])
+        consortium_tags.extend(bil_tags)
+
         sheets = Sheet.objects.filter(collection_id=collection.id).last()
         if sheets:
             datasets = Dataset.objects.filter(sheet_id=sheets.id)
@@ -982,10 +986,14 @@ def add_tags(request):
         dataset_id = request.POST.get('dataset_id')
         selected_tags = request.POST.getlist('tag_text[]')
         if selected_tags and dataset_id:
-            dataset = Dataset.objects.get(id=dataset_id)
-            for tag_text in selected_tags:
-                DatasetTag.objects.create(tag=tag_text, dataset=dataset)
-            return JsonResponse({'status': 'success', 'message': 'Tags added successfully.'})
+            try:
+                dataset = Dataset.objects.get(id=dataset_id)
+                bil_id = BIL_ID.objects.filter(v2_ds_id=dataset).first()  # Lookup BIL_ID based on dataset
+                for tag_text in selected_tags:
+                    DatasetTag.objects.create(tag=tag_text, dataset=dataset, bil_id=bil_id)
+                return JsonResponse({'status': 'success', 'message': 'Tags added successfully.'})
+            except Dataset.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Dataset not found.'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
 
 @login_required
