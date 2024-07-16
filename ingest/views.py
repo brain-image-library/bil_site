@@ -888,20 +888,25 @@ def collection_detail(request, pk):
         datasets_list = []
         collection = Collection.objects.get(id=pk)
         project = collection.project
-        project_consortium = ProjectConsortium.objects.filter(project=project).first()
-        consortium = project_consortium.consortium if project_consortium else None
-        consortium_tags = settings.CONSORTIUM_TAGS.get(consortium.short_name, []) if consortium else []
+        project_consortia = ProjectConsortium.objects.filter(project=project).select_related('consortium')
+
+        consortium_tags = set()  # Use a set to avoid duplicates
+
+        for project_consortium in project_consortia:
+            consortium = project_consortium.consortium
+            consortium_tags.update(settings.CONSORTIUM_TAGS.get(consortium.short_name, []))
 
         # Include BIL tags for all datasets
         bil_tags = settings.CONSORTIUM_TAGS.get('BIL', [])
-        for tag in bil_tags:
-            if tag not in consortium_tags:
-                consortium_tags.append(tag)
+        consortium_tags.update(bil_tags)
+
+        consortium_tags = sorted(consortium_tags)  # Convert to a sorted list for consistent ordering
 
         sheets = Sheet.objects.filter(collection_id=collection.id).last()
         if sheets:
             datasets = Dataset.objects.filter(sheet_id=sheets.id)
             for d in datasets:
+                d.tag_list = list(d.tags.values_list('tag', flat=True))  # Pass the list of tag values
                 datasets_list.append(d)
     except ObjectDoesNotExist:
         raise Http404
@@ -982,6 +987,8 @@ def collection_detail(request, pk):
          'descriptive_metadata_queryset': descriptive_metadata_queryset,
          'pi': pi, 'datasets_list': datasets_list, 'consortium_tags': consortium_tags})
 
+
+
 @login_required
 def add_tags(request):
     if request.method == 'POST':
@@ -992,20 +999,30 @@ def add_tags(request):
                 dataset = Dataset.objects.get(id=dataset_id)
                 bil_id = BIL_ID.objects.filter(v2_ds_id=dataset).first()  # Lookup BIL_ID based on dataset
                 for tag_text in selected_tags:
-                    DatasetTag.objects.create(tag=tag_text, dataset=dataset, bil_id=bil_id)
-                return JsonResponse({'status': 'success', 'message': 'Tags added successfully.'})
+                    if not DatasetTag.objects.filter(tag=tag_text, dataset=dataset).exists():
+                        DatasetTag.objects.create(tag=tag_text, dataset=dataset, bil_id=bil_id)
+                # Fetch the updated list of tags to return in the response
+                updated_tags = DatasetTag.objects.filter(dataset=dataset)
+                tags_list = [{'id': tag.id, 'text': tag.tag} for tag in updated_tags]
+                return JsonResponse({'status': 'success', 'tags': tags_list})
             except Dataset.DoesNotExist:
                 return JsonResponse({'status': 'error', 'message': 'Dataset not found.'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+
 
 @login_required
 def delete_tag(request):
     if request.method == 'POST':
         tag_id = request.POST.get('tag_id')
         if tag_id:
-            DatasetTag.objects.filter(id=tag_id).delete()
-            return JsonResponse({'status': 'success', 'message': 'Tag deleted successfully.'})
+            try:
+                tag = DatasetTag.objects.get(id=tag_id)
+                tag.delete()
+                return JsonResponse({'status': 'success', 'tag_text': tag.tag})
+            except DatasetTag.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Tag not found.'}, status=404)
     return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+
 
 
 @login_required
