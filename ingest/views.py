@@ -894,7 +894,9 @@ def collection_detail(request, pk):
 
         # Include BIL tags for all datasets
         bil_tags = settings.CONSORTIUM_TAGS.get('BIL', [])
-        consortium_tags.extend(bil_tags)
+        for tag in bil_tags:
+            if tag not in consortium_tags:
+                consortium_tags.append(tag)
 
         sheets = Sheet.objects.filter(collection_id=collection.id).last()
         if sheets:
