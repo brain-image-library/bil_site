@@ -891,6 +891,7 @@ def collection_detail(request, pk):
         project_consortia = ProjectConsortium.objects.filter(project=project).select_related('consortium')
 
         consortium_tags = set()  # Use a set to avoid duplicates
+        used_tags = set()  # Tags that are actually used in datasets
 
         for project_consortium in project_consortia:
             consortium = project_consortium.consortium
@@ -900,14 +901,16 @@ def collection_detail(request, pk):
         bil_tags = settings.CONSORTIUM_TAGS.get('BIL', [])
         consortium_tags.update(bil_tags)
 
-        consortium_tags = sorted(consortium_tags)  # Convert to a sorted list for consistent ordering
-
         sheets = Sheet.objects.filter(collection_id=collection.id).last()
         if sheets:
             datasets = Dataset.objects.filter(sheet_id=sheets.id)
             for d in datasets:
                 d.tag_list = list(d.tags.values_list('tag', flat=True))  # Pass the list of tag values
+                used_tags.update(d.tag_list)  # Add tags to used_tags set
                 datasets_list.append(d)
+        
+        consortium_tags = sorted(consortium_tags)  # Convert to a sorted list for consistent ordering
+        used_tags = sorted(used_tags)  # Convert to a sorted list for consistent ordering
     except ObjectDoesNotExist:
         raise Http404
 
@@ -985,7 +988,7 @@ def collection_detail(request, pk):
         {'table': table,
          'collection': collection,
          'descriptive_metadata_queryset': descriptive_metadata_queryset,
-         'pi': pi, 'datasets_list': datasets_list, 'consortium_tags': consortium_tags})
+         'pi': pi, 'datasets_list': datasets_list, 'consortium_tags': consortium_tags, 'used_tags': used_tags})
 
 
 
@@ -1009,6 +1012,33 @@ def add_tags(request):
                 return JsonResponse({'status': 'error', 'message': 'Dataset not found.'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
 
+@login_required
+def add_tags_all(request):
+    if request.method == 'POST':
+        collection_id = request.POST.get('collection_id')
+        selected_tags = request.POST.getlist('tag_text[]')
+
+        if selected_tags and collection_id:
+            try:
+                collection = Collection.objects.get(id=collection_id)
+                sheets = Sheet.objects.filter(collection_id=collection.id).last()
+                if sheets:
+                    datasets = Dataset.objects.filter(sheet_id=sheets.id)
+                    for dataset in datasets:
+                        bil_id = BIL_ID.objects.filter(v2_ds_id=dataset).first()  # Lookup BIL_ID based on dataset
+                        for tag_text in selected_tags:
+                            if not DatasetTag.objects.filter(tag=tag_text, dataset=dataset).exists():
+                                DatasetTag.objects.create(tag=tag_text, dataset=dataset, bil_id=bil_id)
+
+                    # Fetch the updated list of tags to return in the response
+                    updated_tags = {}
+                    for dataset in datasets:
+                        updated_tags[dataset.id] = [{'id': tag.id, 'tag': tag.tag} for tag in dataset.tags.all()]
+                    return JsonResponse({'status': 'success', 'updated_tags': updated_tags})
+            except Collection.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Collection not found.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+
 
 @login_required
 def delete_tag(request):
@@ -1017,12 +1047,36 @@ def delete_tag(request):
         if tag_id:
             try:
                 tag = DatasetTag.objects.get(id=tag_id)
+                tag_text = tag.tag
                 tag.delete()
-                return JsonResponse({'status': 'success', 'tag_text': tag.tag})
+                return JsonResponse({'status': 'success', 'tag_text': tag_text})
             except DatasetTag.DoesNotExist:
                 return JsonResponse({'status': 'error', 'message': 'Tag not found.'}, status=404)
     return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
 
+@login_required
+def delete_tag_all(request):
+    if request.method == 'POST':
+        collection_id = request.POST.get('collection_id')
+        tag_text = request.POST.get('tag_text')
+
+        if collection_id and tag_text:
+            try:
+                collection = Collection.objects.get(id=collection_id)
+                sheets = Sheet.objects.filter(collection_id=collection.id).last()
+                if sheets:
+                    datasets = Dataset.objects.filter(sheet_id=sheets.id)
+                    for dataset in datasets:
+                        DatasetTag.objects.filter(tag=tag_text, dataset=dataset).delete()
+
+                    # Fetch the updated list of tags to return in the response
+                    updated_tags = {}
+                    for dataset in datasets:
+                        updated_tags[dataset.id] = [{'id': tag.id, 'tag': tag.tag} for tag in dataset.tags.all()]
+                    return JsonResponse({'status': 'success', 'updated_tags': updated_tags})
+            except Collection.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Collection not found.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
 
 
 @login_required

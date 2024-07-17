@@ -2,6 +2,34 @@
 
 {% block content %}
 {% if pi %}
+
+<style>
+  .styled-checkbox {
+      padding: 5px;
+      margin-bottom: 10px;
+  }
+  
+  .styled-checkbox input[type="checkbox"] {
+      margin-right: 10px;
+  }
+  
+  .styled-checkbox label {
+      display: flex;
+      align-items: center;
+      font-weight: 500;
+      font-size: 14px;
+  }
+  
+  .styled-checkbox label input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+  }
+  
+  .btn-primary {
+      margin-top: 20px;
+  }
+  </style>
+  
 <a href="{% url 'ingest:index' %}">
   <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
 </a>
@@ -18,7 +46,6 @@
   </div>
   <div class="row">
     <div class="col-md-12">
-
       <div class="list-group">
         <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Submission Description</h4> {{collection.description}}</a>
         <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Organization</h4> {{collection.organization_name}}</a>
@@ -98,49 +125,69 @@
       </p>
       <br><br>
 
-      {% if datasets_list %}
-        <h2>Add Tags to Datasets</h2>
-        {% for dataset in datasets_list %}
-    <div class="panel panel-default">
-        <div class="panel-heading" data-toggle="collapse" data-target="#dataset-{{ dataset.id }}">
-            {{ dataset.title }} <i class="chevron fa fa-fw"></i>
-        </div>
-        <div class="collapse" id="dataset-{{ dataset.id }}">
-            <div class="panel-body">
-                <p>{{ dataset.abstract }}</p>
-                <form id="add-tags-form-{{ dataset.id }}" action="{% url 'ingest:add_tags' %}" method="post">
-                    {% csrf_token %}
-                    <input type="hidden" name="dataset_id" value="{{ dataset.id }}">
-                    <div class="input-group">
-                        {% for tag in consortium_tags %}
-                            <div class="checkbox">
-                                <label>
-                                    <input type="checkbox" name="tag_text[]" value="{{ tag }}" {% if tag in dataset.tag_list %}disabled{% endif %}> {{ tag }}
-                                </label>
-                            </div>
-                        {% endfor %}
-                        <span class="input-group-btn">
-                            <button class="btn btn-primary" type="button" onclick="addTags({{ dataset.id }})">Add Tags</button>
-                        </span>
-                    </div>
-                </form>
-                <ul id="tag-list-{{ dataset.id }}">
-                    {% for tag in dataset.tags.all %}
-                        <li id="tag-{{ tag.id }}">
-                            {{ tag.tag }}
-                            <form id="delete-tag-form-{{ tag.id }}" action="{% url 'ingest:delete_tag' %}" method="post" style="display:inline;">
-                                {% csrf_token %}
-                                <input type="hidden" name="tag_id" value="{{ tag.id }}">
-                                <button type="button" class="btn btn-danger btn-xs" onclick="deleteTag({{ tag.id }})">Delete</button>
-                            </form>
-                        </li>
-                    {% endfor %}
-                </ul>
+<!-- Form to add tags to all datasets -->
+<h2>Add Tags to All Datasets</h2>
+<form id="add-tags-all-form" action="{% url 'ingest:add_tags_all' %}" method="post">
+    {% csrf_token %}
+    <input type="hidden" name="collection_id" value="{{ collection.id }}">
+    <div class="row">
+        {% for tag in consortium_tags %}
+        <div class="col-md-4">
+            <div class="checkbox styled-checkbox">
+                <label>
+                    <input type="checkbox" name="tag_text[]" value="{{ tag }}"> {{ tag }}
+                </label>
             </div>
         </div>
+        {% endfor %}
     </div>
-{% endfor %}
+    <button class="btn btn-primary" type="submit">Add Tags to All</button>
+</form>
 
+
+      <!-- Existing code for individual dataset tags -->
+      {% if datasets_list %}
+        <h2>Add Tags to Individual Datasets</h2>
+        {% for dataset in datasets_list %}
+          <div class="panel panel-default">
+            <div class="panel-heading" data-toggle="collapse" data-target="#dataset-{{ dataset.id }}">
+              {{ dataset.title }} <i class="chevron fa fa-fw"></i>
+            </div>
+            <div class="collapse" id="dataset-{{ dataset.id }}">
+              <div class="panel-body">
+                <p>{{ dataset.abstract }}</p>
+                <form id="add-tags-form-{{ dataset.id }}" action="{% url 'ingest:add_tags' %}" method="post">
+                  {% csrf_token %}
+                  <input type="hidden" name="dataset_id" value="{{ dataset.id }}">
+                  <div class="input-group">
+                    {% for tag in consortium_tags %}
+                      <div class="checkbox">
+                        <label>
+                          <input type="checkbox" name="tag_text[]" value="{{ tag }}" {% if tag in dataset.tag_list %}disabled{% endif %}> {{ tag }}
+                        </label>
+                      </div>
+                    {% endfor %}
+                    <span class="input-group-btn">
+                      <button class="btn btn-primary" type="button" onclick="addTags({{ dataset.id }})">Add Tags</button>
+                    </span>
+                  </div>
+                </form>
+                <ul id="tag-list-{{ dataset.id }}">
+                  {% for tag in dataset.tags.all %}
+                    <li id="tag-{{ tag.id }}">
+                      {{ tag.tag }}
+                      <form id="delete-tag-form-{{ tag.id }}" action="{% url 'ingest:delete_tag' %}" method="post" style="display:inline;">
+                        {% csrf_token %}
+                        <input type="hidden" name="tag_id" value="{{ tag.id }}">
+                        <button type="button" class="btn btn-danger btn-xs" onclick="deleteTag({{ tag.id }})">Delete</button>
+                      </form>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
       {% endif %}
 
       {% include 'ingest/new_metadata_sheet.html' %}
@@ -152,6 +199,63 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
+$(document).ready(function() {
+    var isSubmitting = false;
+
+    $('#add-tags-all-form').on('submit', function(event) {
+        if (isSubmitting) {
+            event.preventDefault();
+            return false;
+        }
+        event.preventDefault();
+        
+        var confirmed = confirm('Are you sure you want to add these tags to all datasets?  Removing tags will need to be done on datasets individually.');
+        if (confirmed) {
+            isSubmitting = true;
+            var form = $(this);
+            var url = form.attr('action');
+            $.ajax({
+                type: 'POST',
+                url: url,
+                data: form.serialize(),
+                success: function(response) {
+                    isSubmitting = false;
+                    if (response.status === 'success') {
+                        $.each(response.updated_tags, function(datasetId, tags) {
+                            var tagList = $('#tag-list-' + datasetId);
+                            tagList.empty();  // Clear existing tags
+                            tags.forEach(function(tag) {
+                                var tagHtml = '<li id="tag-' + tag.id + '">' + tag.tag + 
+                                              ' <form id="delete-tag-form-' + tag.id + '" action="{% url 'ingest:delete_tag' %}" method="post" style="display:inline;">' + 
+                                              '{% csrf_token %}' +
+                                              '<input type="hidden" name="tag_id" value="' + tag.id + '">' +
+                                              '<button type="button" class="btn btn-danger btn-xs" onclick="deleteTag(' + tag.id + ')">Delete</button>' +
+                                              '</form></li>';
+                                tagList.append(tagHtml);
+                            });
+
+                            // Disable the added tags in the individual forms
+                            tags.forEach(function(tag) {
+                                $('input[type="checkbox"][value="' + tag.tag + '"]').prop('disabled', true);
+                            });
+                        });
+
+                        form.find('input[type="checkbox"]:checked').prop('checked', false);
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function(response) {
+                    isSubmitting = false;
+                    alert('An error occurred while adding tags.');
+                }
+            });
+        } else {
+            isSubmitting = false;
+        }
+    });
+});
+
 function addTags(datasetId) {
     var form = $('#add-tags-form-' + datasetId);
     var url = form.attr('action');
@@ -173,7 +277,7 @@ function addTags(datasetId) {
                     tagList.append(tagHtml);
                 });
 
-                // Disable the added tags
+                // Disable the added tags in the form
                 form.find('input[type="checkbox"]').each(function() {
                     var tagValue = $(this).val();
                     if (response.tags.some(tag => tag.text === tagValue)) {
@@ -202,19 +306,53 @@ function deleteTag(tagId) {
         success: function(response) {
             if (response.status === 'success') {
                 var tagText = response.tag_text.trim();
-                console.log('Tag deleted:', tagText);  // Debugging statement
-
-                // Remove the tag from the list
                 $('#tag-' + tagId).remove();
 
                 // Enable the tag in the checkbox list again
                 var checkbox = $('input[type="checkbox"][value="' + tagText + '"]');
                 if (checkbox.length) {
                     checkbox.prop('disabled', false);
-                    console.log('Checkbox enabled for tag:', tagText);  // Debugging statement
-                } else {
-                    console.log('Checkbox not found for tag:', tagText);  // Debugging statement
                 }
+            } else {
+                alert(response.message);
+            }
+        },
+        error: function(response) {
+            alert('An error occurred while deleting the tag.');
+        }
+    });
+}
+
+function deleteTagAll(tagText) {
+    var form = $('#delete-tag-all-form-' + tagText);
+    var url = form.attr('action');
+    $.ajax({
+        type: 'POST',
+        url: url,
+        data: form.serialize(),
+        success: function(response) {
+            if (response.status === 'success') {
+                $.each(response.updated_tags, function(datasetId, tags) {
+                    var tagList = $('#tag-list-' + datasetId);
+                    tagList.empty();  // Clear existing tags
+                    tags.forEach(function(tag) {
+                        var tagHtml = '<li id="tag-' + tag.id + '">' + tag.tag + 
+                                      ' <form id="delete-tag-form-' + tag.id + '" action="{% url 'ingest:delete_tag' %}" method="post" style="display:inline;">' + 
+                                      '{% csrf_token %}' +
+                                      '<input type="hidden" name="tag_id" value="' + tag.id + '">' +
+                                      '<button type="button" class="btn btn-danger btn-xs" onclick="deleteTag(' + tag.id + ')">Delete</button>' +
+                                      '</form></li>';
+                        tagList.append(tagHtml);
+                    });
+
+                    // Enable the deleted tags in the checkbox list again
+                    var checkbox = $('input[type="checkbox"][value="' + tagText + '"]');
+                    if (checkbox.length) {
+                        checkbox.prop('disabled', false);
+                    }
+                });
+
+                $('#tag-all-' + tagText).remove();  // Remove the tag from the list at the top
             } else {
                 alert(response.message);
             }
