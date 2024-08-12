@@ -4,37 +4,39 @@
 {% if pi %}
 
 <style>
-  .styled-checkbox {
-      padding: 5px;
-      margin-bottom: 10px;
+  .styled-checkbox-container .styled-checkbox {
+      padding: 0 !important;
+      margin-bottom: 5px !important;
   }
   
-  .styled-checkbox input[type="checkbox"] {
-      margin-right: 10px;
+  .styled-checkbox-container .styled-checkbox input[type="checkbox"] {
+      margin-right: 5px !important;
   }
   
-  .styled-checkbox label {
+  .styled-checkbox-container .styled-checkbox label {
       display: flex;
       align-items: center;
       font-weight: 500;
       font-size: 14px;
   }
   
-  .styled-checkbox label input[type="checkbox"] {
-      width: 20px;
-      height: 20px;
+  .styled-checkbox-container .styled-checkbox label input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
   }
   
-  .btn-primary {
-      margin-top: 20px;
+  .styled-checkbox-container .btn-primary {
+      margin-top: 10px !important;
   }
   </style>
+  
+  
   
 <a href="{% url 'ingest:index' %}">
   <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
 </a>
 {% endif %}
-<div class="content container-fluid">
+<div class="content container-fluid styled-checkbox-container">
   <div class="row">
     <div class="col-md-6">
       <h1><b>Submission Name</b> {{ collection.name }} 
@@ -132,7 +134,7 @@
     <input type="hidden" name="collection_id" value="{{ collection.id }}">
     <div class="row">
         {% for tag in consortium_tags %}
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="checkbox styled-checkbox">
                 <label>
                     <input type="checkbox" name="tag_text[]" value="{{ tag }}"> {{ tag }}
@@ -143,6 +145,7 @@
     </div>
     <button class="btn btn-primary" type="submit">Add Tags to All</button>
 </form>
+
 
 
       <!-- Existing code for individual dataset tags -->
