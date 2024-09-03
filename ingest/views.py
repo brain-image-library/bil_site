@@ -40,6 +40,8 @@ from datetime import datetime
 import os
 from django.middleware.csrf import get_token
 
+from .mongo_utils import get_mongo_collection
+
 
 def logout(request):
     messages.success(request, "You've successfully logged out")
@@ -3137,3 +3139,16 @@ def upload_spreadsheet(spreadsheet_file, associated_submission, request):
         error = True
         messages.error(request, "File type not supported")
         return error
+
+def landing_page(request):
+    # Get the MongoDB collection
+    collection = get_mongo_collection()
+    
+    # Fetch data from the MongoDB collection
+    data = collection.find()
+    
+    # Convert MongoDB cursor to a list of dictionaries
+    json_data = list(data)
+    
+    # Render the template with the fetched data
+    return render(request, 'ingest/landing_page.html', {'data': json_data})
