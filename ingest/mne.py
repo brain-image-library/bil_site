@@ -199,7 +199,7 @@ class Mne:
            else:
              rstring=rstring + '-'
            rstring=rstring+Mne.DATAA[element]
-       rstring = "spc_"+rstring
+       rstring = "spc-"+rstring
        return rstring
   
   @staticmethod
