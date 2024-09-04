@@ -28,24 +28,24 @@
         <a href="#" class="list-group-item"><h4 class="list-group-item-heading">Data staging area </h4> {{collection.data_path}}</a>
 
         {% if collection.validation_status == "NOT_VALIDATED" %}
-        <a href="{% url 'ingest:collection_validation_results' pk=collection.pk %}" class="list-group-item list-group-item-info"><h4 class="list-group-item-heading">Validation Status</h4> Not validated</a>
-        {% elif collection.validation_status == "PENDING" %}
-        <a href="{% url 'ingest:collection_validation_results' pk=collection.pk %}" class="list-group-item list-group-item-warning"><h4 class="list-group-item-heading">Validation Status</h4> Validation pending</a>
-        {% elif collection.validation_status == "SUCCESS" %}
-        <a href="{% url 'ingest:collection_validation_results' pk=collection.pk %}" class="list-group-item list-group-item-success"><h4 class="list-group-item-heading">Validation Status</h4> Validation successful. [Click to view validation log].</a>
-        {% elif collection.validation_status == "FAILED" %}
-        <a href="{% url 'ingest:collection_validation_results' pk=collection.pk %}" class="list-group-item list-group-item-danger"><h4 class="list-group-item-heading">Validation Status</h4> Validation failed. [Click to view validation log]</a>
-        {% endif %}
+      <div class="list-group-item list-group-item-info"><h4 class="list-group-item-heading">Validation Status</h4> Not validated</div>
+      {% elif collection.validation_status == "PENDING" %}
+      <div class="list-group-item list-group-item-warning"><h4 class="list-group-item-heading">Validation Status</h4> Validation pending</div>
+      {% elif collection.validation_status == "SUCCESS" %}
+      <div class="list-group-item list-group-item-success"><h4 class="list-group-item-heading">Validation Status</h4> Validation successful.</div>
+      {% elif collection.validation_status == "FAILED" %}
+      <div class="list-group-item list-group-item-danger"><h4 class="list-group-item-heading">Validation Status</h4> Validation failed.</div>
+      {% endif %}
 
-        {% if collection.submission_status == "NOT_SUBMITTED" %}
-        <a href="{% url 'ingest:collection_submission_results' pk=collection.pk %}" class="list-group-item list-group-item-info"><h4 class="list-group-item-heading">Submission Status</h4> Not submitted</a>
-        {% elif collection.submission_status == "PENDING" %}
-        <a href="{% url 'ingest:collection_submission_results' pk=collection.pk %}" class="list-group-item list-group-item-warning"><h4 class="list-group-item-heading">Submission Status</h4> Submition pending</a>
-        {% elif collection.submission_status == "SUCCESS" %}
-        <a href="{% url 'ingest:collection_submission_results' pk=collection.pk %}" class="list-group-item list-group-item-success"><h4 class="list-group-item-heading">Submission Status</h4> Submission successful. [Click to view submission log].</a>
-        {% elif collection.submission_status == "FAILED" %}
-        <a href="{% url 'ingest:collection_submission_results' pk=collection.pk %}" class="list-group-item list-group-item-danger"><h4 class="list-group-item-heading">Submission Status</h4> Submission failed. [Click to view submission log].</a>
-        {% endif %}
+      {% if collection.submission_status == "NOT_SUBMITTED" %}
+      <div class="list-group-item list-group-item-info"><h4 class="list-group-item-heading">Submission Status</h4> Not submitted</div>
+      {% elif collection.submission_status == "PENDING" %}
+      <div class="list-group-item list-group-item-warning"><h4 class="list-group-item-heading">Submission Status</h4> Submission pending</div>
+      {% elif collection.submission_status == "SUCCESS" %}
+      <div class="list-group-item list-group-item-success"><h4 class="list-group-item-heading">Submission Status</h4> Submission successful.</div>
+      {% elif collection.submission_status == "FAILED" %}
+      <div class="list-group-item list-group-item-danger"><h4 class="list-group-item-heading">Submission Status</h4> Submission failed.</div>
+      {% endif %}
 
       </div>
 
