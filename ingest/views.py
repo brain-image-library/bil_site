@@ -1658,7 +1658,6 @@ def save_dataset_sheet_method_1_or_3(datasets, sheet):
             abstract = d['Abstract']
             methods = d['Methods']
             technicalinfo = d['TechnicalInfo']
-            bildid = d['BILDID']
             dataset = Dataset(bildirectory=bildirectory, title=title, socialmedia=socialmedia, subject=subject, subjectscheme=subjectscheme, rights=rights, rightsuri=rightsuri, rightsidentifier=rightsidentifier, dataset_image=dataset_image, generalmodality=generalmodality, technique=technique, other=other, abstract=abstract, methods=methods, technicalinfo=technicalinfo, sheet_id=sheet.id)
             dataset.save()
             saved_datasets.append(dataset)
@@ -2290,33 +2289,35 @@ def save_bil_ids(datasets, filename):
     workbook=xlrd.open_workbook(filename)
     sheetname = 'Dataset'
     dataset_sheet = workbook.sheet_by_name(sheetname)
-    for cell_value in dataset_sheet.col_values(0):
-        row_index = 0
-        if cell_value.startswith('/bil/data'):
-            bil_direct_row = row_index
-            if dataset_sheet.cell_type(bil_direct_row, 15) != xlrd.XL_CELL_EMPTY:
-                bil_id_value = dataset_sheet.cell_value(bil_direct_row, 15)
-        row_index = row_index + 1
+    row_index = 0
     for dataset in datasets:
-        if bil_id_value in locals():
-            #if BIL_ID.objects.filer(bil_id = bil_id_value):
-                #v2_ds_id = dataset Update existing bil_id set V2_ds_id = dataset (Saving dataset to old bil_id)
-                    #BIL_ID.objects.filter(bil_id = bil_id_value).update(v2_ds_id = dataset, metadata_version = 2)
-                #Set metadata version to two if is not 
-            if BIL_ID.objects.filter(bil_id = bil_id_value):
-                updated_bil_id = BIL_ID.objects.filter(bil_id = bil_id_value).update(v2_ds_id = dataset, metadata_version = 2)
-                updated_bil_id.save()
-            else: print("bil_id did not match any previous bil_id assigned. Please Try Again")
-        else:
-            #create placeholder for BIL_ID
-            bil_id = BIL_ID(v2_ds_id = dataset, metadata_version = 2, doi = False)
-            bil_id.save()
-            #grab the just created database ID and generate an mne id
-            saved_bil_id = BIL_ID.objects.get(v2_ds_id = dataset.id)
-            mne_id = Mne.dataset_num_to_mne(saved_bil_id.id)
-            saved_bil_id.bil_id = mne_id
-            #final save
-            saved_bil_id.save()
+        for cell_value in dataset_sheet.col_values(0):
+            print('hit first loop')
+            if cell_value.startswith('/bil/data'):
+                print(cell_value)
+                bil_direct_row = row_index
+                print(bil_direct_row)
+                if dataset_sheet.cell_type(bil_direct_row, 15) != xlrd.XL_CELL_EMPTY:
+                    bil_id_value = dataset_sheet.cell_value(bil_direct_row, 15)
+                    bil_id_value.strip
+                    print(bil_id_value)
+                    #pulls correct bil_id from spreadsheet
+                    #logic here for updating the BIL_ID with the new dataset
+                    existing_id = BIL_ID.objects.filter(bil_id = bil_id_value)
+                    updated_bil_id = BIL_ID.objects.filter(bil_id = bil_id_value).update(v2_ds_id = dataset, metadata_version = 2)
+                    print(existing_id)
+                else:
+                
+                    print('hit normal bil_ids function')
+                    bil_id = BIL_ID(v2_ds_id = dataset, metadata_version = 2, doi = False)
+                    bil_id.save()
+                    #grab the just created database ID and generate an mne id
+                    saved_bil_id = BIL_ID.objects.get(v2_ds_id = dataset.id)
+                    mne_id = Mne.dataset_num_to_mne(saved_bil_id.id)
+                    saved_bil_id.bil_id = mne_id
+                    #final save
+                    saved_bil_id.save()
+            row_index = row_index + 1
     return
 
 def save_specimen_ids(specimens):
