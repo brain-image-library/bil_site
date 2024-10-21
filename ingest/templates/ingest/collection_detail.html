@@ -28,10 +28,8 @@
   .styled-checkbox-container .btn-primary {
       margin-top: 10px !important;
   }
-  </style>
-  
-  
-  
+</style>
+
 <a href="{% url 'ingest:index' %}">
   <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
 </a>
@@ -103,22 +101,10 @@
 
       <table>
       <tr>           
-      <!--{% if descriptive_metadata_queryset %}
-      <form action="" method="post">{% csrf_token %}
-          <button type="submit" class="cancel btn btn-primary" value="Validate" name="validate_collection">Validate</button>
-          &nbsp;
-          &nbsp;
-      </form>       
-      {% endif %}-->
-
       <a href="{% url 'ingest:collection_update' pk=collection.pk %}">
         <button class="cancel btn btn-primary" value="ignore" formnovalidate="">Edit</button>
       </a>
-          &nbsp;
-      <!--<a href="{% url 'ingest:collection_delete' pk=collection.pk %}">
-        <button class="cancel btn btn-primary" value="ignore" formnovalidate="">Delete</button>
-      </a>-->
-          &nbsp;
+      &nbsp;
       <a href="{% url 'ingest:collection_list' %}">
         <button class="cancel btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
       </a>
@@ -143,10 +129,8 @@
         </div>
         {% endfor %}
     </div>
-    <button class="btn btn-primary" type="submit">Add Tags to All</button>
+    <button class="btn btn-primary" type="submit" disabled>Add Tags to All</button>
 </form>
-
-
 
       <!-- Existing code for individual dataset tags -->
       {% if datasets_list %}
@@ -171,7 +155,7 @@
                       </div>
                     {% endfor %}
                     <span class="input-group-btn">
-                      <button class="btn btn-primary" type="button" onclick="addTags({{ dataset.id }})">Add Tags</button>
+                      <button class="btn btn-primary" type="button" onclick="addTags({{ dataset.id }})" disabled>Add Tags</button>
                     </span>
                   </div>
                 </form>
@@ -205,6 +189,20 @@
 $(document).ready(function() {
     var isSubmitting = false;
 
+    // Disable the "Add Tags to All" button if no checkboxes are selected
+    $('#add-tags-all-form input[type="checkbox"]').on('change', function() {
+        var anyChecked = $('#add-tags-all-form input[type="checkbox"]:checked').length > 0;
+        $('#add-tags-all-form button[type="submit"]').prop('disabled', !anyChecked);
+    });
+
+    // Disable "Add Tags" buttons on individual datasets if no checkboxes are selected
+    $('form[id^="add-tags-form-"] input[type="checkbox"]').on('change', function() {
+        var formId = $(this).closest('form').attr('id');
+        var anyChecked = $('#' + formId + ' input[type="checkbox"]:checked').length > 0;
+        $('#' + formId + ' button[type="button"]').prop('disabled', !anyChecked);
+    });
+
+    // Existing form submission handling
     $('#add-tags-all-form').on('submit', function(event) {
         if (isSubmitting) {
             event.preventDefault();
@@ -244,6 +242,7 @@ $(document).ready(function() {
                         });
 
                         form.find('input[type="checkbox"]:checked').prop('checked', false);
+                        $('#add-tags-all-form button[type="submit"]').prop('disabled', true);  // Disable button after submission
                     } else {
                         alert(response.message);
                     }
@@ -259,6 +258,7 @@ $(document).ready(function() {
     });
 });
 
+// Same logic for individual datasets' tag forms
 function addTags(datasetId) {
     var form = $('#add-tags-form-' + datasetId);
     var url = form.attr('action');
@@ -289,6 +289,7 @@ function addTags(datasetId) {
                 });
 
                 form.find('input[type="checkbox"]:checked').prop('checked', false);
+                form.find('button[type="button"]').prop('disabled', true);  // Disable button after submission
             } else {
                 alert(response.message);
             }
@@ -316,46 +317,6 @@ function deleteTag(tagId) {
                 if (checkbox.length) {
                     checkbox.prop('disabled', false);
                 }
-            } else {
-                alert(response.message);
-            }
-        },
-        error: function(response) {
-            alert('An error occurred while deleting the tag.');
-        }
-    });
-}
-
-function deleteTagAll(tagText) {
-    var form = $('#delete-tag-all-form-' + tagText);
-    var url = form.attr('action');
-    $.ajax({
-        type: 'POST',
-        url: url,
-        data: form.serialize(),
-        success: function(response) {
-            if (response.status === 'success') {
-                $.each(response.updated_tags, function(datasetId, tags) {
-                    var tagList = $('#tag-list-' + datasetId);
-                    tagList.empty();  // Clear existing tags
-                    tags.forEach(function(tag) {
-                        var tagHtml = '<li id="tag-' + tag.id + '">' + tag.tag + 
-                                      ' <form id="delete-tag-form-' + tag.id + '" action="{% url 'ingest:delete_tag' %}" method="post" style="display:inline;">' + 
-                                      '{% csrf_token %}' +
-                                      '<input type="hidden" name="tag_id" value="' + tag.id + '">' +
-                                      '<button type="button" class="btn btn-danger btn-xs" onclick="deleteTag(' + tag.id + ')">Delete</button>' +
-                                      '</form></li>';
-                        tagList.append(tagHtml);
-                    });
-
-                    // Enable the deleted tags in the checkbox list again
-                    var checkbox = $('input[type="checkbox"][value="' + tagText + '"]');
-                    if (checkbox.length) {
-                        checkbox.prop('disabled', false);
-                    }
-                });
-
-                $('#tag-all-' + tagText).remove();  // Remove the tag from the list at the top
             } else {
                 alert(response.message);
             }
