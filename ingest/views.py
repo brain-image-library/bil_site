@@ -31,7 +31,7 @@ from .specimen_portal import Specimen_Portal
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag, ConsortiumTag
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -793,27 +793,26 @@ def collection_detail(request, pk):
         project = collection.project
         project_consortia = ProjectConsortium.objects.filter(project=project).select_related('consortium')
 
-        consortium_tags = set()  # Use a set to avoid duplicates
-        used_tags = set()  # Tags that are actually used in datasets
+        consortium_tags = set()
+        used_tags = set()
 
         for project_consortium in project_consortia:
             consortium = project_consortium.consortium
-            consortium_tags.update(settings.CONSORTIUM_TAGS.get(consortium.short_name, []))
+            consortium_tags.update(ConsortiumTag.objects.filter(consortium=consortium).values_list('tag', flat=True))
 
-        # Include BIL tags for all datasets
-        bil_tags = settings.CONSORTIUM_TAGS.get('BIL', [])
+        bil_tags = ConsortiumTag.objects.filter(consortium__short_name='BIL').values_list('tag', flat=True)
         consortium_tags.update(bil_tags)
 
         sheets = Sheet.objects.filter(collection_id=collection.id).last()
         if sheets:
             datasets = Dataset.objects.filter(sheet_id=sheets.id)
             for d in datasets:
-                d.tag_list = list(d.tags.values_list('tag', flat=True))  # Pass the list of tag values
-                used_tags.update(d.tag_list)  # Add tags to used_tags set
+                d.tag_list = list(d.tags.values_list('tag__tag', flat=True))
+                used_tags.update(d.tag_list)
                 datasets_list.append(d)
-        
-        consortium_tags = sorted(consortium_tags)  # Convert to a sorted list for consistent ordering
-        used_tags = sorted(used_tags)  # Convert to a sorted list for consistent ordering
+
+        consortium_tags = sorted(consortium_tags)
+        used_tags = sorted(used_tags)
     except ObjectDoesNotExist:
         raise Http404
 
@@ -836,20 +835,27 @@ def add_tags(request):
     if request.method == 'POST':
         dataset_id = request.POST.get('dataset_id')
         selected_tags = request.POST.getlist('tag_text[]')
+        
         if selected_tags and dataset_id:
             try:
                 dataset = Dataset.objects.get(id=dataset_id)
                 bil_id = BIL_ID.objects.filter(v2_ds_id=dataset).first()  # Lookup BIL_ID based on dataset
+                
                 for tag_text in selected_tags:
-                    if not DatasetTag.objects.filter(tag=tag_text, dataset=dataset).exists():
-                        DatasetTag.objects.create(tag=tag_text, dataset=dataset, bil_id=bil_id)
+                    # Lookup the corresponding ConsortiumTag object
+                    consortium_tag = ConsortiumTag.objects.filter(tag=tag_text).first()
+                    if consortium_tag and not DatasetTag.objects.filter(tag=consortium_tag, dataset=dataset).exists():
+                        DatasetTag.objects.create(tag=consortium_tag, dataset=dataset, bil_id=bil_id)
+                
                 # Fetch the updated list of tags to return in the response
                 updated_tags = DatasetTag.objects.filter(dataset=dataset)
-                tags_list = [{'id': tag.id, 'text': tag.tag} for tag in updated_tags]
+                tags_list = [{'id': tag.id, 'text': tag.tag.tag, 'url': reverse('ingest:delete_tag')} for tag in updated_tags]  # Include delete URL
                 return JsonResponse({'status': 'success', 'tags': tags_list})
+            
             except Dataset.DoesNotExist:
                 return JsonResponse({'status': 'error', 'message': 'Dataset not found.'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+
 
 @login_required
 def add_tags_all(request):
@@ -861,33 +867,42 @@ def add_tags_all(request):
             try:
                 collection = Collection.objects.get(id=collection_id)
                 sheets = Sheet.objects.filter(collection_id=collection.id).last()
+                
                 if sheets:
                     datasets = Dataset.objects.filter(sheet_id=sheets.id)
+                    
                     for dataset in datasets:
                         bil_id = BIL_ID.objects.filter(v2_ds_id=dataset).first()  # Lookup BIL_ID based on dataset
+                        
                         for tag_text in selected_tags:
-                            if not DatasetTag.objects.filter(tag=tag_text, dataset=dataset).exists():
-                                DatasetTag.objects.create(tag=tag_text, dataset=dataset, bil_id=bil_id)
+                            # Lookup the corresponding ConsortiumTag object
+                            consortium_tag = ConsortiumTag.objects.filter(tag=tag_text).first()
+                            if consortium_tag and not DatasetTag.objects.filter(tag=consortium_tag, dataset=dataset).exists():
+                                DatasetTag.objects.create(tag=consortium_tag, dataset=dataset, bil_id=bil_id)
 
                     # Fetch the updated list of tags to return in the response
                     updated_tags = {}
                     for dataset in datasets:
-                        updated_tags[dataset.id] = [{'id': tag.id, 'tag': tag.tag} for tag in dataset.tags.all()]
+                        updated_tags[dataset.id] = [{'id': tag.id, 'text': tag.tag.tag, 'url': reverse('ingest:delete_tag')} for tag in dataset.tags.all()]  # Use `tag.tag.tag` for the correct tag name
                     return JsonResponse({'status': 'success', 'updated_tags': updated_tags})
+            
             except Collection.DoesNotExist:
                 return JsonResponse({'status': 'error', 'message': 'Collection not found.'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
-
 
 @login_required
 def delete_tag(request):
     if request.method == 'POST':
         tag_id = request.POST.get('tag_id')
+        
         if tag_id:
             try:
+                # Fetch the DatasetTag based on the tag ID
                 tag = DatasetTag.objects.get(id=tag_id)
-                tag_text = tag.tag
-                tag.delete()
+                tag_text = tag.tag.tag  # Get the tag text before deleting
+                
+                tag.delete()  # Delete the DatasetTag entry
+                
                 return JsonResponse({'status': 'success', 'tag_text': tag_text})
             except DatasetTag.DoesNotExist:
                 return JsonResponse({'status': 'error', 'message': 'Tag not found.'}, status=404)

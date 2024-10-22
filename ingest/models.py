@@ -22,6 +22,9 @@ class Consortium(models.Model):
     short_name = models.CharField(max_length=256)
     long_name = models.CharField(max_length=1000)
 
+    def __str__(self):
+        return self.short_name 
+
 class ProjectConsortium(models.Model):
     project = models.ForeignKey(Project, on_delete=models.SET_NULL, blank=False, null=True)
     consortium = models.ForeignKey(Consortium, on_delete=models.SET_NULL, null = True, blank=True)
@@ -530,10 +533,16 @@ class SpecimenLinkage(models.Model):
     code_id = models.CharField(max_length=64, default="", choices=[('cubie_tissue', 'Cubie Tissue')])
     specimen_category = models.CharField(max_length=64, default="", choices=[('tissue', 'Tissue'), ('roi', 'ROI'), ('slab', 'Slab'), ('donor', 'Donor')]) 
 
-class DatasetTag(models.Model):
+class ConsortiumTag(models.Model):
+    consortium = models.ForeignKey(Consortium, on_delete=models.CASCADE, related_name='tags')
     tag = models.CharField(max_length=256)
+
+    def __str__(self):
+        return f"{self.consortium.short_name} - {self.tag}"
+class DatasetTag(models.Model):
+    tag = models.ForeignKey(ConsortiumTag, on_delete=models.CASCADE)  # Reference to ConsortiumTag
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, related_name='tags')
     bil_id = models.ForeignKey(BIL_ID, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
-        return self.tag
+        return f"{self.tag.tag} (Dataset: {self.dataset})"

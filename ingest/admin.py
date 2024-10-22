@@ -10,7 +10,7 @@ from django.db.models import F
 from .models import (
     ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor,
     Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder,
-    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium, BIL_Specimen_ID, SpecimenLinkage
+    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium, BIL_Specimen_ID, SpecimenLinkage, ConsortiumTag
 )
 
 
@@ -217,3 +217,7 @@ admin.site.register(Specimen, SpecimenAdmin)
 
 
 admin.site.register(ProjectConsortium)
+    
+
+admin.site.register(ConsortiumTag)
+

@@ -163,7 +163,7 @@
                   {% for tag in dataset.tags.all %}
                     <li id="tag-{{ tag.id }}">
                       {{ tag.tag }}
-                      <form id="delete-tag-form-{{ tag.id }}" action="{% url 'ingest:delete_tag' %}" method="post" style="display:inline;">
+                      <form id="delete-tag-form-{{ tag.id }}" data-url="{% url 'ingest:delete_tag' %}" method="post" style="display:inline;">
                         {% csrf_token %}
                         <input type="hidden" name="tag_id" value="{{ tag.id }}">
                         <button type="button" class="btn btn-danger btn-xs" onclick="deleteTag({{ tag.id }})">Delete</button>
@@ -204,57 +204,71 @@ $(document).ready(function() {
 
     // Existing form submission handling
     $('#add-tags-all-form').on('submit', function(event) {
+        event.preventDefault();
+
         if (isSubmitting) {
-            event.preventDefault();
             return false;
         }
-        event.preventDefault();
-        
-        var confirmed = confirm('Are you sure you want to add these tags to all datasets?  Removing tags will need to be done on datasets individually.');
-        if (confirmed) {
-            isSubmitting = true;
-            var form = $(this);
-            var url = form.attr('action');
-            $.ajax({
-                type: 'POST',
-                url: url,
-                data: form.serialize(),
-                success: function(response) {
-                    isSubmitting = false;
-                    if (response.status === 'success') {
-                        $.each(response.updated_tags, function(datasetId, tags) {
-                            var tagList = $('#tag-list-' + datasetId);
-                            tagList.empty();  // Clear existing tags
-                            tags.forEach(function(tag) {
-                                var tagHtml = '<li id="tag-' + tag.id + '">' + tag.tag + 
-                                              ' <form id="delete-tag-form-' + tag.id + '" action="{% url 'ingest:delete_tag' %}" method="post" style="display:inline;">' + 
-                                              '{% csrf_token %}' +
-                                              '<input type="hidden" name="tag_id" value="' + tag.id + '">' +
-                                              '<button type="button" class="btn btn-danger btn-xs" onclick="deleteTag(' + tag.id + ')">Delete</button>' +
-                                              '</form></li>';
-                                tagList.append(tagHtml);
-                            });
 
-                            // Disable the added tags in the individual forms
-                            tags.forEach(function(tag) {
-                                $('input[type="checkbox"][value="' + tag.tag + '"]').prop('disabled', true);
+        var confirmed = confirm('Are you sure you want to add these tags to all datasets? Removing tags will need to be done on datasets individually.');
+        if (!confirmed) {
+            return;
+        }
+
+        isSubmitting = true;
+        var form = $(this);
+        var url = form.attr('action');
+
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: form.serialize(),
+            success: function(response) {
+                isSubmitting = false;
+
+                if (response.status === 'success') {
+                    // Iterate through the updated tags for each dataset
+                    $.each(response.updated_tags, function(datasetId, tags) {
+                        var tagList = $('#tag-list-' + datasetId);
+                        tagList.empty();  // Clear existing tags
+
+                        // Append each tag to the dataset's tag list
+                        tags.forEach(function(tag) {
+                            var tagHtml = '<li id="tag-' + tag.id + '">' + tag.text + 
+                                          ' <form id="delete-tag-form-' + tag.id + '" data-url="' + tag.url + '" method="post" style="display:inline;">' + 
+                                          '{% csrf_token %}' +
+                                          '<input type="hidden" name="tag_id" value="' + tag.id + '">' +
+                                          '<button type="button" class="btn btn-danger btn-xs" onclick="deleteTag(' + tag.id + ')">Delete</button>' +
+                                          '</form></li>';
+                            tagList.append(tagHtml);
+                        });
+
+                        // Dynamically attach deleteTag() to each delete button
+                        tags.forEach(function(tag) {
+                            $('#delete-tag-form-' + tag.id).off('click').on('click', function() {
+                                deleteTag(tag.id);
                             });
                         });
 
-                        form.find('input[type="checkbox"]:checked').prop('checked', false);
-                        $('#add-tags-all-form button[type="submit"]').prop('disabled', true);  // Disable button after submission
-                    } else {
-                        alert(response.message);
-                    }
-                },
-                error: function(response) {
-                    isSubmitting = false;
-                    alert('An error occurred while adding tags.');
+                        // Disable the added tags in the individual forms
+                        tags.forEach(function(tag) {
+                            $('#add-tags-form-' + datasetId + ' input[type="checkbox"][value="' + tag.text + '"]').prop('disabled', true);
+                        });
+                    });
+
+                    // Uncheck all checkboxes and disable the "Add Tags to All" button
+                    form.find('input[type="checkbox"]:checked').prop('checked', false);
+                    $('#add-tags-all-form button[type="submit"]').prop('disabled', true);
+
+                } else {
+                    alert(response.message);
                 }
-            });
-        } else {
-            isSubmitting = false;
-        }
+            },
+            error: function(response) {
+                isSubmitting = false;
+                alert('An error occurred while adding tags.');
+            }
+        });
     });
 });
 
@@ -272,7 +286,7 @@ function addTags(datasetId) {
                 tagList.empty();  // Clear existing tags
                 response.tags.forEach(function(tag) {
                     var tagHtml = '<li id="tag-' + tag.id + '">' + tag.text + 
-                                  ' <form id="delete-tag-form-' + tag.id + '" action="{% url 'ingest:delete_tag' %}" method="post" style="display:inline;">' + 
+                                  ' <form id="delete-tag-form-' + tag.id + '" data-url="' + tag.url + '" method="post" style="display:inline;">' + 
                                   '{% csrf_token %}' +
                                   '<input type="hidden" name="tag_id" value="' + tag.id + '">' +
                                   '<button type="button" class="btn btn-danger btn-xs" onclick="deleteTag(' + tag.id + ')">Delete</button>' +
@@ -302,10 +316,11 @@ function addTags(datasetId) {
 
 function deleteTag(tagId) {
     var form = $('#delete-tag-form-' + tagId);
-    var url = form.attr('action');
+    var url = form.data('url'); // Get the URL from the data attribute
+
     $.ajax({
         type: 'POST',
-        url: url,
+        url: url, // Use the URL from the form
         data: form.serialize(),
         success: function(response) {
             if (response.status === 'success') {
