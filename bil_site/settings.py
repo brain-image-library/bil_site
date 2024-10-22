@@ -75,13 +75,6 @@ LOGIN_REDIRECT_URL = '/'
 
 ALLOWED_HOSTS = ['*']
 
-CONSORTIUM_TAGS = {
-    'BICAN': ['BICAN Tag 1', 'BICAN Tag 2', 'BICAN Tag 3'],
-    'BICCN': ['BICCN Tag 1', 'BICCN Tag 2', 'BICCN Tag 3'],
-    'SSPsyGene': ['SSPsyGene Tag 1', 'SSPsyGene Tag 2', 'SSPsyGene Tag 3'],
-    'BIL': ['BIL Tag 1', 'BIL Tag 2', 'BIL Tag 3']  # Add BIL tags here
-}
-
 # Application definition
 
 INSTALLED_APPS = [
