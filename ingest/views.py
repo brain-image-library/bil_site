@@ -781,103 +781,6 @@ def collection_data_path(request, pk):
          'data_path': data_path})
 
 @login_required
-def collection_validation_results(request, pk):
-    current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-    for attribute in project_person:
-        if attribute.is_pi:
-            pi = True
-        else:
-            pi = False
-    """ Where a user can see the results of validation. """
-    collection = Collection.objects.get(id=pk)
-
-    collection.validation_status = "NOT_VALIDATED"
-    dir_size = ""
-    outvalidfile = ""
-    filecontents = ""
-    invalid_metadata_directories = []
-    if collection.celery_task_id_validation:
-        result = AsyncResult(collection.celery_task_id_validation)
-        state = result.state
-        if state == 'SUCCESS':
-            analysis_results = result.get()
-            if analysis_results['valid']:
-                collection.validation_status = "SUCCESS"
-            else:
-                collection.validation_status = "FAILED"
-                invalid_metadata_directories = analysis_results["invalid_metadata_directories"]
-            dir_size = analysis_results['dir_size']
-            outvalidfile = analysis_results['output']
-            #Open the log file and read the contents
-            f=open(outvalidfile, "r")
-            if f.mode == 'r':
-               filecontents=f.read()
-            f.close()
-        else:
-            collection.validation_status = "PENDING"
-
-    return render(
-        request,
-        'ingest/collection_validation_results.html',
-        {'collection': collection,
-         'outfile': outvalidfile,
-         'output': filecontents,
-         'dir_size': dir_size,
-         'invalid_metadata_directories': invalid_metadata_directories,
-         'pi': pi})
-
-@login_required
-def collection_submission_results(request, pk):
-    current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-    for attribute in project_person:
-        if attribute.is_pi:
-            pi = True
-        else:
-            pi = False
-    """ Where a user can see the results of submission. """
-    collection = Collection.objects.get(id=pk)
-
-    collection.submission_status = "NOT_SUBMITTED"
-    dir_size = ""
-    outvalidfile = ""
-    filecontents = ""
-    invalid_metadata_directories = []
-    if collection.celery_task_id_submission:
-        result = AsyncResult(collection.celery_task_id_submission)
-        state = result.state
-        if state == 'SUCCESS':
-            analysis_results = result.get()
-            if analysis_results['valid']:
-                collection.submission_status = "SUCCESS"
-            else:
-                collection.submission_status = "FAILED"
-                invalid_metadata_directories = analysis_results["invalid_metadata_directories"]
-            dir_size = analysis_results['dir_size']
-            outvalidfile = analysis_results['output']
-            #Open the log file and read the contents
-            f=open(outvalidfile, "r")
-            if f.mode == 'r':
-               filecontents=f.read()
-            f.close()
-        else:
-            collection.submission_status = "PENDING"
-
-    return render(
-        request,
-        'ingest/collection_submission_results.html',
-        {'collection': collection,
-         'outfile': outvalidfile,
-         'output': filecontents,
-         'dir_size': dir_size,
-         'invalid_metadata_directories': invalid_metadata_directories,
-         'pi': pi})
-
-
-@login_required
 def collection_detail(request, pk):
     current_user = request.user
     people = People.objects.get(auth_user_id_id=current_user.id)
@@ -916,70 +819,6 @@ def collection_detail(request, pk):
 
     descriptive_metadata_queryset = collection.descriptivemetadata_set.last()
 
-    if request.method == 'POST' and 'spreadsheet_file' in request.FILES:
-        spreadsheet_file = request.FILES['spreadsheet_file']
-        upload_spreadsheet(spreadsheet_file, collection, request)
-        return redirect('ingest:collection_detail', pk=pk)
-    elif request.method == 'POST' and 'validate_collection' in request.POST:
-        collection.locked = False
-        metadata_dirs = []
-        for im in descriptive_metadata_queryset:
-            im.locked = True
-            im.save()
-            metadata_dirs.append(im.r24_directory)
-        if not settings.FAKE_STORAGE_AREA:
-            data_path = collection.data_path.__str__()
-            task = tasks.run_validate.delay(data_path, metadata_dirs)
-            collection.celery_task_id_validation = task.task_id
-        collection.save()
-        return redirect('ingest:collection_detail', pk=pk)
-    elif request.method == 'POST' and 'submit_collection' in request.POST:
-        collection.locked = True
-        metadata_dirs = []
-        for im in descriptive_metadata_queryset:
-            im.locked = True
-            im.save()
-            metadata_dirs.append(im.r24_directory)
-        if not settings.FAKE_STORAGE_AREA:
-            data_path = collection.data_path.__str__()
-            task = tasks.run_analysis.delay(data_path, metadata_dirs)
-            collection.celery_task_id_submission = task.task_id
-        collection.save()
-        return redirect('ingest:collection_detail', pk=pk)
-
-    if collection.celery_task_id_submission:
-        result = AsyncResult(collection.celery_task_id_submission)
-        state = result.state
-        if state == 'SUCCESS':
-            analysis_results = result.get()
-            if analysis_results['valid']:
-                collection.submission_status = "SUCCESS"
-            else:
-                collection.submission_status = "FAILED"
-                collection.locked = False
-                for im in descriptive_metadata_queryset:
-                    im.locked = False
-                    im.save()
-        else:
-            collection.submission_status = "PENDING"
-    collection.save()
-
-    if collection.celery_task_id_validation:
-        result = AsyncResult(collection.celery_task_id_validation)
-        state = result.state
-        if state == 'SUCCESS':
-            analysis_results = result.get()
-            if analysis_results['valid']:
-                collection.validation_status = "SUCCESS"
-            else:
-                collection.validation_status = "FAILED"
-                collection.locked = False
-                for im in descriptive_metadata_queryset:
-                    im.locked = False
-                    im.save()
-        else:
-            collection.validation_status = "PENDING"
-    collection.save()
     table = DescriptiveMetadataTable(
         DescriptiveMetadata.objects.filter(user=request.user, collection=collection))
     return render(
@@ -2673,11 +2512,11 @@ def descriptive_metadata_upload(request, associated_collection):
         #if form.is_valid():
         associated_collection = Collection.objects.get(id = associated_collection)
 
-            # for production
-            #datapath = associated_collection.data_path.replace("/lz/","/etc/")
+        # for production
+        datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-        datapath = '/Users/luketuite/shared_bil_dev' 
+        #datapath = '/Users/luketuite/shared_bil_dev' 
 
         # for development locally
         # datapath = '/Users/ecp/Desktop/bil_metadata_uploads' 
@@ -2774,7 +2613,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         return redirect('ingest:descriptive_metadata_list')
                 else:
                     saved = False
-                    collection = Collection.objects.get(name=associated_submission.name)
+                    collection = Collection.objects.get(name=associated_collection.name)
                     contributors = ingest_contributors_sheet(filename)
                     funders = ingest_funders_sheet(filename)
                     publications = ingest_publication_sheet(filename)
@@ -2834,7 +2673,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4' and ingest_method != 'ingest_5':
                          saved = False
                          messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')                         
-                         return redirect('ingest:descriptive_metadata_upload')
+                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
                     if saved == True:
                         saved_datasets = Dataset.objects.filter(sheet_id = sheet.id).all()
                         for dataset in saved_datasets:
@@ -2846,7 +2685,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     else:
                          error_code = sheet.id
                          messages.error(request, 'There has been an error. Please contact BIL Support. Error Code: ', error_code)
-                         return redirect('ingest:descriptive_metadata_upload')
+                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
 
 
     # This is the GET (just show the metadata upload page)
