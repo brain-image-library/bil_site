@@ -10,7 +10,7 @@ from django.db.models import F
 from .models import (
     ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor,
     Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder,
-    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium, BIL_Specimen_ID, SpecimenLinkage
+    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium, BIL_Specimen_ID, SpecimenLinkage, ConsortiumTag, DatasetTag
 )
 
 
@@ -190,6 +190,7 @@ class DatasetLinkageAdmin(admin.ModelAdmin):
     autocomplete_fields = ['data_id_1_bil']
 
 class BIL_IDAdmin(admin.ModelAdmin):
+    list_display = ["bil_id", "v1_ds_id", "v2_ds_id", "metadata_version", "doi"]
     search_fields = ['bil_id']
 
 admin.site.register(DatasetLinkage, DatasetLinkageAdmin)
@@ -217,3 +218,13 @@ admin.site.register(Specimen, SpecimenAdmin)
 
 
 admin.site.register(ProjectConsortium)
+    
+
+admin.site.register(ConsortiumTag)
+
+class DatasetTagAdmin(admin.ModelAdmin):
+    list_display=["tag", "dataset", "bil_id"]
+
+
+admin.site.register(DatasetTag, DatasetTagAdmin)
+

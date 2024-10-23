@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.storage import FileSystemStorage
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy, reverse
 from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
@@ -31,7 +31,7 @@ from .specimen_portal import Specimen_Portal
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag, ConsortiumTag
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -783,32 +783,41 @@ def collection_data_path(request, pk):
 @login_required
 def collection_detail(request, pk):
     current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-    for attribute in project_person:
-        if attribute.is_pi:
-            pi = True
-        else:
-            pi = False
-    """ View, edit, delete, create a particular collection. """
-    # If user tries to go to a page using a collection primary key that doesn't
-    # exist, give a 404
+    people = People.objects.get(auth_user_id_id=current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id=people.id).all()
+    pi = any(attribute.is_pi for attribute in project_person)
+
     try:
         datasets_list = []
         collection = Collection.objects.get(id=pk)
+        project = collection.project
+        project_consortia = ProjectConsortium.objects.filter(project=project).select_related('consortium')
+
+        consortium_tags = set()
+        used_tags = set()
+
+        for project_consortium in project_consortia:
+            consortium = project_consortium.consortium
+            consortium_tags.update(ConsortiumTag.objects.filter(consortium=consortium).values_list('tag', flat=True))
+
+        bil_tags = ConsortiumTag.objects.filter(consortium__short_name='BIL').values_list('tag', flat=True)
+        consortium_tags.update(bil_tags)
+
         sheets = Sheet.objects.filter(collection_id=collection.id).last()
-        #for s in sheets:
-        if sheets != None:
+        if sheets:
             datasets = Dataset.objects.filter(sheet_id=sheets.id)
             for d in datasets:
+                d.tag_list = list(d.tags.values_list('tag__tag', flat=True))
+                used_tags.update(d.tag_list)
                 datasets_list.append(d)
+
+        consortium_tags = sorted(consortium_tags)
+        used_tags = sorted(used_tags)
     except ObjectDoesNotExist:
         raise Http404
-    # the metadata associated with this collection
-    #image_metadata_queryset = collection.imagemetadata_set.all()
+
     descriptive_metadata_queryset = collection.descriptivemetadata_set.last()
 
-    
     table = DescriptiveMetadataTable(
         DescriptiveMetadata.objects.filter(user=request.user, collection=collection))
     return render(
@@ -817,7 +826,112 @@ def collection_detail(request, pk):
         {'table': table,
          'collection': collection,
          'descriptive_metadata_queryset': descriptive_metadata_queryset,
-         'pi': pi, 'datasets_list':datasets_list})
+         'pi': pi, 'datasets_list': datasets_list, 'consortium_tags': consortium_tags, 'used_tags': used_tags})
+
+
+
+@login_required
+def add_tags(request):
+    if request.method == 'POST':
+        dataset_id = request.POST.get('dataset_id')
+        selected_tags = request.POST.getlist('tag_text[]')
+        
+        if selected_tags and dataset_id:
+            try:
+                dataset = Dataset.objects.get(id=dataset_id)
+                bil_id = BIL_ID.objects.filter(v2_ds_id=dataset).first()  # Lookup BIL_ID based on dataset
+                
+                for tag_text in selected_tags:
+                    # Lookup the corresponding ConsortiumTag object
+                    consortium_tag = ConsortiumTag.objects.filter(tag=tag_text).first()
+                    if consortium_tag and not DatasetTag.objects.filter(tag=consortium_tag, dataset=dataset).exists():
+                        DatasetTag.objects.create(tag=consortium_tag, dataset=dataset, bil_id=bil_id)
+                
+                # Fetch the updated list of tags to return in the response
+                updated_tags = DatasetTag.objects.filter(dataset=dataset)
+                tags_list = [{'id': tag.id, 'text': tag.tag.tag, 'url': reverse('ingest:delete_tag')} for tag in updated_tags]  # Include delete URL
+                return JsonResponse({'status': 'success', 'tags': tags_list})
+            
+            except Dataset.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Dataset not found.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+
+
+@login_required
+def add_tags_all(request):
+    if request.method == 'POST':
+        collection_id = request.POST.get('collection_id')
+        selected_tags = request.POST.getlist('tag_text[]')
+
+        if selected_tags and collection_id:
+            try:
+                collection = Collection.objects.get(id=collection_id)
+                sheets = Sheet.objects.filter(collection_id=collection.id).last()
+                
+                if sheets:
+                    datasets = Dataset.objects.filter(sheet_id=sheets.id)
+                    
+                    for dataset in datasets:
+                        bil_id = BIL_ID.objects.filter(v2_ds_id=dataset).first()  # Lookup BIL_ID based on dataset
+                        
+                        for tag_text in selected_tags:
+                            # Lookup the corresponding ConsortiumTag object
+                            consortium_tag = ConsortiumTag.objects.filter(tag=tag_text).first()
+                            if consortium_tag and not DatasetTag.objects.filter(tag=consortium_tag, dataset=dataset).exists():
+                                DatasetTag.objects.create(tag=consortium_tag, dataset=dataset, bil_id=bil_id)
+
+                    # Fetch the updated list of tags to return in the response
+                    updated_tags = {}
+                    for dataset in datasets:
+                        updated_tags[dataset.id] = [{'id': tag.id, 'text': tag.tag.tag, 'url': reverse('ingest:delete_tag')} for tag in dataset.tags.all()]  # Use `tag.tag.tag` for the correct tag name
+                    return JsonResponse({'status': 'success', 'updated_tags': updated_tags})
+            
+            except Collection.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Collection not found.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+
+@login_required
+def delete_tag(request):
+    if request.method == 'POST':
+        tag_id = request.POST.get('tag_id')
+        
+        if tag_id:
+            try:
+                # Fetch the DatasetTag based on the tag ID
+                tag = DatasetTag.objects.get(id=tag_id)
+                tag_text = tag.tag.tag  # Get the tag text before deleting
+                
+                tag.delete()  # Delete the DatasetTag entry
+                
+                return JsonResponse({'status': 'success', 'tag_text': tag_text})
+            except DatasetTag.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Tag not found.'}, status=404)
+    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+
+@login_required
+def delete_tag_all(request):
+    if request.method == 'POST':
+        collection_id = request.POST.get('collection_id')
+        tag_text = request.POST.get('tag_text')
+
+        if collection_id and tag_text:
+            try:
+                collection = Collection.objects.get(id=collection_id)
+                sheets = Sheet.objects.filter(collection_id=collection.id).last()
+                if sheets:
+                    datasets = Dataset.objects.filter(sheet_id=sheets.id)
+                    for dataset in datasets:
+                        DatasetTag.objects.filter(tag=tag_text, dataset=dataset).delete()
+
+                    # Fetch the updated list of tags to return in the response
+                    updated_tags = {}
+                    for dataset in datasets:
+                        updated_tags[dataset.id] = [{'id': tag.id, 'tag': tag.tag} for tag in dataset.tags.all()]
+                    return JsonResponse({'status': 'success', 'updated_tags': updated_tags})
+            except Collection.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Collection not found.'})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
+
 
 @login_required
 def ondemandSubmission(request, pk):
@@ -830,6 +944,8 @@ def ondemandSubmission(request, pk):
         path = coll.data_path
     od = 'https://ondemand.bil.psc.edu/pun/sys/dashboard/files/fs' + path
     return redirect(od)
+
+
 
 class CollectionUpdate(LoginRequiredMixin, UpdateView):
     """ Edit an existing collection ."""
