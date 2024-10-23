@@ -114,6 +114,7 @@
       <br><br>
 
 <!-- Form to add tags to all datasets -->
+{% if datasets_list %}
 <h2>Add Tags to All Datasets</h2>
 <form id="add-tags-all-form" action="{% url 'ingest:add_tags_all' %}" method="post">
     {% csrf_token %}
@@ -131,9 +132,8 @@
     </div>
     <button class="btn btn-primary" type="submit" disabled>Add Tags to All</button>
 </form>
-
       <!-- Existing code for individual dataset tags -->
-      {% if datasets_list %}
+      
         <h2>Add Tags to Individual Datasets</h2>
         {% for dataset in datasets_list %}
           <div class="panel panel-default">
@@ -175,7 +175,7 @@
             </div>
           </div>
         {% endfor %}
-      {% endif %}
+{% endif %}
 
       {% include 'ingest/new_metadata_sheet.html' %}
       {% include 'ingest/messages.html' %}
