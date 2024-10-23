@@ -190,6 +190,7 @@ class DatasetLinkageAdmin(admin.ModelAdmin):
     autocomplete_fields = ['data_id_1_bil']
 
 class BIL_IDAdmin(admin.ModelAdmin):
+    list_display = ["bil_id", "v1_ds_id", "v2_ds_id", "metadata_version", "doi"]
     search_fields = ['bil_id']
 
 admin.site.register(DatasetLinkage, DatasetLinkageAdmin)
