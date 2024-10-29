@@ -2300,16 +2300,27 @@ def save_bil_ids(datasets, filename):
                     #Check bil id value
                     bil_id_value = dataset_sheet.cell_value(bil_direct_row, 15)
                     bil_id_value.strip
-                    print(bil_id_value)
+                    bil_id_stop = True
                     #pulls correct bil_id from spreadsheet
                     #logic here for updating the BIL_ID with the new dataset
                     if BIL_ID.objects.filter(bil_id = bil_id_value).exists():
-                        #Update existing bil_id with new values 
+                        #results = BIL_ID.objects.filter(bil_id=bil_id_value).exclude(v1_ds_id__isnull=True).exclude(v1_ds_id="")
+                        #if not results:
+                            #Update existing bil_id with new values 
                         existing_id = BIL_ID.objects.filter(bil_id = bil_id_value)
                         updated_bil_id = BIL_ID.objects.filter(bil_id = bil_id_value).update(v2_ds_id = dataset, metadata_version = 2)
                     else:
                         update_bil_error = "BIL ID does not match any previous dataset upload's BIL ID. Please resubmit with correct ID."
                         return update_bil_error
+            try:
+                bil_id_stop
+            except NameError:
+                print("")
+            else:
+                if bil_id_stop == True:
+                    bil_id_stop = False
+                else:
+                    break
             row_index = row_index + 1
         if bil_id_value == None:
                 #If value never changes for bil_id_value within loop, then moves on to creating new bil id for datasets
