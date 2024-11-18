@@ -96,7 +96,8 @@
                     {% endif %}
                 </div>
                 <br>
-                <form method="post" action="{% url 'ingest:save_bican_spreadsheet' %}" enctype="multipart/form-data" class="mt-3">
+                <form method="post" action="{% url 'ingest:save_bican_ids' %}" enctype="multipart/form-data" class="mt-3">
+
                     {% csrf_token %}
                     <input type="hidden" name="sheet_id" value="{{ sheet_id }}">
                     <div class="form-group">

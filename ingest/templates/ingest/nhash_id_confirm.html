@@ -3,10 +3,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- ... other head elements ... -->
-    <!-- Bootstrap 3 CSS and JavaScript includes -->
     <style>
-        /* ... your other styles ... */
         .panel-heading {
             position: relative;
         }
@@ -21,48 +18,47 @@
 <body>
 <div class="container">
     <h2>Confirm NHASH Results</h2>
-    <!-- Start loop for each specimen -->
+    <!-- Loop through each specimen -->
     {% for nhash_info, specimen in nhash_specimen_list %}
-        <!-- Specimen Header -->
         <div class="panel-group">
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h4 class="panel-title">Specimen: 
-                        {{ specimen }}
-                        <!-- Collapsible toggle button -->
+                    <h4 class="panel-title">Specimen: {{ specimen }}
                         <button class="btn btn-default collapse-btn" type="button" data-toggle="collapse" data-target="#collapse{{ forloop.counter }}">
                             Collapse
                         </button>
                     </h4>
                 </div>
-                <!-- Collapsible content -->
                 <div id="collapse{{ forloop.counter }}" class="panel-collapse collapse in">
                     <div class="panel-body">
-                        <!-- Table for NHASH and Info -->
-                        {% if 'data' in nhash_info %}
+                        <!-- Table to display NHASH and related information -->
+                        {% if nhash_info %}
                             <table class="table">
                                 <thead>
-                                    <tr>
-                                        <th>NHASH</th>
-                                        <th>Info</th>
-                                    </tr>
+                                    
                                 </thead>
                                 <tbody>
-                                    {% for key, value in nhash_info.data.items %}
-                                        <tr>
-                                            <td><strong>{{ key }}</strong></td>
-                                            <td>{{ value|pretty_print }}</td>
-                                        </tr>
-                                    {% endfor %}
+                                    <!-- Display the bican_id -->
+                                    <tr>
+                                        <td><strong>Provided Identifier</strong></td>
+                                        <td>{{ nhash_info.bican_id }}</td>
+                                    </tr>
+                                    <!-- Display related_ids as a comma-separated list -->
+                                    <tr>
+                                        <td><strong>Found Related IDs</strong></td>
+                                        <td>{{ nhash_info.related_ids|join:", " }}</td>
+                                    </tr>
                                 </tbody>
                             </table>
+                        {% else %}
+                            <p>No NHASH information available for this specimen.</p>
                         {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     {% endfor %}
-    <!-- Confirm Form -->
+    <!-- Confirmation form -->
     <form id="confirm-form" method="post" action="{% url 'ingest:process_ids' %}">
         {% csrf_token %}
         <input type="hidden" name="processed_ids_json" value="{{ processed_ids_json }}">
@@ -73,8 +69,7 @@
 <br>
 <script>
     function handleCancel() {
-        // Redirect to a different page or perform other actions
-        window.location.href = '{% url "ingest:collection_list" %}'; // Change 'desired_cancel_url' to the actual URL
+        window.location.href = '{% url "ingest:collection_list" %}';
     }
 </script>
 </body>

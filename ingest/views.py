@@ -2770,91 +2770,100 @@ def specimen_bican(request, sheet_id):
 
     return response
 
-def save_bican_spreadsheet(request):
+def save_bican_ids(request):
     if request.method == 'POST':
-        uploaded_file = request.FILES['file']
-        sheet_id = request.POST.get('sheet_id')
-        if uploaded_file.name.endswith('.xlsx'):
-            df = pd.read_excel(uploaded_file)
+        # Handle spreadsheet upload
+        if 'file' in request.FILES:
+            uploaded_file = request.FILES['file']
+            sheet_id = request.POST.get('sheet_id')
+            if uploaded_file.name.endswith('.xlsx'):
+                # Process the uploaded spreadsheet
+                df = pd.read_excel(uploaded_file)
+
+                specimen_id_list = []
+                specimen_list = []
+                nhash_info_list = []
+                error_messages = []
+
+                for _, row in df.iterrows():
+                    spec_id = row['Specimen ID']
+                    bican_id = row['BICAN ID']
+
+                    spec_bil_id, local_name = process_specimen_id(spec_id)
+                    specimen_id_list.append(spec_bil_id)
+                    specimen_list.append(local_name)
+
+                    nhash_info, error_message = retrieve_nhash_info(bican_id)
+                    print(f"Specimen ID: {spec_id}, BICAN ID: {bican_id}, NHASH Info: {nhash_info}")
+                    if error_message:
+                        error_messages.append(error_message)
+                        continue
+                    nhash_info_list.append(nhash_info)
+
+                if error_messages:
+                    # Redirect with the first error message
+                    return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_messages[0]}')
+
+                # Process and prepare for confirmation screen
+                processed_ids = {
+                    specimen_id: list(set([info['bican_id']] + info['related_ids']))
+                    for specimen_id, info in zip(specimen_id_list, nhash_info_list)
+                }
+                processed_ids_json = json.dumps(processed_ids)
+                nhash_specimen_list = [
+                    (result, specimen)
+                    for result, specimen in zip(nhash_info_list, specimen_list)
+                ]
+
+                return render(request, 'ingest/nhash_id_confirm.html', {
+                    'nhash_specimen_list': nhash_specimen_list,
+                    'processed_ids_json': processed_ids_json
+                })
+            else:
+                error_message = 'Please upload a valid .xlsx spreadsheet file.'
+                return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_message}')
+        
+        # Handle manual form input
+        else:
+            sheet_id, csrf_token, data_items = extract_post_data(request)
 
             specimen_id_list = []
             specimen_list = []
             nhash_info_list = []
             error_messages = []
 
-            for _, row in df.iterrows():
-                spec_id = row['Specimen ID']
-                bican_id = row['BICAN ID']
-
+            for spec_id, bican_id in data_items:
                 spec_bil_id, local_name = process_specimen_id(spec_id)
                 specimen_id_list.append(spec_bil_id)
                 specimen_list.append(local_name)
 
                 nhash_info, error_message = retrieve_nhash_info(bican_id)
+                print(f"Specimen ID: {spec_id}, BICAN ID: {bican_id}, NHASH Info: {nhash_info}")
                 if error_message:
                     error_messages.append(error_message)
                     continue
                 nhash_info_list.append(nhash_info)
 
             if error_messages:
-                # Handle errors here
                 return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_messages[0]}')
 
-            extracted_ids = extract_ids(nhash_info)
-            processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)
+            processed_ids = {
+                specimen_id: list(set([info['bican_id']] + info['related_ids']))
+                for specimen_id, info in zip(specimen_id_list, nhash_info_list)
+            }
             processed_ids_json = json.dumps(processed_ids)
-
-            nhash_specimen_list = zip(nhash_info_list, specimen_list)
+            nhash_specimen_list = [
+                (result, specimen)
+                for result, specimen in zip(nhash_info_list, specimen_list)
+            ]
 
             return render(request, 'ingest/nhash_id_confirm.html', {
                 'nhash_specimen_list': nhash_specimen_list,
                 'processed_ids_json': processed_ids_json
             })
 
-        else:
-            # Handle case where uploaded file is not an Excel file
-            error_message = 'An Error Has Occurred, please upload a valid .xlsx Spreadsheet File'
-            return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_messages[0]}')
     else:
-        # Handle GET request
-        return render(request, '/')
-
-def save_bican_ids(request):
-    if request.method == 'POST':
-        sheet_id, csrf_token, data_items = extract_post_data(request)
-        
-        specimen_id_list = []
-        specimen_list = []
-        nhash_info_list = []
-        error_messages = []
-
-        for spec_id, bican_id in data_items:
-            spec_bil_id, local_name = process_specimen_id(spec_id)
-            specimen_id_list.append(spec_bil_id)
-            specimen_list.append(local_name)
-
-            nhash_info, error_message = retrieve_nhash_info(bican_id)
-            if error_message:
-                error_messages.append(error_message)
-                continue  # Proceed with the next iteration if there's an error
-            nhash_info_list.append(nhash_info)
-
-        if error_messages:
-            # If there are any errors, handle them. This could be redirecting or displaying the error.
-            # This example uses the first error message for simplicity.
-            return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_messages[0]}')
-
-        extracted_ids = extract_ids(nhash_info)
-        processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)  # Assuming this function exists
-        processed_ids_json = json.dumps(processed_ids)
-
-        nhash_specimen_list = zip(nhash_info_list, specimen_list)
-        
-        return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list, 'processed_ids_json': processed_ids_json})
-    else:
-        # Handle GET request, maybe render the form again or redirect
-        return render(request, '/')
-
+        return redirect('/')
     
 def extract_post_data(request):
     sheet_id = request.POST.get('sheet_id')
@@ -2868,10 +2877,33 @@ def process_specimen_id(spec_id):
     return spec_bil.id, spec_local.localid
 
 def retrieve_nhash_info(bican_id):
+    """
+    Call the NHASH API to retrieve information for a given BICAN ID.
+
+    Parameters:
+    - bican_id: The ID entered in the form.
+
+    Returns:
+    - A dictionary containing:
+        - 'bican_id': The ID entered in the form.
+        - 'related_ids': A list of IDs related to the entered BICAN ID.
+    - Or an error message if the API fails.
+    """
     nhash_info = Specimen_Portal.get_nhash_results(bican_id)
-    if nhash_info == {'error': 'No data found'}:
-        return None, f"We couldn't find any information for the BICAN ID: {bican_id}. Please make sure you've entered the correct BICAN ID and try again."
-    return nhash_info, None
+    if 'error' in nhash_info:
+        return None, f"Could not find information for BICAN ID: {bican_id}"
+
+    # Collect related IDs from 'data' and 'edges'
+    related_ids = [bican_id]  # Include the entered ID itself
+    for key, value in nhash_info['data'].items():
+        related_ids.append(key)  # Add the main key
+        if 'edges' in value:
+            related_ids.extend(value['edges'].get('has_parent', []))  # Add parent edges
+    
+    # Remove duplicates (optional, for safety)
+    related_ids = list(set(related_ids))
+
+    return {'bican_id': bican_id, 'related_ids': related_ids}, None
 
 def extract_ids(nhash_info):
     ids = []
@@ -2893,10 +2925,19 @@ def extract_ids(nhash_info):
     
     return ids
     
-def specimen_list_mapping(ids, specimen_list):
+def specimen_list_mapping(api_results, specimen_list):
+    """
+    Map API results to specimens, including both the entered BICAN ID and related IDs.
+    """
     specimen_ids_mapping = {}
-    for specimen in specimen_list:
-        specimen_ids_mapping[specimen] = ids
+
+    for specimen, result in zip(specimen_list, api_results):
+        # Combine the entered BICAN ID and all related IDs
+        all_ids = [result['bican_id']] + result['related_ids']
+        # Ensure unique IDs
+        specimen_ids_mapping[specimen] = list(set(all_ids))
+
+    print(f"Specimen ID Mapping: {specimen_ids_mapping}")
     return specimen_ids_mapping
 
 def process_ids(request):
@@ -2905,6 +2946,7 @@ def process_ids(request):
         processed_ids = request.POST.get('processed_ids_json')
         processed_ids = json.loads(processed_ids)
         for specimen, nhash_ids in processed_ids.items():
+            print(f"Mapping {specimen} to {nhash_ids}")
             bil_specimen_id = BIL_Specimen_ID.objects.get(id = specimen)
             for id in nhash_ids:
                 if id.startswith('TI'):
