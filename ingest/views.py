@@ -2403,6 +2403,7 @@ def save_bil_ids(datasets):
     using the BIL_ID model. It also associates an MNE ID with each BIL_ID and saves the updated
     BIL_ID object in the database.
     """
+    #Removed Keaton's code to revert
     for dataset in datasets:
         #create placeholder for BIL_ID
         bil_id = BIL_ID(v2_ds_id = dataset, metadata_version = 2, doi = False)
