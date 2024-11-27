@@ -2396,58 +2396,23 @@ def save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contrib
         print(repr(e))
         saved = False
 
-def save_bil_ids(datasets, filename):
+def save_bil_ids(datasets):
     """
     This function iterates through the provided list of datasets, generates and saves BIL_IDs
     using the BIL_ID model. It also associates an MNE ID with each BIL_ID and saves the updated
     BIL_ID object in the database.
     """
-    workbook=xlrd.open_workbook(filename)
-    sheetname = 'Dataset'
-    dataset_sheet = workbook.sheet_by_name(sheetname)
-    row_index = 0
-    bil_id_value = None
+    #Removed Keaton's code to revert
     for dataset in datasets:
-        for cell_value in dataset_sheet.col_values(0):
-            #Find row with bil_id value
-            if cell_value.startswith('/bil/data'):
-                bil_direct_row = row_index
-                if dataset_sheet.cell_type(bil_direct_row, 15) != xlrd.XL_CELL_EMPTY:
-                    #Check bil id value
-                    bil_id_value = dataset_sheet.cell_value(bil_direct_row, 15)
-                    bil_id_value.strip
-                    bil_id_stop = True
-                    #pulls correct bil_id from spreadsheet
-                    #logic here for updating the BIL_ID with the new dataset
-                    if BIL_ID.objects.filter(bil_id = bil_id_value).exists():
-                        #results = BIL_ID.objects.filter(bil_id=bil_id_value).exclude(v1_ds_id__isnull=True).exclude(v1_ds_id="")
-                        #if not results:
-                            #Update existing bil_id with new values 
-                        existing_id = BIL_ID.objects.filter(bil_id = bil_id_value)
-                        updated_bil_id = BIL_ID.objects.filter(bil_id = bil_id_value).update(v2_ds_id = dataset, metadata_version = 2)
-                    else:
-                        update_bil_error = "BIL ID does not match any previous dataset upload's BIL ID. Please resubmit with correct ID."
-                        return update_bil_error
-            try:
-                bil_id_stop
-            except NameError:
-                print("")
-            else:
-                if bil_id_stop == True:
-                    bil_id_stop = False
-                else:
-                    break
-            row_index = row_index + 1
-        if bil_id_value == None:
-                #If value never changes for bil_id_value within loop, then moves on to creating new bil id for datasets
-                bil_id = BIL_ID(v2_ds_id = dataset, metadata_version = 2, doi = False)
-                bil_id.save()
-                #grab the just created database ID and generate an mne id
-                saved_bil_id = BIL_ID.objects.get(v2_ds_id = dataset.id)
-                mne_id = Mne.dataset_num_to_mne(saved_bil_id.id)
-                saved_bil_id.bil_id = mne_id
-                #final save
-                saved_bil_id.save()
+        #create placeholder for BIL_ID
+        bil_id = BIL_ID(v2_ds_id = dataset, metadata_version = 2, doi = False)
+        bil_id.save()
+        #grab the just created database ID and generate an mne id
+        saved_bil_id = BIL_ID.objects.get(v2_ds_id = dataset.id)
+        mne_id = Mne.dataset_num_to_mne(saved_bil_id.id)
+        saved_bil_id.bil_id = mne_id
+        #final save
+        saved_bil_id.save()
     return
 
 def save_specimen_ids(specimens):
