@@ -2534,7 +2534,7 @@ def descriptive_metadata_upload(request, associated_collection):
         #datapath = '/Users/luketuite/shared_bil_dev' 
 
         # for development locally
-        #datapath = '/home/khutchinson/new_bil/bil_site/datasets' 
+        #datapath = '/Users/luketuite/shared_bil_dev' 
         
         spreadsheet_file = request.FILES['spreadsheet_file']
 
@@ -2580,7 +2580,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets, filename)
+                    errormsg = save_bil_ids(ingested_datasets)
                     if errormsg != None:
                         messages.error(request, errormsg)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
