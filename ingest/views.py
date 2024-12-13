@@ -2591,7 +2591,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets, filename)
+                    errormsg = save_bil_ids(ingested_datasets)
                     if errormsg != None:
                         messages.error(request, errormsg)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2602,7 +2602,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets, filename)
+                    errormsg = save_bil_ids(ingested_datasets)
                     if errormsg != None:
                         messages.error(request, errormsg)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2613,7 +2613,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets, filename)
+                    errormsg = save_bil_ids(ingested_datasets)
                     if errormsg != None:
                         messages.error(request, errormsg)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2624,7 +2624,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets, filename)
+                    errormsg = save_bil_ids(ingested_datasets)
                     if errormsg != None:
                         messages.error(request, errormsg)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2667,7 +2667,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         ingested_specimens = Specimen.objects.filter(sheet = sheet)
                         ingested_instruments = Instrument.objects.filter(sheet = sheet)
                         errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets, filename)
+                        errormsg = save_bil_ids(ingested_datasets)
                         if errormsg != None:
                             messages.error(request, errormsg)
                             return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2680,7 +2680,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         ingested_specimens = Specimen.objects.filter(sheet = sheet)
                         ingested_instruments = Instrument.objects.filter(sheet = sheet)
                         errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets, filename)
+                        errormsg = save_bil_ids(ingested_datasets)
                         if errormsg != None:
                             messages.error(request, errormsg)
                             return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2693,7 +2693,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         ingested_specimens = Specimen.objects.filter(sheet = sheet)
                         ingested_instruments = Instrument.objects.filter(sheet = sheet)
                         errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets, filename)
+                        errormsg = save_bil_ids(ingested_datasets)
                         if errormsg != None:
                             messages.error(request, errormsg)
                             return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2706,7 +2706,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         ingested_specimens = Specimen.objects.filter(sheet = sheet)
                         ingested_instruments = Instrument.objects.filter(sheet = sheet)
                         errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets, filename)
+                        errormsg = save_bil_ids(ingested_datasets)
                         if errormsg != None:
                             messages.error(request, errormsg)
                             return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2719,7 +2719,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         ingested_specimens = Specimen.objects.filter(sheet = sheet)
                         ingested_instruments = Instrument.objects.filter(sheet = sheet)
                         errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets, filename)
+                        errormsg = save_bil_ids(ingested_datasets)
                         if errormsg != None:
                             messages.error(request, errormsg)
                             return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
