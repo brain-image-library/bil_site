@@ -2840,10 +2840,12 @@ def save_bican_spreadsheet(request):
                 # Handle errors here
                 return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_messages[0]}')
 
-            extracted_ids = extract_ids(nhash_info)
-            processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)
+            extracted_ids = []
+            for nhash_info in nhash_info_list:
+                ids = extract_ids(nhash_info)  # Extract IDs for each nhash_info individually
+                extracted_ids.append(ids)
+            processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)  # Assuming this function exists
             processed_ids_json = json.dumps(processed_ids)
-
             nhash_specimen_list = zip(nhash_info_list, specimen_list)
 
             return render(request, 'ingest/nhash_id_confirm.html', {
@@ -2872,7 +2874,6 @@ def save_bican_ids(request):
             spec_bil_id, local_name = process_specimen_id(spec_id)
             specimen_id_list.append(spec_bil_id)
             specimen_list.append(local_name)
-
             nhash_info, error_message = retrieve_nhash_info(bican_id)
             if error_message:
                 error_messages.append(error_message)
@@ -2883,11 +2884,13 @@ def save_bican_ids(request):
             # If there are any errors, handle them. This could be redirecting or displaying the error.
             # This example uses the first error message for simplicity.
             return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_messages[0]}')
-
-        extracted_ids = extract_ids(nhash_info)
+        #print("Nhash Info: ", nhash_info)
+        extracted_ids = []
+        for nhash_info in nhash_info_list:
+            ids = extract_ids(nhash_info)  # Extract IDs for each nhash_info individually
+            extracted_ids.append(ids)
         processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)  # Assuming this function exists
         processed_ids_json = json.dumps(processed_ids)
-
         nhash_specimen_list = zip(nhash_info_list, specimen_list)
         
         return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list, 'processed_ids_json': processed_ids_json})
@@ -2917,25 +2920,24 @@ def extract_ids(nhash_info):
     ids = []
     # Check if the input is a dictionary
     if isinstance(nhash_info, dict):
-        # Iterate over the key-value pairs
         for key, value in nhash_info.items():
-            # If the key is 'data' or 'has_parent', add the value to the list
-            if key == 'data' or key == 'has_parent':
+            if key == "data":
+                # Extract keys (IDs) under 'data'
                 ids.extend(value.keys())
-            # Recursively call the function for nested dictionaries
-            else:
+            elif key == "has_parent" and isinstance(value, list):
+                # Extract parent IDs
+                ids.extend(value)
+            elif isinstance(value, (dict, list)):
+                # Recursively search in nested structures
                 ids.extend(extract_ids(value))
-    
-    # If the input is a list, recursively call the function for each element
     elif isinstance(nhash_info, list):
         for item in nhash_info:
             ids.extend(extract_ids(item))
-    
     return ids
     
-def specimen_list_mapping(ids, specimen_list):
+def specimen_list_mapping(ids_list, specimen_list):
     specimen_ids_mapping = {}
-    for specimen in specimen_list:
+    for specimen, ids in zip(specimen_list, ids_list):
         specimen_ids_mapping[specimen] = ids
     return specimen_ids_mapping
 
