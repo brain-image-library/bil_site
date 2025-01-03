@@ -1,6 +1,6 @@
 from django import forms
 from .field_list import metadata_fields, collection_fields
-from .models import ImageMetadata, DescriptiveMetadata, Collection
+from .models import ImageMetadata, DescriptiveMetadata, Collection, Project
 
 
 class UploadForm(forms.Form):
@@ -54,28 +54,38 @@ class collection_send(forms.ModelForm):
         
 
 class CollectionForm(forms.ModelForm):
+    project = forms.ModelChoiceField(
+        queryset=Project.objects.none(),  # Default to an empty queryset
+        widget=forms.Select,  # Dropdown widget
+        required=True,
+        label="Project",
+    )
 
     class Meta:
         model = Collection
         fields = collection_fields
         widgets = {
-            'project': forms.TextInput(attrs={'list': 'project_list'}),
-            
             'project_funder_id': forms.TextInput(attrs={'list': 'funder_list'}),
         }
 
     def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop('request', None)
-        return super().__init__(*args, **kwargs)
+        # Accept and process additional arguments
+        project_queryset = kwargs.pop('project_queryset', None)
+        self.request = kwargs.pop('request', None)  # Track the request object for user
+        super().__init__(*args, **kwargs)
+
+        # Set the queryset for the project field dynamically
+        if project_queryset:
+            self.fields['project'].queryset = project_queryset
 
     def save(self, *args, **kwargs):
+        # Ensure commit is False to attach the user
         kwargs['commit'] = False
         obj = super().save(*args, **kwargs)
         if self.request:
-            obj.user = self.request.user
+            obj.user = self.request.user  # Attach the current user to the object
         obj.save()
         return obj
-
 class CollectionChoice(forms.Form):
     collection = forms.ModelChoiceField(
         queryset=None,  # We'll set this dynamically in the view

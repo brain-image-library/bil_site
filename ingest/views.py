@@ -556,19 +556,20 @@ def collection_send(request):
 def collection_create(request):
     current_user = request.user
     try:
-        people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+        # Fetch the current user as a People object
+        people = People.objects.get(auth_user_id_id=current_user.id)
+        project_person = ProjectPeople.objects.filter(people_id=people.id).all()
     except ObjectDoesNotExist:
-        messages.info(request, 'Error: Your account is likely not fully set up. Follow along with your Sign Up ticket on bil-support and provide the appropriate Grant Name and Number to the Project you will be submitting for. If you have already done so, kindly nudge us to complete your account creation.')
+        messages.info(
+            request,
+            'Error: Your account is likely not fully set up. Follow along with your Sign Up ticket on bil-support and provide the appropriate Grant Name and Number to the Project you will be submitting for. If you have already done so, kindly nudge us to complete your account creation.',
+        )
         return redirect('/')
-    for attribute in project_person:
-        if attribute.is_pi:
-            pi = True
-        else:
-            pi = False
-    """ Create a collection. """
-    # We cache the staging area location, so that we can show it in the GET and
-    # later use it during creation (POST)
+
+    # Determine if the user is a PI
+    pi = any(attribute.is_pi for attribute in project_person)
+
+    # Cache handling for staging area data
     if cache.get('host_and_path'):
         host_and_path = cache.get('host_and_path')
         data_path = cache.get('data_path')
@@ -576,75 +577,74 @@ def collection_create(request):
         bil_user = cache.get('bil_user')
     else:
         top_level_dir = settings.STAGING_AREA_ROOT
-        #shortens uuid
-        uuidhex = (uuid.uuid4()).hex
-        str1 = uuidhex[0:16]
-        str2 = uuidhex[16:]
-        str3 = "%x" % (int(str1,16)^int(str2,16))
-        bil_uuid = str3.zfill(16)
-        #this should make uuid unique or just redirect to home page if collision.
+        uuidhex = uuid.uuid4().hex
+        str1, str2 = uuidhex[:16], uuidhex[16:]
+        bil_uuid = f"{int(str1, 16) ^ int(str2, 16):x}".zfill(16)
+
+        # Save the generated UUID
         uu = UUID(useduuid=bil_uuid)
         try:
-           uu.save()
+            uu.save()
         except:
-           return redirect('ingest:index') 
-        #data_path = "{}/bil_data/{}/{:02d}/{}".format(
-        #    top_level_dir,
-        #    datetime.datetime.now().year,
-        #    datetime.datetime.now().month,
-        #    str(uuid.uuid4()))
-        data_path = "{}/{}/{}".format(
-            top_level_dir,
-            request.user,
-            bil_uuid)
-        host_and_path = "{}@{}:{}".format(
-            request.user, settings.IMG_DATA_HOST, data_path)
-        bil_user = "{}".format(request.user)
+            return redirect('ingest:index')
+
+        data_path = f"{top_level_dir}/{request.user}/{bil_uuid}"
+        host_and_path = f"{request.user}@{settings.IMG_DATA_HOST}:{data_path}"
+        bil_user = str(request.user)
+
+        # Cache these values for later use
         cache.set('host_and_path', host_and_path, 30)
         cache.set('data_path', data_path, 30)
         cache.set('bil_uuid', bil_uuid, 30)
         cache.set('bil_user', bil_user, 30)
 
+    # Handle form submission
     if request.method == "POST":
-        # We need to pass in request here, so we can use it to get the user
-        form = CollectionForm(request.POST, request=request)
+        project_list = Project.objects.filter(
+            id__in=[proj.project_id_id for proj in project_person]
+        )
+        form = CollectionForm(request.POST, request=request, project_queryset=project_list)
         if form.is_valid():
-            # remotely create the directory on some host using fabric and
-            # celery
-            # note: you should authenticate with ssh keys, not passwords
             if not settings.FAKE_STORAGE_AREA:
-                tasks.create_data_path.delay(data_path,bil_user)
+                tasks.create_data_path.delay(data_path, bil_user)
+
             post = form.save(commit=False)
-            #post.data_path = host_and_path
             post.data_path = data_path
             post.bil_uuid = bil_uuid
             post.bil_user = bil_user
             post.save()
 
             time = datetime.now()
-            coll_id = Collection.objects.get(id = post.id)
-            #coll_id = Collection.objects.filter(bil_uuid = bil_uuid).values_list('id', flat=True)
+            coll_id = Collection.objects.get(id=post.id)
             proj_id = coll_id.project_id
-            
-            event = EventsLog(collection_id = coll_id, people_id_id = people.id, project_id_id = proj_id, notes = '', timestamp = time, event_type = 'collection_created')
+            print(proj_id)
+        # Log the event
+            event = EventsLog(
+                collection_id=coll_id,
+                people_id_id=people.id,
+                project_id_id=proj_id,
+                notes='',
+                timestamp=time,
+                event_type='collection_created',
+            )
             event.save()
+
+            # Clear cache
             cache.delete('host_and_path')
             cache.delete('data_path')
             cache.delete('bil_uuid')
             cache.delete('bil_user')
-            messages.success(request, 'Collection successfully created!! Please proceed with metadata upload')
+
+            messages.success(
+                request, 'Collection successfully created!! Please proceed with metadata upload'
+            )
             return redirect('ingest:descriptive_metadata_upload', coll_id.id)
     else:
-        form = CollectionForm()
+        project_list = Project.objects.filter(
+            id__in=[proj.project_id_id for proj in project_person]
+        )
+        form = CollectionForm(project_queryset=project_list)
 
-    project_list = []
-    person = People.objects.get(auth_user_id=request.user.id)
-    projects = ProjectPeople.objects.filter(people_id=people.id).all()
-    for proj in projects:
-        project = Project.objects.get(id=proj.project_id_id)  
-        project_list.append(project)
-  
-    collections = Collection.objects.all()
     funder_list = [
         "1-U01-H114812-01",
         "1-U01-MH114819-01",
@@ -662,13 +662,15 @@ def collection_create(request):
     return render(
         request,
         'ingest/collection_create.html',
-        {'form': form,
-         'projects': projects,
-         'project_list': project_list, 
-         'collections': collections,
-         'funder_list': funder_list,
-         'host_and_path': host_and_path,
-         'pi': pi})
+        {
+            'form': form,
+            'collections': Collection.objects.all(),
+            'funder_list': funder_list,
+            'host_and_path': host_and_path,
+            'pi': pi,
+        },
+    )
+
 
 @login_required
 def submission_view(request):
