@@ -534,6 +534,9 @@ def collection_send(request):
         coll_id = Collection.objects.get(id = coll.id)
         person = People.objects.get(name = user_name)
         person_id = person.id
+        coll.submission_status = 'Pending'
+        coll.validation_status = 'Pending'
+        coll.save()
         time = datetime.now()
         event = EventsLog(collection_id = coll_id, people_id_id = person.id, project_id_id = coll.project_id, notes = '', timestamp = time, event_type = 'request_validation')
         event.save()
@@ -617,7 +620,7 @@ def collection_create(request):
             time = datetime.now()
             coll_id = Collection.objects.get(id=post.id)
             proj_id = coll_id.project_id
-            print(proj_id)
+
         # Log the event
             event = EventsLog(
                 collection_id=coll_id,
