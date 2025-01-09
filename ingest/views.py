@@ -2282,61 +2282,94 @@ def save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contrib
 
 def save_bil_ids(datasets, filename):
     """
-    This function iterates through the provided list of datasets, generates and saves BIL_IDs
-    using the BIL_ID model. It also associates an MNE ID with each BIL_ID and saves the updated
-    BIL_ID object in the database.
+    This function iterates through the provided list of datasets, validates all inputs,
+    and then applies changes only if all validations pass. No partial changes will occur.
     """
-    workbook=xlrd.open_workbook(filename)
+    workbook = xlrd.open_workbook(filename)
     sheetname = 'Dataset'
     dataset_sheet = workbook.sheet_by_name(sheetname)
-    #value that changes with each iteration to find bil id for directory
+
+    # Value that changes with each iteration to find bil id for directory
     loop_index_change = 6
-    #check for if dataset has been updated to a bil id
-    update_bil_check = False
+
+    validation_errors = []
+    updates_to_apply = []
+
+    # Validation Stage
     for dataset in datasets:
         for cell_value in dataset_sheet.row_values(loop_index_change):
             bil_id_value = None
-            #Find row with bil_id value
+            # Find row with bil_id value
             if cell_value.startswith('/bil/data'):
                 if dataset_sheet.cell_type(loop_index_change, 15) != xlrd.XL_CELL_EMPTY:
-                    #Check bil id value
-                    bil_id_value = dataset_sheet.cell_value(loop_index_change, 15)
-                    bil_id_value.strip
-                    bil_id_stop = True
-                    update_bil_check = True
-                    #pulls correct bil_id from spreadsheet
-                    #logic here for updating the BIL_ID with the new dataset
-                    if BIL_ID.objects.filter(bil_id = bil_id_value).exists():
-                        #results = BIL_ID.objects.filter(bil_id=bil_id_value).exclude(v1_ds_id__isnull=True).exclude(v1_ds_id="")
-                        #if not results:
-                            #Update existing bil_id with new values 
-                        existing_id = BIL_ID.objects.filter(bil_id = bil_id_value)
-                        updated_bil_id = BIL_ID.objects.filter(bil_id = bil_id_value).update(v2_ds_id = dataset, metadata_version = 2)
-                        loop_index_change = loop_index_change + 1
+                    bil_id_value = dataset_sheet.cell_value(loop_index_change, 15).strip()
+                    if BIL_ID.objects.filter(bil_id=bil_id_value).exists():
+                        existing_bil_id = BIL_ID.objects.get(bil_id=bil_id_value)
+
+                        # Check if the directory matches
+                        if existing_bil_id.v2_ds_id:
+                            if existing_bil_id.v2_ds_id.bildirectory != cell_value:
+                                validation_errors.append(
+                                    f"Directory mismatch for BIL_ID {bil_id_value} (v2_ds_id)."
+                                )
+                        elif existing_bil_id.v1_ds_id:
+                            if existing_bil_id.v1_ds_id.r24_directory != cell_value:
+                                validation_errors.append(
+                                    f"Directory mismatch for BIL_ID {bil_id_value} (v1_ds_id)."
+                                )
+                        else:
+                            validation_errors.append(
+                                f"BIL_ID {bil_id_value} does not have a valid v1_ds_id or v2_ds_id."
+                            )
+
+                        # Prepare update if validation passed
+                        if not validation_errors:
+                            updates_to_apply.append({
+                                "bil_id": existing_bil_id,
+                                "v2_ds_id": dataset,
+                                "metadata_version": 2
+                            })
+
+                        loop_index_change += 1
                         break
                     else:
-                        update_bil_error = "BIL ID does not match any previous dataset upload's BIL ID. Please resubmit with correct ID."
-                        return update_bil_error
+                        validation_errors.append(
+                            f"BIL_ID {bil_id_value} does not match any previous upload."
+                        )
+                else:
+                    validation_errors.append("Empty cell encountered where BIL_ID was expected.")
+
+            # Handle end of cell processing
             try:
                 bil_id_stop
             except NameError:
-                print("")
+                pass
             else:
-                if bil_id_stop == True:
+                if bil_id_stop:
                     bil_id_stop = False
                 else:
                     break
-        if update_bil_check == False:
-                #If value never changes for bil_id_value within loop, then moves on to creating new bil id for datasets
-                bil_id = BIL_ID(v2_ds_id = dataset, metadata_version = 2, doi = False)
-                bil_id.save()
-                #grab the just created database ID and generate an mne id
-                saved_bil_id = BIL_ID.objects.get(v2_ds_id = dataset.id)
-                mne_id = Mne.dataset_num_to_mne(saved_bil_id.id)
-                saved_bil_id.bil_id = mne_id
-                #final save
-                saved_bil_id.save()
-    return
+
+    # If validation errors exist, return them without applying changes
+    if validation_errors:
+        return {"success": False, "errors": validation_errors}
+
+    # Apply Changes Stage
+    for update in updates_to_apply:
+        bil_id = update["bil_id"]
+        bil_id.v2_ds_id = update["v2_ds_id"]
+        bil_id.metadata_version = update["metadata_version"]
+        bil_id.save()
+
+    # Create new BIL_IDs for datasets not matched
+    for dataset in datasets:
+        if dataset not in [update["v2_ds_id"] for update in updates_to_apply]:
+            bil_id = BIL_ID(v2_ds_id=dataset, metadata_version=2, doi=False)
+            bil_id.save()
+            saved_bil_id = BIL_ID.objects.get(v2_ds_id=dataset.id)
+            mne_id = Mne.dataset_num_to_mne(saved_bil_id.id)
+            saved_bil_id.bil_id = mne_id
+            saved_bil_id.save()
 
 def save_specimen_ids(specimens):
     """
@@ -2457,7 +2490,7 @@ def descriptive_metadata_upload(request, associated_collection):
         #datapath = '/Users/luketuite/shared_bil_dev' 
 
         # for development locally
-        datapath = '/home/khutchinson/new_bil/bil_site/datasets' 
+        datapath = '/Users/luketuite/bil/etc' 
         
         spreadsheet_file = request.FILES['spreadsheet_file']
 
