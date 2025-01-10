@@ -2396,24 +2396,88 @@ def save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contrib
         print(repr(e))
         saved = False
 
-def save_bil_ids(datasets):
+def save_bil_ids(datasets, filename):
     """
-    This function iterates through the provided list of datasets, generates and saves BIL_IDs
-    using the BIL_ID model. It also associates an MNE ID with each BIL_ID and saves the updated
-    BIL_ID object in the database.
+    This function iterates through the provided list of datasets, validates all inputs,
+    and then applies changes only if all validations pass. No partial changes will occur.
     """
-    #Removed Keaton's code to revert
-    for dataset in datasets:
-        #create placeholder for BIL_ID
-        bil_id = BIL_ID(v2_ds_id = dataset, metadata_version = 2, doi = False)
+    workbook = xlrd.open_workbook(filename)
+    sheetname = 'Dataset'
+    dataset_sheet = workbook.sheet_by_name(sheetname)
+
+    # Value that changes with each iteration to find bil id for directory
+    loop_index_change = 6
+
+    validation_errors = []
+    updates_to_apply = []
+
+    # Determine if it's a developer spreadsheet
+    is_dev_spreadsheet = False
+    if dataset_sheet.ncols > 15 and dataset_sheet.cell_type(0, 15) != xlrd.XL_CELL_EMPTY:
+        is_dev_spreadsheet = True
+
+    # If it's a developer spreadsheet, perform detailed validation
+    if is_dev_spreadsheet:
+        for dataset in datasets:
+            for cell_value in dataset_sheet.row_values(loop_index_change):
+                bil_id_value = None
+                # Find row with bil_id value
+                bil_id_value = dataset_sheet.cell_value(loop_index_change, 15).strip()
+                if BIL_ID.objects.filter(bil_id=bil_id_value).exists():
+                    existing_bil_id = BIL_ID.objects.get(bil_id=bil_id_value)
+
+                    # Check if the directory matches
+                    if existing_bil_id.v2_ds_id:
+                        if existing_bil_id.v2_ds_id.bildirectory != cell_value:
+                            validation_errors.append(
+                                f"Directory mismatch for BIL_ID {bil_id_value} (v2_ds_id)."
+                            )
+                    elif existing_bil_id.v1_ds_id:
+                        if existing_bil_id.v1_ds_id.r24_directory != cell_value:
+                            validation_errors.append(
+                                f"Directory mismatch for BIL_ID {bil_id_value} (v1_ds_id)."
+                            )
+                    else:
+                        validation_errors.append(
+                            f"BIL_ID {bil_id_value} does not have a valid v1_ds_id or v2_ds_id."
+                        )
+
+                    # Prepare update if validation passed
+                    if not validation_errors:
+                        updates_to_apply.append({
+                            "bil_id": existing_bil_id,
+                            "v2_ds_id": dataset,
+                            "metadata_version": 2
+                        })
+
+                    loop_index_change += 1
+                    break
+                else:
+                    validation_errors.append(
+                        f"BIL_ID {bil_id_value} does not match any previous upload."
+                    )
+
+        # If validation errors exist, return them without applying changes
+        if validation_errors:
+            return {"success": False, "errors": validation_errors}
+
+    # If it's a regular user spreadsheet, skip developer-specific validation
+    else:
+        for dataset in datasets:
+            # Add datasets directly for regular user spreadsheets
+            bil_id = BIL_ID(v2_ds_id=dataset, metadata_version=2, doi=False)
+            bil_id.save()
+            saved_bil_id = BIL_ID.objects.get(v2_ds_id=dataset.id)
+            mne_id = Mne.dataset_num_to_mne(saved_bil_id.id)
+            saved_bil_id.bil_id = mne_id
+            saved_bil_id.save()
+
+    # Apply Changes Stage (for developer spreadsheets only)
+    for update in updates_to_apply:
+        bil_id = update["bil_id"]
+        bil_id.v2_ds_id = update["v2_ds_id"]
+        bil_id.metadata_version = update["metadata_version"]
         bil_id.save()
-        #grab the just created database ID and generate an mne id
-        saved_bil_id = BIL_ID.objects.get(v2_ds_id = dataset.id)
-        mne_id = Mne.dataset_num_to_mne(saved_bil_id.id)
-        saved_bil_id.bil_id = mne_id
-        #final save
-        saved_bil_id.save()
-    return
 
 def save_specimen_ids(specimens):
     """
@@ -2580,7 +2644,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets)
+                    errormsg = save_bil_ids(ingested_datasets, filename)
                     if errormsg != None:
                         messages.error(request, errormsg)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2591,7 +2655,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets)
+                    errormsg = save_bil_ids(ingested_datasets, filename)
                     if errormsg != None:
                         messages.error(request, errormsg)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2602,7 +2666,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets)
+                    errormsg = save_bil_ids(ingested_datasets, filename)
                     if errormsg != None:
                         messages.error(request, errormsg)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2613,7 +2677,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets)
+                    errormsg = save_bil_ids(ingested_datasets, filename)
                     if errormsg != None:
                         messages.error(request, errormsg)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2624,7 +2688,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets)
+                    errormsg = save_bil_ids(ingested_datasets, filename)
                     if errormsg != None:
                         messages.error(request, errormsg)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2667,7 +2731,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         ingested_specimens = Specimen.objects.filter(sheet = sheet)
                         ingested_instruments = Instrument.objects.filter(sheet = sheet)
                         errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets)
+                        errormsg = save_bil_ids(ingested_datasets, filename)
                         if errormsg != None:
                             messages.error(request, errormsg)
                             return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2680,7 +2744,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         ingested_specimens = Specimen.objects.filter(sheet = sheet)
                         ingested_instruments = Instrument.objects.filter(sheet = sheet)
                         errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets)
+                        errormsg = save_bil_ids(ingested_datasets, filename)
                         if errormsg != None:
                             messages.error(request, errormsg)
                             return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2693,7 +2757,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         ingested_specimens = Specimen.objects.filter(sheet = sheet)
                         ingested_instruments = Instrument.objects.filter(sheet = sheet)
                         errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets)
+                        errormsg = save_bil_ids(ingested_datasets, filename)
                         if errormsg != None:
                             messages.error(request, errormsg)
                             return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2706,7 +2770,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         ingested_specimens = Specimen.objects.filter(sheet = sheet)
                         ingested_instruments = Instrument.objects.filter(sheet = sheet)
                         errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets)
+                        errormsg = save_bil_ids(ingested_datasets, filename)
                         if errormsg != None:
                             messages.error(request, errormsg)
                             return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -2719,7 +2783,7 @@ def descriptive_metadata_upload(request, associated_collection):
                         ingested_specimens = Specimen.objects.filter(sheet = sheet)
                         ingested_instruments = Instrument.objects.filter(sheet = sheet)
                         errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets)
+                        errormsg = save_bil_ids(ingested_datasets, filename)
                         if errormsg != None:
                             messages.error(request, errormsg)
                             return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
