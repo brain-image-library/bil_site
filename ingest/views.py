@@ -39,6 +39,9 @@ import json
 from datetime import datetime
 import os
 from django.middleware.csrf import get_token
+import subprocess
+from django.contrib.admin.views.decorators import staff_member_required
+
 
 
 def logout(request):
@@ -3180,3 +3183,16 @@ def upload_spreadsheet(spreadsheet_file, associated_submission, request):
         error = True
         messages.error(request, "File type not supported")
         return error
+
+@staff_member_required
+def trigger_bash_script(request):
+    try:
+        result = subprocess.run(
+            ["/Users/luketuite/newbil/bil_site/script.sh"],
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+        return HttpResponse(f"Script executed successfully:\n{result.stdout}")
+    except subprocess.CalledProcessError as e:
+        return HttpResponse(f"Error while running script:\n{e.stderr}", status=500)

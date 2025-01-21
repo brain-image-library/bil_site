@@ -6,6 +6,10 @@ from django.core import serializers
 from django.http import HttpResponse
 from django.utils.translation import gettext_lazy
 from django.db.models import F
+from django.urls import path
+from django.utils.html import format_html
+from django.http import HttpResponseRedirect
+from .views import trigger_bash_script  # Import the custom view
 
 from .models import (
     ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor,
@@ -228,3 +232,19 @@ class DatasetTagAdmin(admin.ModelAdmin):
 
 admin.site.register(DatasetTag, DatasetTagAdmin)
 
+class CustomAdminSite(admin.AdminSite):
+    site_header = "Custom Admin"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('trigger-script/', self.admin_view(trigger_bash_script), name='trigger_bash_script'),
+        ]
+        return custom_urls + urls
+
+    def custom_button_view(self):
+        url = reverse('admin:trigger_bash_script')
+        return format_html('<a class="button" href="{}">Run Bash Script</a>', url)
+
+# Instantiate the custom admin site
+custom_admin_site = CustomAdminSite(name='custom_admin')

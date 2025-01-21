@@ -1,0 +1,7 @@
+{% extends "admin/index.html" %}
+
+{% block content %}
+    <h1>Custom Admin Dashboard</h1>
+    <a class="button" href="{% url 'ingest:trigger_bash_script' %}">Run Bash Script</a>
+    {{ block.super }}
+{% endblock %}
