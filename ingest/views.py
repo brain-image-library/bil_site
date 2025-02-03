@@ -41,6 +41,9 @@ import os
 from django.middleware.csrf import get_token
 import subprocess
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.csrf import csrf_exempt
+import requests
+
 
 
 
@@ -3184,15 +3187,47 @@ def upload_spreadsheet(spreadsheet_file, associated_submission, request):
         messages.error(request, "File type not supported")
         return error
 
-@staff_member_required
-def trigger_bash_script(request):
+@csrf_exempt  # Exempt CSRF since it's handled in JavaScript
+def doi_api(request):
+    """Handles the request to send a BIL_ID to the Flask API and redirects to admin page with a message"""
+    print(f"📌 Received request: {request.method}")
+
+    if request.method != "POST":
+        messages.error(request, "Invalid request method.")
+        return redirect("admin:ingest_bil_id_changelist")  # Redirect to BIL_ID admin page
+
     try:
-        result = subprocess.run(
-            ["/Users/luketuite/newbil/bil_site/script.sh"],
-            check=True,
-            text=True,
-            capture_output=True,
-        )
-        return HttpResponse(f"Script executed successfully:\n{result.stdout}")
-    except subprocess.CalledProcessError as e:
-        return HttpResponse(f"Error while running script:\n{e.stderr}", status=500)
+        data = json.loads(request.body)  # Parse JSON data
+        print(f"📦 Received payload: {data}")
+        bil_id = data.get("bildid")  # Extract "bildid"
+    except json.JSONDecodeError:
+        messages.error(request, "Invalid JSON format.")
+        return redirect("admin:ingest_bil_id_changelist")
+
+    if not bil_id:
+        print("❌ No BIL_ID received")
+        messages.error(request, "No BIL_ID provided.")
+        return redirect("admin:ingest_bil_id_changelist")
+
+    print(f"✅ Got BIL_ID: {bil_id}")
+
+    # Flask API details
+    flask_api_url = "http://127.0.0.1:8094/draft"
+    payload = {"bildid": bil_id, "action": "draft"}
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        print(f"🚀 Sending payload to Flask API: {json.dumps(payload, indent=2)}")
+        response = requests.post(flask_api_url, json=payload, headers=headers)
+        print(f"🎯 Flask API Response: {response.status_code} - {response.text}")
+
+        if response.status_code == 201:
+            messages.success(request, f"✅ DOI successfully created for {bil_id}!")
+        else:
+            messages.error(request, f"❌ Error: {response.text}")
+
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Flask API Error: {str(e)}")
+        messages.error(request, f"❌ Request to Flask API failed: {str(e)}")
+
+    return redirect("admin:ingest_bil_id_changelist")  # Redirect to BIL_ID admin page

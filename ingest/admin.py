@@ -9,7 +9,8 @@ from django.db.models import F
 from django.urls import path
 from django.utils.html import format_html
 from django.http import HttpResponseRedirect
-from .views import trigger_bash_script  # Import the custom view
+from django.middleware.csrf import get_token
+from .views import doi_api  # Import the custom view
 
 from .models import (
     ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor,
@@ -153,10 +154,15 @@ class Instrument(admin.ModelAdmin):
 
 @admin.register(Dataset)
 
-class Dataset(admin.ModelAdmin):
+class DatasetAdmin(admin.ModelAdmin):
     search_fields = ['bildirectory']
-    list_display = ("id", "bildirectory", "socialmedia", "subject", "subjectscheme", "rights", "rightsuri", "rightsidentifier", "dataset_image", "generalmodality", "technique", "other", "methods", "technicalinfo", "sheet")
-    
+    list_display = (
+        "id", "bildirectory", "socialmedia", "subject", "subjectscheme",
+        "rights", "rightsuri", "rightsidentifier", "dataset_image",
+        "generalmodality", "technique", "other", "methods",
+        "technicalinfo", "sheet"
+    )
+
 @admin.register(Image)
 class Image(admin.ModelAdmin):
     list_display = ("id", "xaxis", "obliquexdim1", "obliquexdim2", "obliquexdim3", "yaxis", "obliqueydim1", "obliqueydim2", "obliqueydim3", "zaxis", "obliquezdim1", "obliquezdim2", "obliquezdim3", "landmarkname", "landmarkx", "landmarky", "landmarkz", "number", "displaycolor", "representation", "flurophore", "stepsizex", "stepsizey", "stepsizez", "stepsizet", "channels", "slices", "z", "xsize", "ysize", "zsize", "gbytes", "files", "dimensionorder", "sheet")
@@ -194,12 +200,68 @@ class DatasetLinkageAdmin(admin.ModelAdmin):
     autocomplete_fields = ['data_id_1_bil']
 
 class BIL_IDAdmin(admin.ModelAdmin):
-    list_display = ["bil_id", "v1_ds_id", "v2_ds_id", "metadata_version", "doi"]
+    list_display = ["bil_id", "v1_ds_id", "v2_ds_id", "metadata_version", "doi", "send_to_doi_button"]
     search_fields = ['bil_id']
 
-admin.site.register(DatasetLinkage, DatasetLinkageAdmin)
+    def send_to_doi_button(self, obj):
+        """Button that sends the BIL_ID to the DOI API via AJAX with confirmation"""
+        doi_api_url = reverse("ingest:doi_api")  # Ensure this is the correct URL name
 
+        return format_html(
+            '''
+            <button type="button" onclick="confirmAndSendBILID('{bil_id}', '{doi_api_url}')">
+                Send to DOI API
+            </button>
+
+            <script>
+                function confirmAndSendBILID(bil_id, url) {{
+                    event.stopPropagation();  // Prevents row click behavior
+                    event.preventDefault();  // Prevents form submission
+
+                    // Show confirmation prompt
+                    const userConfirmed = confirm(`Are you sure you want to send BIL_ID: ${bil_id} to the DOI API?`);
+                    if (!userConfirmed) {{
+                        console.log('❌ Action cancelled by user.');
+                        return;
+                    }}
+
+                    console.log('📤 Sending BIL_ID:', bil_id);
+
+                    const payload = {{
+                        "bildid": bil_id,
+                        "action": "draft"
+                    }};
+                    console.log('📦 Payload:', payload);
+
+                    fetch(url, {{
+                        method: "POST",
+                        headers: {{
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": getCSRFToken()
+                        }},
+                        body: JSON.stringify(payload)
+                    }})
+                    .then(response => response.json())
+                    .then(data => console.log('✅ Response:', data))
+                    .catch(error => console.error('❌ Error:', error));
+                }}
+
+                function getCSRFToken() {{
+                    return document.cookie.split('; ')
+                        .find(row => row.startsWith('csrftoken='))
+                        ?.split('=')[1] || '';
+                }}
+            </script>
+            ''',
+            bil_id=obj.bil_id, doi_api_url=doi_api_url
+        )
+
+
+
+    #send_to_doi_button.short_description = "Send to DOI API"
 admin.site.register(BIL_ID, BIL_IDAdmin)
+
+admin.site.register(DatasetLinkage, DatasetLinkageAdmin)
 
 class Specimen_linkageAdmin(admin.ModelAdmin):
     list_display = ("specimen_id", "specimen_id_2", "code_id", "specimen_category")
@@ -232,19 +294,19 @@ class DatasetTagAdmin(admin.ModelAdmin):
 
 admin.site.register(DatasetTag, DatasetTagAdmin)
 
-class CustomAdminSite(admin.AdminSite):
-    site_header = "Custom Admin"
+#class CustomAdminSite(admin.AdminSite):
+#    site_header = "Custom Admin"
 
-    def get_urls(self):
-        urls = super().get_urls()
-        custom_urls = [
-            path('trigger-script/', self.admin_view(trigger_bash_script), name='trigger_bash_script'),
-        ]
-        return custom_urls + urls
-
-    def custom_button_view(self):
-        url = reverse('admin:trigger_bash_script')
-        return format_html('<a class="button" href="{}">Run Bash Script</a>', url)
+#    def get_urls(self):
+#        urls = super().get_urls()
+#        custom_urls = [
+#            path('trigger-script/', self.admin_view(trigger_bash_script), name='trigger_bash_script'),
+#        ]
+#        return custom_urls + urls
+#
+#    def custom_button_view(self):
+#        url = reverse('admin:trigger_bash_script')
+#        return format_html('<a class="button" href="{}">Run Bash Script</a>', url)
 
 # Instantiate the custom admin site
-custom_admin_site = CustomAdminSite(name='custom_admin')
+#custom_admin_site = CustomAdminSite(name='custom_admin')
