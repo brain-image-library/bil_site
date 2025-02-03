@@ -30,8 +30,8 @@ from .mne import Mne
 from .specimen_portal import Specimen_Portal
 from .field_list import required_metadata
 from .filters import CollectionFilter
-from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag, ConsortiumTag
+from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice, DatasetLinkageForm
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag, ConsortiumTag, DatasetLinkage
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -39,6 +39,10 @@ import json
 from datetime import datetime
 import os
 from django.middleware.csrf import get_token
+from django.utils.timezone import now
+
+from django.db.models import OuterRef, Subquery, Q
+
 
 
 def logout(request):
@@ -932,6 +936,84 @@ def delete_tag_all(request):
                 return JsonResponse({'status': 'error', 'message': 'Collection not found.'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
 
+@login_required
+def create_dataset_linkage(request, collection_id):
+    collection = get_object_or_404(Collection, id=collection_id)
+
+    # Use a Subquery to fetch the corresponding BIL_ID for each Dataset
+    bil_id_query = BIL_ID.objects.filter(v2_ds_id=OuterRef('pk')).values('id')[:1]  # Use 'id' to fetch primary key
+
+    # Annotate each dataset with its corresponding BIL_ID
+    datasets = Dataset.objects.filter(sheet__collection_id=collection.id).annotate(bil_id=Subquery(bil_id_query))
+
+    if request.method == "POST":
+        errors = []
+
+        for dataset in datasets:
+            # Extract dataset-specific data from the POST request using the dataset's ID as a prefix
+            code_id = request.POST.get(f'code_id_{dataset.id}')
+            data_id_2 = request.POST.get(f'data_id_2_{dataset.id}')
+            relationship = request.POST.get(f'relationship_{dataset.id}')
+            description = request.POST.get(f'description_{dataset.id}')
+
+            # Validate that required fields are provided
+            if not code_id or not relationship:
+                errors.append(f"Dataset {dataset.title}: Missing required fields (Code ID or Relationship).")
+                continue
+
+            # Create a new DatasetLinkage object
+            linkage = DatasetLinkage(
+                code_id=code_id,
+                data_id_2=data_id_2,
+                relationship=relationship,
+                description=description,
+                linkage_date=now().date(),  # Automatically set the linkage date to today
+            )
+
+            # Fetch and assign the corresponding BIL_ID instance
+            bil_id_instance = BIL_ID.objects.filter(id=dataset.bil_id).first()
+            if bil_id_instance:
+                linkage.data_id_1_bil = bil_id_instance
+            else:
+                errors.append(f"Dataset {dataset.title}: No valid BIL ID found.")
+                continue
+
+            # Save the linkage object
+            linkage.save()
+
+        if not errors:
+            # Redirect to the collection detail page on success
+            return redirect('ingest:collection_detail', pk=collection_id)
+
+        # If there are errors, re-render the page with error messages
+        return render(request, 'ingest/create_dataset_linkage.html', {
+            'collection': collection,
+            'datasets': datasets,
+            'errors': errors,
+        })
+
+    # For GET requests, render the page
+    return render(request, 'ingest/create_dataset_linkage.html', {
+        'collection': collection,
+        'datasets': datasets,
+    })
+
+def get_bil_ids(request):
+    query = request.GET.get("q", "").strip()
+    
+    # Get all BIL_IDs, optionally filtering by the search term
+    bil_ids = BIL_ID.objects.all()
+    if query:
+        bil_ids = bil_ids.filter(bil_id__icontains=query) | bil_ids.filter(v2_ds_id__title__icontains=query)
+    
+    data = [
+        {
+            "bil_id": bil.bil_id,
+            "dataset_title": bil.v2_ds_id.title if bil.v2_ds_id else ""  # Avoid NoneType errors
+        }
+        for bil in bil_ids
+    ]
+    return JsonResponse(data, safe=False)
 
 @login_required
 def ondemandSubmission(request, pk):

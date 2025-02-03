@@ -1,6 +1,8 @@
 from django import forms
 from .field_list import metadata_fields, collection_fields
-from .models import ImageMetadata, DescriptiveMetadata, Collection
+from .models import ImageMetadata, DescriptiveMetadata, Collection, DatasetLinkage
+from django.utils import timezone
+
 
 
 class UploadForm(forms.Form):
@@ -86,3 +88,22 @@ class CollectionChoice(forms.Form):
         super(CollectionChoice, self).__init__(*args, **kwargs)
         # Dynamically filter queryset based on the logged-in user
         self.fields['collection'].queryset = Collection.objects.filter(user=user)
+
+class DatasetLinkageForm(forms.ModelForm):
+    class Meta:
+        model = DatasetLinkage
+        fields = ['code_id', 'data_id_2', 'relationship', 'description']
+        widgets = {
+            'code_id': forms.Select(attrs={'class': 'form-control'}),
+            'data_id_2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Data ID 2'}),
+            'relationship': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Add a description'}),
+        }
+
+    def save(self, commit=True, *args, **kwargs):
+        instance = super().save(commit=False)
+        # Automatically set the linkage_date to now
+        instance.linkage_date = timezone.now().date()
+        if commit:
+            instance.save()
+        return instance
