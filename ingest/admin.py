@@ -204,28 +204,30 @@ class BIL_IDAdmin(admin.ModelAdmin):
     search_fields = ['bil_id']
 
     def send_to_doi_button(self, obj):
-        """Button that sends the BIL_ID to the DOI API via AJAX with confirmation"""
+        """Button that sends the BIL_ID to the DOI API via AJAX and opens the DOI page"""
+
+        # If DOI is already created, do NOT show the button
+        if obj.doi:
+            return format_html('<span style="color: green; font-weight: bold;">✅ DOI Created</span>')
+
         doi_api_url = reverse("ingest:doi_api")  # Ensure this is the correct URL name
 
         return format_html(
             '''
-            <button type="button" onclick="confirmAndSendBILID('{bil_id}', '{doi_api_url}')">
-                Send to DOI API
+            <button type="button" onclick="sendBILID('{bil_id}', '{doi_api_url}')">
+                Create DOI
             </button>
 
             <script>
-                function confirmAndSendBILID(bil_id, url) {{
+                function sendBILID(bil_id, url) {{
                     event.stopPropagation();  // Prevents row click behavior
                     event.preventDefault();  // Prevents form submission
 
-                    // Show confirmation prompt
-                    const userConfirmed = confirm(`Are you sure you want to send BIL_ID: ${bil_id} to the DOI API?`);
-                    if (!userConfirmed) {{
-                        console.log('❌ Action cancelled by user.');
+                    if (!confirm("Are you sure you want to send this BIL_ID?")) {{
                         return;
                     }}
 
-                    console.log('📤 Sending BIL_ID:', bil_id);
+                    console.log('📤 Sending BIL_ID:', bil_id); 
 
                     const payload = {{
                         "bildid": bil_id,
@@ -242,8 +244,21 @@ class BIL_IDAdmin(admin.ModelAdmin):
                         body: JSON.stringify(payload)
                     }})
                     .then(response => response.json())
-                    .then(data => console.log('✅ Response:', data))
-                    .catch(error => console.error('❌ Error:', error));
+                    .then(data => {{
+                        if (data.success && data.doi_url) {{
+                            alert("✅ DOI successfully created!");
+                            setTimeout(() => {{
+                                window.open(data.doi_url, "_blank");  // 🚀 Open DOI page in new tab
+                                location.reload();  // 🔄 Refresh the page after DOI is created
+                            }}, 500);
+                        }} else {{
+                            alert("❌ Error: " + (data.error || "Unknown error"));
+                        }}
+                    }})
+                    .catch(error => {{
+                        console.error('❌ Error:', error);
+                        alert("❌ Failed to communicate with the server.");
+                    }});
                 }}
 
                 function getCSRFToken() {{
@@ -256,6 +271,7 @@ class BIL_IDAdmin(admin.ModelAdmin):
             bil_id=obj.bil_id, doi_api_url=doi_api_url
         )
 
+    send_to_doi_button.short_description = "Create DOI"
 
 
     #send_to_doi_button.short_description = "Send to DOI API"

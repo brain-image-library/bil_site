@@ -3189,25 +3189,22 @@ def upload_spreadsheet(spreadsheet_file, associated_submission, request):
 
 @csrf_exempt  # Exempt CSRF since it's handled in JavaScript
 def doi_api(request):
-    """Handles the request to send a BIL_ID to the Flask API and redirects to admin page with a message"""
+    """Handles the request to send a BIL_ID to the Flask API"""
     print(f"📌 Received request: {request.method}")
 
     if request.method != "POST":
-        messages.error(request, "Invalid request method.")
-        return redirect("admin:ingest_bil_id_changelist")  # Redirect to BIL_ID admin page
+        return JsonResponse({"error": "Invalid request method"}, status=405)
 
     try:
         data = json.loads(request.body)  # Parse JSON data
         print(f"📦 Received payload: {data}")
-        bil_id = data.get("bildid")  # Extract "bildid"
+        bil_id = data.get("bildid")
     except json.JSONDecodeError:
-        messages.error(request, "Invalid JSON format.")
-        return redirect("admin:ingest_bil_id_changelist")
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
 
     if not bil_id:
         print("❌ No BIL_ID received")
-        messages.error(request, "No BIL_ID provided.")
-        return redirect("admin:ingest_bil_id_changelist")
+        return JsonResponse({"error": "No BIL_ID provided"}, status=400)
 
     print(f"✅ Got BIL_ID: {bil_id}")
 
@@ -3222,12 +3219,19 @@ def doi_api(request):
         print(f"🎯 Flask API Response: {response.status_code} - {response.text}")
 
         if response.status_code == 201:
-            messages.success(request, f"✅ DOI successfully created for {bil_id}!")
+            # Update the DOI field in the database
+            bil_record = get_object_or_404(BIL_ID, bil_id=bil_id)
+            bil_record.doi = True
+            bil_record.save()
+            print(f"✅ Updated BIL_ID {bil_id} as DOI=True")
+
+            # Construct DOI URL
+            doi_url = f"https://doi.test.datacite.org/dois/10.80303%2F{bil_id}"
+            return JsonResponse({"success": True, "doi_url": doi_url}, status=201)
         else:
-            messages.error(request, f"❌ Error: {response.text}")
+            return JsonResponse({"error": response.text}, status=response.status_code)
 
     except requests.exceptions.RequestException as e:
         print(f"❌ Flask API Error: {str(e)}")
-        messages.error(request, f"❌ Request to Flask API failed: {str(e)}")
+        return JsonResponse({"error": f"Request to Flask API failed: {str(e)}"}, status=500)
 
-    return redirect("admin:ingest_bil_id_changelist")  # Redirect to BIL_ID admin page
