@@ -1,0 +1,26 @@
+.inline-group {
+    overflow: hidden;
+    /* Prevents scrolling on the entire group */
+}
+
+.inline-related {
+    overflow-x: auto;
+    /* Enables horizontal scrolling */
+    display: block;
+    /* Prevents unintended flex behavior */
+    white-space: nowrap;
+    /* Keeps content in a single line */
+    max-width: 100%;
+    /* Ensures it doesn't overflow outside */
+    padding-bottom: 10px;
+    /* Prevents scrollbar from overlapping content */
+}
+
+.inline-related table {
+    display: block;
+    /* Makes the table scrollable */
+    overflow-x: auto;
+    max-width: 100%;
+    white-space: nowrap;
+    /* Prevents wrapping of table content */
+}

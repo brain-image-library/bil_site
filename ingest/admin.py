@@ -10,7 +10,7 @@ from django.db.models import F
 from .models import (
     ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor,
     Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder,
-    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium, BIL_Specimen_ID, SpecimenLinkage, ConsortiumTag, DatasetTag
+    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium, BIL_Specimen_ID, SpecimenLinkage
 )
 
 
@@ -52,6 +52,8 @@ class ImagesInline(admin.TabularInline):
 
 class SWCSInline(admin.TabularInline):
     model = SWC
+    show_change_link = True
+    raw_id_fields = ('data_set', 'sheet')
 
 class ConsortiaInline(admin.TabularInline):
     model = Consortium
@@ -61,7 +63,19 @@ class ProjectConsortiumInline(admin.TabularInline):
 
 class BIL_IDInline(admin.TabularInline):
     model = BIL_ID
+    fields = ('bil_id', 'BilDirectory')
     raw_id_fields = ('v2_ds_id',)
+    
+    def BilDirectory(self, obj):
+        print(obj)
+        related_dataset = Dataset.objects.filter(v2_ds_id_id=obj.id)
+        print(related_dataset)
+        
+        if related_dataset.exists():
+            return related_dataset.first().bildirectory
+        return "No Dataset Found"
+    
+
 
 class BIL_Specimen_IDInline(admin.TabularInline):
     model = BIL_Specimen_ID
@@ -118,12 +132,18 @@ class CollectionAdmin(admin.ModelAdmin):
         )
         return format_html('<a href="{}">{} Events</a>', url, count)
     view_eventslogs_link.short_description = "EventsLogs"
+    class Media:
+        css = {
+            "all": ("admin/css/custom_admin.css",)  # Make sure this file exists in your static folder
+        }
+        
 
 admin.site.register(ImageMetadata)
 
 @admin.register(People)
 
 class People(admin.ModelAdmin):
+    search_fields = ("name",)
     list_display = ("id", "name", "orcid", "affiliation", "affiliation_identifier", "is_bil_admin", "auth_user_id")
 
 @admin.register(Project)
@@ -151,7 +171,12 @@ class Instrument(admin.ModelAdmin):
 
 class Dataset(admin.ModelAdmin):
     search_fields = ['bildirectory']
-    list_display = ("id", "bildirectory", "socialmedia", "subject", "subjectscheme", "rights", "rightsuri", "rightsidentifier", "dataset_image", "generalmodality", "technique", "other", "methods", "technicalinfo", "sheet")
+    list_display = ("id", "bildirectory", "socialmedia", "subject", "subjectscheme", "rights", "rightsuri", "rightsidentifier", "dataset_image", "generalmodality", "technique", "other", "methods", "technicalinfo", "sheet", "bil_id_details")
+    def bil_id_details(self, obj):
+        related_bil_ids = BIL_ID.objects.filter(v2_ds_id_id=obj.id)
+        if related_bil_ids.exists():
+            return related_bil_ids.first().bil_id  # Replace 'some_field' with the desired field name
+        return "No BIL_ID found"
     
 @admin.register(Image)
 class Image(admin.ModelAdmin):
@@ -159,8 +184,14 @@ class Image(admin.ModelAdmin):
 
 @admin.register(Sheet)
 class SheetAdmin(admin.ModelAdmin):
+    search_fields = ['filename']
     list_display = ("id","filename", "date_uploaded", "collection",)
-    inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline,]
+    inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline, SWCSInline]
+
+    class Media:
+        css = {
+            'all': ('admin/css/custom_admin.css',)
+        }
 
 @admin.register(EventsLog)
 class EventsLogAdmin(admin.ModelAdmin):
@@ -171,6 +202,7 @@ class EventsLogAdmin(admin.ModelAdmin):
 @admin.register(ProjectPeople)
 
 class ProjectPeople(admin.ModelAdmin):
+    search_fields = ['people_id__name', 'project_id__name']
     list_display = ("id", "project_id", "people_id", "is_po", "is_po", "doi_role")
 
 @admin.register(SWC)
@@ -190,8 +222,18 @@ class DatasetLinkageAdmin(admin.ModelAdmin):
     autocomplete_fields = ['data_id_1_bil']
 
 class BIL_IDAdmin(admin.ModelAdmin):
-    list_display = ["bil_id", "v1_ds_id", "v2_ds_id", "metadata_version", "doi"]
     search_fields = ['bil_id']
+    list_display = ['bil_id', 'v1_ds_id', 'view_dataset_id_link', 'metadata_version', 'doi']
+    def view_dataset_id_link(self, obj):
+        if obj.v2_ds_id:  # Ensure there's an associated dataset
+            print(obj.v2_ds_id)
+            url = reverse("admin:ingest_dataset_change", args=[obj.v2_ds_id.pk])
+            return format_html('<a href="{}">V2 Dataset</a>', url)
+        return "No V2 Dataset"
+    
+    view_dataset_id_link.short_description = "v2_ds_id"
+    
+
 
 admin.site.register(DatasetLinkage, DatasetLinkageAdmin)
 
@@ -204,27 +246,46 @@ class Specimen_linkageAdmin(admin.ModelAdmin):
 
 class BIL_Specimen_IDAdmin(admin.ModelAdmin):
     search_fields = ['bil_spc_id']
+    list_display = ['bil_spc_id', 'view_specimenid_link']
+
+    def view_specimenid_link(self, obj):
+        if obj.specimen_id:  # Ensure there's an associated specimen
+            url = reverse("admin:ingest_specimen_change", args=[obj.specimen_id.pk])
+            return format_html('<a href="{}">Specimen</a>', url)
+        return "No Specimen"
+    
+    view_specimenid_link.short_description = "Specimen ID"
 
 admin.site.register(SpecimenLinkage, Specimen_linkageAdmin)
 
 admin.site.register(BIL_Specimen_ID, BIL_Specimen_IDAdmin)
 
 class SpecimenAdmin(admin.ModelAdmin):
+    list_display = ['data_set', 'view_sheets_link', 'locations', 'atlas', 'samplelocalid', 'organname', 'organlocalid', 'genotype', 'sex', 'ageunit', 'age', 'ncbitaxonomy', 'species', 'localid']
     autocomplete_fields = ['data_set']
+    search_fields = ['data_set']
+    list_filter = ['data_set']
+    def view_sheets_link(self, obj):
+        url = (
+            reverse("admin:ingest_sheet_changelist")
+            + "?"
+            +urlencode({"filename": f"{obj.sheet}"})
+        )
+        return format_html('<a href="{}"> Sheets</a>', url)
+    view_sheets_link.short_description = "Sheets"
 
 admin.site.register(Specimen, SpecimenAdmin)
 
-#class ProjectConsortiumAdmin(admin.ModelAdmin):
-
-
-admin.site.register(ProjectConsortium)
+class ProjectConsortiumAdmin(admin.ModelAdmin):
+    list_display = ('project', 'consortium_link')
+    def consortium_link(self, obj):
+        if obj.consortium:  # Ensure there's an associated dataset
+            print(obj.consortium)
+            url = reverse("admin:ingest_consortium_change", args=[obj.consortium.pk])
+            return format_html('<a href="{}"> Consortium </a>', url)
+        return "No V2 Dataset"
     
-
-admin.site.register(ConsortiumTag)
-
-class DatasetTagAdmin(admin.ModelAdmin):
-    list_display=["tag", "dataset", "bil_id"]
+    consortium_link.short_description = "consortium"
 
 
-admin.site.register(DatasetTag, DatasetTagAdmin)
-
+admin.site.register(ProjectConsortium, ProjectConsortiumAdmin)
