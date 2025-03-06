@@ -39,6 +39,7 @@ import json
 from datetime import datetime
 import os
 from django.middleware.csrf import get_token
+import subprocess
 
 
 def logout(request):
@@ -523,35 +524,87 @@ class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
     template_name = 'ingest/descriptive_metadata_detail.html'
     context_object_name = 'descriptive_metadata'
 
+#def validation_pipeline(bil_uuids)
+    #run the stuff we added in collection send
+    #we should have function grab the full path of the UUID
+    #current_user = request.user
+    #username = current_user.username
+    #first2 = bil_uuid[:2]
+    #second2 = coll.bil_uuid[2:4]
+    #full_path=/bil/lz/*username*/first2/second2/uuid
+
 @login_required
 def collection_send(request):
     content = json.loads(request.body)
     items = []
     user_name = request.user
+
+    script_path = "./bil_script.sh"  # First script
+    second_script_path = "./second_script.sh"  # Second script
+    output_file = "bil_output.txt"  # Output file
+    # instead of running these here, call a function called like "validation_pipeline(list_of_uuids)"
     for item in content:
-        items.append(item['bil_uuid'])
-        coll = Collection.objects.get(bil_uuid = item['bil_uuid'])
-        coll_id = Collection.objects.get(id = coll.id)
-        person = People.objects.get(name = user_name)
+        bil_uuid = item['bil_uuid']
+        items.append(bil_uuid)
+
+        coll = Collection.objects.get(bil_uuid=bil_uuid)
+        coll_id = coll.id
+        person = People.objects.get(name=user_name)
         person_id = person.id
-        time = datetime.now()
-        event = EventsLog(collection_id = coll_id, people_id_id = person.id, project_id_id = coll.project_id, notes = '', timestamp = time, event_type = 'request_validation')
+        timestamp = datetime.now()
+
+        # Log the event
+        event = EventsLog(
+            collection_id=coll,
+            people_id_id=person_id,
+            project_id_id=coll.project_id,
+            notes='',
+            timestamp=timestamp,
+            event_type='request_validation'
+        )
         event.save()
+
+        # Remove any previous output file before running the script
+        if os.path.exists(output_file):
+            os.remove(output_file)
+
+        # Run the first script and wait for completion
+        process = subprocess.run([script_path, bil_uuid], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        # Check if the script encountered an error
+        if process.returncode != 0:
+            error_message = f"Error running {script_path}: {process.stderr}"
+            print(error_message)  # Log error for debugging
+            messages.error(request, f"An error occurred while processing {bil_uuid}")
+            continue  # Skip to the next item instead of breaking
+
+        # Wait until the output file is created and not empty
+        while not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
+            continue  # Keep checking until file appears and has content
+
+        # Read the output file
+        with open(output_file, "r") as out_file:
+            output_content = out_file.read().strip()
+
+        # If the output file contains "Passed", run the second script
+        if "Passed" in output_content:
+            subprocess.run([second_script_path], check=True)
+
     if request.method == "POST":
         subject = '[BIL Validations] New Validation Request'
         sender = 'ltuite96@psc.edu'
-        message = F'The following collections have been requested to be validated {items} by {user_name}@psc.edu'
+        message = f'The following collections have been requested to be validated: {items} by {user_name}@psc.edu'
         recipient = ['ltuite96@psc.edu']
         
         send_mail(
-        subject,
-        message,
-        sender,
-        recipient
-             )
-    messages.success(request, 'Request succesfully sent')
-    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+            subject,
+            message,
+            sender,
+            recipient
+        )
 
+    messages.success(request, 'Request successfully sent')
+    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
 @login_required
 def collection_create(request):
     current_user = request.user
