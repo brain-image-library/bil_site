@@ -268,3 +268,85 @@ p {
       }
     }
   }
+
+/* 🔹 Ensure table layout is completely fixed */
+.table {
+  table-layout: fixed;
+  /* Prevents width changes */
+  width: 100%;
+}
+
+/* 🔹 Prevent column widths from shifting */
+.table th,
+.table td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 8px;
+  text-align: left;
+}
+
+/* 🔹 Assign fixed column widths */
+.table th:nth-child(1),
+.table td:nth-child(1) {
+  width: 45%;
+}
+
+/* Dataset Info */
+.table th:nth-child(2),
+.table td:nth-child(2) {
+  width: 150px;
+}
+
+/* Code ID */
+.table th:nth-child(3),
+.table td:nth-child(3) {
+  width: 250px;
+}
+
+/* Identifier */
+.table th:nth-child(4),
+.table td:nth-child(4) {
+  width: 200px;
+}
+
+/* Relationship */
+.table th:nth-child(5),
+.table td:nth-child(5) {
+  width: 250px;
+}
+
+/* Description */
+
+/* 🔹 Ensure Identifier field never shrinks */
+.identifier-cell {
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+}
+
+/* 🔹 Prevent input and select from changing width */
+.identifier-cell input,
+.identifier-cell select {
+  width: 100% !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+}
+
+/* 🔹 Lock Code ID dropdown width */
+.code-id-dropdown {
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
+}
+
+/* 🔹 Ensure Relationship and Description fields stay consistent */
+.relationship-dropdown {
+  width: 200px !important;
+}
+
+.description-textarea {
+  width: 250px !important;
+  resize: none;
+  /* Prevents resizing */
+}

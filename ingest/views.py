@@ -940,62 +940,28 @@ def delete_tag_all(request):
 def create_dataset_linkage(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
 
-    # Use a Subquery to fetch the corresponding BIL_ID for each Dataset
-    bil_id_query = BIL_ID.objects.filter(v2_ds_id=OuterRef('pk')).values('id')[:1]  # Use 'id' to fetch primary key
+    # Fetch existing dataset linkages for this collection
+    existing_linkages = DatasetLinkage.objects.filter(data_id_1_bil__v2_ds_id__sheet__collection_id=collection.id)
 
-    # Annotate each dataset with its corresponding BIL_ID
+    # If no linkages exist, proceed with form logic
+    bil_ids = list(BIL_ID.objects.values("bil_id", "v2_ds_id__title"))
+
+    bil_id_data = [
+        {
+            "bil_id": bil["bil_id"],
+            "dataset_title": bil["v2_ds_id__title"] if bil["v2_ds_id__title"] else ""
+        }
+        for bil in bil_ids
+    ]
+
+    bil_id_query = BIL_ID.objects.filter(v2_ds_id=OuterRef('pk')).values('id')[:1]
     datasets = Dataset.objects.filter(sheet__collection_id=collection.id).annotate(bil_id=Subquery(bil_id_query))
 
-    if request.method == "POST":
-        errors = []
-
-        for dataset in datasets:
-            # Extract dataset-specific data from the POST request using the dataset's ID as a prefix
-            code_id = request.POST.get(f'code_id_{dataset.id}')
-            data_id_2 = request.POST.get(f'data_id_2_{dataset.id}')
-            relationship = request.POST.get(f'relationship_{dataset.id}')
-            description = request.POST.get(f'description_{dataset.id}')
-
-            # Validate that required fields are provided
-            if not code_id or not relationship:
-                errors.append(f"Dataset {dataset.title}: Missing required fields (Code ID or Relationship).")
-                continue
-
-            # Create a new DatasetLinkage object
-            linkage = DatasetLinkage(
-                code_id=code_id,
-                data_id_2=data_id_2,
-                relationship=relationship,
-                description=description,
-                linkage_date=now().date(),  # Automatically set the linkage date to today
-            )
-
-            # Fetch and assign the corresponding BIL_ID instance
-            bil_id_instance = BIL_ID.objects.filter(id=dataset.bil_id).first()
-            if bil_id_instance:
-                linkage.data_id_1_bil = bil_id_instance
-            else:
-                errors.append(f"Dataset {dataset.title}: No valid BIL ID found.")
-                continue
-
-            # Save the linkage object
-            linkage.save()
-
-        if not errors:
-            # Redirect to the collection detail page on success
-            return redirect('ingest:collection_detail', pk=collection_id)
-
-        # If there are errors, re-render the page with error messages
-        return render(request, 'ingest/create_dataset_linkage.html', {
-            'collection': collection,
-            'datasets': datasets,
-            'errors': errors,
-        })
-
-    # For GET requests, render the page
     return render(request, 'ingest/create_dataset_linkage.html', {
         'collection': collection,
-        'datasets': datasets,
+        'datasets': datasets if not existing_linkages.exists() else None,  # Only show datasets if no linkages exist
+        'bil_id_data': bil_id_data,
+        'existing_linkages': existing_linkages,  # Pass existing linkages
     })
 
 def get_bil_ids(request):
@@ -2674,10 +2640,10 @@ def descriptive_metadata_upload(request, associated_collection):
         associated_collection = Collection.objects.get(id = associated_collection)
 
         # for production
-        datapath = associated_collection.data_path.replace("/lz/","/etc/")
+        #datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-        #datapath = '/Users/luketuite/shared_bil_dev' 
+        datapath = '/Users/luketuite/shared_bil_dev' 
 
         # for development locally
         #datapath = '/Users/luketuite/shared_bil_dev' 

@@ -2,47 +2,46 @@
 
 {% block content %}
 <div class="container">
-    <h2>Create Dataset Linkages for {{ collection.name }}</h2>
+    <h2>Dataset Linkages for {{ collection.name }}</h2>
+
+    {% if existing_linkages %}
+    <!-- Display existing linkages -->
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Dataset Title</th>
+                <th>Code ID</th>
+                <th>Identifier for Linkage</th>
+                <th>Relationship</th>
+                <th>Description</th>
+                <th>Linkage Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for linkage in existing_linkages %}
+            <tr>
+                <td>{{ linkage.data_id_1_bil.v2_ds_id.title }}</td>
+                <td>{{ linkage.code_id }}</td>
+                <td>{{ linkage.data_id_2 }}</td>
+                <td>{{ linkage.relationship }}</td>
+                <td>{{ linkage.description }}</td>
+                <td>{{ linkage.linkage_date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <!-- Display form if no linkages exist -->
     <form method="POST">
         {% csrf_token %}
         <table class="table">
             <thead>
                 <tr>
                     <th>Dataset Info</th>
-                    <th>
-                        Code ID
-                        <i class="fa fa-info-circle tooltip-trigger" data-toggle="tooltip" data-html="true"
-                            title="Select the source of the dataset linkage.">
-                        </i>
-                    </th>
-                    <th>
-                        Identifier for Linkage
-                        <i class="fa fa-info-circle tooltip-trigger" data-toggle="tooltip" data-html="true" title="<ul>
-                                    <li>BIL Dataset Identifier: ace-cat-dog</li>
-                                    <li>NeMO Identifier: nemo:dat-4v55t0q</li>
-                                    <li>DANDI Identifier: DANDI:000008/0.211014.0809</li>
-                                   </ul>">
-                        </i>
-                    </th>
-                    <th>
-                        Relationship
-                        <i class="fa fa-info-circle tooltip-trigger" data-toggle="tooltip" data-html="true" title="<ul>
-                                    <li>Omics Data: for related NeMO datasets</li>
-                                    <li>Neurophysiology Data: for related DANDI datasets</li>
-                                    <li>Derived Data: for reprocessed or reanalyzed BIL datasets</li>
-                                    <li>Raw Data: for raw datasets of previously submitted processed BIL datasets</li>
-                                    <li>Neuron Tracing: for neuron tracing datasets of previously submitted BIL datasets</li>
-                                   </ul>">
-                        </i>
-                    </th>
-                    <th>
-                        Description
-                        <i class="fa fa-info-circle tooltip-trigger" data-toggle="tooltip" data-html="true" title="<ul>
-                                    <li>Brief description (character limit: X) of the linked dataset</li>
-                                    <li>Preferably the title of the linked dataset</li>
-                                   </ul>">
-                        </i>
-                    </th>
+                    <th>Code ID</th>
+                    <th>Identifier for Linkage</th>
+                    <th>Relationship</th>
+                    <th>Description</th>
                 </tr>
             </thead>
             <tbody>
@@ -65,9 +64,9 @@
                             <option value="cubietissue">CubieTissue</option>
                         </select>
                     </td>
-                    <td class="identifier-cell">
+                    <td class="identifier-cell" style="width: 250px;">
                         <input type="text" name="data_id_2_{{ dataset.id }}" id="data_id_2_{{ dataset.id }}"
-                            class="form-control identifier-input" placeholder="Data ID 2">
+                            class="form-control identifier-input" placeholder="Data ID 2" style="width: 100%;">
                     </td>
                     <td>
                         <select name="relationship_{{ dataset.id }}" class="form-control">
@@ -89,6 +88,7 @@
         </table>
         <button type="submit" class="btn btn-primary">Submit Linkages</button>
     </form>
+    {% endif %}
 </div>
 
 <!-- jQuery, Bootstrap & Select2 -->
@@ -98,60 +98,65 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
 
 <script>
+    var preloadedBilIds = {{ bil_id_data| safe }};
+
     $(document).ready(function () {
-        // Initialize tooltips for all elements with the data-toggle attribute
-        function initializeTooltips() {
-            $('[data-toggle="tooltip"]').tooltip({
-                html: true, // Allow HTML content in tooltips
-                placement: 'bottom'
-            });
-        }
-
-        // Initialize tooltips on page load
-        initializeTooltips();
-
-        $(".code-id-dropdown").change(function () {
-            var datasetId = $(this).data("dataset-id");
-            var selectedCode = $(this).val();
-            var identifierCell = $("#data_id_2_" + datasetId).closest(".identifier-cell");
-
-            if (selectedCode === "bil") {
-                // Replace with Select2 dropdown inside the same cell
-                identifierCell.html(`
-                    <select name="data_id_2_${datasetId}" id="data_id_2_${datasetId}" class="form-control identifier-dropdown"></select>
-                `);
-
-                $("#data_id_2_" + datasetId).select2({
-                    placeholder: "Search BIL ID or Dataset Title",
-                    allowClear: true,
-                    width: '100%',
-                    ajax: {
-                        url: "{% url 'ingest:get_bil_ids' %}",
-                        dataType: "json",
-                        delay: 250,
-                        data: function (params) {
-                            return { q: params.term || "" };
-                        },
-                        processResults: function (data) {
-                            return {
-                                results: $.map(data, function (item) {
-                                    return { id: item.bil_id, text: item.bil_id + (item.dataset_title ? " - " + item.dataset_title : "") };
-                                })
-                            };
-                        }
-                    }
-                });
-            } else {
-                // Restore the original text input inside the same cell
-                identifierCell.html(`
-                    <input type="text" name="data_id_2_${datasetId}" id="data_id_2_${datasetId}" class="form-control identifier-input" placeholder="Data ID 2">
-                `);
+            function initializeTooltips() {
+                $('[data-toggle="tooltip"]').tooltip({ html: true, placement: 'bottom' });
             }
-
-            // Reinitialize tooltips after dynamic content change
             initializeTooltips();
+
+            $(".code-id-dropdown").change(function () {
+                var datasetId = $(this).data("dataset-id");
+                var selectedCode = $(this).val();
+                var identifierCell = $("#data_id_2_" + datasetId).closest(".identifier-cell");
+
+                // 🔹 Always maintain a fixed width (prevents shifting)
+                var fixedWidth = "250px";
+
+                // Disable "Select Code ID" after selection
+                $(this).find("option[value='']").prop("disabled", true);
+
+                if (selectedCode === "bil") {
+                    // 🔹 Replace input with Select2 dropdown but keep width fixed
+                    identifierCell.html(`
+                <select name="data_id_2_${datasetId}" id="data_id_2_${datasetId}" 
+                    class="form-control identifier-dropdown" style="width: ${fixedWidth};"></select>
+            `);
+
+                    $("#data_id_2_" + datasetId).select2({
+                        placeholder: "Search BIL ID or Dataset Title",
+                        allowClear: true,
+                        width: "100%",  // Ensures full width inside the cell
+                        minimumInputLength: 2,
+                        ajax: {
+                            url: "{% url 'ingest:get_bil_ids' %}",
+                            dataType: "json",
+                            delay: 300,
+                            data: function (params) {
+                                return { q: params.term || "" };
+                            },
+                            processResults: function (data) {
+                                return {
+                                    results: $.map(data, function (item) {
+                                        return { id: item.bil_id, text: item.bil_id + (item.dataset_title ? " - " + item.dataset_title : "") };
+                                    })
+                                };
+                            }
+                        }
+                    });
+
+                } else {
+                    // 🔹 Restore text input while keeping width fixed
+                    identifierCell.html(`
+                <input type="text" name="data_id_2_${datasetId}" id="data_id_2_${datasetId}" 
+                class="form-control identifier-input" placeholder="Data ID 2" style="width: ${fixedWidth};">
+            `);
+                }
+
+                initializeTooltips();
+            });
         });
-    });
 </script>
 
 {% endblock %}
