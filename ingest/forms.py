@@ -80,14 +80,17 @@ class CollectionForm(forms.ModelForm):
 
 class CollectionChoice(forms.Form):
     collection = forms.ModelChoiceField(
-        queryset=None,  # We'll set this dynamically in the view
-        empty_label=None  # Ensures user must select a collection
+        queryset=None,  
+        empty_label=None,  
+        widget=forms.Select(attrs={'class': 'collection-select'})  # Add class for Select2
     )
 
     def __init__(self, user, *args, **kwargs):
         super(CollectionChoice, self).__init__(*args, **kwargs)
-        # Dynamically filter queryset based on the logged-in user
         self.fields['collection'].queryset = Collection.objects.filter(user=user)
+
+    def label_from_instance(self, obj):
+        return f"{obj.name} ({obj.bil_uuid})"  # Display both name and BIL UUID in the dropdown
 
 class DatasetLinkageForm(forms.ModelForm):
     class Meta:
