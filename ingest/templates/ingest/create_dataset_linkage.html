@@ -34,10 +34,10 @@
     <!-- Display form if no linkages exist -->
     <form method="POST">
         {% csrf_token %}
-        <table class="table">
+        <table class="table" style="table-layout: fixed;">
             <thead>
                 <tr>
-                    <th>Dataset Info</th>
+                    <th style="width: 300px;">Dataset Info</th>
                     <th>Code ID</th>
                     <th>Identifier for Linkage</th>
                     <th>Relationship</th>
@@ -48,10 +48,20 @@
                 {% for dataset in datasets %}
                 <tr>
                     <td>
-                        <strong>{{ dataset.title }}</strong><br>
-                        <small>BIL Directory: {{ dataset.bildirectory }}</small><br>
+                        <span class="dataset-info" title="{{ dataset.title }}">
+                            <strong>{{ dataset.title }}</strong>
+                        </span><br>
+                        <small>
+                            BIL Directory:
+                            <span class="dataset-info" title="{{ dataset.bildirectory }}">{{ dataset.bildirectory }}</span>
+                        </small><br>
                         {% if collection.submission_status == "SUCCESS" and collection.validation_status == "SUCCESS" %}
-                        <small>BIL ID: {{ dataset.bil_id|default:"N/A" }}</small>
+                        <small>
+                            BIL ID:
+                            <span class="dataset-info" title="{{ dataset.bil_id }}">
+                                {% if dataset.bil_id %}{{ dataset.bil_id }}{% else %}N/A{% endif %}
+                            </span>
+                        </small>
                         {% endif %}
                     </td>
                     <td>
@@ -64,9 +74,9 @@
                             <option value="cubietissue">CubieTissue</option>
                         </select>
                     </td>
-                    <td class="identifier-cell" style="width: 250px;">
+                    <td class="identifier-cell">
                         <input type="text" name="data_id_2_{{ dataset.id }}" id="data_id_2_{{ dataset.id }}"
-                            class="form-control identifier-input" placeholder="Data ID 2" style="width: 100%;">
+                            class="form-control identifier-input" placeholder="Data ID 2">
                     </td>
                     <td>
                         <select name="relationship_{{ dataset.id }}" class="form-control">
@@ -79,8 +89,7 @@
                         </select>
                     </td>
                     <td>
-                        <textarea name="description_{{ dataset.id }}" class="form-control"
-                            placeholder="Description"></textarea>
+                        <textarea name="description_{{ dataset.id }}" class="form-control" placeholder="Description"></textarea>
                     </td>
                 </tr>
                 {% endfor %}
@@ -111,23 +120,25 @@
                 var selectedCode = $(this).val();
                 var identifierCell = $("#data_id_2_" + datasetId).closest(".identifier-cell");
 
-                // 🔹 Always maintain a fixed width (prevents shifting)
-                var fixedWidth = "250px";
+                // 🔹 Fixed width for Identifier field
+                var fixedWidth = "194px";
 
                 // Disable "Select Code ID" after selection
                 $(this).find("option[value='']").prop("disabled", true);
 
                 if (selectedCode === "bil") {
-                    // 🔹 Replace input with Select2 dropdown but keep width fixed
+                    // 🔹 Replace input with Select2 dropdown while keeping width fixed
                     identifierCell.html(`
                 <select name="data_id_2_${datasetId}" id="data_id_2_${datasetId}" 
                     class="form-control identifier-dropdown" style="width: ${fixedWidth};"></select>
             `);
 
-                    $("#data_id_2_" + datasetId).select2({
+                    var dropdown = $("#data_id_2_" + datasetId);
+
+                    dropdown.select2({
                         placeholder: "Search BIL ID or Dataset Title",
                         allowClear: true,
-                        width: "100%",  // Ensures full width inside the cell
+                        width: "100%",  // Ensures it stays within identifierCell
                         minimumInputLength: 2,
                         ajax: {
                             url: "{% url 'ingest:get_bil_ids' %}",
@@ -143,14 +154,30 @@
                                     })
                                 };
                             }
+                        },
+                        templateResult: function (data) {
+                            if (!data.id) {
+                                return data.text;
+                            }
+                            return $("<span style='white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 230px;'>" + data.text + "</span>");
                         }
                     });
+
+                    // 🔹 Explicitly set Select2 container width to prevent expansion
+                    setTimeout(function () {
+                        dropdown.next(".select2-container").css({
+                            "width": fixedWidth,
+                            "min-width": fixedWidth,
+                            "max-width": fixedWidth
+                        });
+                    }, 100);
 
                 } else {
                     // 🔹 Restore text input while keeping width fixed
                     identifierCell.html(`
                 <input type="text" name="data_id_2_${datasetId}" id="data_id_2_${datasetId}" 
-                class="form-control identifier-input" placeholder="Data ID 2" style="width: ${fixedWidth};">
+                class="form-control identifier-input" placeholder="Data ID 2" 
+                style="width: ${fixedWidth}; min-width: ${fixedWidth}; max-width: ${fixedWidth};">
             `);
                 }
 
