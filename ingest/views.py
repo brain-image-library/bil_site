@@ -40,6 +40,7 @@ from datetime import datetime
 import os
 from django.middleware.csrf import get_token
 from django.utils.timezone import now
+from django.db import transaction
 
 from django.db.models import OuterRef, Subquery, Q
 
@@ -940,10 +941,38 @@ def delete_tag_all(request):
 def create_dataset_linkage(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
 
-    # Fetch existing dataset linkages for this collection
+    # Fetch existing dataset linkages
     existing_linkages = DatasetLinkage.objects.filter(data_id_1_bil__v2_ds_id__sheet__collection_id=collection.id)
 
-    # If no linkages exist, proceed with form logic
+    if request.method == "POST":
+        try:
+            with transaction.atomic():  # Ensure atomic operations
+                for dataset in Dataset.objects.filter(sheet__collection_id=collection.id):
+                    code_id = request.POST.get(f"code_id_{dataset.id}")
+                    data_id_2 = request.POST.get(f"data_id_2_{dataset.id}")
+                    relationship = request.POST.get(f"relationship_{dataset.id}")
+                    description = request.POST.get(f"description_{dataset.id}")
+
+                    # Fetch the related BIL_ID instance for this dataset
+                    bil_id_instance = BIL_ID.objects.filter(v2_ds_id=dataset).first()
+
+                    # Validate required fields
+                    if bil_id_instance and code_id and data_id_2 and relationship:
+                        DatasetLinkage.objects.create(
+                            data_id_1_bil=bil_id_instance,  # Use the correct BIL_ID instance
+                            code_id=code_id,
+                            data_id_2=data_id_2,
+                            relationship=relationship,
+                            description=description,
+                        )
+
+            messages.success(request, "Dataset linkages successfully created!")
+            return redirect("ingest:create_dataset_linkage", collection_id=collection.id)
+
+        except Exception as e:
+            messages.error(request, f"Error saving dataset linkages: {str(e)}")
+
+    # Fetch dataset information if no existing linkages
     bil_ids = list(BIL_ID.objects.values("bil_id", "v2_ds_id__title"))
 
     bil_id_data = [
@@ -959,9 +988,9 @@ def create_dataset_linkage(request, collection_id):
 
     return render(request, 'ingest/create_dataset_linkage.html', {
         'collection': collection,
-        'datasets': datasets if not existing_linkages.exists() else None,  # Only show datasets if no linkages exist
+        'datasets': datasets if not existing_linkages.exists() else None,
         'bil_id_data': bil_id_data,
-        'existing_linkages': existing_linkages,  # Pass existing linkages
+        'existing_linkages': existing_linkages,
     })
 
 def get_bil_ids(request):
