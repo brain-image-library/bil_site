@@ -14,6 +14,7 @@ from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
+from requests import request
 
 from django_filters.views import FilterView
 from django_tables2.views import SingleTableMixin
@@ -40,7 +41,8 @@ from datetime import datetime
 import os
 from django.middleware.csrf import get_token
 import subprocess
-
+import time
+import threading
 
 def logout(request):
     messages.success(request, "You've successfully logged out")
@@ -524,14 +526,72 @@ class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
     template_name = 'ingest/descriptive_metadata_detail.html'
     context_object_name = 'descriptive_metadata'
 
-#def validation_pipeline(bil_uuids)
-    #run the stuff we added in collection send
-    #we should have function grab the full path of the UUID
-    #current_user = request.user
-    #username = current_user.username
-    #first2 = bil_uuid[:2]
-    #second2 = coll.bil_uuid[2:4]
-    #full_path=/bil/lz/*username*/first2/second2/uuid
+def validation_pipeline(bil_uuid, request):
+    # Get full path based on user and UUID
+    current_user = request.user
+    username = current_user.username
+    first2 = bil_uuid[:2]
+    second2 = bil_uuid[2:4]
+    full_path = f"/bil/lz/{username}/{first2}/{second2}/{bil_uuid}"
+    return full_path
+
+def run_bash_script_in_background(bil_uuid, output_file, full_path):
+    second_script_path = "/home/khutchinson/new_bil/bil_site/second_script.sh"  # Second script
+
+    # Poll for output file creation
+    while not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
+        time.sleep(1)  # Prevent excessive CPU usage
+
+    # Read the output file
+    with open(output_file, "r") as out_file:
+        output_content = out_file.read().strip()
+
+    # If the output file contains bil_uuid", run the second script
+    if bil_uuid in output_content:
+        subprocess.Popen(
+            [second_script_path, full_path],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )  # Run asynchronously
+        print(f"Second script triggered for {bil_uuid}.")
+
+def process_bil_uuid(bil_uuid, request):
+    output_file = "bil_output.txt"
+    script_path = "/home/khutchinson/new_bil/bil_site/bil_script.sh"
+    output_file2 = "output2.txt"
+    # Remove previous output file before running
+    if os.path.exists(output_file):
+        os.remove(output_file)
+    if os.path.exists(output_file2):
+        os.remove(output_file2)
+
+    # Run first script asynchronously (without waiting)
+    subprocess.Popen(
+        [script_path, bil_uuid],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True
+    )
+    
+    print(f"Started processing {bil_uuid} in the background...")
+    full_path = validation_pipeline(bil_uuid, request)
+    
+    # Run the second script and file-checking in the background
+    threading.Thread(target=run_bash_script_in_background, args=(bil_uuid, output_file, full_path), daemon=True).start()
+    
+    while not os.path.exists(output_file2) or os.path.getsize(output_file2) == 0:
+        time.sleep(1)  # Prevent excessive CPU usage
+    
+    with open(output_file2, "r") as out_file2:
+        output_content = out_file2.read().strip()
+
+    if full_path in output_content:
+        print(f"Finished processing {bil_uuid}, moving to the next item.")
+
+def startThread (bil_uuid, items, request):
+    for bil_uuid in items:
+        process_bil_uuid(bil_uuid, request)
 
 @login_required
 def collection_send(request):
@@ -539,24 +599,18 @@ def collection_send(request):
     items = []
     user_name = request.user
 
-    script_path = "./bil_script.sh"  # First script
-    second_script_path = "./second_script.sh"  # Second script
-    output_file = "bil_output.txt"  # Output file
-    # instead of running these here, call a function called like "validation_pipeline(list_of_uuids)"
+    # Gather all UUIDs and log events
     for item in content:
         bil_uuid = item['bil_uuid']
         items.append(bil_uuid)
 
         coll = Collection.objects.get(bil_uuid=bil_uuid)
-        coll_id = coll.id
         person = People.objects.get(name=user_name)
-        person_id = person.id
         timestamp = datetime.now()
 
-        # Log the event
         event = EventsLog(
             collection_id=coll,
-            people_id_id=person_id,
+            people_id_id=person.id,
             project_id_id=coll.project_id,
             notes='',
             timestamp=timestamp,
@@ -564,44 +618,19 @@ def collection_send(request):
         )
         event.save()
 
-        # Remove any previous output file before running the script
-        if os.path.exists(output_file):
-            os.remove(output_file)
+    # Start processing asynchronously to continue script
+    threading.Thread(target=startThread, args=(bil_uuid, items, request), daemon=True).start()
 
-        # Run the first script and wait for completion
-        process = subprocess.run([script_path, bil_uuid], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    print("Subprocesses started. Main script continues running...")
 
-        # Check if the script encountered an error
-        if process.returncode != 0:
-            error_message = f"Error running {script_path}: {process.stderr}"
-            print(error_message)  # Log error for debugging
-            messages.error(request, f"An error occurred while processing {bil_uuid}")
-            continue  # Skip to the next item instead of breaking
-
-        # Wait until the output file is created and not empty
-        while not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
-            continue  # Keep checking until file appears and has content
-
-        # Read the output file
-        with open(output_file, "r") as out_file:
-            output_content = out_file.read().strip()
-
-        # If the output file contains "Passed", run the second script
-        if "Passed" in output_content:
-            subprocess.run([second_script_path], check=True)
-
+    # Send email notification after all UUIDs have been queued
     if request.method == "POST":
         subject = '[BIL Validations] New Validation Request'
         sender = 'ltuite96@psc.edu'
         message = f'The following collections have been requested to be validated: {items} by {user_name}@psc.edu'
         recipient = ['ltuite96@psc.edu']
         
-        send_mail(
-            subject,
-            message,
-            sender,
-            recipient
-        )
+        send_mail(subject, message, sender, recipient)
 
     messages.success(request, 'Request successfully sent')
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
@@ -2645,13 +2674,13 @@ def descriptive_metadata_upload(request, associated_collection):
         associated_collection = Collection.objects.get(id = associated_collection)
 
         # for production
-        datapath = associated_collection.data_path.replace("/lz/","/etc/")
+        #datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
         #datapath = '/Users/luketuite/shared_bil_dev' 
 
         # for development locally
-        #datapath = '/Users/luketuite/shared_bil_dev' 
+        datapath = '/home/khutchinson/new_bil/bil_site/shared_dev' 
         
         spreadsheet_file = request.FILES['spreadsheet_file']
 

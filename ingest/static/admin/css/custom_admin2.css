@@ -1,0 +1,23 @@
+/* Ensure the table can scroll horizontally */
+#result_list {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+/* Fixed scrollbar at the bottom of the page */
+.fixed-scrollbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 20px; /* Height of scrollbar */
+    overflow-x: auto;
+    background: #1e1e1e; /* Dark mode styling */
+    z-index: 1000; /* Keeps it above everything */
+}
+
+/* Inner track that matches table width */
+.scroll-track {
+    height: 1px; /* Invisible but needed for scrolling */
+}
