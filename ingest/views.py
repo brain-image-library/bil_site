@@ -536,8 +536,8 @@ def validation_pipeline(bil_uuid, request):
     return full_path
 
 def run_bash_script_in_background(bil_uuid, output_file, full_path):
-    second_script_path = "/home/khutchinson/new_bil/bil_site/second_script.sh"  # Second script
-
+    #second_script_path = "/home/khutchinson/new_bil/bil_site/second_script.sh"  # Second script
+    second_script_path = "/Users/luketuite/newbil/bil_site/second_script.sh"
     # Poll for output file creation
     while not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
         time.sleep(1)  # Prevent excessive CPU usage
@@ -556,9 +556,12 @@ def run_bash_script_in_background(bil_uuid, output_file, full_path):
         )  # Run asynchronously
         print(f"Second script triggered for {bil_uuid}.")
 
-def process_bil_uuid(bil_uuid, request):
-    output_file = "bil_output.txt"
-    script_path = "/home/khutchinson/new_bil/bil_site/bil_script.sh"
+def process_validation(bil_uuid, request):
+    #Create a new directory path for output file to land
+    #create a directory in /validation_status/ + bil_uuid + /validation*datetime*.txt
+    output_file = "bil_output.txt" #so create it here
+    #script_path = "/home/khutchinson/new_bil/bil_site/bil_script.sh"
+    script_path = "/Users/luketuite/newbil/bil_site/bil_script.sh"
     output_file2 = "output2.txt"
     # Remove previous output file before running
     if os.path.exists(output_file):
@@ -591,7 +594,11 @@ def process_bil_uuid(bil_uuid, request):
 
 def startThread (bil_uuid, items, request):
     for bil_uuid in items:
-        process_bil_uuid(bil_uuid, request)
+        process_validation(bil_uuid, request)
+
+#view function for viewing the output file
+#def check_validation_status(collection_id):
+    #
 
 @login_required
 def collection_send(request):
