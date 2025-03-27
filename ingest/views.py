@@ -2418,46 +2418,48 @@ def save_bil_ids(datasets, filename):
 
     # If it's a developer spreadsheet, perform detailed validation
     if is_dev_spreadsheet:
-        for dataset in datasets:
-            for cell_value in dataset_sheet.row_values(loop_index_change):
-                bil_id_value = None
-                # Find row with bil_id value
-                bil_id_value = dataset_sheet.cell_value(loop_index_change, 15).strip()
-                if BIL_ID.objects.filter(bil_id=bil_id_value).exists():
-                    existing_bil_id = BIL_ID.objects.get(bil_id=bil_id_value)
+        for idx, dataset in enumerate(datasets):
+            row_index = 6 + idx  # Assuming row 6 corresponds to datasets[0]
+            bil_id_value = dataset_sheet.cell_value(row_index, 15).strip()  # Column 15 = BILDID
 
-                    # Check if the directory matches
-                    if existing_bil_id.v2_ds_id:
-                        if existing_bil_id.v2_ds_id.bildirectory != cell_value:
-                            validation_errors.append(
-                                f"Directory mismatch for BIL_ID {bil_id_value} (v2_ds_id)."
-                            )
-                    elif existing_bil_id.v1_ds_id:
-                        if existing_bil_id.v1_ds_id.r24_directory != cell_value:
-                            validation_errors.append(
-                                f"Directory mismatch for BIL_ID {bil_id_value} (v1_ds_id)."
-                            )
-                    else:
-                        validation_errors.append(
-                            f"BIL_ID {bil_id_value} does not have a valid v1_ds_id or v2_ds_id."
-                        )
+            if not bil_id_value:
+                validation_errors.append(f"No BIL_ID found in row {row_index + 1}.")
+                continue
 
-                    # Prepare update if validation passed
-                    if not validation_errors:
-                        updates_to_apply.append({
-                            "bil_id": existing_bil_id,
-                            "v2_ds_id": dataset,
-                            "metadata_version": 2
-                        })
+            if not BIL_ID.objects.filter(bil_id=bil_id_value).exists():
+                validation_errors.append(
+                    f"BIL_ID {bil_id_value} does not match any previous upload."
+                )
+                continue
 
-                    loop_index_change += 1
-                    break
-                else:
+            existing_bil_id = BIL_ID.objects.get(bil_id=bil_id_value)
+
+            spreadsheet_dir = dataset_sheet.cell_value(row_index, 0).strip()  # BILDirectory is column 0
+
+            # Check if directory matches what's in DB
+            if existing_bil_id.v2_ds_id:
+                if existing_bil_id.v2_ds_id.bildirectory != spreadsheet_dir:
                     validation_errors.append(
-                        f"BIL_ID {bil_id_value} does not match any previous upload."
+                        f"Directory mismatch for BIL_ID {bil_id_value} (v2_ds_id)."
                     )
+            elif existing_bil_id.v1_ds_id:
+                if existing_bil_id.v1_ds_id.r24_directory != spreadsheet_dir:
+                    validation_errors.append(
+                        f"Directory mismatch for BIL_ID {bil_id_value} (v1_ds_id)."
+                    )
+            else:
+                validation_errors.append(
+                    f"BIL_ID {bil_id_value} does not have a valid v1_ds_id or v2_ds_id."
+                )
 
-        # If validation errors exist, return them without applying changes
+            # If no errors so far for this dataset
+            if not validation_errors:
+                updates_to_apply.append({
+                    "bil_id": existing_bil_id,
+                    "v2_ds_id": dataset,
+                    "metadata_version": 2
+                })
+
         if validation_errors:
             return {"success": False, "errors": validation_errors}
 
@@ -2592,10 +2594,10 @@ def descriptive_metadata_upload(request, associated_collection):
         associated_collection = Collection.objects.get(id = associated_collection)
 
         # for production
-        datapath = associated_collection.data_path.replace("/lz/","/etc/")
+        #datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-        #datapath = '/Users/luketuite/shared_bil_dev' 
+        datapath = '/Users/luketuite/shared_bil_dev' 
 
         # for development locally
         #datapath = '/Users/luketuite/shared_bil_dev' 
