@@ -536,8 +536,8 @@ def validation_pipeline(bil_uuid, request):
     return full_path
 
 def run_bash_script_in_background(bil_uuid, output_file, full_path, output_file2):
-    second_script_path = "/home/khutchinson/new_bil/bil_site/second_script.sh"  # Second script
-    #second_script_path = "/Users/luketuite/newbil/bil_site/second_script.sh"
+    #second_script_path = "/home/khutchinson/new_bil/bil_site/second_script.sh"  # Second script
+    second_script_path = "/Users/luketuite/newbil/bil_site/second_script.sh"
     # Poll for output file creation
     while not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
         time.sleep(1)  # Prevent excessive CPU usage
@@ -562,8 +562,8 @@ def process_validation(bil_uuid, request):
     valid_direct = f"./validation_status/{bil_uuid}/"
     output_file2 = f"./validation_status/{bil_uuid}/validation_{datetime.now().strftime('%Y%m%d%H%M%S')}.txt" #new Output file
     output_file = "bil_output.txt" 
-    script_path = "/home/khutchinson/new_bil/bil_site/bil_script.sh"
-    #script_path = "/Users/luketuite/newbil/bil_site/bil_script.sh"
+    #script_path = "/home/khutchinson/new_bil/bil_site/bil_script.sh"
+    script_path = "/Users/luketuite/newbil/bil_site/bil_script.sh"
     # Remove previous output file before running
     if os.path.exists(output_file):
         os.remove(output_file)
@@ -600,8 +600,14 @@ def startThread (bil_uuid, items, request):
         process_validation(bil_uuid, request)
 
 #view function for viewing the output file
-#def check_validation_status(collection_id):
-    #
+
+def check_validation_status(request, pk):
+    #check the contents of the txt file in the validation directory
+    #get a hold of the contents of the file
+    #set them to a variable for example:
+    message = "checked status"
+    #send it to the view function
+    return render(request, 'ingest/check_validation.html', {'message': message})
 
 @login_required
 def collection_send(request):
@@ -617,6 +623,10 @@ def collection_send(request):
         coll = Collection.objects.get(bil_uuid=bil_uuid)
         person = People.objects.get(name=user_name)
         timestamp = datetime.now()
+
+        coll.submission_status = 'PENDING'
+        coll.validation_status = 'PENDING'
+        coll.save()
 
         event = EventsLog(
             collection_id=coll,

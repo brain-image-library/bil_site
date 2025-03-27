@@ -98,6 +98,12 @@
         <button class="btn btn-lg btn-primary" value="ignore" formnovalidate="">View Submission Directory</button>
       </a></div>
       <p>
+      {% if not collection.submission_status == "NOT_SUBMITTED" %}
+      <div><a href="{% url 'ingest:check_validation_status' collection.id %}">
+          <button class="btn btn-lg btn-primary" value="ignore" formnovalidate="">Check Validation</button>
+        </a></div>
+      <p>
+      {% endif %}
 
       <table>
       <tr>           

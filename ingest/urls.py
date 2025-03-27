@@ -51,4 +51,5 @@ urlpatterns = [
     path('delete_tag/', views.delete_tag, name='delete_tag'),
     path('add_tags_all/', views.add_tags_all, name='add_tags_all'),
     path('delete_tag_all/', views.delete_tag_all, name='delete_tag_all'),
+    path('check_validation_status/<int:pk>', views.check_validation_status, name='check_validation_status'),
 ]
