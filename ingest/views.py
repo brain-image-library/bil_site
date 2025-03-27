@@ -535,9 +535,9 @@ def validation_pipeline(bil_uuid, request):
     full_path = f"/bil/lz/{username}/{first2}/{second2}/{bil_uuid}"
     return full_path
 
-def run_bash_script_in_background(bil_uuid, output_file, full_path):
-    #second_script_path = "/home/khutchinson/new_bil/bil_site/second_script.sh"  # Second script
-    second_script_path = "/Users/luketuite/newbil/bil_site/second_script.sh"
+def run_bash_script_in_background(bil_uuid, output_file, full_path, output_file2):
+    second_script_path = "/home/khutchinson/new_bil/bil_site/second_script.sh"  # Second script
+    #second_script_path = "/Users/luketuite/newbil/bil_site/second_script.sh"
     # Poll for output file creation
     while not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
         time.sleep(1)  # Prevent excessive CPU usage
@@ -549,7 +549,7 @@ def run_bash_script_in_background(bil_uuid, output_file, full_path):
     # If the output file contains bil_uuid", run the second script
     if bil_uuid in output_content:
         subprocess.Popen(
-            [second_script_path, full_path],
+            [second_script_path, full_path, output_file2 ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
@@ -559,15 +559,17 @@ def run_bash_script_in_background(bil_uuid, output_file, full_path):
 def process_validation(bil_uuid, request):
     #Create a new directory path for output file to land
     #create a directory in /validation_status/ + bil_uuid + /validation*datetime*.txt
-    output_file = "bil_output.txt" #so create it here
-    #script_path = "/home/khutchinson/new_bil/bil_site/bil_script.sh"
-    script_path = "/Users/luketuite/newbil/bil_site/bil_script.sh"
-    output_file2 = "output2.txt"
+    valid_direct = f"./validation_status/{bil_uuid}/"
+    output_file2 = f"./validation_status/{bil_uuid}/validation_{datetime.now().strftime('%Y%m%d%H%M%S')}.txt" #new Output file
+    output_file = "bil_output.txt" 
+    script_path = "/home/khutchinson/new_bil/bil_site/bil_script.sh"
+    #script_path = "/Users/luketuite/newbil/bil_site/bil_script.sh"
     # Remove previous output file before running
     if os.path.exists(output_file):
         os.remove(output_file)
-    if os.path.exists(output_file2):
-        os.remove(output_file2)
+    if not os.path.exists(valid_direct):
+        os.makedirs(valid_direct)
+        print(f"Directory created: {valid_direct}")
 
     # Run first script asynchronously (without waiting)
     subprocess.Popen(
@@ -581,13 +583,14 @@ def process_validation(bil_uuid, request):
     full_path = validation_pipeline(bil_uuid, request)
     
     # Run the second script and file-checking in the background
-    threading.Thread(target=run_bash_script_in_background, args=(bil_uuid, output_file, full_path), daemon=True).start()
+    threading.Thread(target=run_bash_script_in_background, args=(bil_uuid, output_file, full_path, output_file2), daemon=True).start()
     
     while not os.path.exists(output_file2) or os.path.getsize(output_file2) == 0:
         time.sleep(1)  # Prevent excessive CPU usage
     
     with open(output_file2, "r") as out_file2:
         output_content = out_file2.read().strip()
+        print("new output 2 is being accessed.")
 
     if full_path in output_content:
         print(f"Finished processing {bil_uuid}, moving to the next item.")
