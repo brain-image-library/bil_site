@@ -3023,6 +3023,8 @@ def process_ids(request):
                     linkage = SpecimenLinkage(specimen_id = bil_specimen_id, specimen_id_2 = id, code_id = 'cubie_tissue', specimen_category = 'slab')
                 elif id.startswith('DO'):
                     linkage = SpecimenLinkage(specimen_id = bil_specimen_id, specimen_id_2 = id, code_id = 'cubie_tissue', specimen_category = 'donor')
+                elif id.startswith('SC'):
+                    linkage = SpecimenLinkage(specimen_id = bil_specimen_id, specimen_id_2 = id, code_id = 'cubie_tissue', specimen_category = 'section')
                 linkage.save()
         # Redirect to a different view or do other processing
         return redirect('ingest:collection_list')  # Redirect to success page
