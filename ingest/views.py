@@ -2594,10 +2594,10 @@ def descriptive_metadata_upload(request, associated_collection):
         associated_collection = Collection.objects.get(id = associated_collection)
 
         # for production
-        #datapath = associated_collection.data_path.replace("/lz/","/etc/")
+        datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-        datapath = '/Users/luketuite/shared_bil_dev' 
+        #datapath = '/Users/luketuite/shared_bil_dev' 
 
         # for development locally
         #datapath = '/Users/luketuite/shared_bil_dev' 
