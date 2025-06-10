@@ -230,3 +230,7 @@ EMAIL_USE_TLS = True
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 #EMAIL_USE_SSL = False
 DATA_UPLOAD_MAX_NUMBER_FIELDS = None
+#Asana Settings
+ASANA_PAT= config['Security']['ASANA_PAT']
+ASANA_PROJECT_ID = config['Security']['ASANA_PROJECT_ID']
+ASANA_GID = config['Security']['ASANA_GID']
