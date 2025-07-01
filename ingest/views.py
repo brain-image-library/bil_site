@@ -63,9 +63,11 @@ def signup(request):
 def index(request):
     """ The main/home page. """
     current_user = request.user
+
+    # --- Step 1: Ensure People and ProjectPerson exist ---
     try:
-        people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+        people = People.objects.get(auth_user_id_id=current_user.id)
+        project_person = ProjectPeople.objects.filter(people_id=people.id).all()
     except ObjectDoesNotExist:
         people = People()
         people.name = current_user.username
@@ -75,29 +77,42 @@ def index(request):
         people.is_bil_admin = False
         people.auth_user_id = current_user
         people.save()
+
         project = Project()
         pname = current_user.username + ' Project 1'
         project.name = pname
         project.funded_by = ''
         project.is_biccn = False
         project.save()
+
         save_project_id(project)
+
         project_people = ProjectPeople()
         project_people.project_id = project
         project_people.people_id = people
         project_people.is_pi = False
         project_people.is_po = False
         project_people.save()
+
+    # --- Step 2: Ensure user-specific Consortium exists ---
+    user_consortium_short_name = f"user_{current_user.username}"
+    Consortium.objects.get_or_create(
+        short_name=user_consortium_short_name,
+        defaults={"long_name": f"User Tags for {current_user.username}"}
+    )
+
+    # --- Step 3: Routing logic based on role ---
     try:
-        people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+        people = People.objects.get(auth_user_id_id=current_user.id)
+        project_person = ProjectPeople.objects.filter(people_id=people.id).all()
         if people.is_bil_admin:
-            return render(request, 'ingest/bil_index.html', {'people':people})
-        for attribute in project_person: 
+            return render(request, 'ingest/bil_index.html', {'people': people})
+        for attribute in project_person:
             if attribute.is_pi:
                 return render(request, 'ingest/pi_index.html', {'project_person': attribute})
     except Exception as e:
         print(e)
+
     return render(request, 'ingest/index.html')
 
 
@@ -261,21 +276,25 @@ def manageCollections(request):
 @login_required
 def project_form(request):
     current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-    allprojects=[]
+    people = People.objects.get(auth_user_id_id=current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id=people.id)
+
+    allprojects = []
     for row in project_person:
-        project_id = row.project_id_id
-        project =  Project.objects.get(id=project_id)
-        allprojects.append(project)    
-        
-    consortia = Consortium.objects.all
-    for attribute in project_person:
-        if attribute.is_pi:
-            pi = True
-        else:
-            pi = False
-    return render(request, 'ingest/project_form.html', {'pi':pi, 'allprojects':allprojects, 'consortia':consortia})
+        project = Project.objects.get(id=row.project_id_id)
+        allprojects.append(project)
+
+    # Filter out user-specific consortia (e.g., user_luketuite)
+    consortia = Consortium.objects.exclude(short_name__startswith='user_')
+
+    # Determine PI status
+    pi = any(attribute.is_pi for attribute in project_person)
+
+    return render(request, 'ingest/project_form.html', {
+        'pi': pi,
+        'allprojects': allprojects,
+        'consortia': consortia,
+    })
 
 # takes the data from project_form
 @login_required
@@ -800,8 +819,13 @@ def collection_detail(request, pk):
             consortium = project_consortium.consortium
             consortium_tags.update(ConsortiumTag.objects.filter(consortium=consortium).values_list('tag', flat=True))
 
+        # Include tags from BIL consortium
         bil_tags = ConsortiumTag.objects.filter(consortium__short_name='BIL').values_list('tag', flat=True)
         consortium_tags.update(bil_tags)
+
+        # Pull user-specific tags
+        user_consortium_short = f"user_{current_user.username}"
+        user_tags = ConsortiumTag.objects.filter(consortium__short_name=user_consortium_short).values_list('tag', flat=True)
 
         sheets = Sheet.objects.filter(collection_id=collection.id).last()
         if sheets:
@@ -812,6 +836,7 @@ def collection_detail(request, pk):
                 datasets_list.append(d)
 
         consortium_tags = sorted(consortium_tags)
+        user_tags = sorted(user_tags)
         used_tags = sorted(used_tags)
     except ObjectDoesNotExist:
         raise Http404
@@ -820,15 +845,21 @@ def collection_detail(request, pk):
 
     table = DescriptiveMetadataTable(
         DescriptiveMetadata.objects.filter(user=request.user, collection=collection))
+    
     return render(
         request,
         'ingest/collection_detail.html',
-        {'table': table,
-         'collection': collection,
-         'descriptive_metadata_queryset': descriptive_metadata_queryset,
-         'pi': pi, 'datasets_list': datasets_list, 'consortium_tags': consortium_tags, 'used_tags': used_tags})
-
-
+        {
+            'table': table,
+            'collection': collection,
+            'descriptive_metadata_queryset': descriptive_metadata_queryset,
+            'pi': pi,
+            'datasets_list': datasets_list,
+            'consortium_tags': consortium_tags,
+            'user_tags': user_tags,
+            'used_tags': used_tags
+        }
+    )
 
 @login_required
 def add_tags(request):

@@ -120,16 +120,29 @@
     {% csrf_token %}
     <input type="hidden" name="collection_id" value="{{ collection.id }}">
     <div class="row">
-        {% for tag in consortium_tags %}
-        <div class="col-md-3">
+        <div class="row">
+          <div class="col-md-6">
+            <h4>Consortium Tags</h4>
+            {% for tag in consortium_tags %}
             <div class="checkbox styled-checkbox">
-                <label>
-                    <input type="checkbox" name="tag_text[]" value="{{ tag }}"> {{ tag }}
-                </label>
+              <label>
+                <input type="checkbox" name="tag_text[]" value="{{ tag }}"> {{ tag }}
+              </label>
             </div>
+            {% endfor %}
+          </div>
+        
+          <div class="col-md-6">
+            <h4>User Tags</h4>
+            {% for tag in user_tags %}
+            <div class="checkbox styled-checkbox">
+              <label>
+                <input type="checkbox" name="tag_text[]" value="{{ tag }}"> {{ tag }}
+              </label>
+            </div>
+            {% endfor %}
+          </div>
         </div>
-        {% endfor %}
-    </div>
     <button class="btn btn-primary" type="submit" disabled>Add Tags to All</button>
 </form>
       <!-- Existing code for individual dataset tags -->
@@ -147,13 +160,31 @@
             {% csrf_token %}
             <input type="hidden" name="dataset_id" value="{{ dataset.id }}">
             <div class="input-group">
-              {% for tag in consortium_tags %}
-                <div class="checkbox">
-                  <label>
-                    <input type="checkbox" name="tag_text[]" value="{{ tag }}" {% if tag in dataset.tag_list %}disabled{% endif %}> {{ tag }}
-                  </label>
+              <div class="row">
+                <div class="col-md-6">
+                  <h5>Consortium Tags</h5>
+                  {% for tag in consortium_tags %}
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="tag_text[]" value="{{ tag }}" {% if tag in dataset.tag_list %}disabled{% endif %}>
+                      {{ tag }}
+                    </label>
+                  </div>
+                  {% endfor %}
                 </div>
-              {% endfor %}
+              
+                <div class="col-md-6">
+                  <h5>User Tags</h5>
+                  {% for tag in user_tags %}
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="tag_text[]" value="{{ tag }}" {% if tag in dataset.tag_list %}disabled{% endif %}>
+                      {{ tag }}
+                    </label>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
               <span class="input-group-btn">
                 <button class="btn btn-primary" type="button" onclick="addTags({{ dataset.id }})" disabled>Add Tags</button>
               </span>
