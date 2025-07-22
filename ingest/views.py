@@ -39,11 +39,11 @@ import json
 from datetime import datetime
 import os
 from django.middleware.csrf import get_token
+import requests
 from django.utils.timezone import now
 from django.db import transaction
 
 from django.db.models import OuterRef, Subquery, Q
-
 
 
 def logout(request):
@@ -573,8 +573,57 @@ def collection_send(request):
         sender,
         recipient
              )
+        _create_asana_tasks(items, user_name)
     messages.success(request, 'Request succesfully sent')
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+
+def _create_asana_tasks(bil_uuids, username):
+    """Create Asana tasks for the submitted collections (UUID only)."""
+
+    token = settings.ASANA_PAT
+    project_id = settings.ASANA_PROJECT_ID
+    gid = settings.ASANA_GID  # Section ID for "Submitted/Resubmitted"
+
+    if not token or not project_id or not gid:
+        return
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    task_url = "https://app.asana.com/api/1.0/tasks"
+    section_url = f"https://app.asana.com/api/1.0/sections/{gid}/addTask"
+
+    for bil_uuid in bil_uuids:
+        try:
+            payload = {
+                "data": {
+                    "name": bil_uuid,  # Just the UUID
+                    "notes": f"User {username} submitted collection {bil_uuid}",
+                    "projects": [project_id],
+                }
+            }
+
+            # Create the task
+            response = requests.post(task_url, headers=headers, json=payload, timeout=10)
+            response.raise_for_status()
+            task_gid = response.json()["data"]["gid"]
+
+            # Move the task into the section
+            section_payload = {
+                "data": {
+                    "task": task_gid
+                }
+            }
+            section_response = requests.post(section_url, headers=headers, json=section_payload, timeout=10)
+            section_response.raise_for_status()
+
+            print(f"✅ Created Asana task for UUID: {bil_uuid}")
+
+        except Exception as exc:
+            print(f"❌ Asana task creation failed for {bil_uuid}: {exc}")
+
 
 @login_required
 def collection_create(request):
