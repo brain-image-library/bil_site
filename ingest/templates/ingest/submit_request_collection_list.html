@@ -1,62 +1,85 @@
 <head>
-<script src="/static/ingest/sendemail.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+  <script src="/static/ingest/sendemail.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
 </head>
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %} 
+{% load bootstrap4 %}
 {% block wide %}
 {% if pi %}
 <a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+  <button class="cancel btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
 </a>
 {% endif %}
 <br>
 <h1>Request to Publicize Submission</h1>
-<p>Select checkboxes for each submission to request validation and publication. This will submit a ticket to BIL support and be processed</p>
+<p>Select checkboxes for each submission to request validation and publication. This will submit a ticket to BIL support
+  and be processed</p>
 <form id="rowform">
-{% csrf_token %}
-<table id="CollectionTable" class="table">
-<thead>
-<tr>
-<th></th>
-<th>Name</th>
-<th>Description</th>
-<th>Organization Lab</th>
-<th>Lab Name</th>
-<th>Project Funder ID</th>
-<th>Project Funder</th>
-<th>BIL Uuid</th>
-<th>Data Path</th>
-<th>Locked</th>
-<th>Submission Status</th>
-<th>Validation Status</th>
-</tr>
-</thead>
-<tbody>
-{% for collection in collections %}
-<tr>
-<td><input type="checkbox" id="collection_is_checked"></td>
-<td>{{collection.name}}</td>
-<td>{{collection.description}}</td>
-<td>{{collection.organization_name}}</td>
-<td>{{collection.lab_name}}</td>
-<td>{{collection.project_funder_id}}</td>
-<td>{{collection.project_funder}}</td>
-<td id="bilUuid">{{collection.bil_uuid}}</td>
-<td>{{collection.data_path}}</td>
-<td>{{collection.locked}}</td>
-<td>{{collection.submission_status}}</td>
-<td>{{collection.validation_status}}</td>
-</tr>
-{% endfor %}
-</table>
+  {% csrf_token %}
+  <table id="CollectionTable" class="table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Organization Lab</th>
+        <th>Lab Name</th>
+        <th>Project Funder ID</th>
+        <th>Project Funder</th>
+        <th>BIL Uuid</th>
+        <th>Data Path</th>
+        <th>Locked</th>
+        <th>Submission Status</th>
+        <th>Validation Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for collection in collections %}
+      <tr>
+        <td><input type="checkbox" class="collection-checkbox"></td>
+        <td>{{ collection.name }}</td>
+        <td>{{ collection.description }}</td>
+        <td>{{ collection.organization_name }}</td>
+        <td>{{ collection.lab_name }}</td>
+        <td>{{ collection.project_funder_id }}</td>
+        <td>{{ collection.project_funder }}</td>
+        <td class="bilUuid">{{ collection.bil_uuid }}</td>
+        <td>{{ collection.data_path }}</td>
+        <td>{{ collection.locked }}</td>
+        <td>{{ collection.submission_status }}</td>
+        <td>{{ collection.validation_status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </form>
-<button class="btn btn-primary" onclick="collection_send();">Submit Validation Request</button>
+
+<button id="submitBtn" class="btn btn-primary" onclick="collection_send();" disabled>Submit Validation Request</button>
+
 <hr>
 
 <a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+  <button class="cancel btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
 </a>
 
-{% endblock %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const checkboxes = document.querySelectorAll(".collection-checkbox");
+    const submitBtn = document.getElementById("submitBtn");
 
+    function toggleSubmitButton() {
+      // Enable button if at least one checkbox is checked
+      submitBtn.disabled = !Array.from(checkboxes).some(checkbox => checkbox.checked);
+    }
+
+    // Attach event listeners to all checkboxes
+    checkboxes.forEach(checkbox => {
+      checkbox.addEventListener("change", toggleSubmitButton);
+    });
+
+    // Run the function once on load to disable the button if no checkboxes are checked
+    toggleSubmitButton();
+  });
+</script>
+
+{% endblock %}
