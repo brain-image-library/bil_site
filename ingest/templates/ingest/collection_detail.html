@@ -1,79 +1,10 @@
 {% extends 'ingest/base.html' %}
 
 {% block content %}
-<style>
-  /* --- Submission detail layout polish (applies for everyone) --- */
-
-  /* Top “Edit Submission” bar */
-  .collection-actions {
-    background: #fff;
-    border-bottom: 1px solid #e9ecef;
-    padding: 8px 12px;
-    margin: 12px 0 24px;
-    /* space above/below the bar */
-  }
-
-  .actions-bar {
-    margin: 16px 0 24px;
-  }
-
-  .actions-bar .btn-toolbar {
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .actions-bar .btn-group {
-    display: flex;
-    gap: 10px;
-  }
-
-  .actions-bar .btn-group.secondary-actions {
-    flex: 0 0 auto;
-  }
-
-  @media (max-width:768px) {
-    .actions-bar .btn-group {
-      width: 100%;
-    }
-
-    .actions-bar .btn {
-      width: 100%;
-    }
-  }
-
-  /* Info list tweaks */
-  .submission-info .list-group-item h4 {
-    margin: 0 0 6px;
-    font-weight: 600;
-  }
-
-  /* Primary buttons placed under the info list */
-  .below-info-actions {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin: 28px 0 48px;
-    /* ⬅️ extra space before the blue alert */
-  }
-
-  .below-info-actions .btn {
-    /* optional, keeps them meaty */
-    min-width: 260px;
-  }
-
-  @media (max-width:768px) {
-    .below-info-actions .btn {
-      width: 100%;
-      min-width: 0;
-    }
-  }
-</style>
 
 {% if pi %}
-<a href="{% url 'ingest:index' %}" class="btn btn-default">
-  <span class="glyphicon glyphicon-menu-left"></span> Return to PI Dashboard
+<a href="{% url 'ingest:index' %}" class="btn btn-primary">
+  Return to PI Dashboard
 </a>
 {% endif %}
 
@@ -201,7 +132,94 @@
 
       {# ---- Tags: All datasets ---- #}
       {% if datasets_list %}
-      <!-- (unchanged tags markup) -->
+      <h2>Add Tags to All Datasets</h2>
+      <form id="add-tags-all-form" action="{% url 'ingest:add_tags_all' %}" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="collection_id" value="{{ collection.id }}">
+        <div class="row">
+          <div class="col-md-6">
+            <h4>Consortium Tags</h4>
+            {% for tag in consortium_tags %}
+            <div class="checkbox styled-checkbox">
+              <label>
+                <input type="checkbox" name="tag_text[]" value="{{ tag }}"> {{ tag }}
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="col-md-6">
+            <h4>User Tags</h4>
+            {% for tag in user_tags %}
+            <div class="checkbox styled-checkbox">
+              <label>
+                <input type="checkbox" name="tag_text[]" value="{{ tag }}"> {{ tag }}
+              </label>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit" disabled>
+          <span class="glyphicon glyphicon-plus"></span> Add Tags to All
+        </button>
+      </form>
+
+      <h2 style="margin-top:30px;">Add Tags to Individual Datasets</h2>
+      {% for dataset in datasets_list %}
+      <div class="panel panel-default">
+        <div class="panel-heading" data-toggle="collapse" data-target="#dataset-{{ dataset.id }}">
+          {{ dataset.title }} <i class="chevron fa fa-fw"></i>
+        </div>
+        <div class="collapse" id="dataset-{{ dataset.id }}">
+          <div class="panel-body">
+            <p>{{ dataset.abstract }}</p>
+            <form id="add-tags-form-{{ dataset.id }}" action="{% url 'ingest:add_tags' %}" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="dataset_id" value="{{ dataset.id }}">
+              <div class="row">
+                <div class="col-md-6">
+                  <h5>Consortium Tags</h5>
+                  {% for tag in consortium_tags %}
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="tag_text[]" value="{{ tag }}" {% if tag in dataset.tag_list %}disabled{% endif %}>
+                      {{ tag }}
+                    </label>
+                  </div>
+                  {% endfor %}
+                </div>
+                <div class="col-md-6">
+                  <h5>User Tags</h5>
+                  {% for tag in user_tags %}
+                  <div class="checkbox">
+                    <label>
+                      <input type="checkbox" name="tag_text[]" value="{{ tag }}" {% if tag in dataset.tag_list %}disabled{% endif %}>
+                      {{ tag }}
+                    </label>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              <button class="btn btn-primary" type="button" onclick="addTags({{ dataset.id }})" disabled>
+                <span class="glyphicon glyphicon-plus"></span> Add Tags
+              </button>
+            </form>
+            <ul id="tag-list-{{ dataset.id }}" style="margin-top:10px;">
+              {% for tag in dataset.tags.all %}
+              <li id="tag-{{ tag.id }}">
+                {{ tag.tag }}
+                <form id="delete-tag-form-{{ tag.id }}" data-url="{% url 'ingest:delete_tag' %}" method="post"
+                  style="display:inline;">
+                  {% csrf_token %}
+                  <input type="hidden" name="tag_id" value="{{ tag.id }}">
+                  <button type="button" class="btn btn-danger btn-xs" onclick="deleteTag({{ tag.id }})">Delete</button>
+                </form>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
       {% endif %}
 
       {% include 'ingest/new_metadata_sheet.html' %}
@@ -210,23 +228,25 @@
   </div>
 </div>
 
-
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-  $(document).ready(function () {
+  $(function () {
     var isSubmitting = false;
 
+    // Enable/disable "Add Tags to All" button
     $('#add-tags-all-form input[type="checkbox"]').on('change', function () {
       var anyChecked = $('#add-tags-all-form input[type="checkbox"]:checked').length > 0;
       $('#add-tags-all-form button[type="submit"]').prop('disabled', !anyChecked);
     });
 
+    // Enable/disable per-dataset "Add Tags" buttons
     $('form[id^="add-tags-form-"] input[type="checkbox"]').on('change', function () {
       var formId = $(this).closest('form').attr('id');
       var anyChecked = $('#' + formId + ' input[type="checkbox"]:checked').length > 0;
       $('#' + formId + ' button[type="button"]').prop('disabled', !anyChecked);
     });
 
+    // Submit "Add Tags to All" via AJAX
     $('#add-tags-all-form').on('submit', function (event) {
       event.preventDefault();
       if (isSubmitting) return false;
@@ -278,6 +298,7 @@
     });
   });
 
+  // Add tags to a specific dataset
   function addTags(datasetId) {
     var form = $('#add-tags-form-' + datasetId);
     var url = form.attr('action');
@@ -314,6 +335,7 @@
     });
   }
 
+  // Delete a single tag
   function deleteTag(tagId) {
     var form = $('#delete-tag-form-' + tagId);
     var url = form.data('url');

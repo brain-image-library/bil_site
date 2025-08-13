@@ -555,3 +555,100 @@ p {
   /* allow wrapping */
   text-align: left;
 }
+
+
+/* adjust to taste */
+
+/* ===== Submission detail page ===== */
+
+/* Top “Edit Submission” bar */
+.collection-actions {
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+  padding: 8px 12px;
+  margin: 12px 0 24px;
+}
+
+.actions-bar {
+  margin: 16px 0 24px;
+}
+
+.actions-bar .btn-toolbar {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actions-bar .btn-group {
+  display: flex;
+  gap: 10px;
+}
+
+.actions-bar .btn-group.secondary-actions {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 768px) {
+  .actions-bar .btn-group {
+    width: 100%;
+  }
+
+  .actions-bar .btn {
+    width: 100%;
+  }
+}
+
+/* Minor spacing tweaks for the info list */
+.submission-info .list-group-item h4 {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+/* Primary buttons under the info list */
+.below-info-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 28px 0 48px;
+}
+
+.below-info-actions .btn {
+  min-width: 260px;
+}
+
+/* NOTE: this was mistyped as ".btn btn-info" in the template.
+   It must be ".btn.btn-info" (two classes on the same element). */
+@media (max-width: 768px) {
+  .below-info-actions .btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Checkbox spacing used in Tags sections */
+.styled-checkbox-container .styled-checkbox {
+  padding: 0 !important;
+  margin-bottom: 5px !important;
+}
+
+.styled-checkbox-container .styled-checkbox input[type="checkbox"] {
+  margin-right: 5px !important;
+}
+
+.styled-checkbox-container .styled-checkbox label {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.styled-checkbox-container .styled-checkbox label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+
+
+
+
