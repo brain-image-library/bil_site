@@ -1021,57 +1021,90 @@ def delete_tag_all(request):
 def create_dataset_linkage(request, collection_id):
     collection = get_object_or_404(Collection, id=collection_id)
 
-    # Fetch existing dataset linkages
-    existing_linkages = DatasetLinkage.objects.filter(data_id_1_bil__v2_ds_id__sheet__collection_id=collection.id)
+    # All existing linkages for datasets in this collection
+    existing_linkages = (
+        DatasetLinkage.objects
+        .filter(data_id_1_bil__v2_ds_id__sheet__collection_id=collection.id)
+        .select_related("data_id_1_bil__v2_ds_id")
+        .order_by("data_id_1_bil__v2_ds_id__title")
+    )
+
+    # Datasets that already have at least one linkage
+    linked_dataset_ids = set(
+        existing_linkages.values_list("data_id_1_bil__v2_ds_id_id", flat=True).distinct()
+    )
+
+    # Annotate BIL_ID for all datasets in the collection
+    bil_id_subq = BIL_ID.objects.filter(v2_ds_id=OuterRef("pk")).values("id")[:1]
+    all_datasets = (
+        Dataset.objects
+        .filter(sheet__collection_id=collection.id)
+        .annotate(bil_id=Subquery(bil_id_subq))
+        .order_by("title")
+    )
+
+    # Show the form only for datasets that do NOT yet have a linkage
+    datasets_to_link = all_datasets.exclude(id__in=linked_dataset_ids)
+
+    # Preload BIL IDs for the Select2 search helper (optional)
+    bil_ids = list(BIL_ID.objects.values("bil_id", "v2_ds_id__title"))
+    bil_id_data = [
+        {"bil_id": b["bil_id"], "dataset_title": b.get("v2_ds_id__title") or ""}
+        for b in bil_ids
+    ]
 
     if request.method == "POST":
         try:
-            with transaction.atomic():  # Ensure atomic operations
-                for dataset in Dataset.objects.filter(sheet__collection_id=collection.id):
-                    code_id = request.POST.get(f"code_id_{dataset.id}")
-                    data_id_2 = request.POST.get(f"data_id_2_{dataset.id}")
-                    relationship = request.POST.get(f"relationship_{dataset.id}")
-                    description = request.POST.get(f"description_{dataset.id}")
+            created = 0
+            with transaction.atomic():
+                # Only process rows we actually rendered
+                for ds in datasets_to_link:
+                    code_id = (request.POST.get(f"code_id_{ds.id}") or "").strip()
+                    data_id_2 = (request.POST.get(f"data_id_2_{ds.id}") or "").strip()
+                    relationship = (request.POST.get(f"relationship_{ds.id}") or "").strip()
+                    description = (request.POST.get(f"description_{ds.id}") or "").strip()
 
-                    # Fetch the related BIL_ID instance for this dataset
-                    bil_id_instance = BIL_ID.objects.filter(v2_ds_id=dataset).first()
+                    if not (code_id and data_id_2 and relationship):
+                        continue
 
-                    # Validate required fields
-                    if bil_id_instance and code_id and data_id_2 and relationship:
-                        DatasetLinkage.objects.create(
-                            data_id_1_bil=bil_id_instance,  # Use the correct BIL_ID instance
-                            code_id=code_id,
-                            data_id_2=data_id_2,
-                            relationship=relationship,
-                            description=description,
-                        )
+                    bil_id_instance = BIL_ID.objects.filter(v2_ds_id=ds).first()
+                    if not bil_id_instance:
+                        continue
 
-            messages.success(request, "Dataset linkages successfully created!")
+                    # Skip duplicate rows
+                    if DatasetLinkage.objects.filter(
+                        data_id_1_bil=bil_id_instance,
+                        code_id=code_id,
+                        data_id_2=data_id_2,
+                        relationship=relationship,
+                    ).exists():
+                        continue
+
+                    DatasetLinkage.objects.create(
+                        data_id_1_bil=bil_id_instance,
+                        code_id=code_id,
+                        data_id_2=data_id_2,
+                        relationship=relationship,
+                        description=description,
+                    )
+                    created += 1
+
+            messages.success(request, f"Created {created} linkage{'s' if created != 1 else ''}.")
             return redirect("ingest:create_dataset_linkage", collection_id=collection.id)
 
         except Exception as e:
-            messages.error(request, f"Error saving dataset linkages: {str(e)}")
+            messages.error(request, f"Error saving dataset linkages: {e}")
 
-    # Fetch dataset information if no existing linkages
-    bil_ids = list(BIL_ID.objects.values("bil_id", "v2_ds_id__title"))
-
-    bil_id_data = [
+    return render(
+        request,
+        "ingest/create_dataset_linkage.html",
         {
-            "bil_id": bil["bil_id"],
-            "dataset_title": bil["v2_ds_id__title"] if bil["v2_ds_id__title"] else ""
-        }
-        for bil in bil_ids
-    ]
-
-    bil_id_query = BIL_ID.objects.filter(v2_ds_id=OuterRef('pk')).values('id')[:1]
-    datasets = Dataset.objects.filter(sheet__collection_id=collection.id).annotate(bil_id=Subquery(bil_id_query))
-
-    return render(request, 'ingest/create_dataset_linkage.html', {
-        'collection': collection,
-        'datasets': datasets if not existing_linkages.exists() else None,
-        'bil_id_data': bil_id_data,
-        'existing_linkages': existing_linkages,
-    })
+            "collection": collection,
+            "existing_linkages": existing_linkages,
+            "datasets_to_link": datasets_to_link,
+            "bil_id_data": bil_id_data,
+        },
+    )
 
 def get_bil_ids(request):
     query = request.GET.get("q", "").strip()

@@ -1,15 +1,51 @@
-.header {
+nav.header {
   background-color: #161b33;
-  /* dark blue */
-  border-radius: 0px;
-  z-index: 99;
-  position: fixed;
+  border-radius: 0;
+  position: sticky;
+  /* <- key change */
+  top: 0;
+  z-index: 1040;
+  /* above page content */
   width: 100%;
 }
 
-.navbar-header {
-  padding-left: 1em;
-  padding-right: 1em;
+.navbar.navbar-inverse.header {
+  position: static;
+  /* follow the page */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1040;
+  /* above page content */
+  background-color: #161b33 !important;
+  /* your dark blue */
+  background-image: none !important;
+  /* remove Bootstrap gradient */
+  filter: none !important;
+  border: 0 !important;
+  border-radius: 0;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .12);
+  /* subtle separator */
+}
+
+.navbar.navbar-inverse.header .container-fluid {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+/* The inner container also has class="header" in your markup.
+   Neutralize any positioning on it so it doesn't try to be sticky too. */
+.container-fluid.header {
+  position: static;
+}
+
+.site-navbar {
+  position: sticky;
+  /* modern browsers */
+  top: 0;
+  z-index: 1040;
+  /* above content, below modals */
+  width: 100%;
 }
 
 .container-fluid {
@@ -253,21 +289,6 @@ p {
   opacity: 0.75;
 }
 
-/* 🔹 Ensure Identifier field remains fixed regardless of input type */
-.identifier-cell {
-  width: 250px !important;
-  min-width: 250px !important;
-  max-width: 250px !important;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-/* 🔹 Force Select2 dropdown to obey width constraints */
-.identifier-cell .select2-container {
-  width: 250px !important;
-  min-width: 250px !important;
-  max-width: 250px !important;
-}
 
 /* 🔹 Prevent Select2 dropdown from expanding */
 .identifier-cell .select2-selection--single {
@@ -277,19 +298,7 @@ p {
   white-space: nowrap;
 }
 
-/* 🔹 Ensure input text field also follows width rules */
-.identifier-cell input {
-  width: 250px !important;
-  min-width: 250px !important;
-  max-width: 250px !important;
-}
 
-/* Ensure dropdown does not exceed column width */
-.select2-dropdown {
-  width: 250px !important;
-  min-width: 250px !important;
-  max-width: 250px !important;
-}
 
 /* Prevent text overflow inside Select2 */
 .identifier-cell .select2-container .select2-selection--single {
@@ -323,23 +332,20 @@ p {
   resize: none;
 }
 
-.table {
-  table-layout: fixed !important;
-  /* Forces column widths to be fixed */
-  width: 100% !important;
-  /* Ensures the table spans full width */
+/* Only fixed on tables that opt in */
+.table.table-fixed {
+  table-layout: fixed;
+  width: 100%;
 }
 
-/* 🔹 Fix Dataset Info column width and apply ellipsis */
-.table th:nth-child(1),
-.table td:nth-child(1) {
-  width: 300px !important;
-  /* Set a fixed width */
-  max-width: 300px !important;
-  min-width: 300px !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
+.table.table-fixed th:nth-child(1),
+.table.table-fixed td:nth-child(1) {
+  width: 300px;
+  max-width: 300px;
+  min-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* 🔹 Ensure dataset info spans within its fixed column */
@@ -351,4 +357,201 @@ p {
   text-overflow: ellipsis !important;
   cursor: pointer !important;
   /* Shows tooltip */
+}
+
+/* === Linkage table layout === */
+/* Keep headers one line */
+.linkage-table thead th {
+  white-space: nowrap;
+}
+
+/* ---- New linkages (5 columns) ---- */
+.linkage-table--new>thead>tr>th:nth-child(1) {
+  width: 360px;
+}
+
+.linkage-table--new>thead>tr>th:nth-child(2) {
+  width: 220px;
+}
+
+.linkage-table--new>thead>tr>th:nth-child(3) {
+  width: 260px;
+}
+
+.linkage-table--new>thead>tr>th:nth-child(4) {
+  width: 220px;
+}
+
+.linkage-table--new>thead>tr>th:nth-child(5) {
+  width: auto;
+}
+
+.linkage-table--new>tbody>tr>td {
+  vertical-align: middle;
+}
+
+/* Identifier cell only on the NEW table */
+.linkage-table--new .identifier-cell {
+  width: 260px;
+  max-width: 260px;
+  min-width: 0;
+  white-space: normal;
+  overflow: visible;
+}
+
+.linkage-table--new .identifier-cell input,
+.linkage-table--new .identifier-cell .select2-container {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Select2 height = Bootstrap 3 input */
+.linkage-table--new .select2-container .select2-selection--single {
+  height: 34px !important;
+}
+
+.linkage-table--new .select2-container .select2-selection__rendered {
+  line-height: 34px !important;
+}
+
+.linkage-table--new .select2-container .select2-selection__arrow {
+  height: 34px !important;
+}
+
+/* ---- Existing linkages (6 columns) ---- */
+.linkage-table--existing>thead>tr>th:nth-child(1) {
+  width: 360px;
+}
+
+.linkage-table--existing>thead>tr>th:nth-child(2) {
+  width: 220px;
+}
+
+.linkage-table--existing>thead>tr>th:nth-child(3) {
+  width: 260px;
+}
+
+.linkage-table--existing>thead>tr>th:nth-child(4) {
+  width: 220px;
+}
+
+.linkage-table--existing>thead>tr>th:nth-child(5) {
+  width: auto;
+}
+
+/* Description flexes */
+.linkage-table--existing>thead>tr>th:nth-child(6) {
+  width: 140px;
+}
+
+/* Linkage Date */
+
+/* Ensure Description doesn't wrap awkwardly */
+.linkage-table--new    > thead > tr > th:nth-child(5),
+.linkage-table--existing > thead > tr > th:nth-child(5) { min-width: 260px; }
+
+/* If needed, trim earlier columns a bit (adjust numbers to taste) */
+.linkage-table--new    > thead > tr > th:nth-child(1) { width: 340px; } /* was 360 */
+.linkage-table--new    > thead > tr > th:nth-child(3) { width: 300px; } /* was 260 -> 300 */
+.linkage-table--existing > thead > tr > th:nth-child(6) { width: 160px; } /* Linkage Date */
+
+/* Wider page just for this screen */
+.container-wide {
+  max-width: 1440px;
+}
+
+/* Wider page just for this screen */
+@media (min-width: 1200px) {
+  .container-wide {
+    width: 1440px;
+  }
+
+  /* pick 1400–1560 to taste */
+}
+
+@media (min-width: 1600px) {
+  .container-wide {
+    width: 1560px;
+  }
+}
+
+/* Keep table headers one line */
+.linkage-table thead th {
+  white-space: nowrap;
+}
+
+/* tiny question-mark icon beside headers */
+.help-icon {
+  margin-left: 6px;
+  font-size: 12px;
+  color: #777;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.help-icon:hover {
+  color: #333;
+}
+
+/* Wider tooltips for column-help icons */
+.tooltip-help .tooltip-inner {
+  max-width: 420px;
+  /* override Bootstrap's 200px */
+  width: 420px;
+  /* optional: lock width */
+  white-space: normal;
+  text-align: left;
+}
+
+.tooltip-help .tooltip-inner code {
+  white-space: nowrap;
+}
+
+.tooltip-help .tooltip-inner ul {
+  margin: 6px 0 0 16px;
+  padding: 0;
+}
+
+/* Wider, auto-sized tooltips just for our help icons */
+.tooltip-help .tooltip-inner {
+  display: inline-block;
+  /* shrink-to-fit width */
+  width: auto;
+  /* no fixed width */
+  max-width: 560px;
+  /* safety cap; tweak to taste */
+  white-space: normal;
+  /* allow blocks to define wrapping */
+  text-align: left;
+}
+
+/* Each logical line stays on one line */
+.tooltip-help .tt-line {
+  display: block;
+  /* becomes its own line */
+  white-space: nowrap;
+  /* never wraps mid-line */
+}
+
+/* keep codes on one line */
+.tooltip-help .tooltip-inner code {
+  white-space: nowrap;
+}
+
+/* Truncated inline blocks that show full text on hover via tooltip */
+.dataset-ellipsis {
+  display: block;
+  /* take the available cell width */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Wider, wrapping tooltip for long paths/titles */
+.tooltip-long .tooltip-inner {
+  max-width: 640px;
+  /* cap so it doesn't span the world */
+  white-space: normal;
+  /* allow wrapping */
+  text-align: left;
 }

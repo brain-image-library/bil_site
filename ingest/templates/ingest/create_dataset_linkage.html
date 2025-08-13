@@ -1,12 +1,22 @@
 {% extends 'ingest/base.html' %}
+{% load static %}
 
 {% block content %}
-<div class="container">
+<div class="container container-wide">
     <h2>Dataset Linkages for {{ collection.name }}</h2>
 
+    {# --- Existing linkages table (always shown if any) --- #}
     {% if existing_linkages %}
-    <!-- Display existing linkages -->
-    <table class="table">
+    <h4 class="mt-3">Existing linkages</h4>
+    <table class="table table-striped table-fixed linkage-table linkage-table--existing">
+        <colgroup>
+            <col style="width:360px"> {# Dataset Title #}
+            <col style="width:220px"> {# Code ID #}
+            <col style="width:260px"> {# Identifier for Linkage #}
+            <col style="width:220px"> {# Relationship #}
+            <col> {# Description (flex) #}
+            <col style="width:160px"> {# Linkage Date #}
+        </colgroup>
         <thead>
             <tr>
                 <th>Dataset Title</th>
@@ -20,7 +30,12 @@
         <tbody>
             {% for linkage in existing_linkages %}
             <tr>
-                <td>{{ linkage.data_id_1_bil.v2_ds_id.title }}</td>
+                <td>
+                    <span class="dataset-ellipsis help-ellipsis" data-toggle="tooltip" data-container="body"
+                        title="{{ linkage.data_id_1_bil.v2_ds_id.title }}">
+                        {{ linkage.data_id_1_bil.v2_ds_id.title }}
+                    </span>
+                </td>
                 <td>{{ linkage.code_id }}</td>
                 <td>{{ linkage.data_id_2 }}</td>
                 <td>{{ linkage.relationship }}</td>
@@ -30,40 +45,88 @@
             {% endfor %}
         </tbody>
     </table>
-    {% else %}
-    <!-- Display form if no linkages exist -->
+    {% endif %}
+
+    {# --- Form for datasets that are NOT yet linked --- #}
+    {% if datasets_to_link %}
+    <h4 class="mt-4">Add new linkages</h4>
     <form method="POST">
         {% csrf_token %}
-        <table class="table" style="table-layout: fixed;">
+        <table class="table table-striped table-fixed linkage-table linkage-table--new">
+            <colgroup>
+                <col style="width:360px"> {# Dataset Info #}
+                <col style="width:220px"> {# Code ID #}
+                <col style="width:260px"> {# Identifier #}
+                <col style="width:220px"> {# Relationship #}
+                <col> {# Description (flex) #}
+            </colgroup>
             <thead>
                 <tr>
-                    <th style="width: 300px;">Dataset Info</th>
-                    <th>Code ID</th>
-                    <th>Identifier for Linkage</th>
-                    <th>Relationship</th>
-                    <th>Description</th>
+                    <th style="width:300px;">Dataset Info</th>
+
+                    <th>
+                        Code ID
+                        <span class="glyphicon glyphicon-question-sign help-icon" data-toggle="tooltip"
+                            data-container="body" data-html="true"
+                            title="Select the repository where the linked dataset is stored (e.g., Brain Image Library, NeMO, DANDI)."></span>
+                    </th>
+
+                    <th>
+                        Identifier for Linkage
+                        <span class="glyphicon glyphicon-question-sign help-icon" data-toggle="tooltip"
+                            data-container="body" data-html="true"
+                            title="<strong>Enter the persistent identifier for the linked dataset.</strong>
+                                     <br><em>Examples:</em>
+                                     <span class='tt-line'>BIL Dataset Identifier: <code>ace-cat-dog</code></span>
+                                     <span class='tt-line'>NeMO Identifier: <code>nemo:dat-4v55t0q</code></span>
+                                     <span class='tt-line'>DANDI Identifier: <code>DANDI:000008/0.211014.0809</code></span>"></span>
+                    </th>
+
+                    <th>
+                        Relationship
+                        <span class="glyphicon glyphicon-question-sign help-icon" data-toggle="tooltip"
+                            data-container="body" data-html="true"
+                            title="<strong>Specify the relationship of the linked data to the dataset in the first column.</strong>
+                                     <span class='tt-line'><em>Omics Data</em> — related NeMO datasets</span>
+                                     <span class='tt-line'><em>Neurophysiology Data</em> — related DANDI datasets</span>
+                                     <span class='tt-line'><em>Derived Data</em> — reprocessed/reanalyzed BIL datasets</span>
+                                     <span class='tt-line'><em>Raw Data</em> — raw datasets of processed BIL datasets</span>
+                                     <span class='tt-line'><em>Neuron Tracing</em> — neuron tracing datasets in BIL</span>"></span>
+                    </th>
+
+                    <th>
+                        Description
+                        <span class="glyphicon glyphicon-question-sign help-icon" data-toggle="tooltip"
+                            data-container="body" data-html="true"
+                            title="Brief description of the linked dataset, preferably the title of the linked dataset."></span>
+                    </th>
                 </tr>
             </thead>
             <tbody>
-                {% for dataset in datasets %}
+                {% for dataset in datasets_to_link %}
                 <tr>
                     <td>
-                        <span class="dataset-info" title="{{ dataset.title }}">
-                            <strong>{{ dataset.title }}</strong>
-                        </span><br>
+                        <span class="dataset-ellipsis help-ellipsis" data-toggle="tooltip" data-container="body"
+                            title="{{ dataset.title|default_if_none:'' }}">
+                            <strong>{{ dataset.title|default_if_none:'' }}</strong>
+                        </span>
                         <small>
-                            BIL Directory:
-                            <span class="dataset-info" title="{{ dataset.bildirectory }}">{{ dataset.bildirectory }}</span>
-                        </small><br>
+                            <span class="dataset-ellipsis help-ellipsis" data-toggle="tooltip" data-container="body"
+                                title="BIL Directory: {{ dataset.bildirectory|default_if_none:'' }}">
+                                BIL Directory: {{ dataset.bildirectory|default_if_none:'' }}
+                            </span>
+                        </small>
                         {% if collection.submission_status == "SUCCESS" and collection.validation_status == "SUCCESS" %}
+                        <br>
                         <small>
-                            BIL ID:
-                            <span class="dataset-info" title="{{ dataset.bil_id }}">
-                                {% if dataset.bil_id %}{{ dataset.bil_id }}{% else %}N/A{% endif %}
+                            <span class="dataset-ellipsis help-ellipsis" data-toggle="tooltip" data-container="body"
+                                title="BIL ID: {% if dataset.bil_id %}{{ dataset.bil_id }}{% else %}N/A{% endif %}">
+                                BIL ID: {% if dataset.bil_id %}{{ dataset.bil_id }}{% else %}N/A{% endif %}
                             </span>
                         </small>
                         {% endif %}
                     </td>
+
                     <td>
                         <select name="code_id_{{ dataset.id }}" class="form-control code-id-dropdown"
                             data-dataset-id="{{ dataset.id }}">
@@ -74,10 +137,12 @@
                             <option value="cubietissue">CubieTissue</option>
                         </select>
                     </td>
+
                     <td class="identifier-cell">
                         <input type="text" name="data_id_2_{{ dataset.id }}" id="data_id_2_{{ dataset.id }}"
                             class="form-control identifier-input" placeholder="Data ID 2">
                     </td>
+
                     <td>
                         <select name="relationship_{{ dataset.id }}" class="form-control">
                             <option value="">Select Relationship</option>
@@ -88,102 +153,113 @@
                             <option value="aligned">Aligned</option>
                         </select>
                     </td>
+
                     <td>
-                        <textarea name="description_{{ dataset.id }}" class="form-control" placeholder="Description"></textarea>
+                        <textarea name="description_{{ dataset.id }}" class="form-control"
+                            placeholder="Description"></textarea>
                     </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
+
         <button type="submit" class="btn btn-primary">Submit Linkages</button>
     </form>
+    {% else %}
+    <p class="text-muted">All datasets in this collection already have at least one linkage.</p>
     {% endif %}
 </div>
 
-<!-- jQuery, Bootstrap & Select2 -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+{# Use the jQuery/Bootstrap already loaded in base.html. Only include Select2 here. #}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
 
 <script>
+    // Optional preloaded data if you want to use it later
     var preloadedBilIds = {{ bil_id_data| safe }};
 
-    $(document).ready(function () {
-            function initializeTooltips() {
-                $('[data-toggle="tooltip"]').tooltip({ html: true, placement: 'bottom' });
-            }
-            initializeTooltips();
-
-            $(".code-id-dropdown").change(function () {
-                var datasetId = $(this).data("dataset-id");
-                var selectedCode = $(this).val();
-                var identifierCell = $("#data_id_2_" + datasetId).closest(".identifier-cell");
-
-                // 🔹 Fixed width for Identifier field
-                var fixedWidth = "194px";
-
-                // Disable "Select Code ID" after selection
-                $(this).find("option[value='']").prop("disabled", true);
-
-                if (selectedCode === "bil") {
-                    // 🔹 Replace input with Select2 dropdown while keeping width fixed
-                    identifierCell.html(`
-                <select name="data_id_2_${datasetId}" id="data_id_2_${datasetId}" 
-                    class="form-control identifier-dropdown" style="width: ${fixedWidth};"></select>
-            `);
-
-                    var dropdown = $("#data_id_2_" + datasetId);
-
-                    dropdown.select2({
-                        placeholder: "Search BIL ID or Dataset Title",
-                        allowClear: true,
-                        width: "100%",  // Ensures it stays within identifierCell
-                        minimumInputLength: 2,
-                        ajax: {
-                            url: "{% url 'ingest:get_bil_ids' %}",
-                            dataType: "json",
-                            delay: 300,
-                            data: function (params) {
-                                return { q: params.term || "" };
-                            },
-                            processResults: function (data) {
-                                return {
-                                    results: $.map(data, function (item) {
-                                        return { id: item.bil_id, text: item.bil_id + (item.dataset_title ? " - " + item.dataset_title : "") };
-                                    })
-                                };
-                            }
-                        },
-                        templateResult: function (data) {
-                            if (!data.id) {
-                                return data.text;
-                            }
-                            return $("<span style='white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 230px;'>" + data.text + "</span>");
-                        }
-                    });
-
-                    // 🔹 Explicitly set Select2 container width to prevent expansion
-                    setTimeout(function () {
-                        dropdown.next(".select2-container").css({
-                            "width": fixedWidth,
-                            "min-width": fixedWidth,
-                            "max-width": fixedWidth
-                        });
-                    }, 100);
-
-                } else {
-                    // 🔹 Restore text input while keeping width fixed
-                    identifierCell.html(`
-                <input type="text" name="data_id_2_${datasetId}" id="data_id_2_${datasetId}" 
-                class="form-control identifier-input" placeholder="Data ID 2" 
-                style="width: ${fixedWidth}; min-width: ${fixedWidth}; max-width: ${fixedWidth};">
-            `);
-                }
-
-                initializeTooltips();
+    $(function () {
+        function initializeTooltips() {
+            // Header help icons (wider, HTML-enabled)
+            $('.help-icon').tooltip('destroy').tooltip({
+                html: true,
+                placement: 'bottom',
+                container: 'body',
+                template:
+                    '<div class="tooltip tooltip-help" role="tooltip">' +
+                    '<div class="tooltip-arrow"></div>' +
+                    '<div class="tooltip-inner"></div>' +
+                    '</div>'
             });
-        });
-</script>
 
+            // Ellipsized text (titles/paths/IDs) – wrap nicely and auto-size
+            $('.help-ellipsis').tooltip('destroy').tooltip({
+                html: false,
+                placement: 'bottom',
+                container: 'body',
+                template:
+                    '<div class="tooltip tooltip-long" role="tooltip">' +
+                    '<div class="tooltip-arrow"></div>' +
+                    '<div class="tooltip-inner"></div>' +
+                    '</div>'
+            });
+        }
+        initializeTooltips();
+
+        // Swap Identifier field when Code ID changes
+        $(".code-id-dropdown").on("change", function () {
+            var datasetId = $(this).data("dataset-id");
+            var selectedCode = $(this).val();
+            var $cell = $("#data_id_2_" + datasetId).closest(".identifier-cell");
+
+            // Disable "Select Code ID" after selection
+            $(this).find("option[value='']").prop("disabled", true);
+
+            if (selectedCode === "bil") {
+                $cell.html(
+                    '<select name="data_id_2_' + datasetId + '" id="data_id_2_' + datasetId + '"' +
+                    ' class="form-control identifier-dropdown"></select>'
+                );
+
+                var $dropdown = $("#data_id_2_" + datasetId);
+
+                $dropdown.select2({
+                    placeholder: "Search BIL ID or Dataset Title",
+                    allowClear: true,
+                    width: "100%",
+                    minimumInputLength: 2,
+                    ajax: {
+                        url: "{% url 'ingest:get_bil_ids' %}",
+                        dataType: "json",
+                        delay: 300,
+                        data: function (params) { return { q: params.term || "" }; },
+                        processResults: function (data) {
+                            return {
+                                results: $.map(data, function (item) {
+                                    var label = item.bil_id + (item.dataset_title ? " - " + item.dataset_title : "");
+                                    return { id: item.bil_id, text: label };
+                                })
+                            };
+                        }
+                    },
+                    templateResult: function (data) {
+                        if (!data.id) return data.text;
+                        return $('<span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;">' +
+                            data.text + '</span>');
+                    }
+                });
+
+            } else {
+                // Plain input, 100% of column
+                $cell.html(
+                    '<input type="text" name="data_id_2_' + datasetId + '" id="data_id_2_' + datasetId + '"' +
+                    ' class="form-control identifier-input" placeholder="Data ID 2">'
+                );
+            }
+
+            // Re-bind tooltips (in case new elements were inserted)
+            initializeTooltips();
+        });
+    });
+</script>
 {% endblock %}
