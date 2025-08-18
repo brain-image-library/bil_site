@@ -171,7 +171,7 @@ class EventsLogAdmin(admin.ModelAdmin):
 @admin.register(ProjectPeople)
 
 class ProjectPeople(admin.ModelAdmin):
-    list_display = ("id", "project_id", "people_id", "is_po", "is_po", "doi_role")
+    list_display = ("id", "project_id", "people_id", "is_pi", "is_po", "doi_role")
 
 @admin.register(SWC)
 
