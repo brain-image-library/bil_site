@@ -708,7 +708,7 @@ def collection_create(request):
             messages.success(request, 'Collection successfully created!! Please proceed with metadata upload')
             return redirect('ingest:descriptive_metadata_upload', coll_id.id)
     else:
-        form = CollectionForm()
+        form = CollectionForm(request=request)
 
     project_list = []
     person = People.objects.get(auth_user_id=request.user.id)
