@@ -507,7 +507,7 @@ class BIL_ID(models.Model):
 
 class DatasetLinkage(models.Model):
     data_id_1_bil = models.ForeignKey(BIL_ID, on_delete=models.SET_NULL, null=True, blank=True)
-    code_id = models.CharField(max_length=64, default="", choices=[('bil', 'BIL'), ('nemo', 'Nemo'),('dandi', 'Dandi'), ('cubietissue', 'CubieTissue')]) 
+    code_id = models.CharField(max_length=64, default="", choices=[('bil', 'BIL'), ('nemo', 'Nemo'),('dandi', 'Dandi')]) 
     data_id_2 = models.CharField(max_length=256, blank=True, null=True)
     relationship = models.CharField(max_length=64, default="", choices=[('sequence data', 'Sequence Data'), ('neuron tracing', 'Neuron Tracing'), ('derived_data', 'Derived Data'), ('raw', 'Raw'), ('aligned', 'Aligned')]) 
     description = models.TextField(blank=True, null=True)

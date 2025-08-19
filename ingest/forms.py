@@ -1,6 +1,8 @@
 from django import forms
 from .field_list import metadata_fields, collection_fields
-from .models import ImageMetadata, DescriptiveMetadata, Collection
+from .models import ImageMetadata, DescriptiveMetadata, Collection, DatasetLinkage, Project, People
+from django.utils import timezone
+
 
 
 class UploadForm(forms.Form):
@@ -54,22 +56,37 @@ class collection_send(forms.ModelForm):
         
 
 class CollectionForm(forms.ModelForm):
+    project = forms.ModelChoiceField(
+        queryset=Project.objects.none(),
+        empty_label="Select a project",
+        widget=forms.Select(attrs={"class": "form-control"})
+    )
 
     class Meta:
         model = Collection
         fields = collection_fields
         widgets = {
-            'project': forms.TextInput(attrs={'list': 'project_list'}),
-            
-            'project_funder_id': forms.TextInput(attrs={'list': 'funder_list'}),
+            "project_funder_id": forms.TextInput(attrs={"list": "funder_list"}),
         }
 
     def __init__(self, *args, **kwargs):
-        self.request = kwargs.pop('request', None)
-        return super().__init__(*args, **kwargs)
+        self.request = kwargs.pop("request", None)
+        super().__init__(*args, **kwargs)
+
+        if self.request:
+            try:
+                people = People.objects.get(auth_user_id_id=self.request.user.id)
+                qs = (Project.objects
+                      .filter(projectpeople__people_id=people.id)
+                      .order_by("name")
+                      .distinct())
+            except People.DoesNotExist:
+                qs = Project.objects.none()
+
+            self.fields["project"].queryset = qs
 
     def save(self, *args, **kwargs):
-        kwargs['commit'] = False
+        kwargs["commit"] = False
         obj = super().save(*args, **kwargs)
         if self.request:
             obj.user = self.request.user
@@ -78,11 +95,33 @@ class CollectionForm(forms.ModelForm):
 
 class CollectionChoice(forms.Form):
     collection = forms.ModelChoiceField(
-        queryset=None,  # We'll set this dynamically in the view
-        empty_label=None  # Ensures user must select a collection
+        queryset=None,  
+        empty_label=None,  
+        widget=forms.Select(attrs={'class': 'collection-select'})  # Add class for Select2
     )
 
     def __init__(self, user, *args, **kwargs):
         super(CollectionChoice, self).__init__(*args, **kwargs)
-        # Dynamically filter queryset based on the logged-in user
         self.fields['collection'].queryset = Collection.objects.filter(user=user)
+
+    def label_from_instance(self, obj):
+        return f"{obj.name} ({obj.bil_uuid})"  # Display both name and BIL UUID in the dropdown
+
+class DatasetLinkageForm(forms.ModelForm):
+    class Meta:
+        model = DatasetLinkage
+        fields = ['code_id', 'data_id_2', 'relationship', 'description']
+        widgets = {
+            'code_id': forms.Select(attrs={'class': 'form-control'}),
+            'data_id_2': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Data ID 2'}),
+            'relationship': forms.Select(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Add a description'}),
+        }
+
+    def save(self, commit=True, *args, **kwargs):
+        instance = super().save(commit=False)
+        # Automatically set the linkage_date to now
+        instance.linkage_date = timezone.now().date()
+        if commit:
+            instance.save()
+        return instance

@@ -1,36 +1,72 @@
-.header {
-    background-color: #161b33; /* dark blue */
-    border-radius:0px;
-    z-index: 99;
-    position:fixed;
-    width: 100%;
+nav.header {
+  background-color: #161b33;
+  border-radius: 0;
+  position: sticky;
+  /* <- key change */
+  top: 0;
+  z-index: 1040;
+  /* above page content */
+  width: 100%;
 }
 
-.navbar-header { 
-    padding-left: 1em;
-    padding-right: 1em;
+.navbar.navbar-inverse.header {
+  position: static;
+  /* follow the page */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1040;
+  /* above page content */
+  background-color: #161b33 !important;
+  /* your dark blue */
+  background-image: none !important;
+  /* remove Bootstrap gradient */
+  filter: none !important;
+  border: 0 !important;
+  border-radius: 0;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, .12);
+  /* subtle separator */
+}
+
+.navbar.navbar-inverse.header .container-fluid {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+/* The inner container also has class="header" in your markup.
+   Neutralize any positioning on it so it doesn't try to be sticky too. */
+.container-fluid.header {
+  position: static;
+}
+
+.site-navbar {
+  position: sticky;
+  /* modern browsers */
+  top: 0;
+  z-index: 1040;
+  /* above content, below modals */
+  width: 100%;
 }
 
 .container-fluid {
-    padding: 0;
+  padding: 0;
 }
 
 .content {
-    margin-left: 40px;
-    margin-right: 40px;
+  margin-left: 40px;
+  margin-right: 40px;
 }
 
 .fill {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden
 }
 
-.fill > div {
+.fill>div {
   flex: 1;
-
   display: flex;
   flex-direction: row;
   height: 100%;
@@ -38,47 +74,53 @@
 }
 
 .fill img {
-    flex-shrink: 0;
-    min-width: 100%;
-    min-height: 100%;
+  flex-shrink: 0;
+  min-width: 100%;
+  min-height: 100%;
 }
 
 /* for the header that appears above the big buttons */
-.big-button-header { 
-    padding-top: 5em;
-    text-align: center;
+.big-button-header {
+  padding-top: 5em;
+  text-align: center;
 }
 
 /* for the big buttons at the bottom of the main page */
-.big-button { 
-    padding-left: 3em;
-    padding-right: 3em;
-    padding-bottom: 5em;
-    line-height: 1.8;
-    text-align: center;
-    font-size: small;
+.big-button {
+  padding-left: 3em;
+  padding-right: 3em;
+  padding-bottom: 5em;
+  line-height: 1.8;
+  text-align: center;
+  font-size: small;
 }
 
 .big-row-text {
-    padding: 5em;
-    line-height: 2;
-    text-align: center;
-    font-size: large;
+  padding: 5em;
+  line-height: 2;
+  text-align: center;
+  font-size: large;
 }
 
 .white_on_gray {
-    background-color: #ffffff; /* white */
-    color: #696969; /* dark gray */
+  background-color: #ffffff;
+  /* white */
+  color: #696969;
+  /* dark gray */
 }
 
 .gray_on_med_blue {
-    background-color: #474973; /* medium blue */
-    color: #d1d2dc; /* light gray */
+  background-color: #474973;
+  /* medium blue */
+  color: #d1d2dc;
+  /* light gray */
 }
 
 .gray_on_dark_blue {
-    background-color: #161b33; /* dark blue */
-    color: #d1d2dc; /* light gray */
+  background-color: #161b33;
+  /* dark blue */
+  color: #d1d2dc;
+  /* light gray */
 }
 
 .diagram {
@@ -88,42 +130,59 @@
   padding-bottom: 10em;
 }
 
-h1, h2, h3, h4 {
-    font-family: 'Lato';
-    margin-top: 70px;
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Lato';
+  margin-top: 70px;
 }
 
 p {
-    font-family: 'Montserrat';
+  font-family: 'Montserrat';
 }
 
 .save {
-    float: right;
+  float: right;
 }
 
-.post-form textarea, .post-form input {
-    width: 100%;
+.post-form textarea,
+.post-form input {
+  width: 100%;
 }
 
 .post {
-    margin-bottom: 70px;
+  margin-bottom: 70px;
 }
 
-.post h1 a, .post h1 a:visited {
-    color: #000000;
+.post h1 a,
+.post h1 a:visited {
+  color: #000000;
 }
 
-.fa-2x{font-size: 2em;}
-.fa-3x{font-size: 3em;}
-.fa-4x{font-size: 4em;}
-.fa-5x{font-size: 5em;}
+.fa-2x {
+  font-size: 2em;
+}
+
+.fa-3x {
+  font-size: 3em;
+}
+
+.fa-4x {
+  font-size: 4em;
+}
+
+.fa-5x {
+  font-size: 5em;
+}
 
 .panel-heading .chevron:after {
-    content: "\f078";   
+  content: "\f078";
 }
+
 .panel-heading.collapsed .chevron:after {
-    content: "\f054"; 
-}  
+  content: "\f054";
+}
 
 .login-page {
   width: 360px;
@@ -174,97 +233,422 @@ p {
 }
 
 .dropdown input {
-    display: block;
-    padding: 3px 20px;
-    clear: both;
-    font-weight: 400;
-    line-height: 1.42857143;
-    color: #333;
-    white-space: nowrap;
-    height: 26px;
-    text-align: left;
+  display: block;
+  padding: 3px 20px;
+  clear: both;
+  font-weight: 400;
+  line-height: 1.42857143;
+  color: #333;
+  white-space: nowrap;
+  height: 26px;
+  text-align: left;
 }
 
 .dropdown .btn-link:hover {
-    text-decoration: none;
-    background-color: #e8e8e8;
+  text-decoration: none;
+  background-color: #e8e8e8;
 }
 
 /** SPINNER CREATION **/
 
 .loader {
-    position: relative;
-    text-align: center;
-    margin: 15px auto 35px auto;
-    z-index: 9999;
-    display: block;
-    width: 80px;
-    height: 80px;
-    border: 10px solid rgba(0, 0, 0, .3);
-    border-radius: 50%;
-    border-top-color: #000;
-    animation: spin 1s ease-in-out infinite;
-    -webkit-animation: spin 1s ease-in-out infinite;
+  position: relative;
+  text-align: center;
+  margin: 15px auto 35px auto;
+  z-index: 9999;
+  display: block;
+  width: 80px;
+  height: 80px;
+  border: 10px solid rgba(0, 0, 0, .3);
+  border-radius: 50%;
+  border-top-color: #000;
+  animation: spin 1s ease-in-out infinite;
+  -webkit-animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    -webkit-transform: rotate(360deg);
   }
-  
-  @keyframes spin {
-    to {
-      -webkit-transform: rotate(360deg);
-    }
+}
+
+@-webkit-keyframes spin {
+  to {
+    -webkit-transform: rotate(360deg);
   }
-  
-  @-webkit-keyframes spin {
-    to {
-      -webkit-transform: rotate(360deg);
-    }
-  }
-  
-  
-  /** MODAL STYLING **/
-  
+}
+
+/** MODAL STYLING **/
+
 .modal-content {
-    border-radius: 0px;
-    box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
-  }
-  
+  border-radius: 0px;
+  box-shadow: 0 0 20px 8px rgba(0, 0, 0, 0.7);
+}
+
 .modal-backdrop.show {
-    opacity: 0.75;
+  opacity: 0.75;
+}
+
+
+/* 🔹 Prevent Select2 dropdown from expanding */
+.identifier-cell .select2-selection--single {
+  width: 100% !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+
+
+/* Prevent text overflow inside Select2 */
+.identifier-cell .select2-container .select2-selection--single {
+  width: 100% !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Prevent Select2 dropdown from expanding the row */
+.select2-dropdown {
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+}
+
+/* Lock Code ID dropdown width */
+.code-id-dropdown {
+  width: 150px !important;
+  min-width: 150px !important;
+  max-width: 150px !important;
+}
+
+/* 🔹 Ensure Relationship and Description fields stay consistent */
+.relationship-dropdown {
+  width: 200px !important;
+}
+
+.description-textarea {
+  width: 250px !important;
+  resize: none;
+}
+
+/* Only fixed on tables that opt in */
+.table.table-fixed {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.table.table-fixed th:nth-child(1),
+.table.table-fixed td:nth-child(1) {
+  width: 300px;
+  max-width: 300px;
+  min-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 🔹 Ensure dataset info spans within its fixed column */
+.dataset-info {
+  display: block !important;
+  max-width: 100% !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  cursor: pointer !important;
+  /* Shows tooltip */
+}
+
+/* === Linkage table layout === */
+/* Keep headers one line */
+.linkage-table thead th {
+  white-space: nowrap;
+}
+
+/* ---- New linkages (5 columns) ---- */
+.linkage-table--new>thead>tr>th:nth-child(1) {
+  width: 360px;
+}
+
+.linkage-table--new>thead>tr>th:nth-child(2) {
+  width: 220px;
+}
+
+.linkage-table--new>thead>tr>th:nth-child(3) {
+  width: 260px;
+}
+
+.linkage-table--new>thead>tr>th:nth-child(4) {
+  width: 220px;
+}
+
+.linkage-table--new>thead>tr>th:nth-child(5) {
+  width: auto;
+}
+
+.linkage-table--new>tbody>tr>td {
+  vertical-align: middle;
+}
+
+/* Identifier cell only on the NEW table */
+.linkage-table--new .identifier-cell {
+  width: 260px;
+  max-width: 260px;
+  min-width: 0;
+  white-space: normal;
+  overflow: visible;
+}
+
+.linkage-table--new .identifier-cell input,
+.linkage-table--new .identifier-cell .select2-container {
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Select2 height = Bootstrap 3 input */
+.linkage-table--new .select2-container .select2-selection--single {
+  height: 34px !important;
+}
+
+.linkage-table--new .select2-container .select2-selection__rendered {
+  line-height: 34px !important;
+}
+
+.linkage-table--new .select2-container .select2-selection__arrow {
+  height: 34px !important;
+}
+
+/* ---- Existing linkages (6 columns) ---- */
+.linkage-table--existing>thead>tr>th:nth-child(1) {
+  width: 360px;
+}
+
+.linkage-table--existing>thead>tr>th:nth-child(2) {
+  width: 220px;
+}
+
+.linkage-table--existing>thead>tr>th:nth-child(3) {
+  width: 260px;
+}
+
+.linkage-table--existing>thead>tr>th:nth-child(4) {
+  width: 220px;
+}
+
+.linkage-table--existing>thead>tr>th:nth-child(5) {
+  width: auto;
+}
+
+/* Description flexes */
+.linkage-table--existing>thead>tr>th:nth-child(6) {
+  width: 140px;
+}
+
+/* Linkage Date */
+
+/* Ensure Description doesn't wrap awkwardly */
+.linkage-table--new    > thead > tr > th:nth-child(5),
+.linkage-table--existing > thead > tr > th:nth-child(5) { min-width: 260px; }
+
+/* If needed, trim earlier columns a bit (adjust numbers to taste) */
+.linkage-table--new    > thead > tr > th:nth-child(1) { width: 340px; } /* was 360 */
+.linkage-table--new    > thead > tr > th:nth-child(3) { width: 300px; } /* was 260 -> 300 */
+.linkage-table--existing > thead > tr > th:nth-child(6) { width: 160px; } /* Linkage Date */
+
+/* Wider page just for this screen */
+.container-wide {
+  max-width: 1440px;
+}
+
+/* Wider page just for this screen */
+@media (min-width: 1200px) {
+  .container-wide {
+    width: 1440px;
   }
-  
-.loader-txt {
-    p {
-      font-size: 13px;
-      color: #666;
-      small {
-        font-size: 11.5px;
-        color: #999;
-      }
-    }
+
+  /* pick 1400–1560 to taste */
+}
+
+@media (min-width: 1600px) {
+  .container-wide {
+    width: 1560px;
   }
-  
-#output {
-    padding: 25px 15px;
-    background: #222;
-    border: 1px solid #222;
-    max-width: 350px;
-    margin: 35px auto;
-    font-family: 'Roboto', sans-serif !important;
-    p.subtle {
-      color: #555;
-      font-style: italic;
-      font-family: 'Roboto', sans-serif !important;
-    }
-    h4 {
-      font-weight: 300 !important;
-      font-size: 1.1em;
-      font-family: 'Roboto', sans-serif !important;
-    }
-    p {
-      font-family: 'Roboto', sans-serif !important;
-      font-size: 0.9em;
-      b {
-        text-transform: uppercase;
-        text-decoration: underline;
-      }
-    }
+}
+
+/* Keep table headers one line */
+.linkage-table thead th {
+  white-space: nowrap;
+}
+
+/* tiny question-mark icon beside headers */
+.help-icon {
+  margin-left: 6px;
+  font-size: 12px;
+  color: #777;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.help-icon:hover {
+  color: #333;
+}
+
+/* Wider tooltips for column-help icons */
+.tooltip-help .tooltip-inner {
+  max-width: 420px;
+  /* override Bootstrap's 200px */
+  width: 420px;
+  /* optional: lock width */
+  white-space: normal;
+  text-align: left;
+}
+
+.tooltip-help .tooltip-inner code {
+  white-space: nowrap;
+}
+
+.tooltip-help .tooltip-inner ul {
+  margin: 6px 0 0 16px;
+  padding: 0;
+}
+
+/* Wider, auto-sized tooltips just for our help icons */
+.tooltip-help .tooltip-inner {
+  display: inline-block;
+  /* shrink-to-fit width */
+  width: auto;
+  /* no fixed width */
+  max-width: 560px;
+  /* safety cap; tweak to taste */
+  white-space: normal;
+  /* allow blocks to define wrapping */
+  text-align: left;
+}
+
+/* Each logical line stays on one line */
+.tooltip-help .tt-line {
+  display: block;
+  /* becomes its own line */
+  white-space: nowrap;
+  /* never wraps mid-line */
+}
+
+/* keep codes on one line */
+.tooltip-help .tooltip-inner code {
+  white-space: nowrap;
+}
+
+/* Truncated inline blocks that show full text on hover via tooltip */
+.dataset-ellipsis {
+  display: block;
+  /* take the available cell width */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Wider, wrapping tooltip for long paths/titles */
+.tooltip-long .tooltip-inner {
+  max-width: 640px;
+  /* cap so it doesn't span the world */
+  white-space: normal;
+  /* allow wrapping */
+  text-align: left;
+}
+
+
+/* adjust to taste */
+
+/* ===== Submission detail page ===== */
+
+/* Top “Edit Submission” bar */
+.collection-actions {
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+  padding: 8px 12px;
+  margin: 12px 0 24px;
+}
+
+.actions-bar {
+  margin: 16px 0 24px;
+}
+
+.actions-bar .btn-toolbar {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.actions-bar .btn-group {
+  display: flex;
+  gap: 10px;
+}
+
+.actions-bar .btn-group.secondary-actions {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 768px) {
+  .actions-bar .btn-group {
+    width: 100%;
   }
+
+  .actions-bar .btn {
+    width: 100%;
+  }
+}
+
+/* Minor spacing tweaks for the info list */
+.submission-info .list-group-item h4 {
+  margin: 0 0 6px;
+  font-weight: 600;
+}
+
+/* Primary buttons under the info list */
+.below-info-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 28px 0 48px;
+}
+
+.below-info-actions .btn {
+  min-width: 260px;
+}
+
+/* NOTE: this was mistyped as ".btn btn-info" in the template.
+   It must be ".btn.btn-info" (two classes on the same element). */
+@media (max-width: 768px) {
+  .below-info-actions .btn {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+/* Checkbox spacing used in Tags sections */
+.styled-checkbox-container .styled-checkbox {
+  padding: 0 !important;
+  margin-bottom: 5px !important;
+}
+
+.styled-checkbox-container .styled-checkbox input[type="checkbox"] {
+  margin-right: 5px !important;
+}
+
+.styled-checkbox-container .styled-checkbox label {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.styled-checkbox-container .styled-checkbox label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+
+
+
+

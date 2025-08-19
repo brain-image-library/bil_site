@@ -1,62 +1,89 @@
-<head>
-<script src="/static/ingest/sendemail.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-</head>
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %} 
+{% load static bootstrap4 %}
+
 {% block wide %}
+{# ——— load your JS first, in the body ——— #}
+<script src="{% static 'ingest/sendemail.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
+
 {% if pi %}
 <a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+  <button class="cancel btn btn-primary" formnovalidate>
+    Return to PI Dashboard
+  </button>
 </a>
 {% endif %}
+
 <br>
 <h1>Request to Publicize Submission</h1>
-<p>Select checkboxes for each submission to request validation and publication. This will submit a ticket to BIL support and be processed</p>
+<p>
+  Select checkboxes for each submission to request validation and publication.
+  This will submit a ticket to BIL support and be processed.
+</p>
+
 <form id="rowform">
-{% csrf_token %}
-<table id="CollectionTable" class="table">
-<thead>
-<tr>
-<th></th>
-<th>Name</th>
-<th>Description</th>
-<th>Organization Lab</th>
-<th>Lab Name</th>
-<th>Project Funder ID</th>
-<th>Project Funder</th>
-<th>BIL Uuid</th>
-<th>Data Path</th>
-<th>Locked</th>
-<th>Submission Status</th>
-<th>Validation Status</th>
-</tr>
-</thead>
-<tbody>
-{% for collection in collections %}
-<tr>
-<td><input type="checkbox" id="collection_is_checked"></td>
-<td>{{collection.name}}</td>
-<td>{{collection.description}}</td>
-<td>{{collection.organization_name}}</td>
-<td>{{collection.lab_name}}</td>
-<td>{{collection.project_funder_id}}</td>
-<td>{{collection.project_funder}}</td>
-<td id="bilUuid">{{collection.bil_uuid}}</td>
-<td>{{collection.data_path}}</td>
-<td>{{collection.locked}}</td>
-<td>{{collection.submission_status}}</td>
-<td>{{collection.validation_status}}</td>
-</tr>
-{% endfor %}
-</table>
+  {% csrf_token %}
+  <table id="CollectionTable" class="table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Name</th>
+        <th>Description</th>
+        <th>Organization Lab</th>
+        <th>Lab Name</th>
+        <th>Project Funder ID</th>
+        <th>Project Funder</th>
+        <th>BIL Uuid</th>
+        <th>Data Path</th>
+        <th>Locked</th>
+        <th>Submission Status</th>
+        <th>Validation Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in collections %}
+      <tr>
+        <td>
+          <input type="checkbox" id="collection_is_checked" class="collection-checkbox" />
+        </td>
+        <td>{{ c.name }}</td>
+        <td>{{ c.description }}</td>
+        <td>{{ c.organization_name }}</td>
+        <td>{{ c.lab_name }}</td>
+        <td>{{ c.project_funder_id }}</td>
+        <td>{{ c.project_funder }}</td>
+        <td id="bilUuid">{{ c.bil_uuid }}</td>
+        <td>{{ c.data_path }}</td>
+        <td>{{ c.locked }}</td>
+        <td>{{ c.submission_status }}</td>
+        <td>{{ c.validation_status }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </form>
-<button class="btn btn-primary" onclick="collection_send();">Submit Validation Request</button>
+
+<button id="submitBtn" class="btn btn-primary" onclick="collection_send();" disabled>
+  Submit Validation Request
+</button>
+
 <hr>
 
 <a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+  <button class="cancel btn btn-primary" formnovalidate>
+    Cancel
+  </button>
 </a>
 
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const checkboxes = document.querySelectorAll('.collection-checkbox');
+    const btn = document.getElementById('submitBtn');
+    function updateBtn() {
+      btn.disabled = !Array.from(checkboxes).some(cb => cb.checked);
+    }
+    checkboxes.forEach(cb => cb.addEventListener('change', updateBtn));
+    updateBtn();
+  });
+</script>
 {% endblock %}
-

@@ -30,8 +30,8 @@ from .mne import Mne
 from .specimen_portal import Specimen_Portal
 from .field_list import required_metadata
 from .filters import CollectionFilter
-from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag, ConsortiumTag
+from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice, DatasetLinkageForm
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag, ConsortiumTag, DatasetLinkage
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -39,6 +39,11 @@ import json
 from datetime import datetime
 import os
 from django.middleware.csrf import get_token
+import requests
+from django.utils.timezone import now
+from django.db import transaction
+
+from django.db.models import OuterRef, Subquery, Q
 
 
 def logout(request):
@@ -63,9 +68,11 @@ def signup(request):
 def index(request):
     """ The main/home page. """
     current_user = request.user
+
+    # --- Step 1: Ensure People and ProjectPerson exist ---
     try:
-        people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+        people = People.objects.get(auth_user_id_id=current_user.id)
+        project_person = ProjectPeople.objects.filter(people_id=people.id).all()
     except ObjectDoesNotExist:
         people = People()
         people.name = current_user.username
@@ -75,29 +82,42 @@ def index(request):
         people.is_bil_admin = False
         people.auth_user_id = current_user
         people.save()
+
         project = Project()
         pname = current_user.username + ' Project 1'
         project.name = pname
         project.funded_by = ''
         project.is_biccn = False
         project.save()
+
         save_project_id(project)
+
         project_people = ProjectPeople()
         project_people.project_id = project
         project_people.people_id = people
         project_people.is_pi = False
         project_people.is_po = False
         project_people.save()
+
+    # --- Step 2: Ensure user-specific Consortium exists ---
+    user_consortium_short_name = f"user_{current_user.username}"
+    Consortium.objects.get_or_create(
+        short_name=user_consortium_short_name,
+        defaults={"long_name": f"User Tags for {current_user.username}"}
+    )
+
+    # --- Step 3: Routing logic based on role ---
     try:
-        people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
+        people = People.objects.get(auth_user_id_id=current_user.id)
+        project_person = ProjectPeople.objects.filter(people_id=people.id).all()
         if people.is_bil_admin:
-            return render(request, 'ingest/bil_index.html', {'people':people})
-        for attribute in project_person: 
+            return render(request, 'ingest/bil_index.html', {'people': people})
+        for attribute in project_person:
             if attribute.is_pi:
                 return render(request, 'ingest/pi_index.html', {'project_person': attribute})
     except Exception as e:
         print(e)
+
     return render(request, 'ingest/index.html')
 
 
@@ -261,21 +281,25 @@ def manageCollections(request):
 @login_required
 def project_form(request):
     current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-    allprojects=[]
+    people = People.objects.get(auth_user_id_id=current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id=people.id)
+
+    allprojects = []
     for row in project_person:
-        project_id = row.project_id_id
-        project =  Project.objects.get(id=project_id)
-        allprojects.append(project)    
-        
-    consortia = Consortium.objects.all
-    for attribute in project_person:
-        if attribute.is_pi:
-            pi = True
-        else:
-            pi = False
-    return render(request, 'ingest/project_form.html', {'pi':pi, 'allprojects':allprojects, 'consortia':consortia})
+        project = Project.objects.get(id=row.project_id_id)
+        allprojects.append(project)
+
+    # Filter out user-specific consortia (e.g., user_luketuite)
+    consortia = Consortium.objects.exclude(short_name__startswith='user_')
+
+    # Determine PI status
+    pi = any(attribute.is_pi for attribute in project_person)
+
+    return render(request, 'ingest/project_form.html', {
+        'pi': pi,
+        'allprojects': allprojects,
+        'consortia': consortia,
+    })
 
 # takes the data from project_form
 @login_required
@@ -549,8 +573,57 @@ def collection_send(request):
         sender,
         recipient
              )
+        _create_asana_tasks(items, user_name)
     messages.success(request, 'Request succesfully sent')
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+
+def _create_asana_tasks(bil_uuids, username):
+    """Create Asana tasks for the submitted collections (UUID only)."""
+
+    token = settings.ASANA_PAT
+    project_id = settings.ASANA_PROJECT_ID
+    gid = settings.ASANA_GID  # Section ID for "Submitted/Resubmitted"
+
+    if not token or not project_id or not gid:
+        return
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    task_url = "https://app.asana.com/api/1.0/tasks"
+    section_url = f"https://app.asana.com/api/1.0/sections/{gid}/addTask"
+
+    for bil_uuid in bil_uuids:
+        try:
+            payload = {
+                "data": {
+                    "name": bil_uuid,  # Just the UUID
+                    "notes": f"User {username} submitted collection {bil_uuid}",
+                    "projects": [project_id],
+                }
+            }
+
+            # Create the task
+            response = requests.post(task_url, headers=headers, json=payload, timeout=10)
+            response.raise_for_status()
+            task_gid = response.json()["data"]["gid"]
+
+            # Move the task into the section
+            section_payload = {
+                "data": {
+                    "task": task_gid
+                }
+            }
+            section_response = requests.post(section_url, headers=headers, json=section_payload, timeout=10)
+            section_response.raise_for_status()
+
+            print(f"✅ Created Asana task for UUID: {bil_uuid}")
+
+        except Exception as exc:
+            print(f"❌ Asana task creation failed for {bil_uuid}: {exc}")
+
 
 @login_required
 def collection_create(request):
@@ -635,7 +708,7 @@ def collection_create(request):
             messages.success(request, 'Collection successfully created!! Please proceed with metadata upload')
             return redirect('ingest:descriptive_metadata_upload', coll_id.id)
     else:
-        form = CollectionForm()
+        form = CollectionForm(request=request)
 
     project_list = []
     person = People.objects.get(auth_user_id=request.user.id)
@@ -800,8 +873,13 @@ def collection_detail(request, pk):
             consortium = project_consortium.consortium
             consortium_tags.update(ConsortiumTag.objects.filter(consortium=consortium).values_list('tag', flat=True))
 
+        # Include tags from BIL consortium
         bil_tags = ConsortiumTag.objects.filter(consortium__short_name='BIL').values_list('tag', flat=True)
         consortium_tags.update(bil_tags)
+
+        # Pull user-specific tags
+        user_consortium_short = f"user_{current_user.username}"
+        user_tags = ConsortiumTag.objects.filter(consortium__short_name=user_consortium_short).values_list('tag', flat=True)
 
         sheets = Sheet.objects.filter(collection_id=collection.id).last()
         if sheets:
@@ -812,6 +890,7 @@ def collection_detail(request, pk):
                 datasets_list.append(d)
 
         consortium_tags = sorted(consortium_tags)
+        user_tags = sorted(user_tags)
         used_tags = sorted(used_tags)
     except ObjectDoesNotExist:
         raise Http404
@@ -820,15 +899,21 @@ def collection_detail(request, pk):
 
     table = DescriptiveMetadataTable(
         DescriptiveMetadata.objects.filter(user=request.user, collection=collection))
+    
     return render(
         request,
         'ingest/collection_detail.html',
-        {'table': table,
-         'collection': collection,
-         'descriptive_metadata_queryset': descriptive_metadata_queryset,
-         'pi': pi, 'datasets_list': datasets_list, 'consortium_tags': consortium_tags, 'used_tags': used_tags})
-
-
+        {
+            'table': table,
+            'collection': collection,
+            'descriptive_metadata_queryset': descriptive_metadata_queryset,
+            'pi': pi,
+            'datasets_list': datasets_list,
+            'consortium_tags': consortium_tags,
+            'user_tags': user_tags,
+            'used_tags': used_tags
+        }
+    )
 
 @login_required
 def add_tags(request):
@@ -932,6 +1017,111 @@ def delete_tag_all(request):
                 return JsonResponse({'status': 'error', 'message': 'Collection not found.'})
     return JsonResponse({'status': 'error', 'message': 'Invalid request.'})
 
+@login_required
+def create_dataset_linkage(request, collection_id):
+    collection = get_object_or_404(Collection, id=collection_id)
+
+    # All existing linkages for datasets in this collection
+    existing_linkages = (
+        DatasetLinkage.objects
+        .filter(data_id_1_bil__v2_ds_id__sheet__collection_id=collection.id)
+        .select_related("data_id_1_bil__v2_ds_id")
+        .order_by("data_id_1_bil__v2_ds_id__title")
+    )
+
+    # Datasets that already have at least one linkage
+    linked_dataset_ids = set(
+        existing_linkages.values_list("data_id_1_bil__v2_ds_id_id", flat=True).distinct()
+    )
+
+    # Annotate BIL_ID for all datasets in the collection
+    bil_id_subq = BIL_ID.objects.filter(v2_ds_id=OuterRef("pk")).values("id")[:1]
+    all_datasets = (
+        Dataset.objects
+        .filter(sheet__collection_id=collection.id)
+        .annotate(bil_id=Subquery(bil_id_subq))
+        .order_by("title")
+    )
+
+    # Show the form only for datasets that do NOT yet have a linkage
+    datasets_to_link = all_datasets.exclude(id__in=linked_dataset_ids)
+
+    # Preload BIL IDs for the Select2 search helper (optional)
+    bil_ids = list(BIL_ID.objects.values("bil_id", "v2_ds_id__title"))
+    bil_id_data = [
+        {"bil_id": b["bil_id"], "dataset_title": b.get("v2_ds_id__title") or ""}
+        for b in bil_ids
+    ]
+
+    if request.method == "POST":
+        try:
+            created = 0
+            with transaction.atomic():
+                # Only process rows we actually rendered
+                for ds in datasets_to_link:
+                    code_id = (request.POST.get(f"code_id_{ds.id}") or "").strip()
+                    data_id_2 = (request.POST.get(f"data_id_2_{ds.id}") or "").strip()
+                    relationship = (request.POST.get(f"relationship_{ds.id}") or "").strip()
+                    description = (request.POST.get(f"description_{ds.id}") or "").strip()
+
+                    if not (code_id and data_id_2 and relationship):
+                        continue
+
+                    bil_id_instance = BIL_ID.objects.filter(v2_ds_id=ds).first()
+                    if not bil_id_instance:
+                        continue
+
+                    # Skip duplicate rows
+                    if DatasetLinkage.objects.filter(
+                        data_id_1_bil=bil_id_instance,
+                        code_id=code_id,
+                        data_id_2=data_id_2,
+                        relationship=relationship,
+                    ).exists():
+                        continue
+
+                    DatasetLinkage.objects.create(
+                        data_id_1_bil=bil_id_instance,
+                        code_id=code_id,
+                        data_id_2=data_id_2,
+                        relationship=relationship,
+                        description=description,
+                    )
+                    created += 1
+
+            messages.success(request, f"Created {created} linkage{'s' if created != 1 else ''}.")
+            return redirect("ingest:create_dataset_linkage", collection_id=collection.id)
+
+        except Exception as e:
+            messages.error(request, f"Error saving dataset linkages: {e}")
+
+    return render(
+        request,
+        "ingest/create_dataset_linkage.html",
+        {
+            "collection": collection,
+            "existing_linkages": existing_linkages,
+            "datasets_to_link": datasets_to_link,
+            "bil_id_data": bil_id_data,
+        },
+    )
+
+def get_bil_ids(request):
+    query = request.GET.get("q", "").strip()
+    
+    # Get all BIL_IDs, optionally filtering by the search term
+    bil_ids = BIL_ID.objects.all()
+    if query:
+        bil_ids = bil_ids.filter(bil_id__icontains=query) | bil_ids.filter(v2_ds_id__title__icontains=query)
+    
+    data = [
+        {
+            "bil_id": bil.bil_id,
+            "dataset_title": bil.v2_ds_id.title if bil.v2_ds_id else ""  # Avoid NoneType errors
+        }
+        for bil in bil_ids
+    ]
+    return JsonResponse(data, safe=False)
 
 @login_required
 def ondemandSubmission(request, pk):
@@ -2605,9 +2795,8 @@ def descriptive_metadata_upload(request, associated_collection):
         spreadsheet_file = request.FILES['spreadsheet_file']
 
         fs = FileSystemStorage(location=datapath)
-        name_with_path = datapath + '/' + spreadsheet_file.name
-        fs.save(name_with_path, spreadsheet_file)
-        filename = name_with_path
+        unique_name = fs.save(spreadsheet_file.name, spreadsheet_file)
+        filename = os.path.join(datapath, unique_name)
 
         version1 = metadata_version_check(filename)
         
