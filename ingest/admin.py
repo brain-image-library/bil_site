@@ -56,8 +56,10 @@ class SWCSInline(admin.TabularInline):
 class ConsortiaInline(admin.TabularInline):
     model = Consortium
 
-class ProjectConsortiumInline(admin.TabularInline):
-    model = ProjectConsortium
+@admin.register(ProjectConsortium)
+class ProjectConsortiumAdmin(admin.ModelAdmin):
+    list_display = [field.name for field in ProjectConsortium._meta.fields]
+    search_fields = ['project__name', 'consortium__short_name']
 
 class BIL_IDInline(admin.TabularInline):
     model = BIL_ID
@@ -215,9 +217,6 @@ class SpecimenAdmin(admin.ModelAdmin):
 admin.site.register(Specimen, SpecimenAdmin)
 
 #class ProjectConsortiumAdmin(admin.ModelAdmin):
-
-
-admin.site.register(ProjectConsortium)
     
 
 admin.site.register(ConsortiumTag)

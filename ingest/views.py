@@ -41,9 +41,11 @@ import os
 from django.middleware.csrf import get_token
 import requests
 from django.utils.timezone import now
+from django.utils import timezone
 from django.db import transaction
 
-from django.db.models import OuterRef, Subquery, Q
+from django.db.models import OuterRef, Subquery, Q, Exists
+from pathlib import Path
 
 
 def logout(request):
@@ -549,33 +551,253 @@ class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
 
 @login_required
 def collection_send(request):
-    content = json.loads(request.body)
-    items = []
-    user_name = request.user
-    for item in content:
-        items.append(item['bil_uuid'])
-        coll = Collection.objects.get(bil_uuid = item['bil_uuid'])
-        coll_id = Collection.objects.get(id = coll.id)
-        person = People.objects.get(name = user_name)
-        person_id = person.id
-        time = datetime.now()
-        event = EventsLog(collection_id = coll_id, people_id_id = person.id, project_id_id = coll.project_id, notes = '', timestamp = time, event_type = 'request_validation')
-        event.save()
-    if request.method == "POST":
-        subject = '[BIL Validations] New Validation Request'
-        sender = 'ltuite96@psc.edu'
-        message = F'The following collections have been requested to be validated {items} by {user_name}@psc.edu'
-        recipient = ['ltuite96@psc.edu']
-        
-        send_mail(
-        subject,
-        message,
-        sender,
-        recipient
-             )
-        _create_asana_tasks(items, user_name)
-    messages.success(request, 'Request succesfully sent')
-    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        payload = json.loads(request.body or "[]")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
+
+    # Normalize to list of bil_uuids
+    bil_uuids = []
+    for item in payload:
+        if isinstance(item, dict) and "bil_uuid" in item:
+            bil_uuids.append(item["bil_uuid"])
+        elif isinstance(item, str):
+            bil_uuids.append(item)
+    bil_uuids = list(dict.fromkeys(bil_uuids))
+
+    sent = []
+    skipped = {
+        "missing_metadata": [],
+        "already_requested": [],
+        "already_success": [],
+        "not_found": [],
+    }
+    curation_issues = {}
+
+    user = request.user
+    user_email = getattr(user, "email", "") or f"{user.username}@psc.edu"
+
+    valid_for_validation = []
+
+    # --- Iterate through each selected submission ---
+    for bu in bil_uuids:
+        try:
+            coll = Collection.objects.get(bil_uuid=bu, user=user)
+        except Collection.DoesNotExist:
+            skipped["not_found"].append(
+                {"uuid": bu, "reason": "No submission found for this user."}
+            )
+            continue
+
+        if (
+            coll.submission_status == Collection.SUCCESS
+            and coll.validation_status == Collection.SUCCESS
+        ):
+            skipped["already_success"].append(
+                {"uuid": bu, "reason": "This submission has already been validated."}
+            )
+            continue
+
+        has_sheet = Sheet.objects.filter(collection=coll).exists()
+        if not has_sheet:
+            skipped["missing_metadata"].append(
+                {"uuid": bu, "reason": "No metadata spreadsheet uploaded yet."}
+            )
+            continue
+
+        already_req = EventsLog.objects.filter(
+            collection_id=coll, event_type="request_validation"
+        ).exists()
+        if already_req:
+            skipped["already_requested"].append(
+                {"uuid": bu, "reason": "Validation already requested for this collection."}
+            )
+            continue
+
+        # --- Run pre-curation directory check BEFORE logging event ---
+        curation_result = check_collection_directories(coll, user)
+        if curation_result["status"] != "ok":
+            # Store issue per collection
+            curation_issues[bu] = curation_result
+            continue
+
+        valid_for_validation.append(coll)
+
+    # --- Proceed only with valid submissions ---
+    for coll in valid_for_validation:
+        try:
+            person = People.objects.get(auth_user_id_id=user.id)
+            EventsLog.objects.create(
+                collection_id=coll, 
+                people_id_id=person.id,
+                project_id_id=coll.project_id,
+                timestamp=timezone.now(),
+                event_type="request_validation",
+            )
+        except People.DoesNotExist:
+            EventsLog.objects.create(
+                collection_id=coll, 
+                project_id_id=coll.project_id,
+                notes="(No People record found for user)",
+                timestamp=timezone.now(),
+                event_type="request_validation",
+            )
+
+        sent.append(coll.bil_uuid)
+
+    # --- Send email & Asana task only for successfully sent ones ---
+    if sent:
+        subject = "[BIL Validations] New Validation Request"
+        sender = "noreply@psc.edu"
+        recipient = ["ltuite96@psc.edu"]
+        message = (
+            f"The following collections have been requested for validation by {user_email}:\n\n"
+            + "\n".join(f"• {uuid}" for uuid in sent)
+        )
+        send_mail(subject, message, sender, recipient)
+        try:
+            _create_asana_tasks(sent, user.username)
+        except Exception as exc:
+            print(f"Asana task creation failed: {exc}")
+
+    # --- Return combined results ---
+    return JsonResponse({
+        "sent": sent,
+        "skipped": skipped,
+        "curation_issues": curation_issues,
+        "message": (
+            "Some submissions could not be sent for validation."
+            if curation_issues or any(skipped.values())
+            else "All submissions successfully sent for validation."
+        ),
+        "redirect": reverse("ingest:index"),
+    })
+
+
+def check_collection_directories(coll, current_user):
+    """
+    Verifies that the filesystem directory structure matches expected dataset directories
+    using the collection's stored data_path. Returns a structured dict for UI display.
+    """
+
+    # Use the path recorded in the collection itself
+    base_dir = Path(coll.data_path).expanduser()
+
+    # --- 1. Directory missing entirely ---
+    if not base_dir.exists():
+        return {
+            "status": "missing_path",
+            "title": "Collection Directory Missing",
+            "message": (
+                f"The collection path recorded in metadata ({coll.data_path}) "
+                "does not exist on disk."
+            ),
+            "suggestion": (
+                "Ensure this directory exists and is accessible. If this is a new "
+                "submission, confirm that the staging area has been created."
+            ),
+            "missing": [],
+            "extra": [],
+        }
+
+    # --- 2. Permission error accessing directory ---
+    try:
+        actual_dirs = sorted([p.name for p in base_dir.iterdir() if p.is_dir()])
+    except PermissionError:
+        return {
+            "status": "permission_error",
+            "title": "Permission Error",
+            "message": (
+                f"Permission denied when reading {base_dir}. "
+                "The web service or test user may not have filesystem access."
+            ),
+            "suggestion": (
+                "Verify directory ownership and permissions. "
+                "The process running Django must have read access to all subdirectories."
+            ),
+            "missing": [],
+            "extra": [],
+        }
+
+    # --- 3. Compare expected vs actual dataset subdirectories ---
+    datasets = Dataset.objects.filter(sheet__collection=coll)
+    expected_dirs = sorted([
+        Path(ds.bildirectory).name.strip("/")
+        for ds in datasets if ds.bildirectory
+    ])
+
+    missing = [d for d in expected_dirs if d not in actual_dirs]
+    extra = [d for d in actual_dirs if d not in expected_dirs]
+
+    # --- 4. No issues ---
+    if not missing and not extra:
+        return {
+            "status": "ok",
+            "title": "Directories Verified",
+            "message": "All expected dataset directories are present and match metadata.",
+            "missing": [],
+            "extra": [],
+        }
+
+    # --- 5. Directory mismatch ---
+    details = []
+    if missing:
+        details.append(f"Missing expected directories: {', '.join(missing)}")
+    if extra:
+        details.append(f"Unexpected extra directories found: {', '.join(extra)}")
+
+    return {
+        "status": "mismatch",
+        "title": "Directory Mismatch Detected",
+        "message": (
+            "The directories present under this collection’s data_path do not match "
+            "the dataset directories listed in metadata."
+        ),
+        "details": " | ".join(details),
+        "suggestion": (
+            "Add any missing directories listed in metadata, or remove any extras "
+            "not referenced there, before re-submitting for validation."
+        ),
+        "missing": missing,
+        "extra": extra,
+    }
+
+@login_required
+def refresh_tables(request):
+    """Return updated eligible and validation-in-progress table HTML (mirrors SubmitRequestCollectionList logic)."""
+    user = request.user
+
+    # Base set: user’s collections excluding already fully completed ones
+    base_qs = (Collection.objects
+               .filter(user=user)
+               .exclude(Q(submission_status=Collection.SUCCESS) &
+                        Q(validation_status=Collection.SUCCESS)))
+
+    # Subqueries
+    has_sheet_sq = Sheet.objects.filter(collection=OuterRef('pk'))
+    has_requested_sq = EventsLog.objects.filter(
+        collection_id=OuterRef('pk'),
+        event_type='request_validation',
+    )
+
+    # Annotate and categorize
+    annotated = (base_qs
+                 .annotate(has_sheet=Exists(has_sheet_sq),
+                           has_requested=Exists(has_requested_sq)))
+
+    eligible = annotated.filter(has_sheet=True, has_requested=False)
+    needs_metadata = annotated.filter(has_sheet=False)
+    already_requested = annotated.filter(has_requested=True)
+
+    return render(request, "ingest/_tables_refresh.html", {
+        "eligible_collections": eligible.distinct(),
+        "needs_metadata_collections": needs_metadata.distinct(),
+        "already_requested_collections": already_requested.distinct(),
+        "pi": People.objects.filter(auth_user_id_id=user.id).exists(),
+    })
 
 def _create_asana_tasks(bil_uuids, username):
     """Create Asana tasks for the submitted collections (UUID only)."""
@@ -648,7 +870,10 @@ def collection_create(request):
         bil_uuid = cache.get('bil_uuid')
         bil_user = cache.get('bil_user')
     else:
-        top_level_dir = settings.STAGING_AREA_ROOT
+        #FOR PRODUCTION
+        #top_level_dir = settings.STAGING_AREA_ROOT
+        #FOR LOCAL DEVELOPMENT
+        top_level_dir = '/Users/luketuite/newbil/aug_bil_site/lz'
         #shortens uuid
         uuidhex = (uuid.uuid4()).hex
         str1 = uuidhex[0:16]
@@ -780,39 +1005,61 @@ class SubmitValidateCollectionList(LoginRequiredMixin, SingleTableMixin, FilterV
         return kwargs
 
 class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
-    def IsPi(request):
-        current_user = request.user
-        people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-        for attribute in project_person:
-            if attribute.is_pi:
-                pi = True
-            else:
-                pi = False
-        return render(request, {'pi':pi})
-    """ A list of all a user's collections. """
-
+    """ A list of all a user's collections, split into buckets for validation. """
     table_class = CollectionRequestTable
     model = Collection
     template_name = 'ingest/submit_request_collection_list.html'
     filterset_class = CollectionFilter
+    success_url = reverse_lazy('ingest:collection_list')
 
     def get_queryset(self, **kwargs):
         return Collection.objects.filter(user=self.request.user)
 
+    def _is_pi(self, request):
+        try:
+            person = People.objects.get(auth_user_id_id=request.user.id)
+            return ProjectPeople.objects.filter(people_id=person.id, is_pi=True).exists()
+        except People.DoesNotExist:
+            return False
+
     def get_context_data(self, **kwargs):
-        # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
-        context['collections'] = Collection.objects.filter(user=self.request.user)
+
+        # Base set: user’s collections excluding already fully completed ones
+        base_qs = (Collection.objects
+                   .filter(user=self.request.user)
+                   .exclude(Q(submission_status=Collection.SUCCESS) &
+                            Q(validation_status=Collection.SUCCESS)))
+
+        # Subqueries (no need for related_name on models)
+        has_sheet_sq = Sheet.objects.filter(collection=OuterRef('pk'))
+        has_requested_sq = EventsLog.objects.filter(
+            collection_id=OuterRef('pk'),
+            event_type='request_validation',
+        )
+
+        annotated = (base_qs
+                     .annotate(has_sheet=Exists(has_sheet_sq),
+                               has_requested=Exists(has_requested_sq)))
+
+        eligible = annotated.filter(has_sheet=True, has_requested=False)
+        needs_metadata = annotated.filter(has_sheet=False)
+        already_requested = annotated.filter(has_requested=True)
+
+        context.update({
+            'pi': self._is_pi(self.request),
+            'eligible_collections': eligible.distinct(),
+            'needs_metadata_collections': needs_metadata.distinct(),
+            'already_requested_collections': already_requested.distinct(),
+        })
         return context
 
     def get_filterset_kwargs(self, filterset_class):
-        """ Sets the default collection filter status. """
+        """Default list shows NOT_SUBMITTED by default (your original behavior)."""
         kwargs = super().get_filterset_kwargs(filterset_class)
         if kwargs["data"] is None:
             kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
         return kwargs
-    success_url = reverse_lazy('ingest:collection_list')
 
 class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     """ A list of all a user's collections. """
@@ -2784,10 +3031,10 @@ def descriptive_metadata_upload(request, associated_collection):
         associated_collection = Collection.objects.get(id = associated_collection)
 
         # for production
-        datapath = associated_collection.data_path.replace("/lz/","/etc/")
+        #datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-        #datapath = '/Users/luketuite/shared_bil_dev' 
+        datapath = '/Users/luketuite/shared_bil_dev' 
 
         # for development locally
         #datapath = '/Users/luketuite/shared_bil_dev' 
