@@ -1,0 +1,67 @@
+<!-- Eligible Table -->
+<table id="EligibleTable" class="table">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Organization Lab</th>
+            <th>Lab Name</th>
+            <th>Project Funder ID</th>
+            <th>Project Funder</th>
+            <th>BIL Uuid</th>
+            <th>Data Path</th>
+            <th>Submission Status</th>
+            <th>Validation Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in eligible_collections %}
+        <tr>
+            <td><input type="checkbox" class="collection-checkbox" value="{{ c.bil_uuid }}"></td>
+            <td>{{ c.name }}</td>
+            <td>{{ c.description }}</td>
+            <td>{{ c.organization_name }}</td>
+            <td>{{ c.lab_name }}</td>
+            <td>{{ c.project_funder_id }}</td>
+            <td>{{ c.project_funder }}</td>
+            <td class="bilUuid">{{ c.bil_uuid }}</td>
+            <td>{{ c.data_path }}</td>
+            <td>{{ c.submission_status }}</td>
+            <td>{{ c.validation_status }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="12"><em>No eligible submissions.</em></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Validation In Progress Table -->
+<table id="AlreadyRequestedTable" class="table table-sm">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>BIL Uuid</th>
+            <th>Submission Status</th>
+            <th>Validation Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for c in already_requested_collections %}
+        <tr>
+            <td>{{ c.name }}</td>
+            <td>{{ c.description }}</td>
+            <td>{{ c.bil_uuid }}</td>
+            <td>{{ c.submission_status }}</td>
+            <td>{{ c.validation_status }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5"><em>No pending validation requests.</em></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
