@@ -1,7 +1,6 @@
 <head>
   <script src="/static/ingest/metadataloadingindicator.js"></script>
-  <script type="text/javascript" 
-    src="http://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>  
+  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 </head>
 
 {% extends 'ingest/wide.html' %}
@@ -20,29 +19,34 @@
 <h1>Upload Metadata Spreadsheet</h1>
 <h3>Please note that BIL has adopted a new metadata schema. Please use the template provided below.</h3>
 <form method="post" enctype="multipart/form-data">
-{% include 'ingest/metadata_questions.html' %}
+  {% include 'ingest/metadata_questions.html' %}
 
-<h3>Step 3 of 3: Upload metadata for associated submission</h3>
-{% if collections %}
-<ul class="list-group">
-  <li class="list-group-item">Download and fill out either the <a href="{% static 'ingest/BIL_Metadata_TemplateV3.xlsx' %}">Excel</a> or <a href="{% static '/ingest/BIL_Metadata_TemplateV3.ods' %}">LibreOffice Calc</a> template. </li>
-  <li class="list-group-item">Choose a submission, then upload your metadata.</li>
-</ul>
-  <hr>  
-    {% csrf_token %}
-    {{ form }}
-    </br>
+  <h3>Step 3 of 3: Upload metadata for associated submission</h3>
+  {% if collections %}
+  <ul class="list-group">
+    <li class="list-group-item">
+      Download and fill out either the
+      <a href="{% static 'ingest/BIL_Metadata_TemplateV3.xlsx' %}">Excel</a> or
+      <a href="{% static '/ingest/BIL_Metadata_TemplateV3.ods' %}">LibreOffice Calc</a> template.
+    </li>
+    <li class="list-group-item">Choose a submission, then upload your metadata.</li>
+  </ul>
+  <hr>
+  {% csrf_token %}
+  {{ form }}
+  </br>
 
-    </br>
-    <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata" onclick="document.getElementById('file').click();" />
-    
-    <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();loadSpinner();" />
-    </br>
-  </form>
+  </br>
+  <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata"
+    onclick="document.getElementById('file').click();" />
+
+  <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();loadSpinner();" />
+  </br>
+</form>
 {% else %}
-  <div class="alert alert-info">
-    <p>You need to create a submission before uploading a metadata spreadsheet</p>
-  </div>
+<div class="alert alert-info">
+  <p>You need to create a submission before uploading a metadata spreadsheet</p>
+</div>
 {% endif %}
 
 </br>
@@ -64,43 +68,53 @@
   </div>
 </div>
 
-  <script>
-    let uploadMetadataButton = document.getElementById('UploadMetadata').disabled = true;
-    let radio1 = document.getElementById('ingest_method_1');
-    let radio2 = document.getElementById('ingest_method_2');
-    let radio3 = document.getElementById('ingest_method_3');
-    let radio4 = document.getElementById('ingest_method_4');
-    let radio5 = document.getElementById('ingest_method_5');
+<script>
+  // Disable upload button until an ingest method is selected
+  let uploadMetadataButton = document.getElementById('UploadMetadata').disabled = true;
+  let radio1 = document.getElementById('ingest_method_1');
+  let radio2 = document.getElementById('ingest_method_2');
+  let radio3 = document.getElementById('ingest_method_3');
+  let radio4 = document.getElementById('ingest_method_4');
+  let radio5 = document.getElementById('ingest_method_5');
+  let radio6 = document.getElementById('ingest_method_6');  // NEW: Spatial ingest
 
-    $(radio1).on('change', () => {
-        if (radio1.checked == true) {
-        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-        }
-     });
-    
-    $(radio2).on('change', () => {
-        if (radio2.checked == true) {
-        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-        }
-     });
+  $(radio1).on('change', () => {
+    if (radio1.checked == true) {
+      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
+    }
+  });
 
-    $(radio3).on('change', () => {
-        if (radio3.checked == true) {
-        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-        }
-     });
+  $(radio2).on('change', () => {
+    if (radio2.checked == true) {
+      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
+    }
+  });
 
-    $(radio4).on('change', () => {
-        if (radio4.checked == true) {
-        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-        }
-     });
+  $(radio3).on('change', () => {
+    if (radio3.checked == true) {
+      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
+    }
+  });
 
-    $(radio5).on('change', () => {
-        if (radio5.checked == true) {
-        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-        }
-     });
+  $(radio4).on('change', () => {
+    if (radio4.checked == true) {
+      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
+    }
+  });
 
-  </script>
+  $(radio5).on('change', () => {
+    if (radio5.checked == true) {
+      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
+    }
+  });
+
+  // NEW: enable when Spatial (ingest_method_6) is selected
+  if (radio6) {
+    $(radio6).on('change', () => {
+      if (radio6.checked == true) {
+        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
+      }
+    });
+  }
+</script>
 {% endblock %}

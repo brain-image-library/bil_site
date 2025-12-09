@@ -10,7 +10,7 @@ from django.db.models import F
 from .models import (
     ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor,
     Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder,
-    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium, BIL_Specimen_ID, SpecimenLinkage, ConsortiumTag, DatasetTag
+    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium, BIL_Specimen_ID, SpecimenLinkage, ConsortiumTag, DatasetTag, Spatial
 )
 
 
@@ -159,10 +159,14 @@ class Dataset(admin.ModelAdmin):
 class Image(admin.ModelAdmin):
     list_display = ("id", "xaxis", "obliquexdim1", "obliquexdim2", "obliquexdim3", "yaxis", "obliqueydim1", "obliqueydim2", "obliqueydim3", "zaxis", "obliquezdim1", "obliquezdim2", "obliquezdim3", "landmarkname", "landmarkx", "landmarky", "landmarkz", "number", "displaycolor", "representation", "flurophore", "stepsizex", "stepsizey", "stepsizez", "stepsizet", "channels", "slices", "z", "xsize", "ysize", "zsize", "gbytes", "files", "dimensionorder", "sheet")
 
+class SpatialInline(admin.TabularInline):
+    model = Spatial
+    show_change_link = True
+    raw_id_fields = ('sheet', 'data_set',)
 @admin.register(Sheet)
 class SheetAdmin(admin.ModelAdmin):
     list_display = ("id","filename", "date_uploaded", "collection",)
-    inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline,]
+    inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline,SpatialInline,]
 
 @admin.register(EventsLog)
 class EventsLogAdmin(admin.ModelAdmin):
@@ -227,3 +231,8 @@ class DatasetTagAdmin(admin.ModelAdmin):
 
 admin.site.register(DatasetTag, DatasetTagAdmin)
 
+@admin.register(Spatial)
+class SpatialAdmin(admin.ModelAdmin):
+    # Adjust these to match your actual field names if needed
+    list_display = ("id", "sheet", "data_set")
+    search_fields = ("sheet__filename", "data_set__bildirectory")

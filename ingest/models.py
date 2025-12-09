@@ -488,6 +488,40 @@ class SWC(models.Model):
     data_set = models.ForeignKey(Dataset, on_delete=models.SET_NULL, blank=True, null=True)
     sheet = models.ForeignKey(Sheet, on_delete=models.SET_NULL, blank=True, null=True)
 
+class Spatial(models.Model):
+    dataavailability = models.CharField(max_length=256)
+    histologicalstainname = models.CharField(max_length=256, blank=True)
+    nuclearstainname = models.CharField(max_length=256, blank=True)
+    probesetdoi = models.CharField(max_length=256, blank=True)
+    probesequencesdoi = models.CharField(max_length=256, blank=True)
+    lighttreatmenttime = models.CharField(max_length=256, blank=True)
+    lighttreatmenttimeunits = models.CharField(max_length=256, blank=True)
+    numbertargetedrna = models.CharField(max_length=256, blank=True)
+    genepanelname = models.CharField(max_length=256, blank=True)
+    platformname = models.CharField(max_length=256, blank=True)
+    machinename = models.CharField(max_length=256, blank=True)
+    machinesoftwareversion = models.CharField(max_length=256, blank=True)
+    numberzsections = models.CharField(max_length=256, blank=True)
+    segmentationmethod = models.CharField(max_length=256, blank=True)
+    segmentationmodel = models.CharField(max_length=256, blank=True)
+    segmentationmethodversion = models.CharField(max_length=256, blank=True)
+    clusteringmethod = models.CharField(max_length=256, blank=True)
+    labeltransfermethod = models.CharField(max_length=256, blank=True)
+    labeltransferreference = models.CharField(max_length=256, blank=True)
+    nuclearimagetransform = models.CharField(max_length=256, blank=True)
+    histologicalimagetransform = models.CharField(max_length=256, blank=True)
+    filtercriteria = models.TextField(blank=True)
+    xyzposition = models.CharField(max_length=256, blank=True)
+    cellid = models.CharField(max_length=256, blank=True)
+    cellcentroidlocation = models.CharField(max_length=256, blank=True)
+    cellareavolume = models.CharField(max_length=256, blank=True)
+
+    data_set = models.ForeignKey(Dataset, on_delete=models.CASCADE)
+    sheet = models.ForeignKey(Sheet, on_delete=models.PROTECT)
+
+    def __str__(self):
+        return f"Spatial metadata for dataset {self.data_set_id}"
+
 class BIL_ID(models.Model):
     bil_id = models.CharField(max_length=256, blank=True, null=True)
     v1_ds_id = models.ForeignKey(DescriptiveMetadata, on_delete=models.SET_NULL, blank=True, null=True)
