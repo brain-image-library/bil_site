@@ -31,7 +31,7 @@ from .specimen_portal import Specimen_Portal
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice, DatasetLinkageForm
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag, ConsortiumTag, DatasetLinkage
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag, ConsortiumTag, DatasetLinkage, Spatial
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -1637,6 +1637,115 @@ def check_swc_sheet(filename):
                 errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
     return errormsg
 
+def check_spatial_sheet(filename):
+    errormsg = ""
+    workbook = xlrd.open_workbook(filename)
+    sheetname = 'Spatial'
+    try:
+        spatial_sheet = workbook.sheet_by_name(sheetname)
+    except xlrd.biffh.XLRDError:
+        errormsg += 'Tab "Spatial" not found in spreadsheet. '
+        return errormsg
+
+    colheads = [
+        'DataAvailability','HistologicalStainName','NuclearStainName','ProbeSetDOI',
+        'ProbeSequencesDOI','LightTreatmentTime','LightTreatmentTimeUnits',
+        'NumberTargetedRNA','GenePanelName','PlatformName','MachineName',
+        'MachineSoftwareVersion','NumberZSections','SegmentationMethod',
+        'SegmentationModel','SegmentationMethodVersion','ClusteringMethod',
+        'LabelTransferMethod','LabelTransferReference','NuclearImageTransform',
+        'HistologicalImageTransform','FilterCriteria','XYZPosition','CellID',
+        'CellCentroidLocation','CellAreaVolume'
+    ]
+
+    cellcols = ['A','B','C','D','E','F','G','H','I','J','K','L','M',
+                'N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+
+    data_availability_cv = ['raw', 'segmented', 'raw and segmented']
+    platform_name_cv = ['MERSCOPE', 'DBit-Seq', 'Slide-Tags', 'Stereo-seq', 'Xenium']
+
+    cols = spatial_sheet.row_values(3)
+
+    # Header check
+    for i in range(len(colheads)):
+        sheet_val = cols[i] if i < len(cols) else ""
+        if sheet_val != colheads[i]:
+            errormsg += (
+                f' Tab: "Spatial" cell heading found: "{sheet_val}" '
+                f'but expected: "{colheads[i]}" at cell: "{cellcols[i]}4". '
+            )
+    if errormsg:
+        return errormsg
+
+    # ---- SAFE helper ----
+    def get_val(row_vals, idx):
+        return "" if idx >= len(row_vals) else str(row_vals[idx]).strip()
+
+    # Row-level checks
+    for i in range(6, spatial_sheet.nrows):
+        row_vals = spatial_sheet.row_values(i)
+
+        # Skip blank rows
+        if not any(str(v).strip() for v in row_vals):
+            continue
+
+        # 0: DataAvailability
+        val = get_val(row_vals, 0)
+        if val == "":
+            errormsg += (
+                f'On spreadsheet tab: {sheetname} Column: "{colheads[0]}" '
+                f'value expected but not found in cell "{cellcols[0]}{i+1}". '
+            )
+        elif val not in data_availability_cv:
+            errormsg += (
+                f'On spreadsheet tab: {sheetname} Column: "{colheads[0]}" '
+                f'incorrect CV value "{val}" in cell "{cellcols[0]}{i+1}". '
+            )
+
+        # LightTreatmentTime (#5)
+        val = get_val(row_vals, 5)
+        if val != "":
+            try:
+                float(val)
+            except:
+                errormsg += (
+                    f'On spreadsheet tab: {sheetname} Column: "{colheads[5]}" '
+                    f'must be numeric in cell "{cellcols[5]}{i+1}". '
+                )
+
+        # NumberTargetedRNA (#7)
+        val = get_val(row_vals, 7)
+        if val != "":
+            try:
+                int(float(val))
+            except:
+                errormsg += (
+                    f'On spreadsheet tab: {sheetname} Column: "{colheads[7]}" '
+                    f'must be an integer in cell "{cellcols[7]}{i+1}". '
+                )
+
+        # PlatformName (#9)
+        val = get_val(row_vals, 9)
+        if val != "" and val not in platform_name_cv:
+            errormsg += (
+                f'On spreadsheet tab: {sheetname} Column: "{colheads[9]}" '
+                f'incorrect CV value "{val}" in cell "{cellcols[9]}{i+1}". '
+            )
+
+        # File columns (#23–26)
+        file_cols = [22, 23, 24, 25]
+        any_file_val = any(get_val(row_vals, idx) != "" for idx in file_cols)
+
+        if any_file_val:
+            for idx in file_cols:
+                if get_val(row_vals, idx) == "":
+                    errormsg += (
+                        f'On spreadsheet tab: {sheetname} Column: "{colheads[idx]}" '
+                        f'value expected but not found in cell "{cellcols[idx]}{i+1}". '
+                    )
+
+    return errormsg
+
 def ingest_contributors_sheet(filename):
     fn = xlrd.open_workbook(filename)
     contributors_sheet = fn.sheet_by_name('Contributors')
@@ -1728,6 +1837,24 @@ def ingest_swc_sheet(filename):
         swcs.append(values)
     return swcs
 
+def ingest_spatial_sheet(filename):
+    fn = xlrd.open_workbook(filename)
+    spatial_sheet = fn.sheet_by_name('Spatial')
+    keys = [spatial_sheet.cell(3, col).value for col in range(spatial_sheet.ncols)]
+    spatials = []
+    for row in range(6, spatial_sheet.nrows):
+        values = {
+            keys[col]: spatial_sheet.cell(row, col).value
+            for col in range(spatial_sheet.ncols)
+        }
+
+        # Skip completely empty rows
+        if not any(str(v).strip() for v in values.values()):
+            continue
+
+        spatials.append(values)
+    return spatials
+
 def save_sheet_row(ingest_method, filename, collection):
     try:
         sheet = Sheet(filename=filename, date_uploaded=datetime.now(), collection_id=collection.id, ingest_method = ingest_method)
@@ -1814,6 +1941,75 @@ def save_swc_sheet(swcs, sheet, saved_datasets):
 
             swc_uuid = Mne.num_to_mne(swc.id)
             swc = SWC.objects.filter(id=swc.id).update(swc_uuid=swc_uuid)
+        return True
+    except Exception as e:
+        print(repr(e))
+        return False
+    
+def save_spatial_sheet(spatials, sheet, saved_datasets):
+    # Many spatial rows : 1 dataset
+    try:
+        data_set_id = saved_datasets[0].id if isinstance(saved_datasets, list) else saved_datasets.id
+
+        for s in spatials:
+            dataavailability = s['DataAvailability']
+            histologicalstainname = s['HistologicalStainName']
+            nuclearstainname = s['NuclearStainName']
+            probesetdoi = s['ProbeSetDOI']
+            probesequencesdoi = s['ProbeSequencesDOI']
+            lighttreatmenttime = s['LightTreatmentTime']
+            lighttreatmenttimeunits = s['LightTreatmentTimeUnits']
+            numbertargetedrna = s['NumberTargetedRNA']
+            genepanelname = s['GenePanelName']
+            platformname = s['PlatformName']
+            machinename = s['MachineName']
+            machinesoftwareversion = s['MachineSoftwareVersion']
+            numberzsections = s['NumberZSections']
+            segmentationmethod = s['SegmentationMethod']
+            segmentationmodel = s['SegmentationModel']
+            segmentationmethodversion = s['SegmentationMethodVersion']
+            clusteringmethod = s['ClusteringMethod']
+            labeltransfermethod = s['LabelTransferMethod']
+            labeltransferreference = s['LabelTransferReference']
+            nuclearimagetransform = s['NuclearImageTransform']
+            histologicalimagetransform = s['HistologicalImageTransform']
+            filtercriteria = s['FilterCriteria']
+            xyzposition = s['XYZPosition']
+            cellid = s['CellID']
+            cellcentroidlocation = s['CellCentroidLocation']
+            cellareavolume = s['CellAreaVolume']
+
+            spatial = Spatial(
+                dataavailability=dataavailability,
+                histologicalstainname=histologicalstainname,
+                nuclearstainname=nuclearstainname,
+                probesetdoi=probesetdoi,
+                probesequencesdoi=probesequencesdoi,
+                lighttreatmenttime=lighttreatmenttime,
+                lighttreatmenttimeunits=lighttreatmenttimeunits,
+                numbertargetedrna=numbertargetedrna,
+                genepanelname=genepanelname,
+                platformname=platformname,
+                machinename=machinename,
+                machinesoftwareversion=machinesoftwareversion,
+                numberzsections=numberzsections,
+                segmentationmethod=segmentationmethod,
+                segmentationmodel=segmentationmodel,
+                segmentationmethodversion=segmentationmethodversion,
+                clusteringmethod=clusteringmethod,
+                labeltransfermethod=labeltransfermethod,
+                labeltransferreference=labeltransferreference,
+                nuclearimagetransform=nuclearimagetransform,
+                histologicalimagetransform=histologicalimagetransform,
+                filtercriteria=filtercriteria,
+                xyzposition=xyzposition,
+                cellid=cellid,
+                cellcentroidlocation=cellcentroidlocation,
+                cellareavolume=cellareavolume,
+                data_set_id=data_set_id,
+                sheet_id=sheet.id
+            )
+            spatial.save()
         return True
     except Exception as e:
         print(repr(e))
@@ -2586,6 +2782,44 @@ def save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contrib
         print(repr(e))
         saved = False
 
+def save_all_sheets_method_6(
+    instruments,
+    specimen_set,
+    datasets,
+    sheet,
+    contributors,
+    funders,
+    publications,
+    spatials
+):
+    # Spatial Transcriptomics ingest method
+    try:
+        saved_datasets = save_dataset_sheet_method_2(datasets, sheet)
+        if saved_datasets:
+            saved_instruments = save_instrument_sheet_method_2(instruments, sheet)
+            if saved_instruments:
+                saved_specimens = save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets)
+                if saved_specimens:
+                    saved_spatial = save_spatial_sheet(spatials, sheet, saved_datasets)
+                    if saved_spatial:
+                        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
+                        if saved_generic:
+                            return True
+                        else:
+                            return False
+                    else:
+                        return False
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+    except Exception as e:
+        print(repr(e))
+        return False
+
+
 def save_bil_ids(datasets, filename):
     """
     This function iterates through the provided list of datasets, validates all inputs,
@@ -2730,6 +2964,8 @@ def metadata_version_check(filename):
     return version1
 
 def check_all_sheets(filename, ingest_method):
+    workbook = xlrd.open_workbook(filename)
+    sheetnames = workbook.sheet_names()
     ingest_method = ingest_method
     errormsg = check_contributors_sheet(filename)
     if errormsg != '':
@@ -2755,6 +2991,11 @@ def check_all_sheets(filename, ingest_method):
             return errormsg
     if ingest_method == 'ingest_5':
         errormsg = check_swc_sheet(filename)
+        if errormsg != '':
+            return errormsg
+    if ingest_method in ('ingest_1', 'ingest_2') and 'Spatial' in sheetnames:
+        print('hit logic')
+        errormsg = check_spatial_sheet(filename)
         if errormsg != '':
             return errormsg
     return errormsg
@@ -2784,10 +3025,10 @@ def descriptive_metadata_upload(request, associated_collection):
         associated_collection = Collection.objects.get(id = associated_collection)
 
         # for production
-        datapath = associated_collection.data_path.replace("/lz/","/etc/")
+        #datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
-        #datapath = '/Users/luketuite/shared_bil_dev' 
+        datapath = '/Users/luketuite/shared_bil_dev' 
 
         # for development locally
         #datapath = '/Users/luketuite/shared_bil_dev' 
@@ -2797,6 +3038,8 @@ def descriptive_metadata_upload(request, associated_collection):
         fs = FileSystemStorage(location=datapath)
         unique_name = fs.save(spreadsheet_file.name, spreadsheet_file)
         filename = os.path.join(datapath, unique_name)
+        workbook = xlrd.open_workbook(filename)
+        has_spatial = 'Spatial' in workbook.sheet_names()
 
         version1 = metadata_version_check(filename)
         
@@ -2826,12 +3069,20 @@ def descriptive_metadata_upload(request, associated_collection):
                 specimen_set = ingest_specimen_sheet(filename)
                 images = ingest_image_sheet(filename)
                 swcs = ingest_swc_sheet(filename)
+                # Only ingest spatial if Spatial sheet exists AND ingest method is 1 or 2
+                if has_spatial and ingest_method in ('ingest_1', 'ingest_2'):
+                    spatials = ingest_spatial_sheet(filename)
+                else:
+                    spatials = []
 
                 # choose save method depending on ingest_method value from radio button
                 # want to pull this out into a helper function
                 if ingest_method == 'ingest_1':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    if has_spatial:
+                        ingested_datasets = list(Dataset.objects.filter(sheet=sheet))
+                        save_spatial_sheet(spatials, sheet, ingested_datasets)
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
@@ -2843,6 +3094,9 @@ def descriptive_metadata_upload(request, associated_collection):
                 elif ingest_method == 'ingest_2':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    if has_spatial:
+                        ingested_datasets = list(Dataset.objects.filter(sheet=sheet))
+                        save_spatial_sheet(spatials, sheet, ingested_datasets)
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
