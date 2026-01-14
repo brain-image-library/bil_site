@@ -1,23 +1,30 @@
 {% extends 'ingest/wide.html' %}
-{% block wide %}
-{% load bootstrap4 %} 
+{% load bootstrap4 %}
+{% load render_table from django_tables2 %}
 
+{% block wide %}
 
 {% if pi %}
 <a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
+  <button class="cancel btn btn-primary" value="ignore" formnovalidate>
+    Return to PI Dashboard
+  </button>
 </a>
 {% endif %}
-<br>
+
 <h1>Your Submissions</h1>
 
 {% if collections %}
-  {% load render_table from django_tables2 %}
-  {% render_table table %} 
+
+{# Scrollable table container #}
+<div class="table-scroll">
+  {% render_table table %}
+</div>
+
 {% else %}
-  <div class="alert alert-info">
-    <p>You haven't created any submissions yet.</p>
-  </div>
+<div class="alert alert-info">
+  <p>You haven't created any submissions yet.</p>
+</div>
 {% endif %}
 
 <hr>
@@ -27,8 +34,7 @@
 </a>
 
 <a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
+  <button class="cancel btn btn-primary" value="ignore" formnovalidate>Cancel</button>
 </a>
 
 {% endblock %}
-

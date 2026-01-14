@@ -135,7 +135,7 @@ h2,
 h3,
 h4 {
   font-family: 'Lato';
-  margin-top: 70px;
+  margin-top: 20px;
 }
 
 p {
@@ -648,7 +648,46 @@ p {
   height: 16px;
 }
 
+.collapsible-section .collapsible-toggle {
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+}
 
+.collapsible-section .collapsible-header {
+  cursor: pointer;
+  user-select: none;
+  display: inline-block;
+}
 
+.collapsible-section .collapsible-header:hover {
+  color: #0d6efd;
+}
 
+.collapsible-section .collapsible-body {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 450ms ease, opacity 250ms ease;
+}
 
+.collapsible-section .collapsible-toggle:checked+.collapsible-header+.collapsible-body {
+  max-height: 8000px;
+  opacity: 1;
+}
+
+.table-scroll {
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
+  overflow-x: auto;
+  border-top: 1px solid #eee;
+}
+
+.table-scroll thead th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 2;
+}

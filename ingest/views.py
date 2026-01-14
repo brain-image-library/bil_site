@@ -696,8 +696,7 @@ def check_collection_directories(coll, current_user):
                 "does not exist on disk."
             ),
             "suggestion": (
-                "Ensure this directory exists and is accessible. If this is a new "
-                "submission, confirm that the staging area has been created."
+                "Contact bil-support@psc.edu so we can investigate why the directory creation failed "
             ),
             "missing": [],
             "extra": [],
@@ -1005,7 +1004,6 @@ class SubmitValidateCollectionList(LoginRequiredMixin, SingleTableMixin, FilterV
         return kwargs
 
 class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
-    """ A list of all a user's collections, split into buckets for validation. """
     table_class = CollectionRequestTable
     model = Collection
     template_name = 'ingest/submit_request_collection_list.html'
@@ -1025,22 +1023,30 @@ class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterVi
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Base set: user’s collections excluding already fully completed ones
-        base_qs = (Collection.objects
-                   .filter(user=self.request.user)
-                   .exclude(Q(submission_status=Collection.SUCCESS) &
-                            Q(validation_status=Collection.SUCCESS)))
+        user_qs = Collection.objects.filter(user=self.request.user)
 
-        # Subqueries (no need for related_name on models)
+        # ✅ Completed bucket (SUCCESS/SUCCESS)
+        completed = user_qs.filter(
+            submission_status=Collection.SUCCESS,
+            validation_status=Collection.SUCCESS,
+        )
+
+        # Base set: user’s collections excluding already fully completed ones
+        base_qs = user_qs.exclude(
+            Q(submission_status=Collection.SUCCESS) &
+            Q(validation_status=Collection.SUCCESS)
+        )
+
         has_sheet_sq = Sheet.objects.filter(collection=OuterRef('pk'))
         has_requested_sq = EventsLog.objects.filter(
             collection_id=OuterRef('pk'),
             event_type='request_validation',
         )
 
-        annotated = (base_qs
-                     .annotate(has_sheet=Exists(has_sheet_sq),
-                               has_requested=Exists(has_requested_sq)))
+        annotated = base_qs.annotate(
+            has_sheet=Exists(has_sheet_sq),
+            has_requested=Exists(has_requested_sq),
+        )
 
         eligible = annotated.filter(has_sheet=True, has_requested=False)
         needs_metadata = annotated.filter(has_sheet=False)
@@ -1051,16 +1057,15 @@ class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterVi
             'eligible_collections': eligible.distinct(),
             'needs_metadata_collections': needs_metadata.distinct(),
             'already_requested_collections': already_requested.distinct(),
+            'completed_collections': completed.distinct(),  # ✅ NEW
         })
         return context
 
     def get_filterset_kwargs(self, filterset_class):
-        """Default list shows NOT_SUBMITTED by default (your original behavior)."""
         kwargs = super().get_filterset_kwargs(filterset_class)
         if kwargs["data"] is None:
             kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
         return kwargs
-
 class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     """ A list of all a user's collections. """
 
@@ -1606,6 +1611,7 @@ def check_instrument_sheet(filename):
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
     return errormsg
 
+
 def check_dataset_sheet(filename):
     dataset_count = 0
     errormsg=""
@@ -1847,6 +1853,7 @@ def check_image_sheet(filename):
         #if cols[32] == "":
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[32] + '" value expected but not found in cell "' + cellcols[32] + str(i+1) + '". '
     return errormsg
+
 
 def check_swc_sheet(filename):
     swc_count = 0
