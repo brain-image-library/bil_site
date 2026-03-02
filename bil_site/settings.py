@@ -234,3 +234,11 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = None
 ASANA_PAT= config['Security']['ASANA_PAT']
 ASANA_PROJECT_ID = config['Security']['ASANA_PROJECT_ID']
 ASANA_GID = config['Security']['ASANA_GID']
+
+DATACITE_DOI_API_URL = "http://127.0.0.1:8094/draft"
+
+MONGO_INGEST_API_URL = "http://127.0.0.1:8095/v1/doi-datasets"
+
+DOI_JWT_SECRET = "dev-secret-change-me"
+DOI_JWT_ISSUER = "django"
+DOI_JWT_AUDIENCE = "doi-ingest-api"

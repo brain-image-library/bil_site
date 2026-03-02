@@ -46,6 +46,7 @@ from django.db import transaction
 
 from django.db.models import OuterRef, Subquery, Q, Exists
 from pathlib import Path
+import jwt, time
 
 
 def logout(request):
@@ -3075,76 +3076,134 @@ def save_all_sheets_method_6(
 
 
 def save_bil_ids(datasets, filename):
-    """
-    This function iterates through the provided list of datasets, validates all inputs,
-    and then applies changes only if all validations pass. No partial changes will occur.
-    """
     workbook = xlrd.open_workbook(filename)
-    sheetname = 'Dataset'
-    dataset_sheet = workbook.sheet_by_name(sheetname)
+    dataset_sheet = workbook.sheet_by_name("Dataset")
 
-    # Value that changes with each iteration to find bil id for directory
-    loop_index_change = 6
+    # Detect dev spreadsheet (BILDID column present)
+    is_dev_spreadsheet = dataset_sheet.ncols > 15 and dataset_sheet.cell_type(3, 15) != xlrd.XL_CELL_EMPTY
+    # ^ note: checking row 3 (0-based) hits header row that contains "BILDID"
+
+    # Build directory -> dataset lookup from the datasets passed in
+    # IMPORTANT: normalize trailing slashes to match spreadsheet style
+    def norm_dir(s: str) -> str:
+        s = (s or "").strip()
+        # normalize trailing slash (your sheet has trailing slash)
+        if s and not s.endswith("/"):
+            s += "/"
+        return s
+
+    datasets_by_dir = {}
+    for ds in datasets:
+        d = norm_dir(getattr(ds, "bildirectory", None) or getattr(ds, "BILDirectory", None))
+        if not d:
+            continue
+        datasets_by_dir[d] = ds
 
     validation_errors = []
     updates_to_apply = []
 
-    # Determine if it's a developer spreadsheet
-    is_dev_spreadsheet = False
-    if dataset_sheet.ncols > 15 and dataset_sheet.cell_type(0, 15) != xlrd.XL_CELL_EMPTY:
-        is_dev_spreadsheet = True
-
-    # If it's a developer spreadsheet, perform detailed validation
     if is_dev_spreadsheet:
-        for idx, dataset in enumerate(datasets):
-            row_index = 6 + idx  # Assuming row 6 corresponds to datasets[0]
-            bil_id_value = dataset_sheet.cell_value(row_index, 15).strip()  # Column 15 = BILDID
+        # Data rows start at row 6 (0-based) in this template (Excel row 7)
+        start_row = 6
+
+        seen_bil_ids = set()
+        used_dataset_ids = set()
+
+        # iterate spreadsheet rows, not datasets
+        for row_index in range(start_row, dataset_sheet.nrows):
+            spreadsheet_dir = norm_dir(dataset_sheet.cell_value(row_index, 0))
+            bil_id_value = (dataset_sheet.cell_value(row_index, 15) or "").strip()
+
+            # skip totally empty rows
+            if not spreadsheet_dir and not bil_id_value:
+                continue
+
+            row_errors = []
+
+            if not spreadsheet_dir:
+                row_errors.append(f"Row {row_index + 1}: Missing BILDirectory (col A).")
 
             if not bil_id_value:
-                validation_errors.append(f"No BIL_ID found in row {row_index + 1}.")
-                continue
+                row_errors.append(f"Row {row_index + 1}: Missing BIL_ID (col P).")
 
-            if not BIL_ID.objects.filter(bil_id=bil_id_value).exists():
-                validation_errors.append(
-                    f"BIL_ID {bil_id_value} does not match any previous upload."
-                )
-                continue
-
-            existing_bil_id = BIL_ID.objects.get(bil_id=bil_id_value)
-
-            spreadsheet_dir = dataset_sheet.cell_value(row_index, 0).strip()  # BILDirectory is column 0
-
-            # Check if directory matches what's in DB
-            if existing_bil_id.v2_ds_id:
-                if existing_bil_id.v2_ds_id.bildirectory != spreadsheet_dir:
-                    validation_errors.append(
-                        f"Directory mismatch for BIL_ID {bil_id_value} (v2_ds_id)."
-                    )
-            elif existing_bil_id.v1_ds_id:
-                if existing_bil_id.v1_ds_id.r24_directory != spreadsheet_dir:
-                    validation_errors.append(
-                        f"Directory mismatch for BIL_ID {bil_id_value} (v1_ds_id)."
-                    )
+            if bil_id_value in seen_bil_ids:
+                row_errors.append(f"Row {row_index + 1}: Duplicate BIL_ID in sheet: {bil_id_value}.")
             else:
-                validation_errors.append(
-                    f"BIL_ID {bil_id_value} does not have a valid v1_ds_id or v2_ds_id."
-                )
+                seen_bil_ids.add(bil_id_value)
 
-            # If no errors so far for this dataset
-            if not validation_errors:
-                updates_to_apply.append({
-                    "bil_id": existing_bil_id,
-                    "v2_ds_id": dataset,
-                    "metadata_version": 2
-                })
+            existing_bil_id = None
+            if bil_id_value:
+                try:
+                    existing_bil_id = BIL_ID.objects.get(bil_id=bil_id_value)
+                except BIL_ID.DoesNotExist:
+                    row_errors.append(
+                        f"Row {row_index + 1}: BIL_ID {bil_id_value} does not match any previous upload."
+                    )
+
+            # find the v2 dataset object by directory from the datasets list
+            ds = None
+            if spreadsheet_dir:
+                ds = datasets_by_dir.get(spreadsheet_dir)
+                if ds is None:
+                    row_errors.append(
+                        f"Row {row_index + 1}: No v2 Dataset found in this upload for directory {spreadsheet_dir}."
+                    )
+
+            # verify directory matches the directory tied to that BIL_ID in DB (v1 or v2)
+            if existing_bil_id and spreadsheet_dir:
+                if existing_bil_id.v2_ds_id:
+                    db_dir = norm_dir(existing_bil_id.v2_ds_id.bildirectory)
+                    if db_dir != spreadsheet_dir:
+                        row_errors.append(
+                            f"Row {row_index + 1}: Directory mismatch for BIL_ID {bil_id_value} (existing v2_ds_id)."
+                        )
+                elif existing_bil_id.v1_ds_id:
+                    db_dir = norm_dir(existing_bil_id.v1_ds_id.r24_directory)
+                    if db_dir != spreadsheet_dir:
+                        row_errors.append(
+                            f"Row {row_index + 1}: Directory mismatch for BIL_ID {bil_id_value} (existing v1_ds_id)."
+                        )
+                else:
+                    row_errors.append(
+                        f"Row {row_index + 1}: BIL_ID {bil_id_value} has no v1_ds_id or v2_ds_id."
+                    )
+
+            # prevent assigning the same dataset to multiple BIL_IDs
+            if ds is not None:
+                if ds.id in used_dataset_ids:
+                    row_errors.append(
+                        f"Row {row_index + 1}: The same v2 Dataset (id={ds.id}) is being assigned more than once."
+                    )
+                else:
+                    used_dataset_ids.add(ds.id)
+
+            if row_errors:
+                validation_errors.extend(row_errors)
+                continue
+
+            # all good: queue update
+            updates_to_apply.append({
+                "bil_id": existing_bil_id,
+                "v2_ds_id": ds,
+                "metadata_version": 2
+            })
 
         if validation_errors:
             return {"success": False, "errors": validation_errors}
 
-    # If it's a regular user spreadsheet, skip developer-specific validation
+        # Apply changes atomically (all-or-nothing)
+        with transaction.atomic():
+            for update in updates_to_apply:
+                bil_id = update["bil_id"]
+                bil_id.v2_ds_id = update["v2_ds_id"]
+                bil_id.metadata_version = update["metadata_version"]
+                bil_id.save()
+
+        return {"success": True, "updated": len(updates_to_apply)}
+
+    # Non-dev spreadsheet behavior (your existing logic)
     else:
         for dataset in datasets:
-            # Add datasets directly for regular user spreadsheets
             bil_id = BIL_ID(v2_ds_id=dataset, metadata_version=2, doi=False)
             bil_id.save()
             saved_bil_id = BIL_ID.objects.get(v2_ds_id=dataset.id)
@@ -3152,12 +3211,7 @@ def save_bil_ids(datasets, filename):
             saved_bil_id.bil_id = mne_id
             saved_bil_id.save()
 
-    # Apply Changes Stage (for developer spreadsheets only)
-    for update in updates_to_apply:
-        bil_id = update["bil_id"]
-        bil_id.v2_ds_id = update["v2_ds_id"]
-        bil_id.metadata_version = update["metadata_version"]
-        bil_id.save()
+        return {"success": True, "created": len(datasets)}
 
 def save_specimen_ids(specimens):
     """
@@ -3254,6 +3308,131 @@ def check_all_sheets(filename, ingest_method):
             return errormsg
     return errormsg
 
+def make_ingest_jwt(sub: str = "django") -> str:
+    now = int(time.time())
+    payload = {
+        "sub": sub,
+        "iss": settings.DOI_JWT_ISSUER,       # must match FastAPI JWT_ISSUER
+        "aud": settings.DOI_JWT_AUDIENCE,     # must match FastAPI JWT_AUDIENCE
+        "iat": now,
+        "exp": now + 60,
+    }
+    return jwt.encode(payload, settings.DOI_JWT_SECRET, algorithm="HS256")
+
+
+def build_canonical_record_from_bil(bil_record: BIL_ID, doi: str) -> dict:
+    """
+    Minimal CanonicalRecord that satisfies your FastAPI schema.
+    The ONLY hard requirement is Dataset.DOI (or Dataset.doi).
+    Fill the rest as you like (or leave empty) and iterate later.
+    """
+    ds = bil_record.v2_ds_id
+
+    return {
+        "Metadata": {},
+        "Submission": {},
+        "Contributors": [],
+        "Funders": [],
+        "Specimen": {},
+        "Dataset": {
+            "DOI": doi,
+            "Title": getattr(ds, "title", "") if ds else "",
+            "Directory": getattr(ds, "bildirectory", "") if ds else "",
+        },
+        "Image": {},
+    }
+
+def doi_api(request):
+    print(f"Received request: {request.method}")
+
+    try:
+        data = json.loads(request.body)
+        print(f"Received payload: {data}")
+        bil_id = data.get("bildid")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
+
+    if not bil_id:
+        return JsonResponse({"error": "No BIL_ID provided"}, status=400)
+
+    print(f"Got BIL_ID: {bil_id}")
+
+    # 1) Call DOI mint API (your existing doi-api service)
+    datacite_url = getattr(settings, "DATACITE_DOI_API_URL", "http://127.0.0.1:8094/draft")
+    payload = {"bildid": bil_id, "action": "draft"}
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        print(f"Sending payload to DOI API: {json.dumps(payload, indent=2)}")
+        response = requests.post(datacite_url, json=payload, headers=headers, timeout=45)
+        print(f"DOI API Response: {response.status_code} - {response.text}")
+
+        if response.status_code != 201:
+            return JsonResponse({"error": response.text}, status=response.status_code)
+
+        # DOI minted successfully
+        bil_record = get_object_or_404(BIL_ID, bil_id=bil_id)
+
+        # Determine DOI string (best: parse from DOI API response if it returns it)
+        try:
+            mint_json = response.json()
+        except Exception:
+            mint_json = {}
+
+        # If your doi-api returns it, use it; else fallback to your known pattern
+        minted_doi = mint_json.get("doi") or f"10.80303/{bil_id}"
+
+        # Update local state (you currently store a boolean on BIL_ID; keep if you want)
+        bil_record.doi = True
+        bil_record.save(update_fields=["doi"])
+        print(f"Updated BIL_ID {bil_id} as DOI=True")
+
+        # Build DOI URL (test resolver example you used)
+        doi_url = mint_json.get("doi_url") or f"https://doi.test.datacite.org/dois/10.80303%2F{bil_id}"
+
+        # 2) Call your FastAPI Mongo ingest service
+        mongo_ingest_url = getattr(settings, "MONGO_INGEST_API_URL", "http://127.0.0.1:8000/v1/doi-datasets")
+        canonical_record = build_canonical_record_from_bil(bil_record, minted_doi)
+
+        token = make_ingest_jwt(sub=request.user.get_username() or "django")
+        ingest_headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
+        print(f"Sending canonical record to Mongo ingest API: {mongo_ingest_url}")
+        ingest_resp = requests.post(mongo_ingest_url, json=canonical_record, headers=ingest_headers, timeout=45)
+        print(f"Mongo ingest response: {ingest_resp.status_code} - {ingest_resp.text}")
+
+        if ingest_resp.status_code >= 400:
+            # Important: DOI is already minted; don't "undo" it.
+            # Return an error so you notice + can retry ingest later.
+            return JsonResponse(
+                {
+                    "error": "DOI minted, but Mongo ingest failed",
+                    "doi_url": doi_url,
+                    "doi": minted_doi,
+                    "ingest_status": "failed",
+                    "ingest_error": ingest_resp.text,
+                },
+                status=502,
+            )
+
+        ingest_json = ingest_resp.json() if ingest_resp.content else {}
+        return JsonResponse(
+            {
+                "success": True,
+                "doi_url": doi_url,
+                "doi": minted_doi,
+                "ingest": ingest_json,  # {"status": "inserted"|"noop_exists", "doi": ...}
+            },
+            status=201,
+        )
+
+    except requests.exceptions.RequestException as e:
+        print(f"Request Error: {str(e)}")
+        return JsonResponse({"error": f"Request failed: {str(e)}"}, status=500)
+    
 @login_required
 def descriptive_metadata_upload(request, associated_collection):
     current_user = request.user
@@ -3521,6 +3700,222 @@ def descriptive_metadata_upload(request, associated_collection):
     collections = Collection.objects.filter(locked=False, user=request.user)
     return render(request, 'ingest/descriptive_metadata_upload.html',{'pi':pi, 'collections':collections, 'associated_collection': associated_collection})
 
+WHITELIST_FIELDS = {
+    "data",
+    "category",
+    "record",
+    "has_parent",
+    "has_parent_identifier",
+    "has_parent_identifiers",
+    "donor_nhash_id",
+    "repository",
+    "donor_source",
+    "donor_species",
+    "hemisphere",
+    "left_hemisphere_preparation",
+    "right_hemisphere_preparation",
+    "rin",
+    "rine",
+    "ph",
+    "brain_weight",
+    "weighed_type",
+    "postmortem_mri_type",
+    "tissue_type",
+    "brain_subdivision",
+    "slab_hemisphere",
+    "number_of_slabs",
+    "thickness",
+    "anatomical_direction_top_btm",
+    "anatomical_direction_left_right",
+    "anatomical_direction_across_slabs",
+    "local_slab_ids",
+    "visible_slab_face",
+    "slab_nhash_id",
+    "tissue_nhash_id",
+    "species",
+    "project_identifier",
+    "structure",
+    "dissociated_cell_sample_nhash_id",
+    "dissociated_cell_sample_cell_label_barcode",
+    "dissociated_cell_sample_cell_prep_type",
+    "enriched_cell_sample_nhash_id",
+    "enriched_cell_sample_cell_label_barcode",
+    "barcoded_cell_sample_nhash_id",
+    "barcoded_cell_sample_number_of_expected_cells",
+    "barcoded_cell_input_quantity_count",
+    "barcoded_cell_sample_technique",
+    "amplified_cdna_nhash_id",
+    "library_nhash_id",
+    "library_technique",
+    "library_r1_r2_index",
+    "library_source_type",
+    "library_pool_nhash_id",
+    "library_pool_tube_barcode",
+    "sequencing_center_id",
+    "tissue_nhash_ids",
+    "consent_status",
+    "left_hemisphere_prep_2",
+    "right_hemisphere_prep_2",
+    "patched_cell_structure",
+    "tissue_brain_subdivision",
+    "tissue_brain_hemisphere",
+    "section_sample_ordinal",
+    "section_sample_thickness",
+    "section_nhash_id",
+    "access_level",
+    "data_use_limitation",
+    "disease_specification",
+    "irb_approval_required",
+    "publication_required",
+    "collaboration_required",
+    "not_for_profit",
+    "methods",
+    "genetic_study_only",
+    "number_of_reads",
+    "sequencing_saturation",
+    "fraction_of_unique_reads_mapped_to_genome",
+    "fraction_of_unique_and_multiple_reads_mapped_to_genome",
+    "fraction_of_reads_with_Q30_bases_in_rna",
+    "fraction_of_reads_with_Q30_bases_in_cb_and_umi",
+    "fraction_of_reads_with_valid_barcodes",
+    "reads_mapped_antisense_to_gene",
+    "reads_mapped_confidently_exonic",
+    "reads_mapped_confidently_to_genome",
+    "reads_mapped_confidently_to_intronic_regions",
+    "reads_mapped_confidently_to_transcriptome",
+    "estimated_cells",
+    "umis_in_cells",
+    "mean_umi_per_cell",
+    "median_umi_per_cell",
+    "unique_reads_in_cells_mapped_to_gene",
+    "fraction_of_unique_reads_in_cells",
+    "mean_reads_per_cell",
+    "median_reads_per_cell",
+    "mean_gene_per_cell",
+    "median_gene_per_cell",
+    "total_genes_unique_detected",
+    "percent_target",
+    "percent_intronic_reads",
+    "keeper_mean_reads_per_cell",
+    "keeper_median_genes",
+    "keeper_cells",
+    "percent_keeper",
+    "percent_usable",
+    "frac_tso",
+    "percent_doublets",
+    "sequenced_reads",
+    "sequenced_read_pairs",
+    "fraction_valid_barcode",
+    "fraction_q30_bases_in_read_1",
+    "fraction_q30_bases_in_read_2",
+    "number_of_cells",
+    "mean_raw_read_pairs_per_cell",
+    "median_high_quality_fragments_per_cell",
+    "fraction_of_high_quality_fragments_in_cells",
+    "fraction_of_transposition_events_in_peaks_in_cells",
+    "fraction_duplicates",
+    "fraction_confidently_mapped",
+    "fraction_unmapped",
+    "fraction_nonnuclear",
+    "fraction_fragment_in_nucleosome_free_region",
+    "fraction_fragment_flanking_single_nucleosome",
+    "tss_enrichment_score",
+    "fraction_of_high_quality_fragments_overlapping_tss",
+    "number_of_peaks",
+    "fraction_of_genome_in_peaks",
+    "fraction_of_high_quality_fragments_overlapping_peaks",
+    "atac_percent_target",
+    "tissue_sample_type",
+    "tissue_structure_acronym",
+    "library_aliquot_fastq_file_size_in_tb",
+    "library_pool_sequencing_instrument",
+    "library_pool_flowcell_type",
+    "library_pool_fastq_submission_id",
+    "gsr_controlled_access",
+    "donor_project",
+    "slab_project",
+    "tissue_project",
+    "section_project",
+    "dissociated_cell_sample_project",
+    "enriched_cell_sample_project",
+    "barcoded_cell_sample_project",
+    "amplified_cdna_project",
+    "library_project",
+    "library_aliquot_project",
+    "library_pool_projects",
+    "donor_labs",
+    "tissue_lab",
+    "section_lab",
+    "dissociated_cell_sample_lab",
+    "enriched_cell_sample_lab",
+    "barcoded_cell_sample_lab",
+    "amplified_cdna_lab",
+    "library_lab",
+    "library_aliquot_lab",
+    "library_pool_labs",
+    "alignment_qc_status",
+    "nemo_pool_bucket",
+    "nemo_aliquot_fastq_public_url",
+    "nemo_aliquot_fastq_gcp_url",
+    "ic_form_nhash_id",
+    "roi_type",
+    "slab_brain_subdivision",
+    "slab_thickness",
+    "slab_visible_slab_face",
+}
+
+NHASH_KEY_RE = re.compile(r"^(TI|RI|SL|DO|SC)-", re.IGNORECASE)
+
+def normalize_key(key: str) -> str:
+    key = str(key).lower().strip()
+    key = re.sub(r"[^\w\s]", " ", key)   # punctuation -> space
+    key = re.sub(r"\s+", "_", key)       # whitespace -> underscore
+    return key
+
+NORMALIZED_WHITELIST = {normalize_key(k) for k in WHITELIST_FIELDS}
+
+def whitelist_filter(obj, *, keep_all_keys=False):
+    """
+    - Always preserves the top-level 'data' container
+    - Preserves NHASH IDs inside data (TI-..., RI-..., etc.)
+    - Applies whitelist only inside each NHASH record dict
+    """
+    if isinstance(obj, dict):
+        cleaned = {}
+
+        for k, v in obj.items():
+            nk = normalize_key(k)
+
+            # 1) Always preserve the 'data' container (template requires it)
+            if nk == "data":
+                # Under data: keep NHASH IDs, but filter inside each record
+                if isinstance(v, dict):
+                    data_cleaned = {}
+                    for nhash_id, record in v.items():
+                        # NHASH ID keys like TI-..., RI-...
+                        if NHASH_KEY_RE.match(str(nhash_id)):
+                            data_cleaned[nhash_id] = whitelist_filter(record, keep_all_keys=False)
+                        else:
+                            # If there are non-NHASH keys under data, you can drop them
+                            # or keep them if you want:
+                            # data_cleaned[nhash_id] = whitelist_filter(record, keep_all_keys=False)
+                            pass
+                    cleaned[k] = data_cleaned
+                else:
+                    cleaned[k] = whitelist_filter(v, keep_all_keys=False)
+                continue
+
+            # 2) Inside a record dict: only keep whitelisted fields
+            if keep_all_keys or nk in NORMALIZED_WHITELIST:
+                cleaned[k] = whitelist_filter(v, keep_all_keys=False)
+
+        return cleaned
+
+    if isinstance(obj, list):
+        return [whitelist_filter(item, keep_all_keys=keep_all_keys) for item in obj]
+
+    return obj
+
 def bican_id_upload(request, sheet_id):
     if request.method == 'GET':
         specimens = Specimen.objects.filter(sheet_id=sheet_id)
@@ -3609,6 +4004,7 @@ def save_bican_spreadsheet(request):
                 extracted_ids.append(ids)
             processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)  # Assuming this function exists
             processed_ids_json = json.dumps(processed_ids)
+            nhash_info_list = [whitelist_filter(x) for x in nhash_info_list]
             nhash_specimen_list = zip(nhash_info_list, specimen_list)
 
             return render(request, 'ingest/nhash_id_confirm.html', {
@@ -3654,7 +4050,12 @@ def save_bican_ids(request):
             extracted_ids.append(ids)
         processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)  # Assuming this function exists
         processed_ids_json = json.dumps(processed_ids)
+        nhash_info_list = [whitelist_filter(x) for x in nhash_info_list]
         nhash_specimen_list = zip(nhash_info_list, specimen_list)
+        print("TOP KEYS:", nhash_info_list[0].keys())
+        print("DATA KEYS:", list(nhash_info_list[0].get("data", {}).keys()))
+        print("FIRST RECORD KEYS:", list(next(iter(nhash_info_list[0].get("data", {}).values()), {}).keys()))
+
         
         return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list, 'processed_ids_json': processed_ids_json})
     else:

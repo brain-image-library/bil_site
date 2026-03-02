@@ -55,4 +55,5 @@ urlpatterns = [
     path('collection/<int:collection_id>/create_dataset_linkage/', views.create_dataset_linkage, name='create_dataset_linkage'),
     path("get_bil_ids/", get_bil_ids, name="get_bil_ids"),
     path("refresh_tables/", views.refresh_tables, name="refresh_tables"),
+    path("doi_api/", views.doi_api, name="doi_api"),
 ]
