@@ -3013,6 +3013,222 @@ def descriptive_metadata_upload(request, associated_collection):
     collections = Collection.objects.filter(locked=False, user=request.user)
     return render(request, 'ingest/descriptive_metadata_upload.html',{'pi':pi, 'collections':collections, 'associated_collection': associated_collection})
 
+WHITELIST_FIELDS = {
+    "data",
+    "category",
+    "record",
+    "has_parent",
+    "has_parent_identifier",
+    "has_parent_identifiers",
+    "donor_nhash_id",
+    "repository",
+    "donor_source",
+    "donor_species",
+    "hemisphere",
+    "left_hemisphere_preparation",
+    "right_hemisphere_preparation",
+    "rin",
+    "rine",
+    "ph",
+    "brain_weight",
+    "weighed_type",
+    "postmortem_mri_type",
+    "tissue_type",
+    "brain_subdivision",
+    "slab_hemisphere",
+    "number_of_slabs",
+    "thickness",
+    "anatomical_direction_top_btm",
+    "anatomical_direction_left_right",
+    "anatomical_direction_across_slabs",
+    "local_slab_ids",
+    "visible_slab_face",
+    "slab_nhash_id",
+    "tissue_nhash_id",
+    "species",
+    "project_identifier",
+    "structure",
+    "dissociated_cell_sample_nhash_id",
+    "dissociated_cell_sample_cell_label_barcode",
+    "dissociated_cell_sample_cell_prep_type",
+    "enriched_cell_sample_nhash_id",
+    "enriched_cell_sample_cell_label_barcode",
+    "barcoded_cell_sample_nhash_id",
+    "barcoded_cell_sample_number_of_expected_cells",
+    "barcoded_cell_input_quantity_count",
+    "barcoded_cell_sample_technique",
+    "amplified_cdna_nhash_id",
+    "library_nhash_id",
+    "library_technique",
+    "library_r1_r2_index",
+    "library_source_type",
+    "library_pool_nhash_id",
+    "library_pool_tube_barcode",
+    "sequencing_center_id",
+    "tissue_nhash_ids",
+    "consent_status",
+    "left_hemisphere_prep_2",
+    "right_hemisphere_prep_2",
+    "patched_cell_structure",
+    "tissue_brain_subdivision",
+    "tissue_brain_hemisphere",
+    "section_sample_ordinal",
+    "section_sample_thickness",
+    "section_nhash_id",
+    "access_level",
+    "data_use_limitation",
+    "disease_specification",
+    "irb_approval_required",
+    "publication_required",
+    "collaboration_required",
+    "not_for_profit",
+    "methods",
+    "genetic_study_only",
+    "number_of_reads",
+    "sequencing_saturation",
+    "fraction_of_unique_reads_mapped_to_genome",
+    "fraction_of_unique_and_multiple_reads_mapped_to_genome",
+    "fraction_of_reads_with_Q30_bases_in_rna",
+    "fraction_of_reads_with_Q30_bases_in_cb_and_umi",
+    "fraction_of_reads_with_valid_barcodes",
+    "reads_mapped_antisense_to_gene",
+    "reads_mapped_confidently_exonic",
+    "reads_mapped_confidently_to_genome",
+    "reads_mapped_confidently_to_intronic_regions",
+    "reads_mapped_confidently_to_transcriptome",
+    "estimated_cells",
+    "umis_in_cells",
+    "mean_umi_per_cell",
+    "median_umi_per_cell",
+    "unique_reads_in_cells_mapped_to_gene",
+    "fraction_of_unique_reads_in_cells",
+    "mean_reads_per_cell",
+    "median_reads_per_cell",
+    "mean_gene_per_cell",
+    "median_gene_per_cell",
+    "total_genes_unique_detected",
+    "percent_target",
+    "percent_intronic_reads",
+    "keeper_mean_reads_per_cell",
+    "keeper_median_genes",
+    "keeper_cells",
+    "percent_keeper",
+    "percent_usable",
+    "frac_tso",
+    "percent_doublets",
+    "sequenced_reads",
+    "sequenced_read_pairs",
+    "fraction_valid_barcode",
+    "fraction_q30_bases_in_read_1",
+    "fraction_q30_bases_in_read_2",
+    "number_of_cells",
+    "mean_raw_read_pairs_per_cell",
+    "median_high_quality_fragments_per_cell",
+    "fraction_of_high_quality_fragments_in_cells",
+    "fraction_of_transposition_events_in_peaks_in_cells",
+    "fraction_duplicates",
+    "fraction_confidently_mapped",
+    "fraction_unmapped",
+    "fraction_nonnuclear",
+    "fraction_fragment_in_nucleosome_free_region",
+    "fraction_fragment_flanking_single_nucleosome",
+    "tss_enrichment_score",
+    "fraction_of_high_quality_fragments_overlapping_tss",
+    "number_of_peaks",
+    "fraction_of_genome_in_peaks",
+    "fraction_of_high_quality_fragments_overlapping_peaks",
+    "atac_percent_target",
+    "tissue_sample_type",
+    "tissue_structure_acronym",
+    "library_aliquot_fastq_file_size_in_tb",
+    "library_pool_sequencing_instrument",
+    "library_pool_flowcell_type",
+    "library_pool_fastq_submission_id",
+    "gsr_controlled_access",
+    "donor_project",
+    "slab_project",
+    "tissue_project",
+    "section_project",
+    "dissociated_cell_sample_project",
+    "enriched_cell_sample_project",
+    "barcoded_cell_sample_project",
+    "amplified_cdna_project",
+    "library_project",
+    "library_aliquot_project",
+    "library_pool_projects",
+    "donor_labs",
+    "tissue_lab",
+    "section_lab",
+    "dissociated_cell_sample_lab",
+    "enriched_cell_sample_lab",
+    "barcoded_cell_sample_lab",
+    "amplified_cdna_lab",
+    "library_lab",
+    "library_aliquot_lab",
+    "library_pool_labs",
+    "alignment_qc_status",
+    "nemo_pool_bucket",
+    "nemo_aliquot_fastq_public_url",
+    "nemo_aliquot_fastq_gcp_url",
+    "ic_form_nhash_id",
+    "roi_type",
+    "slab_brain_subdivision",
+    "slab_thickness",
+    "slab_visible_slab_face",
+}
+
+NHASH_KEY_RE = re.compile(r"^(TI|RI|SL|DO|SC)-", re.IGNORECASE)
+
+def normalize_key(key: str) -> str:
+    key = str(key).lower().strip()
+    key = re.sub(r"[^\w\s]", " ", key)   # punctuation -> space
+    key = re.sub(r"\s+", "_", key)       # whitespace -> underscore
+    return key
+
+NORMALIZED_WHITELIST = {normalize_key(k) for k in WHITELIST_FIELDS}
+
+def whitelist_filter(obj, *, keep_all_keys=False):
+    """
+    - Always preserves the top-level 'data' container
+    - Preserves NHASH IDs inside data (TI-..., RI-..., etc.)
+    - Applies whitelist only inside each NHASH record dict
+    """
+    if isinstance(obj, dict):
+        cleaned = {}
+
+        for k, v in obj.items():
+            nk = normalize_key(k)
+
+            # 1) Always preserve the 'data' container (template requires it)
+            if nk == "data":
+                # Under data: keep NHASH IDs, but filter inside each record
+                if isinstance(v, dict):
+                    data_cleaned = {}
+                    for nhash_id, record in v.items():
+                        # NHASH ID keys like TI-..., RI-...
+                        if NHASH_KEY_RE.match(str(nhash_id)):
+                            data_cleaned[nhash_id] = whitelist_filter(record, keep_all_keys=False)
+                        else:
+                            # If there are non-NHASH keys under data, you can drop them
+                            # or keep them if you want:
+                            # data_cleaned[nhash_id] = whitelist_filter(record, keep_all_keys=False)
+                            pass
+                    cleaned[k] = data_cleaned
+                else:
+                    cleaned[k] = whitelist_filter(v, keep_all_keys=False)
+                continue
+
+            # 2) Inside a record dict: only keep whitelisted fields
+            if keep_all_keys or nk in NORMALIZED_WHITELIST:
+                cleaned[k] = whitelist_filter(v, keep_all_keys=False)
+
+        return cleaned
+
+    if isinstance(obj, list):
+        return [whitelist_filter(item, keep_all_keys=keep_all_keys) for item in obj]
+
+    return obj
+
 def bican_id_upload(request, sheet_id):
     if request.method == 'GET':
         specimens = Specimen.objects.filter(sheet_id=sheet_id)
@@ -3101,6 +3317,7 @@ def save_bican_spreadsheet(request):
                 extracted_ids.append(ids)
             processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)  # Assuming this function exists
             processed_ids_json = json.dumps(processed_ids)
+            nhash_info_list = [whitelist_filter(x) for x in nhash_info_list]
             nhash_specimen_list = zip(nhash_info_list, specimen_list)
 
             return render(request, 'ingest/nhash_id_confirm.html', {
@@ -3146,7 +3363,12 @@ def save_bican_ids(request):
             extracted_ids.append(ids)
         processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)  # Assuming this function exists
         processed_ids_json = json.dumps(processed_ids)
+        nhash_info_list = [whitelist_filter(x) for x in nhash_info_list]
         nhash_specimen_list = zip(nhash_info_list, specimen_list)
+        print("TOP KEYS:", nhash_info_list[0].keys())
+        print("DATA KEYS:", list(nhash_info_list[0].get("data", {}).keys()))
+        print("FIRST RECORD KEYS:", list(next(iter(nhash_info_list[0].get("data", {}).values()), {}).keys()))
+
         
         return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list, 'processed_ids_json': processed_ids_json})
     else:
