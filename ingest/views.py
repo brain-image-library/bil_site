@@ -3199,7 +3199,7 @@ def save_bil_ids(datasets, filename):
                 bil_id.metadata_version = update["metadata_version"]
                 bil_id.save()
 
-        return {"success": True, "updated": len(updates_to_apply)}
+        return None
 
     # Non-dev spreadsheet behavior (your existing logic)
     else:
@@ -3211,7 +3211,7 @@ def save_bil_ids(datasets, filename):
             saved_bil_id.bil_id = mne_id
             saved_bil_id.save()
 
-        return {"success": True, "created": len(datasets)}
+        return None
 
 def save_specimen_ids(specimens):
     """
