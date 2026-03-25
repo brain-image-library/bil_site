@@ -45,8 +45,9 @@
 
         <div class="collapse navbar-collapse" id="myNavbar">
 
-          {# ── Left nav ── #}
+          {# ── Left nav (authenticated only) ── #}
           <ul class="navbar-nav me-auto gap-1">
+            {% if request.user.is_authenticated %}
 
             {# "New" has two items → keep as dropdown #}
             <li class="nav-item dropdown">
@@ -83,6 +84,7 @@
               </a>
             </li>
 
+            {% endif %}
           </ul>
 
           {# ── Right: user area ── #}

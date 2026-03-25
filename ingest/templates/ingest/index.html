@@ -53,7 +53,7 @@
         {% if datasets_by_year %}
         <div class="col-auto">
           <p class="mb-2" style="opacity:.7; font-size:.75rem; text-transform:uppercase; letter-spacing:.06em;">
-            Public datasets per year
+            Cumulative public datasets
           </p>
           <div id="bil-barchart" class="d-flex align-items-end gap-2" style="height:80px; max-width:360px;"
                aria-label="Bar chart of public datasets per year">
@@ -240,11 +240,14 @@
   });
   if (!barData.length) return;
 
-  var maxCount = Math.max.apply(null, barData.map(function (d) { return d.count; }));
+  // Compute cumulative totals
+  var running = 0;
+  barData.forEach(function (d) { running += d.count; d.cumCount = running; });
+  var maxCount = running; // last bar is always the tallest
   var chartH   = 80; // px — matches container height
 
   barData.forEach(function (d) {
-    var pct     = maxCount > 0 ? (d.count / maxCount) : 0;
+    var pct     = maxCount > 0 ? (d.cumCount / maxCount) : 0;
     var barH    = Math.max(Math.round(pct * chartH), 3);
     var bar     = document.createElement('div');
     bar.style.cssText = [
@@ -256,7 +259,7 @@
       'transition:height .9s cubic-bezier(.22,1,.36,1)',
       'cursor:default',
     ].join(';');
-    bar.setAttribute('title', d.year + ': ' + d.count.toLocaleString() + ' dataset' + (d.count !== 1 ? 's' : ''));
+    bar.setAttribute('title', d.year + ': ' + d.cumCount.toLocaleString() + ' total datasets');
     bar.setAttribute('data-bs-toggle', 'tooltip');
     bar.setAttribute('data-bs-placement', 'top');
     chartEl.appendChild(bar);

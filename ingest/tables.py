@@ -106,12 +106,8 @@ class CollectionTable(tables.Table):
     )
 
     # Shorter header labels for the detail columns
-    organization_name = tables.Column(verbose_name="Organization")
-    lab_name          = tables.Column(verbose_name="Lab")
-    project_funder_id = tables.Column(verbose_name="Grant #")
-    project_funder    = tables.Column(verbose_name="Funder")
-    bil_uuid          = tables.Column(verbose_name="UUID")
-    data_path         = tables.Column(verbose_name="Data Path")
+    lab_name  = tables.Column(verbose_name="Lab")
+    data_path = tables.Column(verbose_name="Data Path")
 
     bican_ids_button = tables.Column(
         verbose_name="Actions",
@@ -176,20 +172,8 @@ class CollectionTable(tables.Table):
     def render_description(self, value):
         return self._truncate(value, 40)
 
-    def render_organization_name(self, value):
-        return self._truncate(value, 24)
-
     def render_lab_name(self, value):
         return self._truncate(value, 24)
-
-    def render_project_funder_id(self, value):
-        return self._truncate(value, 20)
-
-    def render_project_funder(self, value):
-        return self._truncate(value, 18)
-
-    def render_bil_uuid(self, value):
-        return self._truncate(value, 12)
 
     def render_data_path(self, value):
         return self._truncate(value, 30)
@@ -229,10 +213,10 @@ class CollectionTable(tables.Table):
         return value
 
     def render_validation_status(self, value):
-        if value == "Not submitted":
+        if value == "Not validated":
             return format_html(
                 '<span class="badge text-bg-secondary">'
-                '<i class="fa-solid fa-minus me-1"></i>Not Submitted</span>'
+                '<i class="fa-solid fa-minus me-1"></i>Not Validated</span>'
             )
         elif value == "Success":
             return format_html(
@@ -253,12 +237,15 @@ class CollectionTable(tables.Table):
 
     class Meta:
         model = Collection
-        exclude = ['celery_task_id_submission', 'celery_task_id_validation', 'user', 'modality', 'collection_type']
+        exclude = [
+            'celery_task_id_submission', 'celery_task_id_validation', 'user',
+            'modality', 'collection_type',
+            'organization_name', 'project_funder_id', 'project_funder', 'bil_uuid',
+        ]
         template_name = 'ingest/collection_table.html'
         sequence = [
             'id', 'name', 'description', 'submission_status', 'validation_status',
-            'locked', 'bican_ids_button', 'organization_name', 'lab_name',
-            'project_funder_id', 'project_funder', 'bil_uuid', 'data_path', 'project',
+            'locked', 'lab_name', 'data_path', 'project', 'bican_ids_button',
         ]
         attrs = {'class': 'table table-sm table-hover table-col-constrain'}
 

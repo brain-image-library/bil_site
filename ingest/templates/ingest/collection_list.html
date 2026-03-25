@@ -47,11 +47,18 @@
           <label class="form-label small fw-semibold text-muted mb-1" style="letter-spacing:.04em;">
             <i class="fa-solid fa-magnifying-glass fa-xs me-1"></i>SEARCH BY NAME
           </label>
-          <input type="text"
-                 name="name"
-                 value="{{ filter.form.name.value|default:'' }}"
-                 class="form-control form-control-sm"
-                 placeholder="Filter by collection name…">
+          <div class="input-group input-group-sm">
+            <input type="text"
+                   name="name"
+                   id="nameSearch"
+                   value="{{ filter.form.name.value|default:'' }}"
+                   class="form-control"
+                   placeholder="Filter by collection name…"
+                   autocomplete="off">
+            <button type="submit" class="btn btn-outline-secondary">
+              <i class="fa-solid fa-magnifying-glass fa-xs"></i>
+            </button>
+          </div>
         </div>
 
         <div class="col-12 col-sm-auto">
@@ -111,9 +118,6 @@
         </div>
 
         <div class="col-12 col-sm-auto d-flex gap-2">
-          <button type="submit" class="btn btn-sm btn-outline-secondary">
-            <i class="fa-solid fa-magnifying-glass fa-xs me-1"></i>Search
-          </button>
           <a href="{% url 'ingest:collection_list' %}" class="btn btn-sm btn-outline-secondary">
             <i class="fa-solid fa-xmark fa-xs me-1"></i>Clear
           </a>
@@ -165,9 +169,10 @@
 $(function () {
   var dt = $('.table-col-constrain').DataTable({
     paging:    false,
-    searching: false,
+    searching: true,
     info:      false,
     order:     [],
+    dom:       'rt',
     columnDefs: [
       { orderable: false, targets: [0, 6] },
       {
