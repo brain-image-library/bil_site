@@ -1,9 +1,10 @@
 function loadSpinner() {
-    $("#loadMe").modal({
-      backdrop: "static", //remove ability to close modal with click
-      keyboard: false, //remove option to close with keyboard
-      show: true //Display loader!
+    var modalEl = document.getElementById('loadMe');
+    var loadModal = bootstrap.Modal.getOrCreateInstance(modalEl, {
+      backdrop: 'static',
+      keyboard: false
     });
+    loadModal.show();
     var url = "${window.origin}/ingest/descriptive_metadata_upload/";
     $.post(
       url,
@@ -13,7 +14,7 @@ function loadSpinner() {
           var resOutput =
             '<h4 style="color: black">Success!</h4>';
           $("#output").html(resOutput);
-          $("#loadMe").modal("hide");
+          loadModal.hide();
         } else {
           $("#output").html(
             '<div class="alert alert-warning"><h4>Please see the errors or contact BIL Support</h4></div>'

@@ -44,9 +44,96 @@ from django.utils.timezone import now
 from django.utils import timezone
 from django.db import transaction
 
-from django.db.models import OuterRef, Subquery, Q, Exists
+from django.db.models import OuterRef, Subquery, Q, Exists, Count, F, Sum
+from django.db.models.functions import ExtractYear
 from pathlib import Path
 import jwt, time
+import brainimagelibrary
+
+
+def _get_public_dataset_stats():
+    """Return (public_dataset_count, public_file_count, datasets_by_year).
+
+    - Dataset count + per-year breakdown: BIL SDK (authoritative public inventory),
+      falls back to local ORM if the SDK call fails.
+    - File count: always from local ORM (the SDK daily report has no file-count column).
+
+    Results are cached for 1 hour.
+    """
+    cached = cache.get('public_dataset_stats')
+    if cached is not None:
+        return cached
+
+    # --- File count from ORM (always) ---
+    _latest_sheet_subq = Subquery(
+        Sheet.objects.filter(
+            collection_id=OuterRef('collection_id'),
+        ).order_by('-date_uploaded').values('id')[:1]
+    )
+    latest_sheet_ids = (
+        Sheet.objects
+        .filter(collection__submission_status='SUCCESS',
+                collection__validation_status='SUCCESS')
+        .annotate(latest_id=_latest_sheet_subq)
+        .filter(latest_id=F('id'))
+        .values_list('id', flat=True)
+    )
+    public_file_count = (
+        Dataset.objects
+        .filter(sheet_id__in=latest_sheet_ids, number_of_files__isnull=False)
+        .aggregate(total=Sum('number_of_files'))['total'] or 0
+    )
+
+    # --- Dataset count + by-year from SDK ---
+    try:
+        df = brainimagelibrary.reports.daily()
+        if df is not None and not df.empty:
+            public_dataset_count = len(df)
+            df = df.copy()
+            df['_year'] = pd.to_datetime(df['bildate'], errors='coerce').dt.year
+            year_counts = df['_year'].dropna().astype(int).value_counts().sort_index()
+            datasets_by_year = [
+                {'year': int(y), 'count': int(n)}
+                for y, n in year_counts.items()
+            ]
+            result = (public_dataset_count, public_file_count, datasets_by_year)
+            cache.set('public_dataset_stats', result, 3600)
+            return result
+    except Exception:
+        pass
+
+    # --- ORM fallback for dataset count + by-year ---
+    upgraded_v1_ids = BIL_ID.objects.filter(
+        v1_ds_id__isnull=False, v2_ds_id__isnull=False,
+    ).values_list('v1_ds_id', flat=True)
+    v2_count = Dataset.objects.filter(sheet_id__in=latest_sheet_ids).count()
+    v1_count = DescriptiveMetadata.objects.filter(
+        collection__submission_status='SUCCESS',
+        collection__validation_status='SUCCESS',
+    ).exclude(id__in=upgraded_v1_ids).count()
+    public_dataset_count = v2_count + v1_count
+    v2_by_year = (
+        Dataset.objects.filter(sheet_id__in=latest_sheet_ids)
+        .annotate(year=ExtractYear('sheet__date_uploaded'))
+        .values('year').annotate(n=Count('id')).order_by('year')
+    )
+    v1_by_year = (
+        DescriptiveMetadata.objects
+        .filter(collection__submission_status='SUCCESS',
+                collection__validation_status='SUCCESS')
+        .exclude(id__in=upgraded_v1_ids)
+        .annotate(year=ExtractYear('date_created'))
+        .values('year').annotate(n=Count('id')).order_by('year')
+    )
+    year_map = {}
+    for row in v2_by_year:
+        if row['year']:
+            year_map[row['year']] = year_map.get(row['year'], 0) + row['n']
+    for row in v1_by_year:
+        if row['year']:
+            year_map[row['year']] = year_map.get(row['year'], 0) + row['n']
+    datasets_by_year = [{'year': y, 'count': year_map[y]} for y in sorted(year_map)]
+    return (public_dataset_count, public_file_count, datasets_by_year)
 
 
 def logout(request):
@@ -110,18 +197,34 @@ def index(request):
     )
 
     # --- Step 3: Routing logic based on role ---
+    public_dataset_count, public_file_count, datasets_by_year = _get_public_dataset_stats()
+
     try:
         people = People.objects.get(auth_user_id_id=current_user.id)
         project_person = ProjectPeople.objects.filter(people_id=people.id).all()
         if people.is_bil_admin:
-            return render(request, 'ingest/bil_index.html', {'people': people})
+            return render(request, 'ingest/bil_index.html', {
+                'people': people,
+                'public_dataset_count': public_dataset_count,
+                'public_file_count': public_file_count,
+                'datasets_by_year': datasets_by_year,
+            })
         for attribute in project_person:
             if attribute.is_pi:
-                return render(request, 'ingest/pi_index.html', {'project_person': attribute})
+                return render(request, 'ingest/pi_index.html', {
+                    'project_person': attribute,
+                    'public_dataset_count': public_dataset_count,
+                    'public_file_count': public_file_count,
+                    'datasets_by_year': datasets_by_year,
+                })
     except Exception as e:
         print(e)
 
-    return render(request, 'ingest/index.html')
+    return render(request, 'ingest/index.html', {
+        'public_dataset_count': public_dataset_count,
+        'public_file_count': public_file_count,
+        'datasets_by_year': datasets_by_year,
+    })
 
 
 @login_required
@@ -357,8 +460,12 @@ def add_project_user(request, pk):
         else:
             pi = False
     all_users = User.objects.all()
-    project = Project.objects.get(id=pk) 
-    return render(request, 'ingest/add_project_user.html', {'all_users':all_users, 'project':project, 'pi':pi})
+    project = Project.objects.get(id=pk)
+    existing_user_ids = set(
+        ProjectPeople.objects.filter(project_id_id=pk)
+        .values_list('people_id__auth_user_id_id', flat=True)
+    )
+    return render(request, 'ingest/add_project_user.html', {'all_users': all_users, 'project': project, 'pi': pi, 'existing_user_ids': existing_user_ids})
 
 # adds person to a project
 @login_required
@@ -415,18 +522,21 @@ def view_project_people(request, pk):
             pi = False
     try:
         project = Project.objects.get(id=pk)
-        # get all of the project people rows with the project_id matching the project.id
-        projectpeople = ProjectPeople.objects.filter(project_id_id=pk).all()
-        # get all of the people who are in those projectpeople rows
-        allpeople = []
+        projectpeople = ProjectPeople.objects.filter(project_id_id=pk).select_related('people_id', 'people_id__auth_user_id').all()
+        members = []
         for row in projectpeople:
-            person_id = row.people_id_id
-            person = People.objects.get(id=person_id)
-            allpeople.append(person)
-        return render(request, 'ingest/view_project_people.html', { 'project':project, 'allpeople':allpeople })
+            person = row.people_id
+            if person:
+                members.append({
+                    'name': person.name,
+                    'username': person.auth_user_id.username if person.auth_user_id else '—',
+                    'affiliation': person.affiliation,
+                    'is_pi': row.is_pi,
+                    'is_po': row.is_po,
+                })
+        return render(request, 'ingest/view_project_people.html', {'project': project, 'members': members})
     except ProjectPeople.DoesNotExist:
         return render(request, 'ingest/no_people.html')
-    return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople, 'project':project, 'pi':pi})
 
 # fallback for when a project has no collections associated with it
 @login_required
@@ -974,11 +1084,11 @@ def submission_view(request):
         form = CollectionChoice(request.user, request.POST)
         if form.is_valid():
             selected_collection = form.cleaned_data['collection']
-            # Process the selected collection
             return redirect('ingest:descriptive_metadata_upload', associated_collection=selected_collection.id)
-    else:
-        form = CollectionChoice(request.user)
-    return render(request, 'ingest/choose_submission.html', {'form': form})
+    collections = Collection.objects.filter(user=request.user).exclude(
+        submission_status='SUCCESS', validation_status='SUCCESS'
+    ).order_by('name')
+    return render(request, 'ingest/choose_submission.html', {'collections': collections})
 
 class SubmitValidateCollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     """ A list of all a user's collections. """
@@ -1079,17 +1189,10 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
         return Collection.objects.filter(user=self.request.user)
 
     def get_context_data(self, **kwargs):
-        # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
-        context['collections'] = Collection.objects.filter(user=self.request.user)
+        context['total_count'] = Collection.objects.filter(user=self.request.user).count()
+        context['filtered_count'] = self.object_list.count()
         return context
-
-    def get_filterset_kwargs(self, filterset_class):
-        """ Sets the default collection filter status. """
-        kwargs = super().get_filterset_kwargs(filterset_class)
-        if kwargs["data"] is None:
-            kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
-        return kwargs
          
 @login_required
 def collection_data_path(request, pk):
@@ -3458,13 +3561,13 @@ def descriptive_metadata_upload(request, associated_collection):
         associated_collection = Collection.objects.get(id = associated_collection)
 
         # for production
-        datapath = associated_collection.data_path.replace("/lz/","/etc/")
+        #datapath = associated_collection.data_path.replace("/lz/","/etc/")
             
             # for development on vm
         #datapath = '/Users/luketuite/shared_bil_dev' 
 
         # for development locally
-        #datapath = '/Users/luketuite/shared_bil_dev' 
+        datapath = '/Users/luketuite/shared_bil_dev' 
         
         spreadsheet_file = request.FILES['spreadsheet_file']
 

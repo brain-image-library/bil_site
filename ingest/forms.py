@@ -66,12 +66,30 @@ class CollectionForm(forms.ModelForm):
         model = Collection
         fields = collection_fields
         widgets = {
-            "project_funder_id": forms.TextInput(attrs={"list": "funder_list"}),
+            "project_funder_id": forms.TextInput(attrs={"list": "funder_list", "class": "form-control"}),
         }
 
     def __init__(self, *args, **kwargs):
         self.request = kwargs.pop("request", None)
         super().__init__(*args, **kwargs)
+
+        placeholders = {
+            "name": "e.g. Mouse cortex light-sheet 2024",
+            "description": "Briefly describe the data being submitted…",
+            "organization_name": "e.g. Carnegie Mellon University",
+            "lab_name": "e.g. Smith Lab",
+            "project_funder": "e.g. NIH",
+            "project_funder_id": "e.g. R01 MH123456",
+        }
+        for name, field in self.fields.items():
+            widget = field.widget
+            if isinstance(widget, forms.Select):
+                widget.attrs.setdefault("class", "form-select")
+            elif "class" not in widget.attrs:
+                widget.attrs["class"] = "form-control"
+            if name in placeholders:
+                widget.attrs.setdefault("placeholder", placeholders[name])
+        self.fields["description"].widget.attrs.setdefault("rows", "4")
 
         if self.request:
             try:

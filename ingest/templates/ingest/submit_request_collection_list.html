@@ -20,12 +20,11 @@
 </p>
 
 <!-- 🌀 LOADING MODAL -->
-<div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static"
-  data-keyboard="false">
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered" role="document">
     <div class="modal-content text-center p-4">
       <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
-        <span class="sr-only">Processing...</span>
+        <span class="visually-hidden">Processing...</span>
       </div>
       <h5>Please wait</h5>
       <p class="mb-0 text-muted">Your submissions are being processed. This may take a few moments...</p>
@@ -38,7 +37,7 @@
   <input type="checkbox" id="eligibleToggle" class="collapsible-toggle" checked>
   <label for="eligibleToggle" class="collapsible-header h3 mb-2">
     Eligible for Validation
-    <span class="text-muted ml-2" style="font-weight: normal;">
+    <span class="text-muted ms-2" style="font-weight: normal;">
       ({{ eligible_collections|length }})
     </span>
   </label>
@@ -46,6 +45,7 @@
   <div class="collapsible-body">
     <form id="rowform">
       {% csrf_token %}
+      <div class="table-responsive">
       <table id="EligibleTable" class="table">
         <thead>
           <tr>
@@ -84,6 +84,7 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
     </form>
 
     <button id="submitBtn" type="button" class="btn btn-primary" onclick="collection_send();" disabled>
@@ -102,16 +103,17 @@
   <input type="checkbox" id="needsMetadataToggle" class="collapsible-toggle">
   <label for="needsMetadataToggle" class="collapsible-header h3 mb-2">
     Need Metadata
-    <span class="text-muted ml-2" style="font-weight: normal;">
+    <span class="text-muted ms-2" style="font-weight: normal;">
       ({{ needs_metadata_collections|length }})
     </span>
-    <span data-toggle="tooltip"
+    <span data-bs-toggle="tooltip"
       title="Submissions need metadata before they can be validated. Upload a spreadsheet to provide metadata.">
       <i class="fa fa-info-circle"></i>
     </span>
   </label>
 
   <div class="collapsible-body">
+    <div class="table-responsive">
     <table id="NeedsMetadataTable" class="table table-sm text-muted">
       <thead>
         <tr>
@@ -133,7 +135,7 @@
           <td>{{ c.bil_uuid }}</td>
           <td>{{ c.submission_status }}</td>
           <td>{{ c.validation_status }}</td>
-          <td class="text-right">
+          <td class="text-end">
             <a href="/ingest/ingest/descriptive_metadata_upload/{{ c.id }}/" class="btn btn-sm btn-primary">
               Add Metadata
             </a>
@@ -146,6 +148,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
 </div>
 
@@ -154,12 +157,13 @@
   <input type="checkbox" id="inProgressToggle" class="collapsible-toggle">
   <label for="inProgressToggle" class="collapsible-header h3 mb-2">
     Validation In Progress
-    <span class="text-muted ml-2" style="font-weight: normal;">
+    <span class="text-muted ms-2" style="font-weight: normal;">
       ({{ already_requested_collections|length }})
     </span>
   </label>
 
   <div class="collapsible-body">
+    <div class="table-responsive">
     <table id="AlreadyRequestedTable" class="table table-sm">
       <thead>
         <tr>
@@ -186,6 +190,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
 </div>
 
@@ -196,12 +201,13 @@
   <input type="checkbox" id="completedToggle" class="collapsible-toggle">
   <label for="completedToggle" class="collapsible-header h3 mb-2">
     Completed (Validated &amp; Published)
-    <span class="text-muted ml-2" style="font-weight: normal;">
+    <span class="text-muted ms-2" style="font-weight: normal;">
       ({{ completed_collections|length }})
     </span>
   </label>
 
   <div class="collapsible-body">
+    <div class="table-responsive">
     <table id="CompletedTable" class="table table-sm text-muted mt-2">
       <thead>
         <tr>
@@ -228,6 +234,7 @@
         {% endfor %}
       </tbody>
     </table>
+    </div>
   </div>
 </div>
 
@@ -236,10 +243,30 @@
 </a>
 
 <script>
+  let loadingModal;
+
   document.addEventListener('DOMContentLoaded', () => {
+    const modalEl = document.getElementById('loadingModal');
+    loadingModal = new bootstrap.Modal(modalEl, {
+      backdrop: 'static',
+      keyboard: false
+    });
     bindCheckboxes();
-    if (window.$) { $('[data-toggle="tooltip"]').tooltip(); }
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+      new bootstrap.Tooltip(el);
+    });
   });
+
+  function hideLoadingModal() {
+    const modalEl = document.getElementById('loadingModal');
+    if (modalEl.classList.contains('show')) {
+      // Animation already complete — safe to hide immediately
+      loadingModal.hide();
+    } else {
+      // Show animation still in progress — queue hide for when it finishes
+      modalEl.addEventListener('shown.bs.modal', () => loadingModal.hide(), { once: true });
+    }
+  }
 
   function bindCheckboxes() {
     const checkboxes = document.querySelectorAll('.collection-checkbox');
@@ -261,7 +288,7 @@
     curationDiv.innerHTML = '';
 
     // 🌀 Show loading spinner
-    $('#loadingModal').modal('show');
+    loadingModal.show();
 
     fetch("{% url 'ingest:collection_send' %}", {
       method: "POST",
@@ -273,7 +300,7 @@
     })
       .then(r => r.json())
       .then(data => {
-        $('#loadingModal').modal('hide');
+        hideLoadingModal();
         let html = '';
 
         if (data.sent && data.sent.length > 0) {
@@ -333,7 +360,7 @@
         }
       })
       .catch(err => {
-        $('#loadingModal').modal('hide');
+        hideLoadingModal();
         console.error(err);
         alert("There was a problem sending your request.");
       });

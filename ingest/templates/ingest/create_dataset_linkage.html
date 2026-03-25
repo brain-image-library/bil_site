@@ -31,7 +31,7 @@
             {% for linkage in existing_linkages %}
             <tr>
                 <td>
-                    <span class="dataset-ellipsis help-ellipsis" data-toggle="tooltip" data-container="body"
+                    <span class="dataset-ellipsis help-ellipsis" data-bs-toggle="tooltip" data-bs-container="body"
                         title="{{ linkage.data_id_1_bil.v2_ds_id.title }}">
                         {{ linkage.data_id_1_bil.v2_ds_id.title }}
                     </span>
@@ -66,39 +66,39 @@
 
                     <th>
                         Code ID
-                        <span class="glyphicon glyphicon-question-sign help-icon" data-toggle="tooltip"
-                            data-container="body" data-html="true"
-                            title="Select the repository where the linked dataset is stored (e.g., Brain Image Library, NeMO, DANDI)."></span>
+                        <i class="fas fa-circle-question help-icon" data-bs-toggle="tooltip"
+                            data-bs-container="body" data-html="true"
+                            title="Select the repository where the linked dataset is stored (e.g., Brain Image Library, NeMO, DANDI)."></i>
                     </th>
 
                     <th>
                         Identifier for Linkage
-                        <span class="glyphicon glyphicon-question-sign help-icon" data-toggle="tooltip"
-                            data-container="body" data-html="true"
+                        <i class="fas fa-circle-question help-icon" data-bs-toggle="tooltip"
+                            data-bs-container="body" data-html="true"
                             title="<strong>Enter the persistent identifier for the linked dataset.</strong>
                                      <br><em>Examples:</em>
                                      <span class='tt-line'>BIL Dataset Identifier: <code>ace-cat-dog</code></span>
                                      <span class='tt-line'>NeMO Identifier: <code>nemo:dat-4v55t0q</code></span>
-                                     <span class='tt-line'>DANDI Identifier: <code>DANDI:000008/0.211014.0809</code></span>"></span>
+                                     <span class='tt-line'>DANDI Identifier: <code>DANDI:000008/0.211014.0809</code></span>"></i>
                     </th>
 
                     <th>
                         Relationship
-                        <span class="glyphicon glyphicon-question-sign help-icon" data-toggle="tooltip"
-                            data-container="body" data-html="true"
+                        <i class="fas fa-circle-question help-icon" data-bs-toggle="tooltip"
+                            data-bs-container="body" data-html="true"
                             title="<strong>Specify the relationship of the linked data to the dataset in the first column.</strong>
                                      <span class='tt-line'><em>Omics Data</em> — related NeMO datasets</span>
                                      <span class='tt-line'><em>Neurophysiology Data</em> — related DANDI datasets</span>
                                      <span class='tt-line'><em>Derived Data</em> — reprocessed/reanalyzed BIL datasets</span>
                                      <span class='tt-line'><em>Raw Data</em> — raw datasets of processed BIL datasets</span>
-                                     <span class='tt-line'><em>Neuron Tracing</em> — neuron tracing datasets in BIL</span>"></span>
+                                     <span class='tt-line'><em>Neuron Tracing</em> — neuron tracing datasets in BIL</span>"></i>
                     </th>
 
                     <th>
                         Description
-                        <span class="glyphicon glyphicon-question-sign help-icon" data-toggle="tooltip"
-                            data-container="body" data-html="true"
-                            title="Brief description of the linked dataset, preferably the title of the linked dataset."></span>
+                        <i class="fas fa-circle-question help-icon" data-bs-toggle="tooltip"
+                            data-bs-container="body" data-html="true"
+                            title="Brief description of the linked dataset, preferably the title of the linked dataset."></i>
                     </th>
                 </tr>
             </thead>
@@ -106,12 +106,12 @@
                 {% for dataset in datasets_to_link %}
                 <tr>
                     <td>
-                        <span class="dataset-ellipsis help-ellipsis" data-toggle="tooltip" data-container="body"
+                        <span class="dataset-ellipsis help-ellipsis" data-bs-toggle="tooltip" data-bs-container="body"
                             title="{{ dataset.title|default_if_none:'' }}">
                             <strong>{{ dataset.title|default_if_none:'' }}</strong>
                         </span>
                         <small>
-                            <span class="dataset-ellipsis help-ellipsis" data-toggle="tooltip" data-container="body"
+                            <span class="dataset-ellipsis help-ellipsis" data-bs-toggle="tooltip" data-bs-container="body"
                                 title="BIL Directory: {{ dataset.bildirectory|default_if_none:'' }}">
                                 BIL Directory: {{ dataset.bildirectory|default_if_none:'' }}
                             </span>
@@ -119,7 +119,7 @@
                         {% if collection.submission_status == "SUCCESS" and collection.validation_status == "SUCCESS" %}
                         <br>
                         <small>
-                            <span class="dataset-ellipsis help-ellipsis" data-toggle="tooltip" data-container="body"
+                            <span class="dataset-ellipsis help-ellipsis" data-bs-toggle="tooltip" data-bs-container="body"
                                 title="BIL ID: {% if dataset.bil_id %}{{ dataset.bil_id }}{% else %}N/A{% endif %}">
                                 BIL ID: {% if dataset.bil_id %}{{ dataset.bil_id }}{% else %}N/A{% endif %}
                             </span>
@@ -169,7 +169,9 @@
     {% endif %}
 </div>
 
-{# Use the jQuery/Bootstrap already loaded in base.html. Only include Select2 here. #}
+{% endblock %}
+
+{% block extra_scripts %}
 <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
 
@@ -180,27 +182,33 @@
     $(function () {
         function initializeTooltips() {
             // Header help icons (wider, HTML-enabled)
-            $('.help-icon').tooltip('destroy').tooltip({
-                html: true,
-                placement: 'bottom',
-                container: 'body',
-                template:
-                    '<div class="tooltip tooltip-help" role="tooltip">' +
-                    '<div class="tooltip-arrow"></div>' +
-                    '<div class="tooltip-inner"></div>' +
-                    '</div>'
+            document.querySelectorAll('.help-icon').forEach(function (el) {
+                bootstrap.Tooltip.getInstance(el)?.dispose();
+                new bootstrap.Tooltip(el, {
+                    html: true,
+                    placement: 'bottom',
+                    container: 'body',
+                    template:
+                        '<div class="tooltip tooltip-help" role="tooltip">' +
+                        '<div class="tooltip-arrow"></div>' +
+                        '<div class="tooltip-inner"></div>' +
+                        '</div>'
+                });
             });
 
             // Ellipsized text (titles/paths/IDs) – wrap nicely and auto-size
-            $('.help-ellipsis').tooltip('destroy').tooltip({
-                html: false,
-                placement: 'bottom',
-                container: 'body',
-                template:
-                    '<div class="tooltip tooltip-long" role="tooltip">' +
-                    '<div class="tooltip-arrow"></div>' +
-                    '<div class="tooltip-inner"></div>' +
-                    '</div>'
+            document.querySelectorAll('.help-ellipsis').forEach(function (el) {
+                bootstrap.Tooltip.getInstance(el)?.dispose();
+                new bootstrap.Tooltip(el, {
+                    html: false,
+                    placement: 'bottom',
+                    container: 'body',
+                    template:
+                        '<div class="tooltip tooltip-long" role="tooltip">' +
+                        '<div class="tooltip-arrow"></div>' +
+                        '<div class="tooltip-inner"></div>' +
+                        '</div>'
+                });
             });
         }
         initializeTooltips();

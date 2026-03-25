@@ -1,27 +1,35 @@
 {% if datasets_list %}
-  <table id="newMetadata" class="table">
-    <thead>
-    <tr>
-    <th>Title</th>
-    <th>Submission</th>
-    <th>BIL Directory</th>
-    <th>Uploaded Date</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for d in datasets_list %}
-    <tr>
-    <td>{{ d.title }}</td>
-    <td>{{ d.sheet.collection }}</td>
-    <td>{{ d.bildirectory }}</td>
-    <td>{{ d.sheet.date_uploaded }}</td>
-    <td><a href="{% url 'ingest:new_metadata_detail' d.sheet_id %}">View More</td>
-    </tr>
-    {% endfor %}
-  </table>
-  
+  <div class="table-responsive">
+    <table id="newMetadata" class="table table-hover align-middle mb-0">
+      <thead style="background-color: #161b33; color: #fff;">
+        <tr>
+          <th>Title</th>
+          <th>Submission</th>
+          <th>BIL Directory</th>
+          <th>Uploaded Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in datasets_list %}
+        <tr>
+          <td>{{ d.title }}</td>
+          <td>{{ d.sheet.collection }}</td>
+          <td>{{ d.bildirectory }}</td>
+          <td>{{ d.sheet.date_uploaded }}</td>
+          <td>
+            <a href="{% url 'ingest:new_metadata_detail' d.sheet_id %}" class="btn btn-sm btn-outline-primary">
+              <i class="fa-solid fa-eye fa-sm me-1"></i>View More
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 {% else %}
-  <div class="alert alert-info">
-    <p>You haven't created any metadata (V2) yet.</p>
+  <div class="alert alert-info d-flex gap-2 align-items-start">
+    <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+    <span>You haven't created any metadata (V2) yet.</span>
   </div>
 {% endif %}

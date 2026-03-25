@@ -69,96 +69,198 @@ class SubmitValidateCollectionTable(tables.Table):
 class CollectionTable(tables.Table):
     """ The table used in the collection list. """
 
-    # We use a collection's id as a link to the corresponding collection
-    # detail.
     id = tables.LinkColumn(
         'ingest:collection_detail',
         verbose_name="",
         args=[A('pk')],
-        text=format_html('<button type="button" class="btn btn-primary">Select</button>'))
-        #text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
-        #attrs={'a': {'class': "btn btn-info", 'role': "button"}})
+        text=format_html(
+            '<button type="button" class="btn btn-sm" '
+            'style="background-color:#161b33;color:#fff;border-color:#161b33;">'
+            '<i class="fa-solid fa-arrow-right me-1"></i>Open'
+            '</button>'
+        ),
+    )
+
     description = tables.Column()
 
+    # Status/icon columns — centred header + cell
+    submission_status = tables.Column(
+        verbose_name="Sub. Status",
+        attrs={
+            'th': {'class': 'text-center text-nowrap'},
+            'td': {'class': 'text-center'},
+        },
+    )
+    validation_status = tables.Column(
+        verbose_name="Val. Status",
+        attrs={
+            'th': {'class': 'text-center text-nowrap'},
+            'td': {'class': 'text-center'},
+        },
+    )
+    locked = tables.Column(
+        attrs={
+            'th': {'class': 'text-center'},
+            'td': {'class': 'text-center'},
+        },
+    )
+
+    # Shorter header labels for the detail columns
+    organization_name = tables.Column(verbose_name="Organization")
+    lab_name          = tables.Column(verbose_name="Lab")
+    project_funder_id = tables.Column(verbose_name="Grant #")
+    project_funder    = tables.Column(verbose_name="Funder")
+    bil_uuid          = tables.Column(verbose_name="UUID")
+    data_path         = tables.Column(verbose_name="Data Path")
+
     bican_ids_button = tables.Column(
-        verbose_name="",
-        accessor='most_recent_sheet_pk',
+        verbose_name="Actions",
+        accessor='pk',
         orderable=False,
         empty_values=(),
     )
 
-    def __init__(self, *args, **kwargs):
-        super(CollectionTable, self).__init__(*args, **kwargs)
-        self.dynamic_args()
-
-    def dynamic_args(self):
-        for record in self.data:
-            most_recent_sheet = Sheet.objects.filter(collection_id=record.id).last()
-            specimens = Specimen.objects.filter(sheet = most_recent_sheet)
-            bil_specimen_ids = BIL_Specimen_ID.objects.filter(specimen_id__in=specimens)
-            linked_bil_specimen_ids = SpecimenLinkage.objects.filter(specimen_id__in=bil_specimen_ids)
-
-            if most_recent_sheet:
-                if record.submission_status == 'SUCCESS':
-                    record.most_recent_sheet_pk = mark_safe('<div class="alert alert-success" role="alert">Data Public</div>')
-                elif ProjectConsortium.objects.filter(project=record.project, consortium__short_name='BICAN').exists():
-                    if linked_bil_specimen_ids.exists():
-                        record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-info">Request Publication</a>'.format(reverse('ingest:submit_request_collection_list')))
-                    else:
-                        record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-primary">Add Bican IDs</a>'.format(reverse('ingest:bican_id_upload', args=[most_recent_sheet.pk])))
+    def render_bican_ids_button(self, record):
+        most_recent_sheet = Sheet.objects.filter(collection_id=record.id).last()
+        if most_recent_sheet:
+            if record.submission_status == 'SUCCESS':
+                return mark_safe(
+                    '<span class="badge text-bg-success px-2 py-1">'
+                    '<i class="fa-solid fa-globe me-1"></i>Data Public</span>'
+                )
+            elif ProjectConsortium.objects.filter(project=record.project, consortium__short_name='BICAN').exists():
+                specimens = Specimen.objects.filter(sheet=most_recent_sheet)
+                bil_specimen_ids = BIL_Specimen_ID.objects.filter(specimen_id__in=specimens)
+                if SpecimenLinkage.objects.filter(specimen_id__in=bil_specimen_ids).exists():
+                    return mark_safe(
+                        '<a href="{}" class="btn btn-sm btn-outline-secondary">'
+                        '<i class="fa-solid fa-paper-plane me-1"></i>Request Publication</a>'.format(
+                            reverse('ingest:submit_request_collection_list')
+                        )
+                    )
                 else:
-                    record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-info">Request Publication</a>'.format(reverse('ingest:submit_request_collection_list')))
+                    return mark_safe(
+                        '<a href="{}" class="btn btn-sm" style="background-color:#161b33;color:#fff;border-color:#161b33;">'
+                        '<i class="fa-solid fa-id-card me-1"></i>Add BICAN IDs</a>'.format(
+                            reverse('ingest:bican_id_upload', args=[most_recent_sheet.pk])
+                        )
+                    )
             else:
-                record.most_recent_sheet_pk = mark_safe('<a href="{}" class="btn btn-danger">Needs Metadata</a>'.format(reverse('ingest:descriptive_metadata_upload', args=[record.id])))
+                return mark_safe(
+                    '<a href="{}" class="btn btn-sm btn-outline-secondary">'
+                    '<i class="fa-solid fa-paper-plane me-1"></i>Request Publication</a>'.format(
+                        reverse('ingest:submit_request_collection_list')
+                    )
+                )
+        return mark_safe(
+            '<a href="{}" class="btn btn-sm btn-warning">'
+            '<i class="fa-solid fa-triangle-exclamation me-1"></i>Needs Metadata</a>'.format(
+                reverse('ingest:descriptive_metadata_upload', args=[record.id])
+            )
+        )
 
-    class Meta:
-        model = Collection
-        exclude = ['celery_task_id_submission', 'celery_task_id_validation', 'user', 'modality']
-        template_name = 'django_tables2/bootstrap.html'
+    @staticmethod
+    def _truncate(value, limit):
+        s = str(value)
+        if len(s) <= limit:
+            return s
+        return format_html(
+            '<span data-bs-toggle="tooltip" data-bs-placement="top"'
+            ' data-bs-custom-class="tooltip-wide" title="{}">{}</span>',
+            s, s[:limit] + '…'
+        )
 
+    def render_name(self, value):
+        return self._truncate(value, 30)
 
-    def render_project_description(self, value):
-        """ Ellipsize the project description if it's too long. """
-        limit_len = 32
-        value = value if len(value) < limit_len else value[:limit_len] + "…"
-        return value
+    def render_description(self, value):
+        return self._truncate(value, 40)
+
+    def render_organization_name(self, value):
+        return self._truncate(value, 24)
+
+    def render_lab_name(self, value):
+        return self._truncate(value, 24)
+
+    def render_project_funder_id(self, value):
+        return self._truncate(value, 20)
+
+    def render_project_funder(self, value):
+        return self._truncate(value, 18)
+
+    def render_bil_uuid(self, value):
+        return self._truncate(value, 12)
+
+    def render_data_path(self, value):
+        return self._truncate(value, 30)
 
     def render_locked(self, value):
         if value:
-            value = format_html('<i class="fa fa-lock"></i>')
-        else:
-            value = format_html('<i class="fa fa-unlock"></i>')
-        return value
+            return format_html(
+                '<span class="badge text-bg-secondary">'
+                '<i class="fa-solid fa-lock me-1"></i>Locked</span>'
+            )
+        return format_html(
+            '<span class="badge border text-muted">'
+            '<i class="fa-solid fa-lock-open me-1"></i>Open</span>'
+        )
 
     def render_submission_status(self, value):
-        """ Show the status as an icon. """
         if value == "Not submitted":
-            value = format_html('<i class="fa fa-minus" style="color:blue"></i>')
+            return format_html(
+                '<span class="badge text-bg-secondary">'
+                '<i class="fa-solid fa-minus me-1"></i>Not Submitted</span>'
+            )
         elif value == "Success":
-            value = format_html('<i class="fa fa-check" style="color:green"></i>')
+            return format_html(
+                '<span class="badge text-bg-success">'
+                '<i class="fa-solid fa-check me-1"></i>Success</span>'
+            )
         elif value == "Pending":
-            value = format_html('<i class="fa fa-clock" style="color:yellow"></i>')
+            return format_html(
+                '<span class="badge text-bg-warning">'
+                '<i class="fa-solid fa-clock me-1"></i>Pending</span>'
+            )
         elif value == "Failed":
-            value = format_html('<i class="fa fa-exclamation-circle" style="color:red"></i>')
+            return format_html(
+                '<span class="badge text-bg-danger">'
+                '<i class="fa-solid fa-circle-exclamation me-1"></i>Failed</span>'
+            )
         return value
 
     def render_validation_status(self, value):
-        """ Show the status as an icon. """
         if value == "Not submitted":
-            value = format_html('<button type="button" class="btn btn-primary">Not Submitted</button>')
-            #value = format_html('<i class="fa fa-minus" style="color:blue"></i>')
+            return format_html(
+                '<span class="badge text-bg-secondary">'
+                '<i class="fa-solid fa-minus me-1"></i>Not Submitted</span>'
+            )
         elif value == "Success":
-            value = format_html('<i class="fa fa-check" style="color:green"></i>')
+            return format_html(
+                '<span class="badge text-bg-success">'
+                '<i class="fa-solid fa-check me-1"></i>Valid</span>'
+            )
         elif value == "Pending":
-            value = format_html('<i class="fa fa-clock" style="color:yellow"></i>')
+            return format_html(
+                '<span class="badge text-bg-warning">'
+                '<i class="fa-solid fa-clock me-1"></i>Pending</span>'
+            )
         elif value == "Failed":
-            value = format_html('<i class="fa fa-exclamation-circle" style="color:red"></i>')
+            return format_html(
+                '<span class="badge text-bg-danger">'
+                '<i class="fa-solid fa-circle-exclamation me-1"></i>Failed</span>'
+            )
         return value
 
     class Meta:
         model = Collection
-        exclude = ['celery_task_id_submission', 'celery_task_id_validation', 'user', 'modality','collection_type']
-        template_name = 'django_tables2/bootstrap.html'
+        exclude = ['celery_task_id_submission', 'celery_task_id_validation', 'user', 'modality', 'collection_type']
+        template_name = 'ingest/collection_table.html'
+        sequence = [
+            'id', 'name', 'description', 'submission_status', 'validation_status',
+            'locked', 'bican_ids_button', 'organization_name', 'lab_name',
+            'project_funder_id', 'project_funder', 'bil_uuid', 'data_path', 'project',
+        ]
+        attrs = {'class': 'table table-sm table-hover table-col-constrain'}
 
 class CollectionRequestTable(tables.Table):
     """ The table used in the collection list. """

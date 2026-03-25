@@ -2,134 +2,278 @@
 {% load static %}
 {% block content %}
 
-<div class="container-fluid white_on_gray">
+<div class="container-fluid py-4">
 
-  <div class="row">
-    <div class="col-lg-12 big-row-text">
-      <h1>Data Submission Portal</h1>
-      <p>The Brain Image Library (BIL) is a public resource enabling
-      researchers to deposit, analyze, mine, share and interact with large
-      brain image datasets.  
-      More information about the Brain Image Library can be found 
-      on our informational website: 
-      <a href="http://www.brainimagelibrary.org/">www.brainimagelibrary.org</a>.
-      The BIL is supported by the National Institute of
-      Mental Health of the National Institutes of Health under award number
-      R24MH114793. </p>
-    </div>
-
-  </div>
-  {% for message in messages %}
-  <div style="width: px; margin-left:0px; " class="alert alert-{{ message.tags }} " id="msg" role="alert">
-  {{ message }}
-    
-{% endfor %}
-</div>
-
-
-{% if request.user.username %}
-
-<div class="container-fluid gray_on_med_blue">
-  <div class="row">
-
-    <div class="col-lg-4 visible-lg fill">
-      <img src="{% static 'images/coronal_zoom_in.jpg' %}"/>
-    </div>
-
-    <div class="col-lg-8 big-row-text">
-      <h1>Datasets</h1>
-      <p>A dataset is a stand-alone entry (e.g. an image-volume) with metadata.
-      A dataset can contain many 2D image files that may be assembled to form a
-      more complex two or three-dimensional volume. Datasets are defined on
-      disk by their “root” directory in which all the image files for the
-      dataset are contained (the root directory can contain recursive
-      subdirectories that contain image files).  </p>
-    </div>
-
-  </div>
-</div>
-
-<div class="container-fluid gray_on_dark_blue">
-  <div class="row">
-
-    <div class="col-lg-5 big-row-text">
-      <h1>Submissions</h1>
-      <p>
-      A submission bundle is an ingestion wrapper that contains one or more 
-      related datasets and metadata.  Submissions are tagged with 
-      identifying metadata (such as the NIH project that the data is 
-      associated with) that will be propagated to each item 
-      in the submission. This important tagging information will allow BIL 
-      to report to NIH on data that has begun, but has not yet completed the 
-      submission process. In general, smaller submission bundles are 
-      recommended because all datasets within a submission must pass the 
-      validation process for the submission bundle to be accepted. 
+  <!-- Page header -->
+  <div class="d-flex align-items-start justify-content-between mb-4">
+    <div>
+      <h1 class="mb-1">Data Submission Portal</h1>
+      <p class="text-muted mb-0">
+        The Brain Image Library (BIL) is a public resource enabling researchers to deposit, analyze,
+        mine, share and interact with large brain image datasets.
+        More information can be found at
+        <a href="http://www.brainimagelibrary.org/" target="_blank" rel="noopener">www.brainimagelibrary.org</a>.
+        The BIL is supported by the National Institute of Mental Health of the National Institutes of Health
+        under award number R24MH114793.
       </p>
     </div>
+  </div>
 
-    <div class="col-lg-7 diagram">
-      <img src="{% static 'images/workflow2.png' %}" class="img-responsive"/>
+  <!-- Flash messages -->
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags }} d-flex gap-2 align-items-start" id="msg" role="alert">
+    <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+    <span>{{ message }}</span>
+  </div>
+  {% endfor %}
+
+  {% if request.user.username %}
+
+  <!-- Public dataset counter + bar chart -->
+  <div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33; background: linear-gradient(135deg, #161b33 0%, #2a3254 100%); color: #fff; border-radius: 8px;">
+    <div class="card-body py-4 px-5">
+      <div class="row align-items-center g-4">
+
+        <!-- Counters -->
+        <div class="col-md-auto">
+          <div class="d-flex align-items-end gap-2 mb-2">
+            <span id="bil-counter" class="fw-bold" style="font-size: 3rem; line-height:1; letter-spacing: -1px;" data-target="{{ public_dataset_count }}">0</span>
+            <span class="mb-1" style="font-size: 1.1rem; opacity: .85;">public datasets</span>
+          </div>
+          <div class="d-flex align-items-end gap-2">
+            <span id="bil-file-counter" class="fw-bold" style="font-size: 1.9rem; line-height:1; letter-spacing: -1px;" data-target="{{ public_file_count }}">0</span>
+            <span class="mb-1" style="font-size: .9rem; opacity: .75;">total files</span>
+          </div>
+          <p class="mb-0 mt-2" style="opacity:.7; font-size:.85rem;">
+            <i class="fa-solid fa-circle-check me-1"></i>Submitted &amp; validated on the Brain Image Library
+          </p>
+        </div>
+
+        <!-- Bar chart -->
+        {% if datasets_by_year %}
+        <div class="col-auto">
+          <p class="mb-2" style="opacity:.7; font-size:.75rem; text-transform:uppercase; letter-spacing:.06em;">
+            Public datasets per year
+          </p>
+          <div id="bil-barchart" class="d-flex align-items-end gap-2" style="height:80px; max-width:360px;"
+               aria-label="Bar chart of public datasets per year">
+            {% for entry in datasets_by_year %}
+            <div data-year="{{ entry.year }}" data-count="{{ entry.count }}" style="display:none;"></div>
+            {% endfor %}
+          </div>
+          <div id="bil-barchart-labels" class="d-flex gap-2 mt-1" style="font-size:.65rem; opacity:.6; max-width:360px;"></div>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+
+  <!-- About section row -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100" style="border-top: 3px solid #161b33;">
+        <div class="card-body p-4">
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-microscope fa-sm me-1"></i>Datasets
+          </p>
+          <p class="mb-0">
+            A dataset is a stand-alone entry (e.g. an image-volume) with metadata.
+            A dataset can contain many 2D image files that may be assembled to form a
+            more complex two or three-dimensional volume. Datasets are defined on disk
+            by their &ldquo;root&rdquo; directory in which all the image files for the
+            dataset are contained (the root directory can contain recursive subdirectories
+            that contain image files).
+          </p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100" style="border-top: 3px solid #161b33;">
+        <div class="card-body p-4">
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-box-archive fa-sm me-1"></i>Submissions
+          </p>
+          <p class="mb-3">
+            A submission bundle is an ingestion wrapper that contains one or more related datasets
+            and metadata. Submissions are tagged with identifying metadata (such as the NIH project
+            that the data is associated with) that will be propagated to each item in the submission.
+            In general, smaller submission bundles are recommended because all datasets within a
+            submission must pass the validation process for the submission bundle to be accepted.
+          </p>
+          <div class="text-center">
+            <img src="{% static 'images/workflow2.png' %}" class="img-fluid rounded" alt="Submission workflow diagram" style="max-height:180px;"/>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action cards -->
+  <div class="row g-4 mb-4">
+
+    <!-- Managing Submissions -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100" style="border-top: 3px solid #161b33;">
+        <div class="card-body p-4">
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-folder-open fa-sm me-1"></i>Managing Submissions
+          </p>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <a href="{% url 'ingest:collection_create' %}" class="card h-100 text-decoration-none text-center p-4 border-0 shadow-sm" style="background:#f8f9fa; transition: box-shadow .15s ease;">
+                <div class="mb-3">
+                  <i class="fa-solid fa-plus-circle fa-3x" style="color:#161b33;"></i>
+                </div>
+                <h5 class="fw-semibold mb-1" style="color:#161b33;">New Submission</h5>
+                <p class="text-muted small mb-0">After creating an account on BIL, this is where most new users need to begin.</p>
+              </a>
+            </div>
+            <div class="col-sm-6">
+              <a href="{% url 'ingest:collection_list' %}" class="card h-100 text-decoration-none text-center p-4 border-0 shadow-sm" style="background:#f8f9fa; transition: box-shadow .15s ease;">
+                <div class="mb-3">
+                  <i class="fa-solid fa-list fa-3x" style="color:#161b33;"></i>
+                </div>
+                <h5 class="fw-semibold mb-1" style="color:#161b33;">View Submissions</h5>
+                <p class="text-muted small mb-0">See a list of the submissions you&rsquo;ve created and their status here.</p>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Managing Metadata -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100" style="border-top: 3px solid #161b33;">
+        <div class="card-body p-4">
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-table fa-sm me-1"></i>Managing Metadata
+          </p>
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <a href="{% url 'ingest:submission_view' %}" class="card h-100 text-decoration-none text-center p-4 border-0 shadow-sm" style="background:#f8f9fa; transition: box-shadow .15s ease;">
+                <div class="mb-3">
+                  <i class="fa-solid fa-upload fa-3x" style="color:#161b33;"></i>
+                </div>
+                <h5 class="fw-semibold mb-1" style="color:#161b33;">Upload Metadata</h5>
+                <p class="text-muted small mb-0">After you&rsquo;ve created a submission, upload a spreadsheet of your metadata.</p>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
+
+  {% else %}
+
+  <!-- Logged-out state -->
+  <div class="card shadow-sm" style="border-top: 3px solid #161b33;">
+    <div class="card-body p-4">
+      <div class="alert alert-info d-flex gap-2 align-items-start mb-0">
+        <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+        <span>
+          Please <a href="{% url 'login' %}">log in</a> or
+          <a href="{% url 'ingest:signup' %}">sign up</a>
+          to begin creating submissions for publication in the BIL.
+        </span>
+      </div>
+    </div>
+  </div>
+
+  {% endif %}
+
 </div>
 
-<div class="container-fluid white_on_gray">
+{% endblock %}
 
-  <div class="row">
-    <div class="col-lg-12 big-button-header"> <h1>Managing Submissions</h1> </div>
-  </div>
+{% block extra_scripts %}
+<script>
+(function () {
+  // ── Counter animation ──────────────────────────────────────────────────────
+  function animateCounter(el, duration) {
+    if (!el) return;
+    var target = parseInt(el.getAttribute('data-target'), 10) || 0;
+    var start = null;
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+    function step(ts) {
+      if (!start) start = ts;
+      var p = Math.min((ts - start) / duration, 1);
+      el.textContent = Math.floor(easeOut(p) * target).toLocaleString();
+      if (p < 1) requestAnimationFrame(step);
+      else el.textContent = target.toLocaleString();
+    }
+    if (target > 0) requestAnimationFrame(step);
+  }
 
-  <div class="row">
-    <div class="col-lg-4 big-button"></div>
-    <div class="col-lg-2 big-button">
-      <h3>New Submission</h3>
-      <a href="{% url 'ingest:collection_create' %}">
-        <span class="fa fa-plus-circle fa-5x"></span>
-      </a>
-      <p>After creating an account on BIL, this is where most new users need to
-      begin.</p>
-    </div>
-    <div class="col-lg-2 big-button">
-      <h3>View Submissions</h3>
-      <a href="{% url 'ingest:collection_list' %}">
-        <span class="fa fa-list fa-5x"></span>
-      </a>
-      <p>See a list of the submissions you've created and their status here.</p>
-    </div>
-    <div class="col-lg-4 big-button"></div>
-  </div>
+  var counterEl     = document.getElementById('bil-counter');
+  var fileCounterEl = document.getElementById('bil-file-counter');
 
-</div>
+  function startCounters() {
+    animateCounter(counterEl, 1800);
+    animateCounter(fileCounterEl, 2200);
+  }
 
-<div class="container-fluid gray_on_dark_blue">
-  <div class="row">
-    <div class="col-lg-12 big-button-header"> <h1>Managing Metadata</h1> </div>
-  </div>
+  if (counterEl) {
+    if ('IntersectionObserver' in window) {
+      var obs = new IntersectionObserver(function (entries) {
+        if (entries[0].isIntersecting) { startCounters(); obs.disconnect(); }
+      }, { threshold: 0.3 });
+      obs.observe(counterEl.closest('.card'));
+    } else {
+      startCounters();
+    }
+  }
 
-  <div class="row">
-    <div class="col-lg-3 big-button"></div>
-    <div class="col-lg-2 big-button">
-      <h3>Upload Metadata</h3>
-      <a href="{% url 'ingest:submission_view' %}">
-        <span class="fa fa-upload fa-5x"></span>
-      </a>
-      <p>After you've created a submission, upload a spreadsheet of your
-      metadata.</p>
-    </div>
-    <div class="col-lg-3 big-button"></div>
-  </div>
+  // ── Bar chart ──────────────────────────────────────────────────────────────
+  var chartEl   = document.getElementById('bil-barchart');
+  var labelsEl  = document.getElementById('bil-barchart-labels');
+  if (!chartEl) return;
 
-</div>
+  // Data injected from Django via data attributes on each bar
+  var bars    = chartEl.querySelectorAll('[data-year]');
+  var barData = [];
+  bars.forEach(function (b) {
+    barData.push({ year: b.getAttribute('data-year'), count: parseInt(b.getAttribute('data-count'), 10) });
+  });
+  if (!barData.length) return;
 
-{% else %}
-<div class="container-fluid wrapper-1">
-  <div class="row">
-    <div class="col-lg-12 big-row-text">
-      <p>Please <a href="{% url 'login' %}"> log in</a> or <a href="{% url 'ingest:signup' %}"> sign up</a> to begin creating submissions for publication in the BIL.</p>
-    </div>
-  </div>
-</div>
-{% endif %}
+  var maxCount = Math.max.apply(null, barData.map(function (d) { return d.count; }));
+  var chartH   = 80; // px — matches container height
 
+  barData.forEach(function (d) {
+    var pct     = maxCount > 0 ? (d.count / maxCount) : 0;
+    var barH    = Math.max(Math.round(pct * chartH), 3);
+    var bar     = document.createElement('div');
+    bar.style.cssText = [
+      'width:22px',
+      'flex-shrink:0',
+      'height:0',
+      'background:rgba(255,255,255,.55)',
+      'border-radius:3px 3px 0 0',
+      'transition:height .9s cubic-bezier(.22,1,.36,1)',
+      'cursor:default',
+    ].join(';');
+    bar.setAttribute('title', d.year + ': ' + d.count.toLocaleString() + ' dataset' + (d.count !== 1 ? 's' : ''));
+    bar.setAttribute('data-bs-toggle', 'tooltip');
+    bar.setAttribute('data-bs-placement', 'top');
+    chartEl.appendChild(bar);
+    // Animate in
+    setTimeout(function (b, h) { b.style.height = h + 'px'; }, 100, bar, barH);
+
+    // Label
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'width:22px;flex-shrink:0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,.55);';
+    lbl.textContent = String(d.year).slice(2); // e.g. "21" for 2021
+    labelsEl.appendChild(lbl);
+  });
+
+  // Init tooltips on new bars
+  chartEl.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+    new bootstrap.Tooltip(el);
+  });
+})();
+</script>
 {% endblock %}

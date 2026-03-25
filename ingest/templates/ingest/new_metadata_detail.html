@@ -1,13 +1,164 @@
-{% extends 'ingest/wide.html' %}
-{% block wide %}
-<h1>Detail of New Metadata</h1>
-{% include 'ingest/contributor_detail.html' %}
-{% include 'ingest/funder_detail.html' %}
-{% include 'ingest/publication_detail.html' %}
-{% include 'ingest/instrument_detail.html' %}
-{% include 'ingest/dataset_detail.html' %}
-{% include 'ingest/specimen_detail.html' %}
-{% include 'ingest/image_detail.html' %}
-{% include 'ingest/swc_detail.html' %}
+{% extends 'ingest/base.html' %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
 {% endblock %}
 
+{% block content %}
+<div class="container-fluid py-4">
+
+  <div class="d-flex align-items-start justify-content-between mb-4">
+    <div>
+      <h1 class="mb-1">Metadata Detail</h1>
+      <p class="text-muted mb-0">Detailed view of uploaded metadata sheet.</p>
+    </div>
+    <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary mt-1">
+      <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Back
+    </a>
+  </div>
+
+  <div class="card shadow-sm" style="border-top: 3px solid #161b33;">
+    <div class="card-header p-0" style="background:#f8f9fa;">
+      <ul class="nav nav-tabs border-0 flex-nowrap overflow-auto" id="metadataTabs" role="tablist" style="white-space:nowrap;">
+
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active px-3 py-3" id="tab-contributors" data-bs-toggle="tab"
+                  data-bs-target="#pane-contributors" type="button" role="tab">
+            <i class="fa-solid fa-user-group fa-sm me-1"></i>Contributors
+            <span class="badge ms-1 {% if contributors %}text-bg-primary{% else %}text-bg-light text-muted{% endif %}">{{ contributors|length }}</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-3 py-3" id="tab-funding" data-bs-toggle="tab"
+                  data-bs-target="#pane-funding" type="button" role="tab">
+            <i class="fa-solid fa-hand-holding-dollar fa-sm me-1"></i>Funding
+            <span class="badge ms-1 {% if funders %}text-bg-primary{% else %}text-bg-light text-muted{% endif %}">{{ funders|length }}</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-3 py-3" id="tab-publications" data-bs-toggle="tab"
+                  data-bs-target="#pane-publications" type="button" role="tab">
+            <i class="fa-solid fa-book-open fa-sm me-1"></i>Publications
+            <span class="badge ms-1 {% if publications %}text-bg-primary{% else %}text-bg-light text-muted{% endif %}">{{ publications|length }}</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-3 py-3" id="tab-instrument" data-bs-toggle="tab"
+                  data-bs-target="#pane-instrument" type="button" role="tab">
+            <i class="fa-solid fa-microscope fa-sm me-1"></i>Instrument
+            <span class="badge ms-1 {% if instruments %}text-bg-primary{% else %}text-bg-light text-muted{% endif %}">{{ instruments|length }}</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-3 py-3" id="tab-dataset" data-bs-toggle="tab"
+                  data-bs-target="#pane-dataset" type="button" role="tab">
+            <i class="fa-solid fa-database fa-sm me-1"></i>Dataset
+            <span class="badge ms-1 {% if datasets %}text-bg-primary{% else %}text-bg-light text-muted{% endif %}">{{ datasets|length }}</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-3 py-3" id="tab-specimen" data-bs-toggle="tab"
+                  data-bs-target="#pane-specimen" type="button" role="tab">
+            <i class="fa-solid fa-dna fa-sm me-1"></i>Specimen
+            <span class="badge ms-1 {% if specimens %}text-bg-primary{% else %}text-bg-light text-muted{% endif %}">{{ specimens|length }}</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-3 py-3" id="tab-image" data-bs-toggle="tab"
+                  data-bs-target="#pane-image" type="button" role="tab">
+            <i class="fa-solid fa-image fa-sm me-1"></i>Image
+            <span class="badge ms-1 {% if images %}text-bg-primary{% else %}text-bg-light text-muted{% endif %}">{{ images|length }}</span>
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link px-3 py-3" id="tab-swc" data-bs-toggle="tab"
+                  data-bs-target="#pane-swc" type="button" role="tab">
+            <i class="fa-solid fa-diagram-project fa-sm me-1"></i>SWC
+            <span class="badge ms-1 {% if swcs %}text-bg-primary{% else %}text-bg-light text-muted{% endif %}">{{ swcs|length }}</span>
+          </button>
+        </li>
+
+      </ul>
+    </div>
+
+    <div class="tab-content card-body p-3">
+
+      <div class="tab-pane fade show active" id="pane-contributors" role="tabpanel">
+        {% include 'ingest/contributor_detail.html' %}
+      </div>
+
+      <div class="tab-pane fade" id="pane-funding" role="tabpanel">
+        {% include 'ingest/funder_detail.html' %}
+      </div>
+
+      <div class="tab-pane fade" id="pane-publications" role="tabpanel">
+        {% include 'ingest/publication_detail.html' %}
+      </div>
+
+      <div class="tab-pane fade" id="pane-instrument" role="tabpanel">
+        {% include 'ingest/instrument_detail.html' %}
+      </div>
+
+      <div class="tab-pane fade" id="pane-dataset" role="tabpanel">
+        {% include 'ingest/dataset_detail.html' %}
+      </div>
+
+      <div class="tab-pane fade" id="pane-specimen" role="tabpanel">
+        {% include 'ingest/specimen_detail.html' %}
+      </div>
+
+      <div class="tab-pane fade" id="pane-image" role="tabpanel">
+        {% include 'ingest/image_detail.html' %}
+      </div>
+
+      <div class="tab-pane fade" id="pane-swc" role="tabpanel">
+        {% include 'ingest/swc_detail.html' %}
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(function () {
+  var dtDefaults = {
+    pageLength: 25,
+    lengthMenu: [10, 25, 50, 100],
+    searching: true,
+    ordering: true,
+    language: {
+      search: '', searchPlaceholder: 'Search…',
+      lengthMenu: 'Show _MENU_ per page',
+      info: '_START_–_END_ of _TOTAL_',
+      infoEmpty: 'No records',
+      paginate: { previous: '‹', next: '›' },
+    },
+    dom: '<"d-flex align-items-center justify-content-between mb-2"fl>rt<"d-flex align-items-center justify-content-between mt-2"ip>',
+  };
+
+  // Standard tables
+  ['#tbl-contributors','#tbl-funders','#tbl-publications','#tbl-instruments',
+   '#tbl-datasets','#tbl-specimens','#tbl-swc'].forEach(function (sel) {
+    if ($(sel).length) $(sel).DataTable($.extend({}, dtDefaults));
+  });
+
+  // Image table: 33 cols — enable horizontal scroll
+  if ($('#tbl-images').length) {
+    $('#tbl-images').DataTable($.extend({}, dtDefaults, {
+      scrollX: true,
+      scrollCollapse: true,
+    }));
+  }
+
+  // DataTables inside Bootstrap tabs need a redraw when the tab becomes visible
+  $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
+    $.fn.DataTable.tables({ visible: true, api: true }).columns.adjust();
+  });
+});
+</script>
+{% endblock %}

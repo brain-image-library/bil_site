@@ -1,5 +1,5 @@
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %} 
+{% load bootstrap4 %}
 
 {% block wide %}
 
@@ -7,7 +7,9 @@
 
 {% if collections %}
   {% load render_table from django_tables2 %}
-  {% render_table table %} 
+  <div class="table-responsive">
+    {% render_table table %}
+  </div>
   {% if filter %}
     <form action="" method="get" class="form form-inline">
       {% bootstrap_form filter.form layout='inline' %}
@@ -23,7 +25,7 @@
 <hr>
 
 <a href="{% url 'ingest:collection_create' %}" class="btn btn-primary">
-  <span class="glyphicon glyphicon-plus"></span> Create Collection
+  <i class="fas fa-plus"></i> Create Collection
 </a>
 
 <a href="{% url 'ingest:index' %}">

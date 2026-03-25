@@ -1,69 +1,123 @@
 {% extends 'ingest/wide.html' %}
 
 {% block wide %}
-{% if pi %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
-<br>
-<h1><b>Image Metadata</b> {{ descriptive_metadata.project_name }}</h1>
-  <div class="list-group">
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">locked</h4> {{descriptive_metadata.locked}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">user</h4>  {{descriptive_metadata.user}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">date_created</h4> {{descriptive_metadata.date_created}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">last_edited</h4> {{descriptive_metadata.last_edited}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">submission</h4>  {{descriptive_metadata.collection}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">sample_id</h4> {{descriptive_metadata.sample_id}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">organism_type</h4> {{descriptive_metadata.organism_type}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">organism_ncbi_taxonomy_id</h4> {{descriptive_metadata.organism_ncbi_taxonomy_id}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">transgenetic_line_information</h4> {{descriptive_metadata.transgenetic_line_information}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">modality</h4> {{descriptive_metadata.modality}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">method</h4> {{descriptive_metadata.method}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">technique</h4> {{descriptive_metadata.technique}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">anatomical_structure</h4> {{descriptive_metadata.anatomical_structure}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">total_processed_cells</h4>  {{descriptive_metadata.total_processed_cells}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">organization</h4>  {{descriptive_metadata.organization}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">lab</h4>  {{descriptive_metadata.lab}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">investigator</h4>  {{descriptive_metadata.investigator}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">grant_number</h4>  {{descriptive_metadata.grant_number }}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">r24_name</h4>  {{descriptive_metadata.r24_name }}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">r24_directory</h4> {{descriptive_metadata.r24_directory}}
-    </a>
+<div class="d-flex align-items-start justify-content-between mb-3">
+  <div>
+    <h1 class="mb-1">Image Metadata <span class="text-muted fw-normal">{{ descriptive_metadata.project_name }}</span></h1>
+    <p class="text-muted mb-0">Descriptive metadata detail</p>
   </div>
-{% if descriptive_metadata.locked %}
-  <p></p>
-  <div class="alert alert-info">
-      <strong>Submitted metadata cannot be modified or deleted.</strong>
-  </div>
-{% else %}
-  <div class='btn-group btn-group-lg'>
-  </div>
+  {% if pi %}
+  <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary mt-1">
+    <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Return to PI Dashboard
+  </a>
+  {% endif %}
+</div>
 
-  </br>
+{% if descriptive_metadata.locked %}
+<div class="alert alert-info d-flex gap-2 align-items-start mb-3">
+  <i class="fa-solid fa-lock mt-1 flex-shrink-0"></i>
+  <span><strong>Submitted metadata cannot be modified or deleted.</strong></span>
+</div>
 {% endif %}
-  </br>
-    <a href="{% url 'ingest:descriptive_metadata_list' %}">
-      <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-    </a>
+
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-circle-info fa-sm me-1"></i>Metadata Fields
+    </p>
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle mb-0">
+        <tbody>
+          <tr>
+            <th class="table-light fw-semibold" style="width:35%">locked</th>
+            <td>{{ descriptive_metadata.locked }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">user</th>
+            <td>{{ descriptive_metadata.user }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">date_created</th>
+            <td>{{ descriptive_metadata.date_created }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">last_edited</th>
+            <td>{{ descriptive_metadata.last_edited }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">submission</th>
+            <td>{{ descriptive_metadata.collection }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">sample_id</th>
+            <td>{{ descriptive_metadata.sample_id }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">organism_type</th>
+            <td>{{ descriptive_metadata.organism_type }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">organism_ncbi_taxonomy_id</th>
+            <td>{{ descriptive_metadata.organism_ncbi_taxonomy_id }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">transgenetic_line_information</th>
+            <td>{{ descriptive_metadata.transgenetic_line_information }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">modality</th>
+            <td>{{ descriptive_metadata.modality }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">method</th>
+            <td>{{ descriptive_metadata.method }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">technique</th>
+            <td>{{ descriptive_metadata.technique }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">anatomical_structure</th>
+            <td>{{ descriptive_metadata.anatomical_structure }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">total_processed_cells</th>
+            <td>{{ descriptive_metadata.total_processed_cells }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">organization</th>
+            <td>{{ descriptive_metadata.organization }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">lab</th>
+            <td>{{ descriptive_metadata.lab }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">investigator</th>
+            <td>{{ descriptive_metadata.investigator }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">grant_number</th>
+            <td>{{ descriptive_metadata.grant_number }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">r24_name</th>
+            <td>{{ descriptive_metadata.r24_name }}</td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">r24_directory</th>
+            <td>{{ descriptive_metadata.r24_directory }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="d-flex gap-2 mt-3">
+  <a href="{% url 'ingest:descriptive_metadata_list' %}" class="btn btn-outline-secondary">
+    <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Back to List
+  </a>
+</div>
 
 {% endblock %}

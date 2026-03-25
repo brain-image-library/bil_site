@@ -1,37 +1,47 @@
 {% if contributors %}
-<h3>Contributors</h3>
-  <table class="table">    								
-    <thead>
-    <tr>
-    <th>contributorName</th>
-    <th>Creator</th>
-    <th>contributorType</th>
-    <th>nameType</th>
-    <th>nameIdentifier</th>
-    <th>nameIdentifierScheme</th>
-    <th>affiliation</th>
-    <th>affiliationIdentifier</th>
-    <th>affiliationIdentifierScheme</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for c in contributors %}
-    <tr>
-    <td>{{ c.contributorname }}</td>
-    <td>{{ c.creator }}</td>
-    <td>{{ c.contributortype }}</td>
-    <td>{{ c.nametype }}</td>
-    <td>{{ c.nameidentifier }}</td>
-    <td>{{ c.nameidentifierscheme }}</td>
-    <td>{{ c.affiliation }}</td>
-    <td>{{ c.affiliationidentifier }}</td>
-    <td>{{ c.affiliationidentifierscheme }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-  
-{% else %}
-  <div class="alert alert-info">
-    <p>There is not Contributor data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-users fa-sm me-1"></i>Contributors
+    </p>
+    <div class="table-responsive">
+      <table id="tbl-contributors" class="table table-sm table-bordered table-hover align-middle mb-0">
+        <thead style="background-color:#161b33; color:#fff;">
+          <tr>
+            <th>contributorName</th>
+            <th>Creator</th>
+            <th>contributorType</th>
+            <th>nameType</th>
+            <th>nameIdentifier</th>
+            <th>nameIdentifierScheme</th>
+            <th>affiliation</th>
+            <th>affiliationIdentifier</th>
+            <th>affiliationIdentifierScheme</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in contributors %}
+          <tr>
+            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ c.contributorname }}">{{ c.contributorname }}</span></td>
+            <td>{{ c.creator }}</td>
+            <td>{{ c.contributortype }}</td>
+            <td>{{ c.nametype }}</td>
+            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ c.nameidentifier }}">{{ c.nameidentifier }}</span></td>
+            <td>{{ c.nameidentifierscheme }}</td>
+            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ c.affiliation }}">{{ c.affiliation }}</span></td>
+            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ c.affiliationidentifier }}">{{ c.affiliationidentifier }}</span></td>
+            <td>{{ c.affiliationidentifierscheme }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
+</div>
+
+{% else %}
+<div class="alert alert-info d-flex gap-2 align-items-start">
+  <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+  <span>There is no Contributor data associated with this dataset. Please contact BIL Support if this is incorrect.</span>
+</div>
 {% endif %}

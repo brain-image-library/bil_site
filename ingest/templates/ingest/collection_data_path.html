@@ -21,59 +21,97 @@ function copy_host_and_path() {
 </script>
 {% endblock %}
 
-<h1><b>Staging Area for Submission</b> {{ collection.name }} 
-  {% if collection.locked %}<i class="fa fa-lock"></i>
-  {% else %}<i class="fa fa-unlock"></i>
-  {% endif %}
-  </h1>
+<div class="d-flex align-items-start justify-content-between mb-3">
+  <div>
+    <h1 class="mb-1">Staging Area for Submission
+      <span class="text-muted fw-normal">{{ collection.name }}</span>
+      {% if collection.locked %}
+        <i class="fa-solid fa-lock fa-sm ms-2 text-muted"></i>
+      {% else %}
+        <i class="fa-solid fa-lock-open fa-sm ms-2 text-muted"></i>
+      {% endif %}
+    </h1>
+    <p class="text-muted mb-0">Upload your data to this landing zone</p>
+  </div>
+</div>
 
-  <hr>
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-server fa-sm me-1"></i>Connection Details
+    </p>
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle mb-0">
+        <tbody>
+          <tr>
+            <th class="table-light fw-semibold" style="width:20%">Host and Path</th>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <input type="text" id="host_and_path" class="form-control form-control-sm font-monospace" value="{{ host_and_path }}" readonly>
+                <button class="btn btn-sm btn-outline-secondary flex-shrink-0" onclick="copy_host_and_path()" title="Copy">
+                  <i class="fa-solid fa-copy fa-sm"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <th class="table-light fw-semibold">Path</th>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <input type="text" id="data_path" class="form-control form-control-sm font-monospace" value="{{ data_path }}" readonly>
+                <button class="btn btn-sm btn-outline-secondary flex-shrink-0" onclick="copy_data_path()" title="Copy">
+                  <i class="fa-solid fa-copy fa-sm"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-  <h4><strong>host and path:</strong> <input type="text" id="host_and_path" size="50" value="{{ host_and_path }}"> <i onclick="copy_host_and_path()" class="fa fa-clone"></i></span></h4>
-  <h4><strong>path:</strong> <input type="text" id="data_path" size="50" value="{{ data_path }}"> <i onclick="copy_data_path()" class="fa fa-clone"></i></span></h4>
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-circle-info fa-sm me-1"></i>Upload Instructions
+    </p>
+    <p>We recommend using <strong>rsync</strong>, <strong>scp</strong>, or
+    <strong>globus</strong> to upload your data sets to the Brain Image Library.
+    Linux and OSX users can use any of these options. Most Windows users should
+    use <strong>globus</strong>.</p>
 
-  <hr>
+    <p>If using <strong>rsync</strong> or <strong>scp</strong>, you'll first want
+    to <code>cd</code> into the top level directory containing all your datasets.
+    For example, if your datasets are located in
+    <code>/home/user/brain_image_datasets</code>, then you'd want to type the
+    following:</p>
 
-  <p>We recommend using <strong>rsync</strong>, <strong>scp</strong>, or
-  <strong>globus</strong> to upload your data sets to the Brain Image Library.
-  Linux and OSX users can use any of these options.  Most Windows users should
-  use <strong>globus</strong>.</p> 
+    <pre class="bg-light border rounded p-3"><code>cd /home/user/brain_image_datasets/</code></pre>
 
-  <p>If using <strong>rsync</strong> or <strong>scp</strong>, you'll first want
-  to <code>cd</code> into the top level directory containing all your datasets.
-  For example, if your datasets are located in
-  <code>/home/user/brain_image_datasets</code>, then you'd want to type the
-  following:</p>
+    <hr>
 
-  <p><code>cd /home/user/brain_image_datasets/</code></p>
+    <h5 class="fw-semibold mb-2">Using scp</h5>
+    <pre class="bg-light border rounded p-3"><code>scp -r . {{host_and_path}}</code></pre>
+    <p class="text-muted"><strong>scp</strong> will <em>not</em> use checksums or resume if the connection is interrupted.</p>
 
-  <p>Here are example <strong>rsync</strong> and <strong>scp</strong> commands
-  using the path to your submission's landing zone.</p>
+    <hr>
 
-  <hr>
-
-  <h2>Using scp</h2>
-    <p><code>scp -r . {{host_and_path}}</code></p>
-    <strong>scp</strong> will <i>not</i> use checksums or resume if the
-    connection is interrupted.
-
-  <hr>
-
-  <h2>Using rsync</h2>
-    <p><code>rsync -a . {{host_and_path}}</code><p>
+    <h5 class="fw-semibold mb-2">Using rsync</h5>
+    <pre class="bg-light border rounded p-3"><code>rsync -a . {{host_and_path}}</code></pre>
     <p>Unlike <strong>scp</strong>, <strong>rsync</strong> can resume if the
     connection is interrupted. If your connection is interrupted, you can
     resume it by using the <code>append-verify</code> flag like this:</p>
-    <p><code>rsync -a --append-verify . {{host_and_path}}</code><p>
+    <pre class="bg-light border rounded p-3"><code>rsync -a --append-verify . {{host_and_path}}</code></pre>
 
-  <hr>
+    <hr>
 
-  <h2>Using globus</h2>
-    See the <a href="https://www.psc.edu/bridges/user-guide/transferring-files#globus">PSC
+    <h5 class="fw-semibold mb-2">Using globus</h5>
+    <p>See the <a href="https://www.psc.edu/bridges/user-guide/transferring-files#globus">PSC
     guide on Globus</a>. If you use Globus, the endpoint to use is
     <code>psc#dxc</code>, not the <code>psc#bridges-xsede</code> or
     <code>psc#bridges-cilogon</code> endpoints shown in the link above.</p>
-
-</br>
+  </div>
+</div>
 
 {% endblock %}

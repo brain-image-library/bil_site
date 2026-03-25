@@ -1,44 +1,53 @@
 {% if instruments %}
-<h3>Instrument</h3>
-
-  <table class="table">    								
-    <thead>
-    <tr>
-    <th>MicroscopeType</th>
-    <th>MicroscopeManufacturerAndModel</th>
-    <th>ObjectiveName</th>
-    <th>ObjectiveImmersion</th>
-    <th>ObjectiveNA</th>
-    <th>ObjectiveMagnification</th>
-    <th>DetectorType</th>
-    <th>DetectorModel</th>
-    <th>IlluminationTypes</th>
-    <th>IlluminationWavelength</th>
-    <th>DetectionWavelength</th>
-    <th>SampleTemperature</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for i in instruments %}
-    <tr>
-    <td>{{ i.microscopetype }}</td>
-    <td>{{ i.microscopemanufacturerandmodel }}</td>
-    <td>{{ i.objectivename }}</td>
-    <td>{{ i.objectiveimmersion }}</td>
-    <td>{{ i.objectivena }}</td>
-    <td>{{ i.objectivemagnification }}</td>
-    <td>{{ i.detectortype }}</td>
-    <td>{{ i.detectormodel }}</td>
-    <td>{{ i.illuminationtypes }}</td>
-    <td>{{ i.illuminationwavelength }}</td>
-    <td>{{ i.detectionwavelength }}</td>
-    <td>{{ i.sampletemperature }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-  
-{% else %}
-  <div class="alert alert-info">
-    <p>There is not Instrument data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-microscope fa-sm me-1"></i>Instrument
+    </p>
+    <div class="table-responsive">
+      <table id="tbl-instruments" class="table table-sm table-bordered table-hover align-middle mb-0">
+        <thead style="background-color:#161b33; color:#fff;">
+          <tr>
+            <th>MicroscopeType</th>
+            <th>MicroscopeManufacturerAndModel</th>
+            <th>ObjectiveName</th>
+            <th>ObjectiveImmersion</th>
+            <th>ObjectiveNA</th>
+            <th>ObjectiveMagnification</th>
+            <th>DetectorType</th>
+            <th>DetectorModel</th>
+            <th>IlluminationTypes</th>
+            <th>IlluminationWavelength</th>
+            <th>DetectionWavelength</th>
+            <th>SampleTemperature</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for i in instruments %}
+          <tr>
+            <td>{{ i.microscopetype }}</td>
+            <td>{{ i.microscopemanufacturerandmodel }}</td>
+            <td>{{ i.objectivename }}</td>
+            <td>{{ i.objectiveimmersion }}</td>
+            <td>{{ i.objectivena }}</td>
+            <td>{{ i.objectivemagnification }}</td>
+            <td>{{ i.detectortype }}</td>
+            <td>{{ i.detectormodel }}</td>
+            <td>{{ i.illuminationtypes }}</td>
+            <td>{{ i.illuminationwavelength }}</td>
+            <td>{{ i.detectionwavelength }}</td>
+            <td>{{ i.sampletemperature }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
+</div>
+
+{% else %}
+<div class="alert alert-info d-flex gap-2 align-items-start">
+  <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+  <span>There is no Instrument data associated with this dataset. Please contact BIL Support if this is incorrect.</span>
+</div>
 {% endif %}

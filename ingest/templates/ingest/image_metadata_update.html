@@ -1,27 +1,302 @@
 {% extends 'ingest/wide.html' %}
 
 {% block wide %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
-<br>
-  <h1>Edit Metadata</h1>
-    <form method="POST" class="post-form">
-    {% csrf_token %}
-      {% for field in form  %}
-        <p data-toggle="tooltip" title="{{field.help_text}}">
-          {{ field.label_tag }} {% if field.field.required %} <span style='color:red'>*</span> {% endif %}<br>
-          {{ field }}
-          {% for error in field.errors %}
-            <p style="color: red">{{ error }}</p>
-          {% endfor %}
-        </p>
-      {% endfor %}
-      <p>Required fields are marked with an <span style='color:red'>*</span>.</p>
-      <button type="submit" class="save btn btn-lg btn-primary">Save</button>
-    </form>
-<a href="{% url 'ingest:image_metadata_list' %}">
-  <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+
+<div class="row justify-content-center">
+  <div class="col-lg-9 col-xl-8">
+
+    {# ── Page header ── #}
+    <div class="d-flex align-items-start justify-content-between mb-3">
+      <div>
+        <h1 class="mb-1">Edit Metadata</h1>
+        <p class="text-muted mb-0">Update this image metadata entry (legacy v1 format).</p>
+      </div>
+      <a href="{% url 'ingest:image_metadata_list' %}" class="btn btn-sm btn-outline-secondary mt-1">
+        <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Back to Metadata
+      </a>
+    </div>
+
+    {# ── Form card ── #}
+    <div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+      <div class="card-body p-4">
+        <form method="POST" class="post-form">
+          {% csrf_token %}
+
+          {# ─── Section: Collection ─── #}
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-layer-group fa-sm me-1"></i>Collection
+          </p>
+
+          <div class="mb-4">
+            <label for="{{ form.collection.id_for_label }}" class="form-label fw-semibold">
+              <i class="fa-solid fa-folder-open fa-sm text-secondary me-1"></i>{{ form.collection.label }}
+              {% if form.collection.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            <div data-bs-toggle="tooltip" data-bs-placement="right" title="{{ form.collection.help_text }}">
+              {{ form.collection }}
+            </div>
+            {% for error in form.collection.errors %}
+              <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <hr class="my-4">
+
+          {# ─── Section: Project Details ─── #}
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-file-lines fa-sm me-1"></i>Project Details
+          </p>
+
+          <div class="mb-3">
+            <label for="{{ form.project_name.id_for_label }}" class="form-label fw-semibold">
+              <i class="fa-solid fa-tag fa-sm text-secondary me-1"></i>{{ form.project_name.label }}
+              {% if form.project_name.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            <div data-bs-toggle="tooltip" data-bs-placement="right" title="{{ form.project_name.help_text }}">
+              {{ form.project_name }}
+            </div>
+            {% for error in form.project_name.errors %}
+              <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-4">
+            <label for="{{ form.project_description.id_for_label }}" class="form-label fw-semibold">
+              <i class="fa-solid fa-align-left fa-sm text-secondary me-1"></i>{{ form.project_description.label }}
+              {% if form.project_description.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            <div data-bs-toggle="tooltip" data-bs-placement="right" title="{{ form.project_description.help_text }}">
+              {{ form.project_description }}
+            </div>
+            {% for error in form.project_description.errors %}
+              <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <hr class="my-4">
+
+          {# ─── Section: Specimen ─── #}
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-microscope fa-sm me-1"></i>Specimen
+          </p>
+
+          <div class="row g-3 mb-3">
+            <div class="col-sm-6">
+              <label for="{{ form.background_strain.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-dna fa-sm text-secondary me-1"></i>{{ form.background_strain.label }}
+                {% if form.background_strain.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.background_strain.help_text }}">
+                {{ form.background_strain }}
+              </div>
+              {% for error in form.background_strain.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.taxonomy_name.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-sitemap fa-sm text-secondary me-1"></i>{{ form.taxonomy_name.label }}
+                {% if form.taxonomy_name.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.taxonomy_name.help_text }}">
+                {{ form.taxonomy_name }}
+              </div>
+              {% for error in form.taxonomy_name.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.transgenic_line_name.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-flask fa-sm text-secondary me-1"></i>{{ form.transgenic_line_name.label }}
+                {% if form.transgenic_line_name.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.transgenic_line_name.help_text }}">
+                {{ form.transgenic_line_name }}
+              </div>
+              {% for error in form.transgenic_line_name.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-3">
+              <label for="{{ form.age.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-calendar fa-sm text-secondary me-1"></i>{{ form.age.label }}
+                {% if form.age.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.age.help_text }}">
+                {{ form.age }}
+              </div>
+              {% for error in form.age.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-3">
+              <label for="{{ form.age_unit.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-clock fa-sm text-secondary me-1"></i>{{ form.age_unit.label }}
+                {% if form.age_unit.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.age_unit.help_text }}">
+                {{ form.age_unit }}
+              </div>
+              {% for error in form.age_unit.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.sex.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-venus-mars fa-sm text-secondary me-1"></i>{{ form.sex.label }}
+                {% if form.sex.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.sex.help_text }}">
+                {{ form.sex }}
+              </div>
+              {% for error in form.sex.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.organ.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-brain fa-sm text-secondary me-1"></i>{{ form.organ.label }}
+                {% if form.organ.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.organ.help_text }}">
+                {{ form.organ }}
+              </div>
+              {% for error in form.organ.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.organ_substructure.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-magnifying-glass fa-sm text-secondary me-1"></i>{{ form.organ_substructure.label }}
+                {% if form.organ_substructure.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.organ_substructure.help_text }}">
+                {{ form.organ_substructure }}
+              </div>
+              {% for error in form.organ_substructure.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          {# ─── Section: Imaging ─── #}
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-camera fa-sm me-1"></i>Imaging
+          </p>
+
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+              <label for="{{ form.assay.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-vials fa-sm text-secondary me-1"></i>{{ form.assay.label }}
+                {% if form.assay.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.assay.help_text }}">
+                {{ form.assay }}
+              </div>
+              {% for error in form.assay.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.slicing_direction.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-arrows-up-down fa-sm text-secondary me-1"></i>{{ form.slicing_direction.label }}
+                {% if form.slicing_direction.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.slicing_direction.help_text }}">
+                {{ form.slicing_direction }}
+              </div>
+              {% for error in form.slicing_direction.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.image_map_style.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-map fa-sm text-secondary me-1"></i>{{ form.image_map_style.label }}
+                {% if form.image_map_style.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.image_map_style.help_text }}">
+                {{ form.image_map_style }}
+              </div>
+              {% for error in form.image_map_style.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.processing_level.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-gears fa-sm text-secondary me-1"></i>{{ form.processing_level.label }}
+                {% if form.processing_level.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.processing_level.help_text }}">
+                {{ form.processing_level }}
+              </div>
+              {% for error in form.processing_level.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          {# ─── Section: Files ─── #}
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-folder fa-sm me-1"></i>Files
+          </p>
+
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+              <label for="{{ form.image_filename_pattern.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-file-image fa-sm text-secondary me-1"></i>{{ form.image_filename_pattern.label }}
+                {% if form.image_filename_pattern.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.image_filename_pattern.help_text }}">
+                {{ form.image_filename_pattern }}
+              </div>
+              {% for error in form.image_filename_pattern.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.directory.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-folder-open fa-sm text-secondary me-1"></i>{{ form.directory.label }}
+                {% if form.directory.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.directory.help_text }}">
+                {{ form.directory }}
+              </div>
+              {% for error in form.directory.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <p class="text-muted small mb-4"><span class="text-danger">*</span> Required fields</p>
+
+          {# ─── Actions ─── #}
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="fa-solid fa-floppy-disk me-1"></i>Save
+            </button>
+            <a href="{% url 'ingest:image_metadata_list' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 {% endblock %}

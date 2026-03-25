@@ -1,54 +1,66 @@
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %}
 {% block wide %}
 
-<a href="{% url 'ingest:project_form' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Create a New Project</button>
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
+<div class="d-flex align-items-start justify-content-between mb-3">
+  <div>
+    <h1 class="mb-1">Manage Projects</h1>
+    <p class="text-muted mb-0">Select a project to view its submissions and associated users.</p>
+  </div>
+  <div class="d-flex gap-2 mt-1">
+    <a href="{% url 'ingest:project_form' %}" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-plus fa-sm me-1"></i>New Project
+    </a>
+    <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="fa-solid fa-arrow-left fa-sm me-1"></i>PI Dashboard
+    </a>
+  </div>
+</div>
 
-<br>
-<h1>Manage Projects</h1>
-<p>Select a project to view details including submissions and users associated with it</p>
-
-<table id="ProjectTable" class="table">
-<thead>
-<tr>
-<th>Name</th>
-<th>Funded By</th>
-<th>Consortia Affiliation</th>
-<th>Parent Project Affiliation</th>
-<th>Child Project Affiliations</th>
-<th>Personnel</th>
-<th>Submissions</th>
-</tr>
-</thead>
-<tbody>
-{% for project in allprojects %}
-<tr>
- <td>{{ project.name }}</td>
- <td>{{ project.funded_by }}</td>
- <td>{{ project.short_names }}</td>
- <td>{{ project.parent_project_names }}</td>
- <td>{{ project.child_project_names }}</td>
-
- <td><a href="{% url 'ingest:view_project_people' project.id %}">View Personnel</td>
- <td><a href="{% url 'ingest:view_project_collections' project.id %}">View Submissions</td>
-</tr>
-{% endfor %}
-</table>
-
-<hr>
-
-<a href="{% url 'ingest:project_form' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Create a New Project</button>
-</a>
-
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
+<div class="card shadow-sm" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead style="background-color: #161b33; color: #fff;">
+          <tr>
+            <th>Name</th>
+            <th>Funded By</th>
+            <th>Consortia</th>
+            <th>Parent Project</th>
+            <th>Child Projects</th>
+            <th class="text-center">Personnel</th>
+            <th class="text-center">Submissions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for project in allprojects %}
+          <tr>
+            <td class="fw-semibold">{{ project.name }}</td>
+            <td>{{ project.funded_by }}</td>
+            <td>{{ project.short_names }}</td>
+            <td>{{ project.parent_project_names }}</td>
+            <td>{{ project.child_project_names }}</td>
+            <td class="text-center">
+              <a href="{% url 'ingest:view_project_people' project.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="fa-solid fa-users fa-sm me-1"></i>Personnel
+              </a>
+            </td>
+            <td class="text-center">
+              <a href="{% url 'ingest:view_project_collections' project.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="fa-solid fa-folder-open fa-sm me-1"></i>Submissions
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">
+              <i class="fa-solid fa-circle-info me-1"></i>No projects found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
 {% endblock %}
-

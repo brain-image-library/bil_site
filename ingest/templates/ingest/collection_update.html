@@ -1,29 +1,160 @@
 {% extends 'ingest/wide.html' %}
 
 {% block wide %}
-{% if pi %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
-<br>
-  <h1>Edit submission</h1>
-  <form method="POST" class="post-form">
-  {% csrf_token %}
-    {% for field in form  %}
-      <p data-toggle="tooltip" title="{{field.help_text}}">
-        {{ field.label_tag }} {% if field.field.required %} <span style='color:red'>*</span> {% endif %}<br>
-        {{ field }}
-        {% for error in field.errors %}
-          <p style="color: red">{{ error }}</p>
-        {% endfor %}
-      </p>
-    {% endfor %}
-    <p><b>Required fields are marked with an <span style='color:red'>*</span>.</b></p>
 
-    <button type="submit" class="save btn btn-lg btn-primary">Update</button>
-  </form>
-<a href="{% url 'ingest:collection_list' %}">
-  <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-7">
+
+    {# ── Page header ── #}
+    <div class="d-flex align-items-start justify-content-between mb-3">
+      <div>
+        <h1 class="mb-1">Edit Submission</h1>
+        <p class="text-muted mb-0">Update the details for this collection.</p>
+      </div>
+      {% if pi %}
+      <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary mt-1">
+        <i class="fa-solid fa-arrow-left fa-sm me-1"></i>PI Dashboard
+      </a>
+      {% else %}
+      <a href="{% url 'ingest:collection_list' %}" class="btn btn-sm btn-outline-secondary mt-1">
+        <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Back to Collections
+      </a>
+      {% endif %}
+    </div>
+
+    {# ── Form card ── #}
+    <div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+      <div class="card-body p-4">
+        <form method="POST" class="post-form">
+          {% csrf_token %}
+
+          {# ─── Section: Submission Details ─── #}
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-file-lines fa-sm me-1"></i>Submission Details
+          </p>
+
+          <div class="mb-3">
+            <label for="{{ form.name.id_for_label }}" class="form-label fw-semibold">
+              <i class="fa-solid fa-tag fa-sm text-secondary me-1"></i>{{ form.name.label }}
+              {% if form.name.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            <div data-bs-toggle="tooltip" data-bs-placement="right" title="{{ form.name.help_text }}">
+              {{ form.name }}
+            </div>
+            {% for error in form.name.errors %}
+              <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-4">
+            <label for="{{ form.description.id_for_label }}" class="form-label fw-semibold">
+              <i class="fa-solid fa-align-left fa-sm text-secondary me-1"></i>{{ form.description.label }}
+              {% if form.description.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            <div data-bs-toggle="tooltip" data-bs-placement="right" title="{{ form.description.help_text }}">
+              {{ form.description }}
+            </div>
+            {% for error in form.description.errors %}
+              <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <hr class="my-4">
+
+          {# ─── Section: Organization & Funding ─── #}
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-building-columns fa-sm me-1"></i>Organization &amp; Funding
+          </p>
+
+          <div class="row g-3 mb-4">
+            <div class="col-sm-6">
+              <label for="{{ form.organization_name.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-building fa-sm text-secondary me-1"></i>{{ form.organization_name.label }}
+                {% if form.organization_name.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.organization_name.help_text }}">
+                {{ form.organization_name }}
+              </div>
+              {% for error in form.organization_name.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.lab_name.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-flask fa-sm text-secondary me-1"></i>{{ form.lab_name.label }}
+                {% if form.lab_name.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.lab_name.help_text }}">
+                {{ form.lab_name }}
+              </div>
+              {% for error in form.lab_name.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.project_funder.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-hand-holding-dollar fa-sm text-secondary me-1"></i>{{ form.project_funder.label }}
+                {% if form.project_funder.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.project_funder.help_text }}">
+                {{ form.project_funder }}
+              </div>
+              {% for error in form.project_funder.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+
+            <div class="col-sm-6">
+              <label for="{{ form.project_funder_id.id_for_label }}" class="form-label fw-semibold">
+                <i class="fa-solid fa-hashtag fa-sm text-secondary me-1"></i>{{ form.project_funder_id.label }}
+                {% if form.project_funder_id.field.required %}<span class="text-danger">*</span>{% endif %}
+              </label>
+              <div data-bs-toggle="tooltip" data-bs-placement="top" title="{{ form.project_funder_id.help_text }}">
+                {{ form.project_funder_id }}
+              </div>
+              {% for error in form.project_funder_id.errors %}
+                <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <hr class="my-4">
+
+          {# ─── Section: Project ─── #}
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-folder-open fa-sm me-1"></i>Project
+          </p>
+
+          <div class="mb-4">
+            <label for="{{ form.project.id_for_label }}" class="form-label fw-semibold">
+              <i class="fa-solid fa-diagram-project fa-sm text-secondary me-1"></i>{{ form.project.label }}
+              {% if form.project.field.required %}<span class="text-danger">*</span>{% endif %}
+            </label>
+            <div data-bs-toggle="tooltip" data-bs-placement="right" title="{{ form.project.help_text }}">
+              {{ form.project }}
+            </div>
+            {% for error in form.project.errors %}
+              <div class="text-danger small mt-1"><i class="fa-solid fa-circle-exclamation fa-sm me-1"></i>{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <p class="text-muted small mb-4"><span class="text-danger">*</span> Required fields</p>
+
+          {# ─── Actions ─── #}
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+              <i class="fa-solid fa-floppy-disk me-1"></i>Update
+            </button>
+            <a href="{% url 'ingest:collection_list' %}" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 {% endblock %}

@@ -1,16 +1,150 @@
 {% extends 'ingest/base.html' %}
 {% load static %}
 {% block content %}
-{% load bootstrap4 %}
 
+<div class="container-fluid py-4">
 
-<div class="container-fluid white_on_gray">
-  <div class="row">
-
-    <div class="col-lg-12 big-row-text">
-      <h1>PI Dashboard</h1>
-   <a href="{% url 'ingest:manage_projects'%}">Manage Projects</a> | <a href="{% url 'ingest:manage_collections'%}">View Submissions</a> | <a href="{% url 'ingest:people_of_pi'%}">View Project Users</a>
- </div>
+  <div class="mb-4">
+    <h1 class="mb-1">PI Dashboard</h1>
+    <p class="text-muted mb-0">Manage your projects, submissions, and project users.</p>
   </div>
+
+  <!-- Public dataset counter + bar chart -->
+  <div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33; background: linear-gradient(135deg, #161b33 0%, #2a3254 100%); color: #fff; border-radius: 8px;">
+    <div class="card-body py-4 px-5">
+      <div class="row align-items-center g-4">
+        <div class="col-md-auto">
+          <div class="d-flex align-items-end gap-2 mb-2">
+            <span id="bil-counter" class="fw-bold" style="font-size: 3rem; line-height:1; letter-spacing: -1px;" data-target="{{ public_dataset_count }}">0</span>
+            <span class="mb-1" style="font-size: 1.1rem; opacity: .85;">public datasets</span>
+          </div>
+          <div class="d-flex align-items-end gap-2">
+            <span id="bil-file-counter" class="fw-bold" style="font-size: 1.9rem; line-height:1; letter-spacing: -1px;" data-target="{{ public_file_count }}">0</span>
+            <span class="mb-1" style="font-size: .9rem; opacity: .75;">total files</span>
+          </div>
+          <p class="mb-0 mt-2" style="opacity:.7; font-size:.85rem;">
+            <i class="fa-solid fa-circle-check me-1"></i>Submitted &amp; validated on the Brain Image Library
+          </p>
+        </div>
+        {% if datasets_by_year %}
+        <div class="col">
+          <p class="mb-2" style="opacity:.7; font-size:.75rem; text-transform:uppercase; letter-spacing:.06em;">Public datasets per year</p>
+          <div id="bil-barchart" class="d-flex align-items-end gap-2" style="height:80px; max-width:360px;" aria-label="Bar chart of public datasets per year">
+            {% for entry in datasets_by_year %}
+            <div data-year="{{ entry.year }}" data-count="{{ entry.count }}" style="display:none;"></div>
+            {% endfor %}
+          </div>
+          <div id="bil-barchart-labels" class="d-flex gap-2 mt-1" style="font-size:.65rem; opacity:.6; max-width:360px;"></div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <div class="col-lg-4">
+      <a href="{% url 'ingest:manage_projects' %}" class="text-decoration-none">
+        <div class="card shadow-sm h-100" style="border-top: 3px solid #161b33; transition: box-shadow .15s ease;">
+          <div class="card-body p-4 text-center">
+            <div class="mb-3">
+              <i class="fa-solid fa-diagram-project fa-3x" style="color:#161b33;"></i>
+            </div>
+            <h5 class="fw-semibold mb-1" style="color:#161b33;">Manage Projects</h5>
+            <p class="text-muted small mb-0">View, create, and manage your research projects and their consortia affiliations.</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-lg-4">
+      <a href="{% url 'ingest:manage_collections' %}" class="text-decoration-none">
+        <div class="card shadow-sm h-100" style="border-top: 3px solid #161b33; transition: box-shadow .15s ease;">
+          <div class="card-body p-4 text-center">
+            <div class="mb-3">
+              <i class="fa-solid fa-folder-open fa-3x" style="color:#161b33;"></i>
+            </div>
+            <h5 class="fw-semibold mb-1" style="color:#161b33;">View Submissions</h5>
+            <p class="text-muted small mb-0">Browse all submissions across your projects, check their status, and view details.</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="col-lg-4">
+      <a href="{% url 'ingest:people_of_pi' %}" class="text-decoration-none">
+        <div class="card shadow-sm h-100" style="border-top: 3px solid #161b33; transition: box-shadow .15s ease;">
+          <div class="card-body p-4 text-center">
+            <div class="mb-3">
+              <i class="fa-solid fa-users fa-3x" style="color:#161b33;"></i>
+            </div>
+            <h5 class="fw-semibold mb-1" style="color:#161b33;">View Project Users</h5>
+            <p class="text-muted small mb-0">See all users associated with your projects and their active status.</p>
+          </div>
+        </div>
+      </a>
+    </div>
+
+  </div>
+
 </div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  // Counters
+  function animateCounter(el, duration) {
+    if (!el) return;
+    var target = parseInt(el.getAttribute('data-target'), 10) || 0;
+    var start = null;
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+    function step(ts) {
+      if (!start) start = ts;
+      var p = Math.min((ts - start) / duration, 1);
+      el.textContent = Math.floor(easeOut(p) * target).toLocaleString();
+      if (p < 1) requestAnimationFrame(step);
+      else el.textContent = target.toLocaleString();
+    }
+    if (target > 0) requestAnimationFrame(step);
+  }
+  var counterEl = document.getElementById('bil-counter');
+  var fileCounterEl = document.getElementById('bil-file-counter');
+  function startCounters() { animateCounter(counterEl, 1800); animateCounter(fileCounterEl, 2200); }
+  if (counterEl) {
+    if ('IntersectionObserver' in window) {
+      var obs = new IntersectionObserver(function (e) {
+        if (e[0].isIntersecting) { startCounters(); obs.disconnect(); }
+      }, { threshold: 0.3 });
+      obs.observe(counterEl.closest('.card'));
+    } else { startCounters(); }
+  }
+  // Bar chart
+  var chartEl = document.getElementById('bil-barchart');
+  var labelsEl = document.getElementById('bil-barchart-labels');
+  if (!chartEl) return;
+  var bars = chartEl.querySelectorAll('[data-year]');
+  var barData = [];
+  bars.forEach(function (b) { barData.push({ year: b.getAttribute('data-year'), count: parseInt(b.getAttribute('data-count'), 10) }); });
+  if (!barData.length) return;
+  var maxCount = Math.max.apply(null, barData.map(function (d) { return d.count; }));
+  var chartH = 80;
+  barData.forEach(function (d) {
+    var barH = Math.max(Math.round((maxCount > 0 ? d.count / maxCount : 0) * chartH), 3);
+    var bar = document.createElement('div');
+    bar.style.cssText = 'width:22px;flex-shrink:0;height:0;background:rgba(255,255,255,.55);border-radius:3px 3px 0 0;transition:height .9s cubic-bezier(.22,1,.36,1);cursor:default;';
+    bar.setAttribute('title', d.year + ': ' + d.count.toLocaleString() + ' dataset' + (d.count !== 1 ? 's' : ''));
+    bar.setAttribute('data-bs-toggle', 'tooltip');
+    bar.setAttribute('data-bs-placement', 'top');
+    chartEl.appendChild(bar);
+    setTimeout(function (b, h) { b.style.height = h + 'px'; }, 100, bar, barH);
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'width:22px;flex-shrink:0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:rgba(255,255,255,.55);';
+    lbl.textContent = String(d.year).slice(2);
+    labelsEl.appendChild(lbl);
+  });
+  chartEl.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) { new bootstrap.Tooltip(el); });
+})();
+</script>
 {% endblock %}
