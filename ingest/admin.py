@@ -10,7 +10,7 @@ from django.db.models import F
 from .models import (
     ImageMetadata, Collection, People, Project, DescriptiveMetadata, Contributor,
     Instrument, Dataset, Specimen, Image, EventsLog, Sheet, ProjectPeople, Funder,
-    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium, BIL_Specimen_ID, SpecimenLinkage, ConsortiumTag, DatasetTag
+    Publication, Consortium, SWC, DatasetLinkage, BIL_ID, ProjectConsortium, BIL_Specimen_ID, SpecimenLinkage, ConsortiumTag, DatasetTag, Spatial
 )
 
 
@@ -56,8 +56,10 @@ class SWCSInline(admin.TabularInline):
 class ConsortiaInline(admin.TabularInline):
     model = Consortium
 
-class ProjectConsortiumInline(admin.TabularInline):
-    model = ProjectConsortium
+@admin.register(ProjectConsortium)
+class ProjectConsortiumAdmin(admin.ModelAdmin):
+    list_display = [field.name for field in ProjectConsortium._meta.fields]
+    search_fields = ['project__name', 'consortium__short_name']
 
 class BIL_IDInline(admin.TabularInline):
     model = BIL_ID
@@ -157,10 +159,14 @@ class Dataset(admin.ModelAdmin):
 class Image(admin.ModelAdmin):
     list_display = ("id", "xaxis", "obliquexdim1", "obliquexdim2", "obliquexdim3", "yaxis", "obliqueydim1", "obliqueydim2", "obliqueydim3", "zaxis", "obliquezdim1", "obliquezdim2", "obliquezdim3", "landmarkname", "landmarkx", "landmarky", "landmarkz", "number", "displaycolor", "representation", "flurophore", "stepsizex", "stepsizey", "stepsizez", "stepsizet", "channels", "slices", "z", "xsize", "ysize", "zsize", "gbytes", "files", "dimensionorder", "sheet")
 
+class SpatialInline(admin.TabularInline):
+    model = Spatial
+    show_change_link = True
+    raw_id_fields = ('sheet', 'data_set',)
 @admin.register(Sheet)
 class SheetAdmin(admin.ModelAdmin):
     list_display = ("id","filename", "date_uploaded", "collection",)
-    inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline,]
+    inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline,SpatialInline,]
 
 @admin.register(EventsLog)
 class EventsLogAdmin(admin.ModelAdmin):
@@ -189,13 +195,86 @@ class DatasetLinkageAdmin(admin.ModelAdmin):
     list_filter = ('code_id', 'relationship', 'linkage_date')
     autocomplete_fields = ['data_id_1_bil']
 
+class DOIEligibleFilter(admin.SimpleListFilter):
+    title = "DOI Eligible"
+    parameter_name = "doi_eligible"
+
+    def lookups(self, request, model_admin):
+        return (
+            ("yes", "Ready for DOI"),
+        )
+
+    def queryset(self, request, queryset):
+        if self.value() == "yes":
+            return queryset.filter(
+                doi=False,
+                v2_ds_id__sheet__collection__submission_status=Collection.SUCCESS,
+                v2_ds_id__sheet__collection__validation_status=Collection.SUCCESS,
+            )
+        return queryset
+
+@admin.register(BIL_ID)
 class BIL_IDAdmin(admin.ModelAdmin):
-    list_display = ["bil_id", "v1_ds_id", "v2_ds_id", "metadata_version", "doi"]
-    search_fields = ['bil_id']
+    list_display = ["bil_id", "v1_ds_id", "v2_ds_id", "metadata_version", "doi_status", "send_to_doi_button"]
+    search_fields = ["bil_id"]
+    list_filter = ["doi", DOIEligibleFilter]
+
+    def doi_status(self, obj):
+        ds = obj.v2_ds_id
+        if not ds:
+            return "(no v2 dataset)"
+        return ds.doi or ""
+    doi_status.short_description = "Dataset DOI"
+
+    def _collection_ready_for_doi(self, ds) -> bool:
+        """
+        DOI can only be created if the dataset’s sheet->collection
+        has submission_status=SUCCESS and validation_status=SUCCESS.
+        """
+        if not ds or not ds.sheet or not ds.sheet.collection:
+            return False
+        coll = ds.sheet.collection
+        return coll.submission_status == "SUCCESS" and coll.validation_status == "SUCCESS"
+
+    def send_to_doi_button(self, obj):
+        ds = obj.v2_ds_id
+        if not ds:
+            return format_html('<span style="color:#999;">(no v2 dataset)</span>')
+
+        # Already has a DOI string? show check
+        if ds.doi:
+            return format_html('<span style="color: green; font-weight: 600;">✅ DOI Created</span>')
+
+        # Gate by collection status
+        if not self._collection_ready_for_doi(ds):
+            # You can hide it entirely OR show disabled w/ tooltip.
+            # Disabled is nicer so admins understand why.
+            coll = ds.sheet.collection if ds.sheet else None
+            sub = getattr(coll, "submission_status", "UNKNOWN")
+            val = getattr(coll, "validation_status", "UNKNOWN")
+
+            return format_html(
+                '<button type="button" class="button" disabled '
+                'title="DOI can only be created when submission_status and validation_status are SUCCESS '
+                '(currently: submission={}/validation={})">Create DOI</button>',
+                sub, val
+            )
+
+        # Otherwise show enabled button
+        doi_api_url = reverse("ingest:doi_api")
+        return format_html(
+            '<button type="button" class="button bil-doi-btn" '
+            'data-bil-id="{}" data-url="{}">Create DOI</button>',
+            obj.bil_id,
+            doi_api_url,
+        )
+
+    send_to_doi_button.short_description = "Create DOI"
+
+    class Media:
+        js = ("ingest/admin/doi_button.js",)
 
 admin.site.register(DatasetLinkage, DatasetLinkageAdmin)
-
-admin.site.register(BIL_ID, BIL_IDAdmin)
 
 class Specimen_linkageAdmin(admin.ModelAdmin):
     list_display = ("specimen_id", "specimen_id_2", "code_id", "specimen_category")
@@ -215,9 +294,6 @@ class SpecimenAdmin(admin.ModelAdmin):
 admin.site.register(Specimen, SpecimenAdmin)
 
 #class ProjectConsortiumAdmin(admin.ModelAdmin):
-
-
-admin.site.register(ProjectConsortium)
     
 
 admin.site.register(ConsortiumTag)
@@ -228,3 +304,8 @@ class DatasetTagAdmin(admin.ModelAdmin):
 
 admin.site.register(DatasetTag, DatasetTagAdmin)
 
+@admin.register(Spatial)
+class SpatialAdmin(admin.ModelAdmin):
+    # Adjust these to match your actual field names if needed
+    list_display = ("id", "sheet", "data_set")
+    search_fields = ("sheet__filename", "data_set__bildirectory")

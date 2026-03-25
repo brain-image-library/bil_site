@@ -31,7 +31,7 @@ from .specimen_portal import Specimen_Portal
 from .field_list import required_metadata
 from .filters import CollectionFilter
 from .forms import CollectionForm, ImageMetadataForm, DescriptiveMetadataForm, UploadForm, collection_send, CollectionChoice, DatasetLinkageForm
-from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag, ConsortiumTag, DatasetLinkage
+from .models import UUID, Collection, ImageMetadata, DescriptiveMetadata, Project, ProjectPeople, People, Project, EventsLog, Contributor, Funder, Publication, Instrument, Dataset, Specimen, Image, Sheet, Consortium, ProjectConsortium, SWC, ProjectAssociation, BIL_ID, DatasetEventsLog, BIL_Specimen_ID, BIL_Instrument_ID, BIL_Project_ID, SpecimenLinkage, DatasetTag, ConsortiumTag, DatasetLinkage, Spatial
 from .tables import CollectionTable, DescriptiveMetadataTable, CollectionRequestTable
 import uuid
 import datetime
@@ -41,9 +41,12 @@ import os
 from django.middleware.csrf import get_token
 import requests
 from django.utils.timezone import now
+from django.utils import timezone
 from django.db import transaction
 
-from django.db.models import OuterRef, Subquery, Q
+from django.db.models import OuterRef, Subquery, Q, Exists
+from pathlib import Path
+import jwt, time
 
 
 def logout(request):
@@ -549,33 +552,252 @@ class DescriptiveMetadataDetail(LoginRequiredMixin, DetailView):
 
 @login_required
 def collection_send(request):
-    content = json.loads(request.body)
-    items = []
-    user_name = request.user
-    for item in content:
-        items.append(item['bil_uuid'])
-        coll = Collection.objects.get(bil_uuid = item['bil_uuid'])
-        coll_id = Collection.objects.get(id = coll.id)
-        person = People.objects.get(name = user_name)
-        person_id = person.id
-        time = datetime.now()
-        event = EventsLog(collection_id = coll_id, people_id_id = person.id, project_id_id = coll.project_id, notes = '', timestamp = time, event_type = 'request_validation')
-        event.save()
-    if request.method == "POST":
-        subject = '[BIL Validations] New Validation Request'
-        sender = 'ltuite96@psc.edu'
-        message = F'The following collections have been requested to be validated {items} by {user_name}@psc.edu'
-        recipient = ['ltuite96@psc.edu']
-        
-        send_mail(
-        subject,
-        message,
-        sender,
-        recipient
-             )
-        _create_asana_tasks(items, user_name)
-    messages.success(request, 'Request succesfully sent')
-    return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
+    if request.method != "POST":
+        return JsonResponse({"error": "POST required"}, status=405)
+
+    try:
+        payload = json.loads(request.body or "[]")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON payload"}, status=400)
+
+    # Normalize to list of bil_uuids
+    bil_uuids = []
+    for item in payload:
+        if isinstance(item, dict) and "bil_uuid" in item:
+            bil_uuids.append(item["bil_uuid"])
+        elif isinstance(item, str):
+            bil_uuids.append(item)
+    bil_uuids = list(dict.fromkeys(bil_uuids))
+
+    sent = []
+    skipped = {
+        "missing_metadata": [],
+        "already_requested": [],
+        "already_success": [],
+        "not_found": [],
+    }
+    curation_issues = {}
+
+    user = request.user
+    user_email = getattr(user, "email", "") or f"{user.username}@psc.edu"
+
+    valid_for_validation = []
+
+    # --- Iterate through each selected submission ---
+    for bu in bil_uuids:
+        try:
+            coll = Collection.objects.get(bil_uuid=bu, user=user)
+        except Collection.DoesNotExist:
+            skipped["not_found"].append(
+                {"uuid": bu, "reason": "No submission found for this user."}
+            )
+            continue
+
+        if (
+            coll.submission_status == Collection.SUCCESS
+            and coll.validation_status == Collection.SUCCESS
+        ):
+            skipped["already_success"].append(
+                {"uuid": bu, "reason": "This submission has already been validated."}
+            )
+            continue
+
+        has_sheet = Sheet.objects.filter(collection=coll).exists()
+        if not has_sheet:
+            skipped["missing_metadata"].append(
+                {"uuid": bu, "reason": "No metadata spreadsheet uploaded yet."}
+            )
+            continue
+
+        already_req = EventsLog.objects.filter(
+            collection_id=coll, event_type="request_validation"
+        ).exists()
+        if already_req:
+            skipped["already_requested"].append(
+                {"uuid": bu, "reason": "Validation already requested for this collection."}
+            )
+            continue
+
+        # --- Run pre-curation directory check BEFORE logging event ---
+        curation_result = check_collection_directories(coll, user)
+        if curation_result["status"] != "ok":
+            # Store issue per collection
+            curation_issues[bu] = curation_result
+            continue
+
+        valid_for_validation.append(coll)
+
+    # --- Proceed only with valid submissions ---
+    for coll in valid_for_validation:
+        try:
+            person = People.objects.get(auth_user_id_id=user.id)
+            EventsLog.objects.create(
+                collection_id=coll, 
+                people_id_id=person.id,
+                project_id_id=coll.project_id,
+                timestamp=timezone.now(),
+                event_type="request_validation",
+            )
+        except People.DoesNotExist:
+            EventsLog.objects.create(
+                collection_id=coll, 
+                project_id_id=coll.project_id,
+                notes="(No People record found for user)",
+                timestamp=timezone.now(),
+                event_type="request_validation",
+            )
+
+        sent.append(coll.bil_uuid)
+
+    # --- Send email & Asana task only for successfully sent ones ---
+    if sent:
+        subject = "[BIL Validations] New Validation Request"
+        sender = "noreply@psc.edu"
+        recipient = ["ltuite96@psc.edu"]
+        message = (
+            f"The following collections have been requested for validation by {user_email}:\n\n"
+            + "\n".join(f"• {uuid}" for uuid in sent)
+        )
+        send_mail(subject, message, sender, recipient)
+        try:
+            _create_asana_tasks(sent, user.username)
+        except Exception as exc:
+            print(f"Asana task creation failed: {exc}")
+
+    # --- Return combined results ---
+    return JsonResponse({
+        "sent": sent,
+        "skipped": skipped,
+        "curation_issues": curation_issues,
+        "message": (
+            "Some submissions could not be sent for validation."
+            if curation_issues or any(skipped.values())
+            else "All submissions successfully sent for validation."
+        ),
+        "redirect": reverse("ingest:index"),
+    })
+
+
+def check_collection_directories(coll, current_user):
+    """
+    Verifies that the filesystem directory structure matches expected dataset directories
+    using the collection's stored data_path. Returns a structured dict for UI display.
+    """
+
+    # Use the path recorded in the collection itself
+    base_dir = Path(coll.data_path).expanduser()
+
+    # --- 1. Directory missing entirely ---
+    if not base_dir.exists():
+        return {
+            "status": "missing_path",
+            "title": "Collection Directory Missing",
+            "message": (
+                f"The collection path recorded in metadata ({coll.data_path}) "
+                "does not exist on disk."
+            ),
+            "suggestion": (
+                "Contact bil-support@psc.edu so we can investigate why the directory creation failed "
+            ),
+            "missing": [],
+            "extra": [],
+        }
+
+    # --- 2. Permission error accessing directory ---
+    try:
+        actual_dirs = sorted([p.name for p in base_dir.iterdir() if p.is_dir()])
+    except PermissionError:
+        return {
+            "status": "permission_error",
+            "title": "Permission Error",
+            "message": (
+                f"Permission denied when reading {base_dir}. "
+                "The web service or test user may not have filesystem access."
+            ),
+            "suggestion": (
+                "Verify directory ownership and permissions. "
+                "The process running Django must have read access to all subdirectories."
+            ),
+            "missing": [],
+            "extra": [],
+        }
+
+    # --- 3. Compare expected vs actual dataset subdirectories ---
+    datasets = Dataset.objects.filter(sheet__collection=coll)
+    expected_dirs = sorted([
+        Path(ds.bildirectory).name.strip("/")
+        for ds in datasets if ds.bildirectory
+    ])
+
+    missing = [d for d in expected_dirs if d not in actual_dirs]
+    extra = [d for d in actual_dirs if d not in expected_dirs]
+
+    # --- 4. No issues ---
+    if not missing and not extra:
+        return {
+            "status": "ok",
+            "title": "Directories Verified",
+            "message": "All expected dataset directories are present and match metadata.",
+            "missing": [],
+            "extra": [],
+        }
+
+    # --- 5. Directory mismatch ---
+    details = []
+    if missing:
+        details.append(f"Missing expected directories: {', '.join(missing)}")
+    if extra:
+        details.append(f"Unexpected extra directories found: {', '.join(extra)}")
+
+    return {
+        "status": "mismatch",
+        "title": "Directory Mismatch Detected",
+        "message": (
+            "The directories present under this collection’s data_path do not match "
+            "the dataset directories listed in metadata."
+        ),
+        "details": " | ".join(details),
+        "suggestion": (
+            "Add any missing directories listed in metadata, or remove any extras "
+            "not referenced there, before re-submitting for validation."
+        ),
+        "missing": missing,
+        "extra": extra,
+    }
+
+@login_required
+def refresh_tables(request):
+    """Return updated eligible and validation-in-progress table HTML (mirrors SubmitRequestCollectionList logic)."""
+    user = request.user
+
+    # Base set: user’s collections excluding already fully completed ones
+    base_qs = (Collection.objects
+               .filter(user=user)
+               .exclude(Q(submission_status=Collection.SUCCESS) &
+                        Q(validation_status=Collection.SUCCESS)))
+
+    # Subqueries
+    has_sheet_sq = Sheet.objects.filter(collection=OuterRef('pk'))
+    has_requested_sq = EventsLog.objects.filter(
+        collection_id=OuterRef('pk'),
+        event_type='request_validation',
+    )
+
+    # Annotate and categorize
+    annotated = (base_qs
+                 .annotate(has_sheet=Exists(has_sheet_sq),
+                           has_requested=Exists(has_requested_sq)))
+
+    eligible = annotated.filter(has_sheet=True, has_requested=False)
+    needs_metadata = annotated.filter(has_sheet=False)
+    already_requested = annotated.filter(has_requested=True)
+
+    return render(request, "ingest/_tables_refresh.html", {
+        "eligible_collections": eligible.distinct(),
+        "needs_metadata_collections": needs_metadata.distinct(),
+        "already_requested_collections": already_requested.distinct(),
+        "pi": People.objects.filter(auth_user_id_id=user.id).exists(),
+    })
 
 def _create_asana_tasks(bil_uuids, username):
     """Create Asana tasks for the submitted collections (UUID only)."""
@@ -648,7 +870,10 @@ def collection_create(request):
         bil_uuid = cache.get('bil_uuid')
         bil_user = cache.get('bil_user')
     else:
+        #FOR PRODUCTION
         top_level_dir = settings.STAGING_AREA_ROOT
+        #FOR LOCAL DEVELOPMENT
+        #top_level_dir = '/Users/luketuite/newbil/aug_bil_site/lz'
         #shortens uuid
         uuidhex = (uuid.uuid4()).hex
         str1 = uuidhex[0:16]
@@ -780,40 +1005,68 @@ class SubmitValidateCollectionList(LoginRequiredMixin, SingleTableMixin, FilterV
         return kwargs
 
 class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
-    def IsPi(request):
-        current_user = request.user
-        people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-        for attribute in project_person:
-            if attribute.is_pi:
-                pi = True
-            else:
-                pi = False
-        return render(request, {'pi':pi})
-    """ A list of all a user's collections. """
-
     table_class = CollectionRequestTable
     model = Collection
     template_name = 'ingest/submit_request_collection_list.html'
     filterset_class = CollectionFilter
+    success_url = reverse_lazy('ingest:collection_list')
 
     def get_queryset(self, **kwargs):
         return Collection.objects.filter(user=self.request.user)
 
+    def _is_pi(self, request):
+        try:
+            person = People.objects.get(auth_user_id_id=request.user.id)
+            return ProjectPeople.objects.filter(people_id=person.id, is_pi=True).exists()
+        except People.DoesNotExist:
+            return False
+
     def get_context_data(self, **kwargs):
-        # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
-        context['collections'] = Collection.objects.filter(user=self.request.user)
+
+        user_qs = Collection.objects.filter(user=self.request.user)
+
+        # ✅ Completed bucket (SUCCESS/SUCCESS)
+        completed = user_qs.filter(
+            submission_status=Collection.SUCCESS,
+            validation_status=Collection.SUCCESS,
+        )
+
+        # Base set: user’s collections excluding already fully completed ones
+        base_qs = user_qs.exclude(
+            Q(submission_status=Collection.SUCCESS) &
+            Q(validation_status=Collection.SUCCESS)
+        )
+
+        has_sheet_sq = Sheet.objects.filter(collection=OuterRef('pk'))
+        has_requested_sq = EventsLog.objects.filter(
+            collection_id=OuterRef('pk'),
+            event_type='request_validation',
+        )
+
+        annotated = base_qs.annotate(
+            has_sheet=Exists(has_sheet_sq),
+            has_requested=Exists(has_requested_sq),
+        )
+
+        eligible = annotated.filter(has_sheet=True, has_requested=False)
+        needs_metadata = annotated.filter(has_sheet=False)
+        already_requested = annotated.filter(has_requested=True)
+
+        context.update({
+            'pi': self._is_pi(self.request),
+            'eligible_collections': eligible.distinct(),
+            'needs_metadata_collections': needs_metadata.distinct(),
+            'already_requested_collections': already_requested.distinct(),
+            'completed_collections': completed.distinct(),  # ✅ NEW
+        })
         return context
 
     def get_filterset_kwargs(self, filterset_class):
-        """ Sets the default collection filter status. """
         kwargs = super().get_filterset_kwargs(filterset_class)
         if kwargs["data"] is None:
             kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
         return kwargs
-    success_url = reverse_lazy('ingest:collection_list')
-
 class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     """ A list of all a user's collections. """
 
@@ -1359,6 +1612,7 @@ def check_instrument_sheet(filename):
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
     return errormsg
 
+
 def check_dataset_sheet(filename):
     dataset_count = 0
     errormsg=""
@@ -1601,6 +1855,7 @@ def check_image_sheet(filename):
         #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[32] + '" value expected but not found in cell "' + cellcols[32] + str(i+1) + '". '
     return errormsg
 
+
 def check_swc_sheet(filename):
     swc_count = 0
     errormsg=""
@@ -1635,6 +1890,115 @@ def check_swc_sheet(filename):
                 errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
               if cols[8] == "":
                 errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
+    return errormsg
+
+def check_spatial_sheet(filename):
+    errormsg = ""
+    workbook = xlrd.open_workbook(filename)
+    sheetname = 'Spatial'
+    try:
+        spatial_sheet = workbook.sheet_by_name(sheetname)
+    except xlrd.biffh.XLRDError:
+        errormsg += 'Tab "Spatial" not found in spreadsheet. '
+        return errormsg
+
+    colheads = [
+        'DataAvailability','HistologicalStainName','NuclearStainName','ProbeSetDOI',
+        'ProbeSequencesDOI','LightTreatmentTime','LightTreatmentTimeUnits',
+        'NumberTargetedRNA','GenePanelName','PlatformName','MachineName',
+        'MachineSoftwareVersion','NumberZSections','SegmentationMethod',
+        'SegmentationModel','SegmentationMethodVersion','ClusteringMethod',
+        'LabelTransferMethod','LabelTransferReference','NuclearImageTransform',
+        'HistologicalImageTransform','FilterCriteria','XYZPosition','CellID',
+        'CellCentroidLocation','CellAreaVolume'
+    ]
+
+    cellcols = ['A','B','C','D','E','F','G','H','I','J','K','L','M',
+                'N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
+
+    data_availability_cv = ['raw', 'segmented', 'raw and segmented']
+    platform_name_cv = ['MERSCOPE', 'DBit-Seq', 'Slide-Tags', 'Stereo-seq', 'Xenium']
+
+    cols = spatial_sheet.row_values(3)
+
+    # Header check
+    for i in range(len(colheads)):
+        sheet_val = cols[i] if i < len(cols) else ""
+        if sheet_val != colheads[i]:
+            errormsg += (
+                f' Tab: "Spatial" cell heading found: "{sheet_val}" '
+                f'but expected: "{colheads[i]}" at cell: "{cellcols[i]}4". '
+            )
+    if errormsg:
+        return errormsg
+
+    # ---- SAFE helper ----
+    def get_val(row_vals, idx):
+        return "" if idx >= len(row_vals) else str(row_vals[idx]).strip()
+
+    # Row-level checks
+    for i in range(6, spatial_sheet.nrows):
+        row_vals = spatial_sheet.row_values(i)
+
+        # Skip blank rows
+        if not any(str(v).strip() for v in row_vals):
+            continue
+
+        # 0: DataAvailability
+        val = get_val(row_vals, 0)
+        if val == "":
+            errormsg += (
+                f'On spreadsheet tab: {sheetname} Column: "{colheads[0]}" '
+                f'value expected but not found in cell "{cellcols[0]}{i+1}". '
+            )
+        elif val not in data_availability_cv:
+            errormsg += (
+                f'On spreadsheet tab: {sheetname} Column: "{colheads[0]}" '
+                f'incorrect CV value "{val}" in cell "{cellcols[0]}{i+1}". '
+            )
+
+        # LightTreatmentTime (#5)
+        val = get_val(row_vals, 5)
+        if val != "":
+            try:
+                float(val)
+            except:
+                errormsg += (
+                    f'On spreadsheet tab: {sheetname} Column: "{colheads[5]}" '
+                    f'must be numeric in cell "{cellcols[5]}{i+1}". '
+                )
+
+        # NumberTargetedRNA (#7)
+        val = get_val(row_vals, 7)
+        if val != "":
+            try:
+                int(float(val))
+            except:
+                errormsg += (
+                    f'On spreadsheet tab: {sheetname} Column: "{colheads[7]}" '
+                    f'must be an integer in cell "{cellcols[7]}{i+1}". '
+                )
+
+        # PlatformName (#9)
+        val = get_val(row_vals, 9)
+        if val != "" and val not in platform_name_cv:
+            errormsg += (
+                f'On spreadsheet tab: {sheetname} Column: "{colheads[9]}" '
+                f'incorrect CV value "{val}" in cell "{cellcols[9]}{i+1}". '
+            )
+
+        # File columns (#23–26)
+        file_cols = [22, 23, 24, 25]
+        any_file_val = any(get_val(row_vals, idx) != "" for idx in file_cols)
+
+        if any_file_val:
+            for idx in file_cols:
+                if get_val(row_vals, idx) == "":
+                    errormsg += (
+                        f'On spreadsheet tab: {sheetname} Column: "{colheads[idx]}" '
+                        f'value expected but not found in cell "{cellcols[idx]}{i+1}". '
+                    )
+
     return errormsg
 
 def ingest_contributors_sheet(filename):
@@ -1728,6 +2092,24 @@ def ingest_swc_sheet(filename):
         swcs.append(values)
     return swcs
 
+def ingest_spatial_sheet(filename):
+    fn = xlrd.open_workbook(filename)
+    spatial_sheet = fn.sheet_by_name('Spatial')
+    keys = [spatial_sheet.cell(3, col).value for col in range(spatial_sheet.ncols)]
+    spatials = []
+    for row in range(6, spatial_sheet.nrows):
+        values = {
+            keys[col]: spatial_sheet.cell(row, col).value
+            for col in range(spatial_sheet.ncols)
+        }
+
+        # Skip completely empty rows
+        if not any(str(v).strip() for v in values.values()):
+            continue
+
+        spatials.append(values)
+    return spatials
+
 def save_sheet_row(ingest_method, filename, collection):
     try:
         sheet = Sheet(filename=filename, date_uploaded=datetime.now(), collection_id=collection.id, ingest_method = ingest_method)
@@ -1814,6 +2196,75 @@ def save_swc_sheet(swcs, sheet, saved_datasets):
 
             swc_uuid = Mne.num_to_mne(swc.id)
             swc = SWC.objects.filter(id=swc.id).update(swc_uuid=swc_uuid)
+        return True
+    except Exception as e:
+        print(repr(e))
+        return False
+    
+def save_spatial_sheet(spatials, sheet, saved_datasets):
+    # Many spatial rows : 1 dataset
+    try:
+        data_set_id = saved_datasets[0].id if isinstance(saved_datasets, list) else saved_datasets.id
+
+        for s in spatials:
+            dataavailability = s['DataAvailability']
+            histologicalstainname = s['HistologicalStainName']
+            nuclearstainname = s['NuclearStainName']
+            probesetdoi = s['ProbeSetDOI']
+            probesequencesdoi = s['ProbeSequencesDOI']
+            lighttreatmenttime = s['LightTreatmentTime']
+            lighttreatmenttimeunits = s['LightTreatmentTimeUnits']
+            numbertargetedrna = s['NumberTargetedRNA']
+            genepanelname = s['GenePanelName']
+            platformname = s['PlatformName']
+            machinename = s['MachineName']
+            machinesoftwareversion = s['MachineSoftwareVersion']
+            numberzsections = s['NumberZSections']
+            segmentationmethod = s['SegmentationMethod']
+            segmentationmodel = s['SegmentationModel']
+            segmentationmethodversion = s['SegmentationMethodVersion']
+            clusteringmethod = s['ClusteringMethod']
+            labeltransfermethod = s['LabelTransferMethod']
+            labeltransferreference = s['LabelTransferReference']
+            nuclearimagetransform = s['NuclearImageTransform']
+            histologicalimagetransform = s['HistologicalImageTransform']
+            filtercriteria = s['FilterCriteria']
+            xyzposition = s['XYZPosition']
+            cellid = s['CellID']
+            cellcentroidlocation = s['CellCentroidLocation']
+            cellareavolume = s['CellAreaVolume']
+
+            spatial = Spatial(
+                dataavailability=dataavailability,
+                histologicalstainname=histologicalstainname,
+                nuclearstainname=nuclearstainname,
+                probesetdoi=probesetdoi,
+                probesequencesdoi=probesequencesdoi,
+                lighttreatmenttime=lighttreatmenttime,
+                lighttreatmenttimeunits=lighttreatmenttimeunits,
+                numbertargetedrna=numbertargetedrna,
+                genepanelname=genepanelname,
+                platformname=platformname,
+                machinename=machinename,
+                machinesoftwareversion=machinesoftwareversion,
+                numberzsections=numberzsections,
+                segmentationmethod=segmentationmethod,
+                segmentationmodel=segmentationmodel,
+                segmentationmethodversion=segmentationmethodversion,
+                clusteringmethod=clusteringmethod,
+                labeltransfermethod=labeltransfermethod,
+                labeltransferreference=labeltransferreference,
+                nuclearimagetransform=nuclearimagetransform,
+                histologicalimagetransform=histologicalimagetransform,
+                filtercriteria=filtercriteria,
+                xyzposition=xyzposition,
+                cellid=cellid,
+                cellcentroidlocation=cellcentroidlocation,
+                cellareavolume=cellareavolume,
+                data_set_id=data_set_id,
+                sheet_id=sheet.id
+            )
+            spatial.save()
         return True
     except Exception as e:
         print(repr(e))
@@ -2586,77 +3037,173 @@ def save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contrib
         print(repr(e))
         saved = False
 
-def save_bil_ids(datasets, filename):
-    """
-    This function iterates through the provided list of datasets, validates all inputs,
-    and then applies changes only if all validations pass. No partial changes will occur.
-    """
-    workbook = xlrd.open_workbook(filename)
-    sheetname = 'Dataset'
-    dataset_sheet = workbook.sheet_by_name(sheetname)
+def save_all_sheets_method_6(
+    instruments,
+    specimen_set,
+    datasets,
+    sheet,
+    contributors,
+    funders,
+    publications,
+    spatials
+):
+    # Spatial Transcriptomics ingest method
+    try:
+        saved_datasets = save_dataset_sheet_method_2(datasets, sheet)
+        if saved_datasets:
+            saved_instruments = save_instrument_sheet_method_2(instruments, sheet)
+            if saved_instruments:
+                saved_specimens = save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets)
+                if saved_specimens:
+                    saved_spatial = save_spatial_sheet(spatials, sheet, saved_datasets)
+                    if saved_spatial:
+                        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
+                        if saved_generic:
+                            return True
+                        else:
+                            return False
+                    else:
+                        return False
+                else:
+                    return False
+            else:
+                return False
+        else:
+            return False
+    except Exception as e:
+        print(repr(e))
+        return False
 
-    # Value that changes with each iteration to find bil id for directory
-    loop_index_change = 6
+
+def save_bil_ids(datasets, filename):
+    workbook = xlrd.open_workbook(filename)
+    dataset_sheet = workbook.sheet_by_name("Dataset")
+
+    # Detect dev spreadsheet (BILDID column present)
+    is_dev_spreadsheet = dataset_sheet.ncols > 15 and dataset_sheet.cell_type(3, 15) != xlrd.XL_CELL_EMPTY
+    # ^ note: checking row 3 (0-based) hits header row that contains "BILDID"
+
+    # Build directory -> dataset lookup from the datasets passed in
+    # IMPORTANT: normalize trailing slashes to match spreadsheet style
+    def norm_dir(s: str) -> str:
+        s = (s or "").strip()
+        # normalize trailing slash (your sheet has trailing slash)
+        if s and not s.endswith("/"):
+            s += "/"
+        return s
+
+    datasets_by_dir = {}
+    for ds in datasets:
+        d = norm_dir(getattr(ds, "bildirectory", None) or getattr(ds, "BILDirectory", None))
+        if not d:
+            continue
+        datasets_by_dir[d] = ds
 
     validation_errors = []
     updates_to_apply = []
 
-    # Determine if it's a developer spreadsheet
-    is_dev_spreadsheet = False
-    if dataset_sheet.ncols > 15 and dataset_sheet.cell_type(0, 15) != xlrd.XL_CELL_EMPTY:
-        is_dev_spreadsheet = True
-
-    # If it's a developer spreadsheet, perform detailed validation
     if is_dev_spreadsheet:
-        for idx, dataset in enumerate(datasets):
-            row_index = 6 + idx  # Assuming row 6 corresponds to datasets[0]
-            bil_id_value = dataset_sheet.cell_value(row_index, 15).strip()  # Column 15 = BILDID
+        # Data rows start at row 6 (0-based) in this template (Excel row 7)
+        start_row = 6
+
+        seen_bil_ids = set()
+        used_dataset_ids = set()
+
+        # iterate spreadsheet rows, not datasets
+        for row_index in range(start_row, dataset_sheet.nrows):
+            spreadsheet_dir = norm_dir(dataset_sheet.cell_value(row_index, 0))
+            bil_id_value = (dataset_sheet.cell_value(row_index, 15) or "").strip()
+
+            # skip totally empty rows
+            if not spreadsheet_dir and not bil_id_value:
+                continue
+
+            row_errors = []
+
+            if not spreadsheet_dir:
+                row_errors.append(f"Row {row_index + 1}: Missing BILDirectory (col A).")
 
             if not bil_id_value:
-                validation_errors.append(f"No BIL_ID found in row {row_index + 1}.")
-                continue
+                row_errors.append(f"Row {row_index + 1}: Missing BIL_ID (col P).")
 
-            if not BIL_ID.objects.filter(bil_id=bil_id_value).exists():
-                validation_errors.append(
-                    f"BIL_ID {bil_id_value} does not match any previous upload."
-                )
-                continue
-
-            existing_bil_id = BIL_ID.objects.get(bil_id=bil_id_value)
-
-            spreadsheet_dir = dataset_sheet.cell_value(row_index, 0).strip()  # BILDirectory is column 0
-
-            # Check if directory matches what's in DB
-            if existing_bil_id.v2_ds_id:
-                if existing_bil_id.v2_ds_id.bildirectory != spreadsheet_dir:
-                    validation_errors.append(
-                        f"Directory mismatch for BIL_ID {bil_id_value} (v2_ds_id)."
-                    )
-            elif existing_bil_id.v1_ds_id:
-                if existing_bil_id.v1_ds_id.r24_directory != spreadsheet_dir:
-                    validation_errors.append(
-                        f"Directory mismatch for BIL_ID {bil_id_value} (v1_ds_id)."
-                    )
+            if bil_id_value in seen_bil_ids:
+                row_errors.append(f"Row {row_index + 1}: Duplicate BIL_ID in sheet: {bil_id_value}.")
             else:
-                validation_errors.append(
-                    f"BIL_ID {bil_id_value} does not have a valid v1_ds_id or v2_ds_id."
-                )
+                seen_bil_ids.add(bil_id_value)
 
-            # If no errors so far for this dataset
-            if not validation_errors:
-                updates_to_apply.append({
-                    "bil_id": existing_bil_id,
-                    "v2_ds_id": dataset,
-                    "metadata_version": 2
-                })
+            existing_bil_id = None
+            if bil_id_value:
+                try:
+                    existing_bil_id = BIL_ID.objects.get(bil_id=bil_id_value)
+                except BIL_ID.DoesNotExist:
+                    row_errors.append(
+                        f"Row {row_index + 1}: BIL_ID {bil_id_value} does not match any previous upload."
+                    )
+
+            # find the v2 dataset object by directory from the datasets list
+            ds = None
+            if spreadsheet_dir:
+                ds = datasets_by_dir.get(spreadsheet_dir)
+                if ds is None:
+                    row_errors.append(
+                        f"Row {row_index + 1}: No v2 Dataset found in this upload for directory {spreadsheet_dir}."
+                    )
+
+            # verify directory matches the directory tied to that BIL_ID in DB (v1 or v2)
+            if existing_bil_id and spreadsheet_dir:
+                if existing_bil_id.v2_ds_id:
+                    db_dir = norm_dir(existing_bil_id.v2_ds_id.bildirectory)
+                    if db_dir != spreadsheet_dir:
+                        row_errors.append(
+                            f"Row {row_index + 1}: Directory mismatch for BIL_ID {bil_id_value} (existing v2_ds_id)."
+                        )
+                elif existing_bil_id.v1_ds_id:
+                    db_dir = norm_dir(existing_bil_id.v1_ds_id.r24_directory)
+                    if db_dir != spreadsheet_dir:
+                        row_errors.append(
+                            f"Row {row_index + 1}: Directory mismatch for BIL_ID {bil_id_value} (existing v1_ds_id)."
+                        )
+                else:
+                    row_errors.append(
+                        f"Row {row_index + 1}: BIL_ID {bil_id_value} has no v1_ds_id or v2_ds_id."
+                    )
+
+            # prevent assigning the same dataset to multiple BIL_IDs
+            if ds is not None:
+                if ds.id in used_dataset_ids:
+                    row_errors.append(
+                        f"Row {row_index + 1}: The same v2 Dataset (id={ds.id}) is being assigned more than once."
+                    )
+                else:
+                    used_dataset_ids.add(ds.id)
+
+            if row_errors:
+                validation_errors.extend(row_errors)
+                continue
+
+            # all good: queue update
+            updates_to_apply.append({
+                "bil_id": existing_bil_id,
+                "v2_ds_id": ds,
+                "metadata_version": 2
+            })
 
         if validation_errors:
             return {"success": False, "errors": validation_errors}
 
-    # If it's a regular user spreadsheet, skip developer-specific validation
+        # Apply changes atomically (all-or-nothing)
+        with transaction.atomic():
+            for update in updates_to_apply:
+                bil_id = update["bil_id"]
+                bil_id.v2_ds_id = update["v2_ds_id"]
+                bil_id.metadata_version = update["metadata_version"]
+                bil_id.save()
+
+        return None
+
+    # Non-dev spreadsheet behavior (your existing logic)
     else:
         for dataset in datasets:
-            # Add datasets directly for regular user spreadsheets
             bil_id = BIL_ID(v2_ds_id=dataset, metadata_version=2, doi=False)
             bil_id.save()
             saved_bil_id = BIL_ID.objects.get(v2_ds_id=dataset.id)
@@ -2664,12 +3211,7 @@ def save_bil_ids(datasets, filename):
             saved_bil_id.bil_id = mne_id
             saved_bil_id.save()
 
-    # Apply Changes Stage (for developer spreadsheets only)
-    for update in updates_to_apply:
-        bil_id = update["bil_id"]
-        bil_id.v2_ds_id = update["v2_ds_id"]
-        bil_id.metadata_version = update["metadata_version"]
-        bil_id.save()
+        return None
 
 def save_specimen_ids(specimens):
     """
@@ -2730,6 +3272,8 @@ def metadata_version_check(filename):
     return version1
 
 def check_all_sheets(filename, ingest_method):
+    workbook = xlrd.open_workbook(filename)
+    sheetnames = workbook.sheet_names()
     ingest_method = ingest_method
     errormsg = check_contributors_sheet(filename)
     if errormsg != '':
@@ -2757,8 +3301,138 @@ def check_all_sheets(filename, ingest_method):
         errormsg = check_swc_sheet(filename)
         if errormsg != '':
             return errormsg
+    if ingest_method in ('ingest_1', 'ingest_2') and 'Spatial' in sheetnames:
+        print('hit logic')
+        errormsg = check_spatial_sheet(filename)
+        if errormsg != '':
+            return errormsg
     return errormsg
 
+def make_ingest_jwt(sub: str = "django") -> str:
+    now = int(time.time())
+    payload = {
+        "sub": sub,
+        "iss": settings.DOI_JWT_ISSUER,       # must match FastAPI JWT_ISSUER
+        "aud": settings.DOI_JWT_AUDIENCE,     # must match FastAPI JWT_AUDIENCE
+        "iat": now,
+        "exp": now + 60,
+    }
+    return jwt.encode(payload, settings.DOI_JWT_SECRET, algorithm="HS256")
+
+
+def build_canonical_record_from_bil(bil_record: BIL_ID, doi: str) -> dict:
+    """
+    Minimal CanonicalRecord that satisfies your FastAPI schema.
+    The ONLY hard requirement is Dataset.DOI (or Dataset.doi).
+    Fill the rest as you like (or leave empty) and iterate later.
+    """
+    ds = bil_record.v2_ds_id
+
+    return {
+        "Metadata": {},
+        "Submission": {},
+        "Contributors": [],
+        "Funders": [],
+        "Specimen": {},
+        "Dataset": {
+            "DOI": doi,
+            "Title": getattr(ds, "title", "") if ds else "",
+            "Directory": getattr(ds, "bildirectory", "") if ds else "",
+        },
+        "Image": {},
+    }
+
+def doi_api(request):
+    print(f"Received request: {request.method}")
+
+    try:
+        data = json.loads(request.body)
+        print(f"Received payload: {data}")
+        bil_id = data.get("bildid")
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
+
+    if not bil_id:
+        return JsonResponse({"error": "No BIL_ID provided"}, status=400)
+
+    print(f"Got BIL_ID: {bil_id}")
+
+    # 1) Call DOI mint API (your existing doi-api service)
+    datacite_url = getattr(settings, "DATACITE_DOI_API_URL", "http://127.0.0.1:8094/draft")
+    payload = {"bildid": bil_id, "action": "draft"}
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        print(f"Sending payload to DOI API: {json.dumps(payload, indent=2)}")
+        response = requests.post(datacite_url, json=payload, headers=headers, timeout=45)
+        print(f"DOI API Response: {response.status_code} - {response.text}")
+
+        if response.status_code != 201:
+            return JsonResponse({"error": response.text}, status=response.status_code)
+
+        # DOI minted successfully
+        bil_record = get_object_or_404(BIL_ID, bil_id=bil_id)
+
+        # Determine DOI string (best: parse from DOI API response if it returns it)
+        try:
+            mint_json = response.json()
+        except Exception:
+            mint_json = {}
+
+        # If your doi-api returns it, use it; else fallback to your known pattern
+        minted_doi = mint_json.get("doi") or f"10.80303/{bil_id}"
+
+        # Update local state (you currently store a boolean on BIL_ID; keep if you want)
+        bil_record.doi = True
+        bil_record.save(update_fields=["doi"])
+        print(f"Updated BIL_ID {bil_id} as DOI=True")
+
+        # Build DOI URL (test resolver example you used)
+        doi_url = mint_json.get("doi_url") or f"https://doi.test.datacite.org/dois/10.80303%2F{bil_id}"
+
+        # 2) Call your FastAPI Mongo ingest service
+        mongo_ingest_url = getattr(settings, "MONGO_INGEST_API_URL", "http://127.0.0.1:8000/v1/doi-datasets")
+        canonical_record = build_canonical_record_from_bil(bil_record, minted_doi)
+
+        token = make_ingest_jwt(sub=request.user.get_username() or "django")
+        ingest_headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+
+        print(f"Sending canonical record to Mongo ingest API: {mongo_ingest_url}")
+        ingest_resp = requests.post(mongo_ingest_url, json=canonical_record, headers=ingest_headers, timeout=45)
+        print(f"Mongo ingest response: {ingest_resp.status_code} - {ingest_resp.text}")
+
+        if ingest_resp.status_code >= 400:
+            # Important: DOI is already minted; don't "undo" it.
+            # Return an error so you notice + can retry ingest later.
+            return JsonResponse(
+                {
+                    "error": "DOI minted, but Mongo ingest failed",
+                    "doi_url": doi_url,
+                    "doi": minted_doi,
+                    "ingest_status": "failed",
+                    "ingest_error": ingest_resp.text,
+                },
+                status=502,
+            )
+
+        ingest_json = ingest_resp.json() if ingest_resp.content else {}
+        return JsonResponse(
+            {
+                "success": True,
+                "doi_url": doi_url,
+                "doi": minted_doi,
+                "ingest": ingest_json,  # {"status": "inserted"|"noop_exists", "doi": ...}
+            },
+            status=201,
+        )
+
+    except requests.exceptions.RequestException as e:
+        print(f"Request Error: {str(e)}")
+        return JsonResponse({"error": f"Request failed: {str(e)}"}, status=500)
+    
 @login_required
 def descriptive_metadata_upload(request, associated_collection):
     current_user = request.user
@@ -2797,6 +3471,8 @@ def descriptive_metadata_upload(request, associated_collection):
         fs = FileSystemStorage(location=datapath)
         unique_name = fs.save(spreadsheet_file.name, spreadsheet_file)
         filename = os.path.join(datapath, unique_name)
+        workbook = xlrd.open_workbook(filename)
+        has_spatial = 'Spatial' in workbook.sheet_names()
 
         version1 = metadata_version_check(filename)
         
@@ -2826,12 +3502,20 @@ def descriptive_metadata_upload(request, associated_collection):
                 specimen_set = ingest_specimen_sheet(filename)
                 images = ingest_image_sheet(filename)
                 swcs = ingest_swc_sheet(filename)
+                # Only ingest spatial if Spatial sheet exists AND ingest method is 1 or 2
+                if has_spatial and ingest_method in ('ingest_1', 'ingest_2'):
+                    spatials = ingest_spatial_sheet(filename)
+                else:
+                    spatials = []
 
                 # choose save method depending on ingest_method value from radio button
                 # want to pull this out into a helper function
                 if ingest_method == 'ingest_1':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    if has_spatial:
+                        ingested_datasets = list(Dataset.objects.filter(sheet=sheet))
+                        save_spatial_sheet(spatials, sheet, ingested_datasets)
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''
@@ -2843,6 +3527,9 @@ def descriptive_metadata_upload(request, associated_collection):
                 elif ingest_method == 'ingest_2':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
+                    if has_spatial:
+                        ingested_datasets = list(Dataset.objects.filter(sheet=sheet))
+                        save_spatial_sheet(spatials, sheet, ingested_datasets)
                     ingested_datasets = Dataset.objects.filter(sheet = sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
                     errormsg = ''

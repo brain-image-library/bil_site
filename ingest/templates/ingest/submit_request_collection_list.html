@@ -2,7 +2,6 @@
 {% load static bootstrap4 %}
 
 {% block wide %}
-{# ——— load your JS first, in the body ——— #}
 <script src="{% static 'ingest/sendemail.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
 
@@ -17,66 +16,232 @@
 <br>
 <h1>Request to Publicize Submission</h1>
 <p>
-  Select checkboxes for each submission to request validation and publication.
-  This will submit a ticket to BIL support and be processed.
+  Select one or more eligible submissions to request validation and publication.
 </p>
 
-<form id="rowform">
-  {% csrf_token %}
-  <table id="CollectionTable" class="table">
-    <thead>
-      <tr>
-        <th></th>
-        <th>Name</th>
-        <th>Description</th>
-        <th>Organization Lab</th>
-        <th>Lab Name</th>
-        <th>Project Funder ID</th>
-        <th>Project Funder</th>
-        <th>BIL Uuid</th>
-        <th>Data Path</th>
-        <th>Locked</th>
-        <th>Submission Status</th>
-        <th>Validation Status</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for c in collections %}
-      <tr>
-        <td>
-          <input type="checkbox" id="collection_is_checked" class="collection-checkbox" />
-        </td>
-        <td>{{ c.name }}</td>
-        <td>{{ c.description }}</td>
-        <td>{{ c.organization_name }}</td>
-        <td>{{ c.lab_name }}</td>
-        <td>{{ c.project_funder_id }}</td>
-        <td>{{ c.project_funder }}</td>
-        <td id="bilUuid">{{ c.bil_uuid }}</td>
-        <td>{{ c.data_path }}</td>
-        <td>{{ c.locked }}</td>
-        <td>{{ c.submission_status }}</td>
-        <td>{{ c.validation_status }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</form>
+<!-- 🌀 LOADING MODAL -->
+<div class="modal fade" id="loadingModal" tabindex="-1" role="dialog" aria-hidden="true" data-backdrop="static"
+  data-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content text-center p-4">
+      <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+        <span class="sr-only">Processing...</span>
+      </div>
+      <h5>Please wait</h5>
+      <p class="mb-0 text-muted">Your submissions are being processed. This may take a few moments...</p>
+    </div>
+  </div>
+</div>
 
-<button id="submitBtn" class="btn btn-primary" onclick="collection_send();" disabled>
-  Submit Validation Request
-</button>
+{# ---------- ELIGIBLE ---------- #}
+<div class="collapsible-section mt-3">
+  <input type="checkbox" id="eligibleToggle" class="collapsible-toggle" checked>
+  <label for="eligibleToggle" class="collapsible-header h3 mb-2">
+    Eligible for Validation
+    <span class="text-muted ml-2" style="font-weight: normal;">
+      ({{ eligible_collections|length }})
+    </span>
+  </label>
+
+  <div class="collapsible-body">
+    <form id="rowform">
+      {% csrf_token %}
+      <table id="EligibleTable" class="table">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Organization Lab</th>
+            <th>Lab Name</th>
+            <th>Project Funder ID</th>
+            <th>Project Funder</th>
+            <th>BIL Uuid</th>
+            <th>Data Path</th>
+            <th>Submission Status</th>
+            <th>Validation Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in eligible_collections %}
+          <tr>
+            <td><input type="checkbox" class="collection-checkbox" value="{{ c.bil_uuid }}"></td>
+            <td>{{ c.name }}</td>
+            <td>{{ c.description }}</td>
+            <td>{{ c.organization_name }}</td>
+            <td>{{ c.lab_name }}</td>
+            <td>{{ c.project_funder_id }}</td>
+            <td>{{ c.project_funder }}</td>
+            <td class="bilUuid">{{ c.bil_uuid }}</td>
+            <td>{{ c.data_path }}</td>
+            <td>{{ c.submission_status }}</td>
+            <td>{{ c.validation_status }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="12"><em>No eligible submissions.</em></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
+
+    <button id="submitBtn" type="button" class="btn btn-primary" onclick="collection_send();" disabled>
+      Submit Validation Request
+    </button>
+
+    <!-- 🚨 Curation Results Display Area -->
+    <div id="curationResults" class="mt-4"></div>
+  </div>
+</div>
 
 <hr>
 
+{# ---------- NEED METADATA ---------- #}
+<div class="collapsible-section mt-3">
+  <input type="checkbox" id="needsMetadataToggle" class="collapsible-toggle">
+  <label for="needsMetadataToggle" class="collapsible-header h3 mb-2">
+    Need Metadata
+    <span class="text-muted ml-2" style="font-weight: normal;">
+      ({{ needs_metadata_collections|length }})
+    </span>
+    <span data-toggle="tooltip"
+      title="Submissions need metadata before they can be validated. Upload a spreadsheet to provide metadata.">
+      <i class="fa fa-info-circle"></i>
+    </span>
+  </label>
+
+  <div class="collapsible-body">
+    <table id="NeedsMetadataTable" class="table table-sm text-muted">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Name</th>
+          <th>Description</th>
+          <th>BIL Uuid</th>
+          <th>Submission Status</th>
+          <th>Validation Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in needs_metadata_collections %}
+        <tr class="disabled">
+          <td></td>
+          <td>{{ c.name }}</td>
+          <td>{{ c.description }}</td>
+          <td>{{ c.bil_uuid }}</td>
+          <td>{{ c.submission_status }}</td>
+          <td>{{ c.validation_status }}</td>
+          <td class="text-right">
+            <a href="/ingest/ingest/descriptive_metadata_upload/{{ c.id }}/" class="btn btn-sm btn-primary">
+              Add Metadata
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7"><em>All set — no submissions missing metadata.</em></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ---------- ALREADY IN VALIDATION ---------- #}
+<div class="collapsible-section mt-3">
+  <input type="checkbox" id="inProgressToggle" class="collapsible-toggle">
+  <label for="inProgressToggle" class="collapsible-header h3 mb-2">
+    Validation In Progress
+    <span class="text-muted ml-2" style="font-weight: normal;">
+      ({{ already_requested_collections|length }})
+    </span>
+  </label>
+
+  <div class="collapsible-body">
+    <table id="AlreadyRequestedTable" class="table table-sm">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th>BIL Uuid</th>
+          <th>Submission Status</th>
+          <th>Validation Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in already_requested_collections %}
+        <tr>
+          <td>{{ c.name }}</td>
+          <td>{{ c.description }}</td>
+          <td>{{ c.bil_uuid }}</td>
+          <td>{{ c.submission_status }}</td>
+          <td>{{ c.validation_status }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5"><em>No pending validation requests.</em></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<hr>
+
+{# ---------- COMPLETED ---------- #}
+<div class="collapsible-section mt-3">
+  <input type="checkbox" id="completedToggle" class="collapsible-toggle">
+  <label for="completedToggle" class="collapsible-header h3 mb-2">
+    Completed (Validated &amp; Published)
+    <span class="text-muted ml-2" style="font-weight: normal;">
+      ({{ completed_collections|length }})
+    </span>
+  </label>
+
+  <div class="collapsible-body">
+    <table id="CompletedTable" class="table table-sm text-muted mt-2">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th>BIL Uuid</th>
+          <th>Submission Status</th>
+          <th>Validation Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in completed_collections %}
+        <tr>
+          <td>{{ c.name }}</td>
+          <td>{{ c.description }}</td>
+          <td>{{ c.bil_uuid }}</td>
+          <td>{{ c.submission_status }}</td>
+          <td>{{ c.validation_status }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5"><em>No completed submissions yet.</em></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn-primary" formnovalidate>
-    Cancel
-  </button>
+  <button class="cancel btn btn-secondary" formnovalidate>Cancel</button>
 </a>
 
 <script>
   document.addEventListener('DOMContentLoaded', () => {
+    bindCheckboxes();
+    if (window.$) { $('[data-toggle="tooltip"]').tooltip(); }
+  });
+
+  function bindCheckboxes() {
     const checkboxes = document.querySelectorAll('.collection-checkbox');
     const btn = document.getElementById('submitBtn');
     function updateBtn() {
@@ -84,6 +249,117 @@
     }
     checkboxes.forEach(cb => cb.addEventListener('change', updateBtn));
     updateBtn();
-  });
+  }
+
+  function collection_send() {
+    const checked = Array.from(document.querySelectorAll('.collection-checkbox:checked'))
+      .map(cb => ({ bil_uuid: cb.value }));
+
+    if (!checked.length) return;
+
+    const curationDiv = document.getElementById('curationResults');
+    curationDiv.innerHTML = '';
+
+    // 🌀 Show loading spinner
+    $('#loadingModal').modal('show');
+
+    fetch("{% url 'ingest:collection_send' %}", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": Cookies.get("csrftoken"),
+      },
+      body: JSON.stringify(checked),
+    })
+      .then(r => r.json())
+      .then(data => {
+        $('#loadingModal').modal('hide');
+        let html = '';
+
+        if (data.sent && data.sent.length > 0) {
+          html += `
+            <div class="alert alert-success shadow-sm" role="alert">
+              <h5>✅ Submitted for Validation</h5>
+              <p>The following submissions were successfully sent for validation:</p>
+              <ul>${data.sent.map(u => `<li><strong>${u}</strong></li>`).join('')}</ul>
+            </div>`;
+        }
+
+        if (data.curation_issues && Object.keys(data.curation_issues).length > 0) {
+          html += `
+            <div class="alert alert-danger shadow-sm" role="alert">
+              <h5>⚠️ Curation Issues Detected</h5>
+              <ul>`;
+          for (const [uuid, info] of Object.entries(data.curation_issues)) {
+            html += `
+              <li><strong>${uuid}</strong><br>
+              <small>
+                <b>${info.title || 'Error'}:</b> ${info.message || ''}<br>
+                ${info.details ? `<b>Details:</b> ${info.details}<br>` : ''}
+                ${info.missing?.length || info.extra?.length
+                ? `<b>Missing:</b> ${info.missing?.join(', ') || 'None'}<br>
+                     <b>Extra:</b> ${info.extra?.join(', ') || 'None'}<br>` : ''}
+                ${info.suggestion ? `<b>Suggested Fix:</b> ${info.suggestion}` : ''}
+              </small></li>`;
+          }
+          html += `</ul></div>`;
+        }
+
+        for (const [key, arr] of Object.entries(data.skipped || {})) {
+          if (arr.length > 0) {
+            html += `
+              <div class="alert alert-warning shadow-sm" role="alert">
+                <h5>⚠️ Skipped (${key.replace('_', ' ')})</h5>
+                <ul>${arr.map(s => `<li><strong>${s.uuid}</strong>: ${s.reason}</li>`).join('')}</ul>
+              </div>`;
+          }
+        }
+
+        if (!html) html = `<div class="alert alert-info">No submissions were processed.</div>`;
+        curationDiv.innerHTML = html;
+
+        if (data.sent && data.sent.length > 0) {
+          refreshTables().then(() => {
+            if (
+              data.sent.length === checked.length &&
+              (!data.curation_issues || Object.keys(data.curation_issues).length === 0) &&
+              Object.values(data.skipped || {}).every(arr => arr.length === 0)
+            ) {
+              setTimeout(() => {
+                window.location.href = "{% url 'ingest:index' %}";
+              }, 2500);
+            }
+          });
+        }
+      })
+      .catch(err => {
+        $('#loadingModal').modal('hide');
+        console.error(err);
+        alert("There was a problem sending your request.");
+      });
+  }
+
+  async function refreshTables() {
+    try {
+      const response = await fetch("{% url 'ingest:refresh_tables' %}", {
+        method: "GET",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
+      const html = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+
+      const eligibleTable = doc.querySelector("#EligibleTable");
+      const requestedTable = doc.querySelector("#AlreadyRequestedTable");
+
+      if (eligibleTable && requestedTable) {
+        document.querySelector("#EligibleTable").outerHTML = eligibleTable.outerHTML;
+        document.querySelector("#AlreadyRequestedTable").outerHTML = requestedTable.outerHTML;
+        bindCheckboxes();
+      }
+    } catch (err) {
+      console.error("Table refresh failed:", err);
+    }
+  }
 </script>
 {% endblock %}
