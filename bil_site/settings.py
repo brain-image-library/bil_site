@@ -143,7 +143,7 @@ if DATABASE == "postgres":
         sys.exit(1)
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'ENGINE': 'django.db.backends.postgresql',
             'NAME': config['Security']['DATABASE_NAME'],
             'USER': config['Security']['DATABASE_USER'],
             'PASSWORD': DATABASE_PASSWORD,
