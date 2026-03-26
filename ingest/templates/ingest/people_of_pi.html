@@ -1,38 +1,61 @@
-{% extends 'ingest/base.html' %}
-{% block content %}
-{% load bootstrap4 %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-<br>
-<br>
-<h1>Users on your projects</h1>
-<p>This is a list of all users associated with your projects</p>
-<table id="projects" class="table">
-<thead>
-    {% for proj in pi_projects %}
-    <tr>
-    <th style="font-size: 24px; text-decoration: underline overline;">{{proj.project_id.name}}</th>
-        <table id="people_of_pi" class="table" style="padding-bottom:10px;">
-            <thead>
-            <tr>
-            <th>Username</th>
-            <th>Active?</th>
-            </tr>
-            </thead>
-            {% for person in proj.related_project_people %}
-            <tbody style="padding-bottom:10px;">
-                <tr>
-                <td>{{person.people_id.auth_user_id.username}}</td>
-                <td>{{person.people_id.auth_user_id.is_active}}</td>
-                </tr>
-            </tbody>
-            {% endfor %}
-    {% endfor %}
-</thead>
-</table>
+{% extends 'ingest/wide.html' %}
+{% block wide %}
 
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
+<div class="d-flex align-items-start justify-content-between mb-3">
+  <div>
+    <h1 class="mb-1">Project Users</h1>
+    <p class="text-muted mb-0">All users associated with your projects.</p>
+  </div>
+  <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary btn-sm mt-1">
+    <i class="fa-solid fa-arrow-left fa-sm me-1"></i>PI Dashboard
+  </a>
+</div>
+
+{% for proj in pi_projects %}
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+  <div class="card-header d-flex align-items-center gap-2 py-3" style="background-color: #f8f9fa;">
+    <i class="fa-solid fa-diagram-project text-secondary"></i>
+    <span class="fw-semibold">{{ proj.project_id.name }}</span>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead style="background-color: #161b33; color: #fff;">
+          <tr>
+            <th>Username</th>
+            <th class="text-center">Active</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for person in proj.related_project_people %}
+          <tr>
+            <td>
+              <i class="fa-solid fa-user fa-sm text-secondary me-1"></i>
+              {{ person.people_id.auth_user_id.username }}
+            </td>
+            <td class="text-center">
+              {% if person.people_id.auth_user_id.is_active %}
+              <span class="badge text-bg-success"><i class="fa-solid fa-check fa-sm me-1"></i>Active</span>
+              {% else %}
+              <span class="badge text-bg-secondary"><i class="fa-solid fa-xmark fa-sm me-1"></i>Inactive</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="2" class="text-center text-muted py-3">No users in this project.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% empty %}
+<div class="alert alert-info d-flex gap-2 align-items-start">
+  <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+  <span>No projects found associated with your account.</span>
+</div>
+{% endfor %}
+
 {% endblock %}

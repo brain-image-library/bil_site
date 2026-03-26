@@ -1,49 +1,89 @@
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %}
 {% block wide %}
 
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-<br>
-<h1>All Project Submissions</h1>
+<div class="d-flex align-items-start justify-content-between mb-3">
+  <div>
+    <h1 class="mb-1">All Project Submissions</h1>
+    <p class="text-muted mb-0">All submissions across your projects.</p>
+  </div>
+  <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary btn-sm mt-1">
+    <i class="fa-solid fa-arrow-left fa-sm me-1"></i>PI Dashboard
+  </a>
+</div>
 
-<table class="table">
-<thead>
-<tr>
-<th>Name </th>
-<th>Project Name</th>
-<th>Submitter</th>
-<th>Organization Lab </th>
-<th>Lab Name </th>
-<th>Locked </th>
-<th>Submission Status </th>
-<th>Validation Status </th>
-<th>Modality </th>
-<th>View Details</th>
-</tr>
-</thead>
-<tbody>
-{% for collection in collections %}
-<tr>
+<div class="card shadow-sm" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead style="background-color: #161b33; color: #fff;">
+          <tr>
+            <th>Name</th>
+            <th>Project</th>
+            <th>Submitter</th>
+            <th>Organization</th>
+            <th>Lab</th>
+            <th class="text-center">Locked</th>
+            <th class="text-center">Submission</th>
+            <th class="text-center">Validation</th>
+            <th>Modality</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for collection in collections %}
+          <tr>
+            <td class="fw-semibold">{{ collection.name }}</td>
+            <td>{{ collection.project.name }}</td>
+            <td>{{ collection.user.username }}</td>
+            <td>{{ collection.organization_name }}</td>
+            <td>{{ collection.lab_name }}</td>
+            <td class="text-center">
+              {% if collection.locked %}
+              <span class="badge text-bg-warning"><i class="fa-solid fa-lock fa-sm me-1"></i>Locked</span>
+              {% else %}
+              <span class="badge text-bg-light border text-muted"><i class="fa-solid fa-unlock fa-sm me-1"></i>Open</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if collection.submission_status == "SUCCESS" %}
+              <span class="badge text-bg-success">Success</span>
+              {% elif collection.submission_status == "FAILED" %}
+              <span class="badge text-bg-danger">Failed</span>
+              {% elif collection.submission_status == "PENDING" %}
+              <span class="badge text-bg-warning">Pending</span>
+              {% else %}
+              <span class="badge text-bg-secondary">Not submitted</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              {% if collection.validation_status == "SUCCESS" %}
+              <span class="badge text-bg-success">Valid</span>
+              {% elif collection.validation_status == "FAILED" %}
+              <span class="badge text-bg-danger">Failed</span>
+              {% elif collection.validation_status == "PENDING" %}
+              <span class="badge text-bg-warning">Pending</span>
+              {% else %}
+              <span class="badge text-bg-secondary">Not validated</span>
+              {% endif %}
+            </td>
+            <td>{{ collection.modality }}</td>
+            <td>
+              <a href="{% url 'ingest:collection_detail' collection.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="fa-solid fa-eye fa-sm me-1"></i>View
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="10" class="text-center text-muted py-4">
+              <i class="fa-solid fa-circle-info me-1"></i>No submissions found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
-<td>{{ collection.name}} </td>
-<td>{{ collection.project.name }}</td>
-<td>{{ collection.user.username}} </td>
-<td>{{ collection.organization_name}} </td>
-<td>{{ collection.lab_name}} </td>
-<td>{{ collection.locked}} </td>
-<td>{{ collection.submission_status}} </td>
-<td>{{ collection.validation_status}} </td>
-<td>{{ collection.modality}} </td>
-
-<td><a href="{% url 'ingest:collection_detail' collection.id %}">View</td>
-</tr>
-{% endfor %}
-</table>
-
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
 {% endblock %}
-

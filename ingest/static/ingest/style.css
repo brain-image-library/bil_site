@@ -1,31 +1,148 @@
-nav.header {
-  background-color: #161b33;
-  border-radius: 0;
+/* ===== Global palette ===== */
+:root {
+  --bil-navy:        #161b33;
+  --bil-navy-mid:    #252d52;  /* hover state */
+  --bil-page-bg:     #f0f2f6;  /* soft blue-gray page background */
+  --bil-card-bg:     #ffffff;
+  --bil-heading:     #161b33;
+}
+
+body {
+  background-color: var(--bil-page-bg);
+}
+
+/* Make cards visually distinct from the page background */
+.card {
+  background-color: var(--bil-card-bg);
+}
+
+/* Headings use the navy so they tie to the nav + card accents */
+h1, h2, h3, h4, h5 {
+  color: var(--bil-heading);
+}
+
+/* Primary buttons → navy, matching the navbar and card borders */
+.btn-primary {
+  background-color: var(--bil-navy);
+  border-color: var(--bil-navy);
+}
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary.active,
+.show > .btn-primary.dropdown-toggle {
+  background-color: var(--bil-navy-mid);
+  border-color: var(--bil-navy-mid);
+}
+.btn-outline-primary {
+  color: var(--bil-navy);
+  border-color: var(--bil-navy);
+}
+.btn-outline-primary:hover {
+  background-color: var(--bil-navy);
+  border-color: var(--bil-navy);
+  color: #fff;
+}
+
+/* Badge: text-bg-primary → navy */
+.text-bg-primary {
+  background-color: var(--bil-navy) !important;
+  color: #fff !important;
+}
+
+header {
   position: sticky;
-  /* <- key change */
   top: 0;
   z-index: 1040;
-  /* above page content */
   width: 100%;
 }
 
-.navbar.navbar-inverse.header {
-  position: static;
-  /* follow the page */
+nav.header {
+  background-color: #161b33;
+  border-radius: 0;
+  width: 100%;
+}
+
+.navbar.navbar-dark.header {
   top: 0;
   left: 0;
   right: 0;
   z-index: 1040;
-  /* above page content */
   background-color: #161b33 !important;
-  /* your dark blue */
-  background-image: none !important;
-  /* remove Bootstrap gradient */
-  filter: none !important;
   border: 0 !important;
   border-radius: 0;
-  box-shadow: 0 2px 0 rgba(0, 0, 0, .12);
-  /* subtle separator */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+  padding-top: .6rem;
+  padding-bottom: .6rem;
+}
+
+/* Brand text — slightly spaced for a wordmark feel */
+.navbar-brand-text {
+  font-family: 'Lato', sans-serif;
+  font-weight: 300;
+  font-size: 1.1rem;
+  letter-spacing: .06em;
+  color: #fff;
+}
+
+/* Pill-shaped nav links */
+.nav-link-pill {
+  border-radius: 6px;
+  padding: .35rem .75rem !important;
+  font-size: .875rem;
+  font-weight: 500;
+  transition: background-color .15s ease, color .15s ease;
+}
+.nav-link-pill:hover,
+.nav-link-pill:focus {
+  background-color: rgba(255, 255, 255, .1);
+}
+.nav-link-pill.active {
+  background-color: rgba(255, 255, 255, .15);
+  color: #fff !important;
+}
+
+/* "Log in" pill gets a subtle accent border */
+.nav-link-pill--accent {
+  border: 1px solid rgba(255, 255, 255, .35);
+}
+.nav-link-pill--accent:hover {
+  border-color: rgba(255, 255, 255, .6);
+  background-color: rgba(255, 255, 255, .12);
+}
+
+/* User pill — avatar icon slightly larger */
+.user-avatar { font-size: 1.1rem; line-height: 1; }
+.user-name   { font-size: .875rem; font-weight: 500; }
+
+/* Dark custom dropdown that matches the navbar */
+.dropdown-menu-dark-custom {
+  background-color: #1e2440;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 8px;
+  padding: .4rem 0;
+  min-width: 180px;
+}
+.dropdown-menu-dark-custom .dropdown-item {
+  color: rgba(255, 255, 255, .85);
+  font-size: .875rem;
+  padding: .45rem 1rem;
+  border-radius: 4px;
+  margin: 0 .3rem;
+  width: auto;
+  transition: background-color .12s ease;
+}
+.dropdown-menu-dark-custom .dropdown-item:hover,
+.dropdown-menu-dark-custom .dropdown-item:focus {
+  background-color: rgba(255, 255, 255, .12);
+  color: #fff;
+}
+.dropdown-menu-dark-custom .dropdown-item .text-secondary {
+  color: rgba(255, 255, 255, .4) !important;
+}
+.dropdown-menu-dark-custom .dropdown-item-text {
+  color: rgba(255, 255, 255, .5);
+  font-size: .8rem;
 }
 
 .navbar.navbar-inverse.header .container-fluid {
@@ -48,13 +165,11 @@ nav.header {
   width: 100%;
 }
 
-.container-fluid {
-  padding: 0;
-}
 
 .content {
-  margin-left: 40px;
-  margin-right: 40px;
+  padding-top: 1.5rem;
+  padding-left: 2rem;
+  padding-right: 2rem;
 }
 
 .fill {
@@ -559,6 +674,19 @@ p {
 
 /* adjust to taste */
 
+/* ===== Truncated table cells with tooltip ===== */
+/* Apply to any <td> value that could be long prose.
+   Wrap the value in <span class="cell-truncate" data-bs-toggle="tooltip" title="...">
+   The globally-initialised BS5 tooltip shows the full text on hover. */
+.cell-truncate {
+  display: block;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+}
+
 /* ===== Submission detail page ===== */
 
 /* Top “Edit Submission” bar */
@@ -676,6 +804,84 @@ p {
 .collapsible-section .collapsible-toggle:checked+.collapsible-header+.collapsible-body {
   max-height: 8000px;
   opacity: 1;
+}
+
+/* Header row for the collection list table */
+.table-col-constrain thead th {
+  background-color: #161b33 !important;
+  color: #fff !important;
+  white-space: nowrap;
+  vertical-align: middle;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.65rem 0.5rem;
+  border-bottom: none;
+}
+
+/* Wide tooltip for truncated table cell values */
+.tooltip-wide .tooltip-inner {
+  max-width: 420px;
+  text-align: left;
+  white-space: normal;
+  word-break: break-word;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* DataTables sort arrows — make them white on the dark header */
+.table-col-constrain thead .dt-orderable-asc .dt-column-title::after,
+.table-col-constrain thead .dt-orderable-desc .dt-column-title::after,
+.table-col-constrain thead .dt-ordering-asc .dt-column-title::after,
+.table-col-constrain thead .dt-ordering-desc .dt-column-title::after,
+table.dataTable thead .sorting::after,
+table.dataTable thead .sorting_asc::after,
+table.dataTable thead .sorting_desc::after {
+  opacity: 0.6;
+  filter: invert(1);
+}
+
+/* Sortable column links in the header */
+.table-col-constrain thead th a {
+  color: rgba(255, 255, 255, 0.85) !important;
+  text-decoration: none;
+}
+
+.table-col-constrain thead th a:hover {
+  color: #fff !important;
+  text-decoration: underline;
+}
+
+/* Constrain text cells in the collection list table */
+.table-col-constrain td {
+  max-width: 12vw;
+  min-width: 80px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+/* Span wrapping truncated tooltip text — display:block so it inherits overflow */
+.table-col-constrain td span[data-bs-toggle="tooltip"] {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Action/icon columns: no truncation, shrink to content */
+.table-col-constrain td:first-child,
+.table-col-constrain td:nth-child(4),
+.table-col-constrain td:nth-child(5),
+.table-col-constrain td:nth-child(6),
+.table-col-constrain td:nth-child(7) {
+  max-width: none;
+  width: 1%;
+  white-space: nowrap;
+  overflow: visible;
 }
 
 .table-scroll {

@@ -17,37 +17,62 @@
   });
 </script>
 {% endblock %}
+
 {% block wide %}
-{% if pi %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
-<br>
-<h1>Your Metadata (version 1)</h1>
-{% if descriptive_metadata %}
-  <form action="" method="post">{% csrf_token %}
-      {% load render_table from django_tables2 %}
-      {% render_table table %}
-      <button type="submit" class="submit btn btn-primary" id="delete_selected" style="display:none">
-        <span class="glyphicon glyphicon-trash"></span> Delete Selected
-      </button>
-  </form>
-{% else %}
-  <div class="alert alert-info">
-    <p>You haven't created any metadata yet.</p>
+
+<div class="d-flex align-items-start justify-content-between mb-3">
+  <div>
+    <h1 class="mb-1">Your Metadata</h1>
+    <p class="text-muted mb-0">Manage your uploaded metadata sheets.</p>
   </div>
-{% endif %}
-<hr>
+  {% if pi %}
+  <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">
+    <i class="fa-solid fa-arrow-left fa-sm me-1"></i> Return to PI Dashboard
+  </a>
+  {% endif %}
+</div>
 
-<h1>Your Metadata (version 2)</h1>
+<div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-file-lines fa-sm me-1"></i>Metadata Version 1
+    </p>
 
+    {% if descriptive_metadata %}
+      <form action="" method="post">{% csrf_token %}
+        {% load render_table from django_tables2 %}
+        <div class="table-responsive">
+          {% render_table table %}
+        </div>
+        <div class="mt-3">
+          <button type="submit" class="btn btn-danger" id="delete_selected" style="display:none">
+            <i class="fa-solid fa-trash fa-sm me-1"></i> Delete Selected
+          </button>
+        </div>
+      </form>
+    {% else %}
+      <div class="alert alert-info d-flex gap-2 align-items-start">
+        <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+        <span>You haven't created any metadata yet.</span>
+      </div>
+    {% endif %}
+  </div>
+</div>
 
-{% include 'ingest/new_metadata_sheet.html' %}
+<div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-file-lines fa-sm me-1"></i>Metadata Version 2
+    </p>
 
+    {% include 'ingest/new_metadata_sheet.html' %}
+  </div>
+</div>
 
+<div class="d-flex gap-2">
+  <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">
+    <i class="fa-solid fa-xmark fa-sm me-1"></i> Cancel
+  </a>
+</div>
 
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
 {% endblock %}

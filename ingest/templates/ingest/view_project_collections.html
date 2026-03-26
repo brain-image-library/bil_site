@@ -1,60 +1,123 @@
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %} 
 {% block wide %}
-<a href="{% url 'ingest:manage_projects' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-<br>
-<h1>Submissions for Project: {{ project.name }}</h1>
 
-<table class="table">
-<thead>
-<tr>
-<th>Name </th>
-<th>Description </th>
-<th>Submitter </th>
-<th>Organization Lab </th>
-<th>Lab Name </th>
-<th>Project Funder ID </th>
-<th>Project Funder </th>
-<th>BIL Uuid </th>
-<th>Locked </th>
-<th>Submission Status </th>
-<th>Validation Status </th>
-<th>Modality </th>
-<th>Current Status </th>
-<th>View Details </th>
-</tr>
-</thead>
-<tbody>
-{% for collection in project_collections %}
-<tr>
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
 
-<td>{{ collection.name}} </td>
-<td>{{ collection.description}} </td>
-<td>{{ collection.owner.username}} </td>
-<td>{{ collection.organization_name}} </td>
-<td>{{ collection.lab_name}} </td>
-<td>{{ collection.project_funder_id}} </td>
-<td>{{ collection.project_funder}} </td>
-<td>{{ collection.bil_uuid}} </td>
-<td>{{ collection.locked}} </td>
-<td>{{ collection.submission_status}} </td>
-<td>{{ collection.validation_status}} </td>
-<td>{{ collection.modality}} </td>
-<td>{{ collection.event.event_type}} </td>
-<td><a href="{% url 'ingest:collection_detail' collection.id %}">View</td>
-</tr>
-{% endfor %}
-</table>
-<a href="{% url 'ingest:manage_projects' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
+<div class="d-flex align-items-start justify-content-between mb-3">
+  <div>
+    <h1 class="mb-1">Submissions — {{ project.name }}</h1>
+    <p class="text-muted mb-0">All collections associated with this project.</p>
+  </div>
+  <div class="d-flex gap-2 mt-1">
+    <a href="{% url 'ingest:manage_projects' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Manage Projects
+    </a>
+    <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="fa-solid fa-house fa-sm me-1"></i>PI Dashboard
+    </a>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-box-archive fa-sm me-1"></i>Collections
+      <span class="badge text-bg-primary ms-1">{{ project_collections|length }}</span>
+    </p>
+
+    <div class="table-responsive">
+      <table id="tbl-collections" class="table table-sm table-hover align-middle mb-0">
+        <thead style="background-color: #161b33; color: #fff;">
+          <tr>
+            <th>Name</th>
+            <th>Submitter</th>
+            <th>Modality</th>
+            <th>Grant #</th>
+            <th>Locked</th>
+            <th>Submission</th>
+            <th>Validation</th>
+            <th>Latest Event</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for collection in project_collections %}
+          <tr>
+            <td>
+              <span class="fw-semibold">{{ collection.name }}</span>
+              {% if collection.description %}
+              <br><small class="text-muted">{{ collection.description|truncatechars:60 }}</small>
+              {% endif %}
+            </td>
+            <td><code class="text-muted">{{ collection.owner.username }}</code></td>
+            <td>{{ collection.modality|default:"—" }}</td>
+            <td><small>{{ collection.project_funder_id|default:"—" }}</small></td>
+            <td>
+              {% if collection.locked %}
+                <span class="badge text-bg-warning">Locked</span>
+              {% else %}
+                <span class="badge text-bg-success">Unlocked</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if collection.submission_status == 'SUCCESS' %}
+                <span class="badge text-bg-success">{{ collection.submission_status }}</span>
+              {% elif collection.submission_status == 'FAILURE' %}
+                <span class="badge text-bg-danger">{{ collection.submission_status }}</span>
+              {% elif collection.submission_status == 'PENDING' or collection.submission_status == 'SUBMITTED' %}
+                <span class="badge text-bg-warning">{{ collection.submission_status }}</span>
+              {% else %}
+                <span class="badge text-bg-secondary">{{ collection.submission_status }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if collection.validation_status == 'SUCCESS' %}
+                <span class="badge text-bg-success">{{ collection.validation_status }}</span>
+              {% elif collection.validation_status == 'FAILURE' %}
+                <span class="badge text-bg-danger">{{ collection.validation_status }}</span>
+              {% elif collection.validation_status == 'PENDING' %}
+                <span class="badge text-bg-warning">{{ collection.validation_status }}</span>
+              {% else %}
+                <span class="badge text-bg-secondary">{{ collection.validation_status }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if collection.event %}
+                <small class="text-muted">{{ collection.event.event_type }}</small>
+              {% else %}
+                <small class="text-muted">—</small>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{% url 'ingest:collection_detail' collection.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="fa-solid fa-eye fa-sm"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('#tbl-collections').DataTable({
+    pageLength: 25,
+    lengthMenu: [10, 25, 50, 100],
+    order: [[0, 'asc']],
+    columnDefs: [
+      { targets: -1, orderable: false, searchable: false, width: '50px' },
+      { targets: 4, width: '80px' },
+      { targets: 5, width: '100px' },
+      { targets: 6, width: '100px' }
+    ]
+  });
+});
+</script>
+
 {% endblock %}
-

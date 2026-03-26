@@ -1,158 +1,178 @@
-<head>
-    <script src="/static/ingest/metadataloadingindicator.js"></script>
-    <script type="text/javascript" 
-      src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>  
-    
-      <script type="text/javascript">
-        $(document).ready(function() {
-            // Initially disable the upload button
-            $('#uploadButton').prop('disabled', true);
+{% extends 'ingest/wide.html' %}
+{% load static %}
 
-            // Event listener for the file input
-            $('#file').change(function() {
-                // Check if a file is selected
-                if ($(this).val()) {
-                    $('#uploadButton').prop('disabled', false).removeClass('disabled');
-                } else {
-                    $('#uploadButton').prop('disabled', true).addClass('disabled');
-                }
-            });
-        });
-    </script>
+{% block wide %}
 
-<script type="text/javascript">
-    $(document).ready(function() {
-        // Function to check the input in all text boxes
-        function checkInputs() {
-            var allFilled = true;
-            $('input[type="text"]').each(function() { 
-                if ($(this).val() === '') {
-                    allFilled = false;
-                    return false;
-                }
-            });
+<div class="d-flex align-items-start justify-content-between mb-4">
+  <div>
+    <h4 class="fw-semibold mb-1" style="color:#161b33;">
+      <i class="fa-solid fa-dna me-2"></i>BICAN ID Upload
+    </h4>
+    <p class="text-muted small mb-0">
+      Provide BICAN Tissue NHASH Identifiers for specimen information uploaded in your metadata.
+      Visit <a href="https://specimenportal.com/" target="_blank" rel="noopener">specimenportal.com</a>
+      for more information on generating these IDs.
+    </p>
+  </div>
+  <a href="{% url 'ingest:collection_list' %}" class="btn btn-sm btn-outline-secondary mt-1">
+    <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Back
+  </a>
+</div>
 
-            // Enable or disable the submit button based on the fields being filled
-            if(allFilled) {
-                $('#submitButton').prop('disabled', false).removeClass('disabled').prop('title', '');
-            } else {
-                $('#submitButton').prop('disabled', true).addClass('disabled').prop('title', 'Please fill out all text boxes in the form to submit');
-            }
-        }
+{% if messages %}
+  {% for message in messages %}
+  <div class="alert alert-{{ message.tags|default:'danger' }} d-flex gap-2 align-items-start mb-3" role="alert">
+    <i class="fa-solid fa-circle-exclamation mt-1 flex-shrink-0"></i>
+    <span>{{ message }}</span>
+  </div>
+  {% endfor %}
+{% endif %}
 
-        // Attach an input event listener to all text inputs
-        $('input[type="text"]').on('input', checkInputs);
+{# ── Option 1: Download + Upload spreadsheet ── #}
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33; border-radius: 8px;">
+  <div class="card-header py-3" style="background-color:#161b33; color:#fff;">
+    <span class="fw-semibold">
+      <i class="fa-solid fa-file-excel me-2"></i>Option 1 — Spreadsheet Upload
+    </span>
+  </div>
+  <div class="card-body p-4">
+    <p class="text-muted small mb-3">
+      Download the specimen spreadsheet, fill in the BICAN NHASH IDs, then upload it below.
+    </p>
 
-        // Initial check on page load
-        checkInputs();
-    });
-</script>
+    {% if sheet_id %}
+    <a href="{% url 'ingest:specimen_bican' sheet_id=sheet_id %}" class="btn btn-sm btn-outline-secondary mb-4">
+      <i class="fa-solid fa-download fa-sm me-1"></i>Download Specimen Spreadsheet
+    </a>
+    {% endif %}
 
-<script type="text/javascript">
-    $(document).ready(function() {
-        $('#file').change(function() {
-            // Get the file name
-            var fileName = $(this).val().split('\\').pop();
-            // Replace the "Choose a file" label
-            $('#file-chosen').text(fileName);
-        });
-    });
-</script>
-
-    <style>
-        /* CSS class for the disabled button */
-        .disabled {
-            background-color: #cccccc; /* Grey color */
-            color: #666666;
-            cursor: not-allowed;
-        }
-    </style>
-</head>
-
-
-    
-  </head>
-
-{% include 'ingest/wide.html' %}
-
-
-<body>
-    <div class="container">
-        <div class="row">
-            <div class="col-md-8 col-md-offset-2">
-                <h1 class="mt-5 mb-4">BICAN ID Upload</h1>
-                {% if error_message %}
-                    <div class="alert alert-danger" role="alert">
-                        {{ error_message }}
-                    </div>
-                {% endif %}
-                <p class="lead">On this page, provide BICAN Tissue NHASH Identifiers corresponding specimen information uploaded in your metadata.</br>Visit <a href="https://specimenportal.com/">specimenportal.com</a> for more information on generating these IDs.</p>
-                <p class="lead">Download excel template, provide corresponding BICAN NHASH IDs, and upload spreadsheet.</p>
-                <div class="mb-4">
-                    {% if sheet_id %}
-                        <a href="{% url 'ingest:specimen_bican' sheet_id=sheet_id %}" class="btn btn-primary">Download Specimen Spreadsheet</a>
-                    {% else %}
-                        <p>No sheet available for download.</p>
-                    {% endif %}
-                </div>
-                <br>
-                <form method="post" action="{% url 'ingest:save_bican_spreadsheet' %}" enctype="multipart/form-data" class="mt-3">
-                    {% csrf_token %}
-                    <input type="hidden" name="sheet_id" value="{{ sheet_id }}">
-                    <div class="form-group">
-                        <input type="file" id="file" name="file" style="display: none;">
-                        <label for="file" class="btn btn-primary">
-                            <i class="fa fa-upload"></i> Choose File
-                        </label>
-                        <span id="file-chosen">No file chosen</span>
-                    </div>
-                    <button type="submit" id="uploadButton" class="btn btn-primary disabled" onclick="loadSpinner()">Upload Spreadsheet</button>
-
-                </form>
-                <h1>OR</h1>
-                <div class="mt-5">
-                    <h2>Enter BICAN NHASH Indentifiers for Specimen Tissue:</h2>
-                    <form method="post" action="{% url 'ingest:save_bican_ids' %}" class="mt-3">
-                        {% csrf_token %}
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Specimen Local ID</th>
-                                    <th>BICAN ID</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for specimen in specimens %}
-                                <tr>
-                                    <td>{{ specimen.localid }}</td>
-                                    <td><input type="text" name="{{ specimen.id }}"></td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                        <input type="hidden" name="sheet_id" value="{{ sheet_id }}">
-                        <button type="submit" id="submitButton" class="btn btn-primary disabled" title="Please fill out all text boxes in the form to submit" onclick="loadSpinner()">Save BICAN IDs</button>
-
-
-                    </form>
-                    <a href="{% url 'ingest:collection_list' %}" class="btn btn-secondary mt-3">Not Now</a>
-                    <br>
-                    <br>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="loadMe" tabindex="-1" role="dialog" aria-labelledby="loadMeLabel">
-        <div class="modal-dialog modal-sm" role="document">
-          <div class="modal-content">
-            <div class="modal-body text-center">
-              <div class="loader"></div>
-              <div clas="loader-txt">
-                <p>Please wait while we load specimen information!<br><br><small>Thanks very much for your patience.</small></p>
-              </div>
-            </div>
-          </div>
+    <form method="post" action="{% url 'ingest:save_bican_spreadsheet' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" name="sheet_id" value="{{ sheet_id }}">
+      <div class="mb-3">
+        <label class="form-label small fw-semibold text-muted" style="letter-spacing:.04em;">
+          <i class="fa-solid fa-file-arrow-up fa-xs me-1"></i>COMPLETED SPREADSHEET
+        </label>
+        <div class="d-flex align-items-center gap-3">
+          <label for="file" class="btn btn-outline-secondary btn-sm mb-0">
+            <i class="fa-solid fa-upload fa-sm me-1"></i>Choose File
+          </label>
+          <span id="file-chosen" class="text-muted small">No file chosen</span>
+          <input type="file" id="file" name="file" class="d-none" accept=".xlsx">
         </div>
       </div>
-</body>
+      <button type="submit" id="uploadButton" class="btn btn-sm btn-primary" disabled>
+        <i class="fa-solid fa-cloud-arrow-up fa-sm me-1"></i>Upload Spreadsheet
+      </button>
+    </form>
+  </div>
+</div>
+
+{# ── Divider ── #}
+<div class="d-flex align-items-center my-4">
+  <hr class="flex-grow-1">
+  <span class="px-3 text-muted fw-semibold small">OR</span>
+  <hr class="flex-grow-1">
+</div>
+
+{# ── Option 2: Manual entry ── #}
+<div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33; border-radius: 8px;">
+  <div class="card-header py-3" style="background-color:#161b33; color:#fff;">
+    <span class="fw-semibold">
+      <i class="fa-solid fa-keyboard me-2"></i>Option 2 — Manual Entry
+    </span>
+  </div>
+  <div class="card-body p-4">
+    <p class="text-muted small mb-3">
+      Enter BICAN NHASH Identifiers directly for each specimen listed below.
+    </p>
+    <form method="post" action="{% url 'ingest:save_bican_ids' %}">
+      {% csrf_token %}
+      <input type="hidden" name="sheet_id" value="{{ sheet_id }}">
+      <div class="table-responsive mb-4">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead style="background-color:#161b33; color:#fff;">
+            <tr>
+              <th>Specimen Local ID</th>
+              <th>BICAN NHASH ID</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for specimen in specimens %}
+            <tr>
+              <td class="fw-semibold">{{ specimen.localid }}</td>
+              <td>
+                <input type="text" name="{{ specimen.id }}"
+                       class="form-control form-control-sm bican-input"
+                       placeholder="Enter NHASH ID…">
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2" class="text-center text-muted py-4">
+                <i class="fa-solid fa-vial fa-2x mb-2 d-block opacity-25"></i>
+                No specimens found for this sheet.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="d-flex gap-2">
+        <button type="submit" id="submitButton" class="btn btn-sm btn-primary" disabled
+                title="Fill in all BICAN IDs to submit">
+          <i class="fa-solid fa-floppy-disk fa-sm me-1"></i>Save BICAN IDs
+        </button>
+        <a href="{% url 'ingest:collection_list' %}" class="btn btn-sm btn-outline-secondary">
+          Not Now
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{# ── Loading modal ── #}
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content text-center p-4">
+      <div class="spinner-border text-primary mb-3 mx-auto" role="status" style="width:2.5rem;height:2.5rem;">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mb-0 text-muted small">Loading specimen information, please wait…</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    // File input — enable upload button and show filename
+    document.getElementById('file').addEventListener('change', function () {
+      var name = this.files.length ? this.files[0].name : 'No file chosen';
+      document.getElementById('file-chosen').textContent = name;
+      document.getElementById('uploadButton').disabled = !this.files.length;
+    });
+
+    // Manual entry — enable submit only when all inputs are filled
+    function checkInputs() {
+      var inputs = document.querySelectorAll('.bican-input');
+      var allFilled = inputs.length > 0 && Array.from(inputs).every(i => i.value.trim() !== '');
+      document.getElementById('submitButton').disabled = !allFilled;
+    }
+    document.querySelectorAll('.bican-input').forEach(function (el) {
+      el.addEventListener('input', checkInputs);
+    });
+    checkInputs();
+
+    // Show loading modal on form submit
+    var loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'), {
+      backdrop: 'static', keyboard: false
+    });
+    document.querySelectorAll('form').forEach(function (form) {
+      form.addEventListener('submit', function () {
+        loadingModal.show();
+      });
+    });
+  })();
+</script>
+
+{% endblock %}

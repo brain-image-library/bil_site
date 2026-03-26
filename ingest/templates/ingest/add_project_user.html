@@ -1,48 +1,103 @@
-<head>
-<script src="/static/ingest/addprojectusers.js"></script>
-</head>
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %} 
 {% block wide %}
-<a href="{% url 'ingest:manage_projects' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-<br>
-<form id="rowform">
-<h1 name="project_id" id="project_id" value="{{ project.id }}">Add a user to your project named {{project.name}}</h1>
-<p>Select checkboxes for each user to add them to the project</p>
-<p>If the user you are looking for is not on this list, it may be because they have no logged into the Submission Portal, or they have not been added to the system. <a href="http://www.brainimagelibrary.org/submission.html">See Instructions</a>
-{% csrf_token %}
-<table id="usertable" class="table">
-<thead>
-<tr>
-<th></th>
-<th>Name</th>
 
-</tr>
-</thead>
-<tbody>
-{% for user in all_users %}
-<tr data-user_id="{{user.id}}">
-<td><input type="checkbox" id="user_is_checked"></td>
-<td name="username" id="username">{{user.username}}</td>
-<td>
-</tr>
-{% endfor %}
-</table>
-</form>
-<button class="btn btn-primary" onclick="add_users();">Submit</button>
-<hr>
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+<script src="/static/ingest/addprojectusers.js"></script>
 
+<div class="d-flex align-items-start justify-content-between mb-3">
+  <div>
+    <h1 class="mb-1" name="project_id" id="project_id" value="{{ project.id }}">
+      Add Users to {{ project.name }}
+    </h1>
+    <p class="text-muted mb-0">Check users to add them to this project. Users already in the project are shown but cannot be added again.</p>
+  </div>
+  <div class="d-flex gap-2 mt-1">
+    <a href="{% url 'ingest:view_project_people' project.id %}" class="btn btn-sm btn-outline-secondary">
+      <i class="fa-solid fa-users fa-sm me-1"></i>View Members
+    </a>
+    <a href="{% url 'ingest:manage_projects' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Manage Projects
+    </a>
+    <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="fa-solid fa-house fa-sm me-1"></i>PI Dashboard
+    </a>
+  </div>
+</div>
 
-<a href="{% url 'ingest:manage_projects' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
+<div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-user-plus fa-sm me-1"></i>Select Users to Add
+    </p>
+
+    <div class="alert alert-info d-flex gap-2 align-items-start mb-3">
+      <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+      <span>If the user you are looking for is not on this list, they may not have logged into the Submission Portal yet.
+        <a href="http://www.brainimagelibrary.org/submission.html" target="_blank">See Instructions</a>
+      </span>
+    </div>
+
+    <form id="rowform">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table id="usertable" class="table table-sm table-hover align-middle mb-0">
+          <thead style="background-color: #161b33; color: #fff;">
+            <tr>
+              <th style="width: 48px;"></th>
+              <th>Username</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in all_users %}
+            {% if user.id in existing_user_ids %}
+            <tr data-user_id="{{ user.id }}" class="table-secondary text-muted">
+              <td><input type="checkbox" class="form-check-input user-checkbox" disabled></td>
+              <td>{{ user.username }}</td>
+              <td><span class="badge text-bg-success"><i class="fa-solid fa-check fa-xs me-1"></i>Already added</span></td>
+            </tr>
+            {% else %}
+            <tr data-user_id="{{ user.id }}">
+              <td><input type="checkbox" class="form-check-input user-checkbox"></td>
+              <td>{{ user.username }}</td>
+              <td><span class="badge text-bg-secondary">Not added</span></td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </form>
+
+    <div class="d-flex gap-2 mt-3">
+      <button class="btn btn-primary" onclick="add_users();">
+        <i class="fa-solid fa-user-plus fa-sm me-1"></i>Add Selected Users
+      </button>
+      <a href="{% url 'ingest:view_project_people' project.id %}" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-users fa-sm me-1"></i>View Members
+      </a>
+      <a href="{% url 'ingest:manage_projects' %}" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Manage Projects
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('#usertable').DataTable({
+    pageLength: 25,
+    lengthMenu: [10, 25, 50, 100],
+    order: [[2, 'asc'], [1, 'asc']],
+    columnDefs: [
+      { targets: 0, orderable: false, searchable: false, width: '48px' },
+      { targets: 2, width: '130px' }
+    ]
+  });
+});
+</script>
+
 {% endblock %}
-

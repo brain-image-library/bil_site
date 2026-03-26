@@ -1,28 +1,37 @@
 {% if publications %}
-<h3>Publication</h3>
-
-  <table class="table">    								
-    <thead>
-    <tr>
-    <th>relatedIdentifier</th>
-    <th>relatedIdentifierType</th>
-    <th>PMCID</th>
-    <th>citation</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for p in publications %}
-    <tr>
-    <td>{{ p.relatedidentifier }}</td>
-    <td>{{ p.relatedidentifiertype }}</td>
-    <td>{{ p.pmcid }}</td>
-    <td>{{ p.citation }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-  
-{% else %}
-  <div class="alert alert-info">
-    <p>There is not Publication data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-book fa-sm me-1"></i>Publication
+    </p>
+    <div class="table-responsive">
+      <table id="tbl-publications" class="table table-sm table-bordered table-hover align-middle mb-0">
+        <thead style="background-color:#161b33; color:#fff;">
+          <tr>
+            <th>relatedIdentifier</th>
+            <th>relatedIdentifierType</th>
+            <th>PMCID</th>
+            <th>citation</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in publications %}
+          <tr>
+            <td>{{ p.relatedidentifier }}</td>
+            <td>{{ p.relatedidentifiertype }}</td>
+            <td>{{ p.pmcid }}</td>
+            <td>{{ p.citation }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
+</div>
+
+{% else %}
+<div class="alert alert-info d-flex gap-2 align-items-start">
+  <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+  <span>There is no Publication data associated with this dataset. Please contact BIL Support if this is incorrect.</span>
+</div>
 {% endif %}

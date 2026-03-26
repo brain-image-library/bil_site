@@ -1,120 +1,140 @@
-<head>
-  <script src="/static/ingest/metadataloadingindicator.js"></script>
-  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-</head>
-
 {% extends 'ingest/wide.html' %}
-
-{% block wide %}
 {% load static %}
 
+{% block scripts %}
+<script src="{% static 'ingest/metadataloadingindicator.js' %}"></script>
+{% endblock %}
 
-{% if pi %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
+{% block wide %}
 
-<br>
-<h1>Upload Metadata Spreadsheet</h1>
-<h3>Please note that BIL has adopted a new metadata schema. Please use the template provided below.</h3>
-<form method="post" enctype="multipart/form-data">
-  {% include 'ingest/metadata_questions.html' %}
+<div class="row justify-content-center">
+  <div class="col-lg-9 col-xl-8">
 
-  <h3>Step 3 of 3: Upload metadata for associated submission</h3>
-  {% if collections %}
-  <ul class="list-group">
-    <li class="list-group-item">
-      Download and fill out either the
-      <a href="{% static 'ingest/BIL_Metadata_TemplateV3.xlsx' %}">Excel</a> or
-      <a href="{% static '/ingest/BIL_Metadata_TemplateV3.ods' %}">LibreOffice Calc</a> template.
-    </li>
-    <li class="list-group-item">Choose a submission, then upload your metadata.</li>
-  </ul>
-  <hr>
-  {% csrf_token %}
-  {{ form }}
-  </br>
-
-  </br>
-  <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata"
-    onclick="document.getElementById('file').click();" />
-
-  <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();loadSpinner();" />
-  </br>
-</form>
-{% else %}
-<div class="alert alert-info">
-  <p>You need to create a submission before uploading a metadata spreadsheet</p>
-</div>
-{% endif %}
-
-</br>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
-
-<!-- Modal -->
-<div class="modal fade" id="loadMe" tabindex="-1" role="dialog" aria-labelledby="loadMeLabel">
-  <div class="modal-dialog modal-sm" role="document">
-    <div class="modal-content">
-      <div class="modal-body text-center">
-        <div class="loader"></div>
-        <div clas="loader-txt">
-          <p>Please wait while we upload your metadata!<br><br><small>Thanks very much for your patience.</small></p>
+    {# ── Page header ── #}
+    <div class="d-flex align-items-start justify-content-between mb-3">
+      <div>
+        <h1 class="mb-1">Upload Metadata Spreadsheet</h1>
+        <div class="d-flex align-items-center gap-2 text-muted small">
+          <span class="badge rounded-pill text-bg-secondary">Step 1 — Create Submission</span>
+          <i class="fa-solid fa-arrow-right fa-xs"></i>
+          <span class="badge rounded-pill text-bg-primary">Step 2 — Upload Metadata</span>
         </div>
+      </div>
+      {% if pi %}
+      <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary mt-1">
+        <i class="fa-solid fa-arrow-left fa-sm me-1"></i>PI Dashboard
+      </a>
+      {% endif %}
+    </div>
+
+    {% if collections %}
+
+    <form method="post" enctype="multipart/form-data" id="metadata-upload-form">
+      {% csrf_token %}
+
+      {# ── Card: Data type selection ── #}
+      <div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+        <div class="card-body p-4">
+          {% include 'ingest/metadata_questions.html' %}
+        </div>
+      </div>
+
+      {# ── Card: Upload ── #}
+      <div class="card shadow-sm" style="border-top: 3px solid #161b33;">
+        <div class="card-body p-4">
+
+          <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+            <i class="fa-solid fa-cloud-arrow-up fa-sm me-1"></i>Step 3 of 3 — Upload metadata for associated submission
+          </p>
+
+          <div class="alert alert-info d-flex gap-2 align-items-start mb-4">
+            <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+            <div>
+              Please note that BIL has adopted a new metadata schema. Download and fill out the template before uploading.
+              <div class="mt-2 d-flex gap-2 flex-wrap">
+                <a href="{% static 'ingest/BIL_Metadata_TemplateV3.xlsx' %}" class="btn btn-sm btn-outline-primary">
+                  <i class="fa-solid fa-file-excel me-1"></i>Excel Template
+                </a>
+                <a href="{% static '/ingest/BIL_Metadata_TemplateV3.ods' %}" class="btn btn-sm btn-outline-primary">
+                  <i class="fa-solid fa-file me-1"></i>LibreOffice Calc Template
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {{ form }}
+
+          {# ── Upload button zone ── #}
+          <div class="border rounded-3 p-4 text-center bg-light mt-3" id="upload-zone">
+            <i class="fa-solid fa-file-spreadsheet fa-2x text-secondary mb-2 d-block"></i>
+            <p class="text-muted small mb-3">Select your completed metadata spreadsheet (.xlsx or .ods)</p>
+            <button type="button" class="btn btn-primary btn-lg" id="UploadMetadata" disabled>
+              <i class="fa-solid fa-cloud-arrow-up me-2"></i>Choose &amp; Upload Spreadsheet
+            </button>
+            <input type="file" style="display:none;" id="file" name="spreadsheet_file"
+              onchange="document.getElementById('metadata-upload-form').submit(); loadSpinner();" />
+            <p class="text-muted small mt-2 mb-0">
+              <i class="fa-solid fa-circle-info fa-xs me-1"></i>Select a data type above to enable upload
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 mt-3">
+        <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">
+          <i class="fa-solid fa-xmark me-1"></i>Cancel
+        </a>
+      </div>
+
+    </form>
+
+    {% else %}
+    <div class="card shadow-sm" style="border-top: 3px solid #161b33;">
+      <div class="card-body p-4">
+        <div class="alert alert-info d-flex gap-2 align-items-center mb-0">
+          <i class="fa-solid fa-circle-info fa-lg flex-shrink-0"></i>
+          <div>
+            You need to <a href="{% url 'ingest:collection_create' %}" class="alert-link">create a submission</a> before uploading a metadata spreadsheet.
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+{# ── Loading modal ── #}
+<div class="modal fade" id="loadMe" tabindex="-1" aria-labelledby="loadMeLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body text-center py-4">
+        <div class="loader mx-auto mb-3"></div>
+        <p class="mb-1 fw-semibold">Uploading your metadata&hellip;</p>
+        <small class="text-muted">Thanks for your patience.</small>
       </div>
     </div>
   </div>
 </div>
 
 <script>
-  // Disable upload button until an ingest method is selected
-  let uploadMetadataButton = document.getElementById('UploadMetadata').disabled = true;
-  let radio1 = document.getElementById('ingest_method_1');
-  let radio2 = document.getElementById('ingest_method_2');
-  let radio3 = document.getElementById('ingest_method_3');
-  let radio4 = document.getElementById('ingest_method_4');
-  let radio5 = document.getElementById('ingest_method_5');
-  let radio6 = document.getElementById('ingest_method_6');  // NEW: Spatial ingest
+  const uploadBtn = document.getElementById('UploadMetadata');
+  const fileInput = document.getElementById('file');
+  const radios = document.querySelectorAll('input[name="ingest_method"]');
 
-  $(radio1).on('change', () => {
-    if (radio1.checked == true) {
-      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-    }
-  });
-
-  $(radio2).on('change', () => {
-    if (radio2.checked == true) {
-      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-    }
-  });
-
-  $(radio3).on('change', () => {
-    if (radio3.checked == true) {
-      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-    }
-  });
-
-  $(radio4).on('change', () => {
-    if (radio4.checked == true) {
-      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-    }
-  });
-
-  $(radio5).on('change', () => {
-    if (radio5.checked == true) {
-      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-    }
-  });
-
-  // NEW: enable when Spatial (ingest_method_6) is selected
-  if (radio6) {
-    $(radio6).on('change', () => {
-      if (radio6.checked == true) {
-        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-      }
+  // Enable upload button when any ingest method is selected
+  radios.forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      uploadBtn.disabled = false;
+      document.getElementById('upload-zone').querySelector('.text-muted.small.mt-2').style.display = 'none';
     });
-  }
+  });
+
+  // Clicking the button triggers the hidden file input
+  uploadBtn.addEventListener('click', function() {
+    fileInput.click();
+  });
 </script>
+
 {% endblock %}

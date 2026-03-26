@@ -1,40 +1,198 @@
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %}
 {% load render_table from django_tables2 %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+<style>
+  table.dataTable thead th { padding-right: 1.5rem; }
+  table.table-hover > tbody > tr:hover > td { background-color: rgba(22,27,51,.04); }
+</style>
+{% endblock %}
 
 {% block wide %}
 
-{% if pi %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn-primary" value="ignore" formnovalidate>
-    Return to PI Dashboard
-  </button>
-</a>
-{% endif %}
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+  <div>
+    <h4 class="mb-0 fw-semibold" style="color:#161b33;">
+      <i class="fa-solid fa-folder-open me-2"></i>Your Submissions
+    </h4>
+    <p class="text-muted small mb-0 mt-1">
+      {% if filtered_count != total_count %}
+        Showing {{ filtered_count }} of {{ total_count }} submission{{ total_count|pluralize }}
+      {% else %}
+        {{ total_count }} submission{{ total_count|pluralize }}
+      {% endif %}
+    </p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if pi %}
+    <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="fa-solid fa-arrow-left me-1"></i>PI Dashboard
+    </a>
+    {% endif %}
+    <a href="{% url 'ingest:collection_create' %}" class="btn btn-sm"
+       style="background-color:#161b33;color:#fff;border-color:#161b33;">
+      <i class="fa-solid fa-folder-plus me-1"></i>New Submission
+    </a>
+  </div>
+</div>
 
-<h1>Your Submissions</h1>
+{# ---- Filter bar ---- #}
+<form method="get" class="mb-3">
+  <div class="card shadow-sm" style="border-top: 3px solid #161b33; border-radius: 8px;">
+    <div class="card-body py-3 px-4">
+      <div class="row g-2 align-items-end">
 
-{% if collections %}
+        <div class="col-12 col-sm-auto flex-grow-1">
+          <label class="form-label small fw-semibold text-muted mb-1" style="letter-spacing:.04em;">
+            <i class="fa-solid fa-magnifying-glass fa-xs me-1"></i>SEARCH BY NAME
+          </label>
+          <div class="input-group input-group-sm">
+            <input type="text"
+                   name="name"
+                   id="nameSearch"
+                   value="{{ filter.form.name.value|default:'' }}"
+                   class="form-control"
+                   placeholder="Filter by collection name…"
+                   autocomplete="off">
+            <button type="submit" class="btn btn-outline-secondary">
+              <i class="fa-solid fa-magnifying-glass fa-xs"></i>
+            </button>
+          </div>
+        </div>
 
-{# Scrollable table container #}
-<div class="table-scroll">
-  {% render_table table %}
+        <div class="col-12 col-sm-auto">
+          <label class="form-label small fw-semibold text-muted mb-1" style="letter-spacing:.04em;">
+            <i class="fa-solid fa-paper-plane fa-xs me-1"></i>SUBMISSION
+          </label>
+          <div class="btn-group btn-group-sm d-flex flex-wrap gap-1" role="group">
+            <a href="?{% if filter.form.validation_status.value %}validation_status={{ filter.form.validation_status.value }}&{% endif %}{% if filter.form.name.value %}name={{ filter.form.name.value }}&{% endif %}"
+               class="btn {% if not filter.form.submission_status.value %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+              All
+            </a>
+            <a href="?submission_status=NOT_SUBMITTED{% if filter.form.validation_status.value %}&validation_status={{ filter.form.validation_status.value }}{% endif %}{% if filter.form.name.value %}&name={{ filter.form.name.value }}{% endif %}"
+               class="btn {% if filter.form.submission_status.value == 'NOT_SUBMITTED' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+              Not Submitted
+            </a>
+            <a href="?submission_status=PENDING{% if filter.form.validation_status.value %}&validation_status={{ filter.form.validation_status.value }}{% endif %}{% if filter.form.name.value %}&name={{ filter.form.name.value }}{% endif %}"
+               class="btn {% if filter.form.submission_status.value == 'PENDING' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+              Pending
+            </a>
+            <a href="?submission_status=SUCCESS{% if filter.form.validation_status.value %}&validation_status={{ filter.form.validation_status.value }}{% endif %}{% if filter.form.name.value %}&name={{ filter.form.name.value }}{% endif %}"
+               class="btn {% if filter.form.submission_status.value == 'SUCCESS' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+              Success
+            </a>
+            <a href="?submission_status=FAILED{% if filter.form.validation_status.value %}&validation_status={{ filter.form.validation_status.value }}{% endif %}{% if filter.form.name.value %}&name={{ filter.form.name.value }}{% endif %}"
+               class="btn {% if filter.form.submission_status.value == 'FAILED' %}btn-danger{% else %}btn-outline-secondary{% endif %}">
+              Failed
+            </a>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-auto">
+          <label class="form-label small fw-semibold text-muted mb-1" style="letter-spacing:.04em;">
+            <i class="fa-solid fa-circle-check fa-xs me-1"></i>VALIDATION
+          </label>
+          <div class="btn-group btn-group-sm d-flex flex-wrap gap-1" role="group">
+            <a href="?{% if filter.form.submission_status.value %}submission_status={{ filter.form.submission_status.value }}&{% endif %}{% if filter.form.name.value %}name={{ filter.form.name.value }}&{% endif %}"
+               class="btn {% if not filter.form.validation_status.value %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+              All
+            </a>
+            <a href="?validation_status=NOT_VALIDATED{% if filter.form.submission_status.value %}&submission_status={{ filter.form.submission_status.value }}{% endif %}{% if filter.form.name.value %}&name={{ filter.form.name.value }}{% endif %}"
+               class="btn {% if filter.form.validation_status.value == 'NOT_VALIDATED' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+              Not Validated
+            </a>
+            <a href="?validation_status=PENDING{% if filter.form.submission_status.value %}&submission_status={{ filter.form.submission_status.value }}{% endif %}{% if filter.form.name.value %}&name={{ filter.form.name.value }}{% endif %}"
+               class="btn {% if filter.form.validation_status.value == 'PENDING' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+              Pending
+            </a>
+            <a href="?validation_status=SUCCESS{% if filter.form.submission_status.value %}&submission_status={{ filter.form.submission_status.value }}{% endif %}{% if filter.form.name.value %}&name={{ filter.form.name.value }}{% endif %}"
+               class="btn {% if filter.form.validation_status.value == 'SUCCESS' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+              Success
+            </a>
+            <a href="?validation_status=FAILED{% if filter.form.submission_status.value %}&submission_status={{ filter.form.submission_status.value }}{% endif %}{% if filter.form.name.value %}&name={{ filter.form.name.value }}{% endif %}"
+               class="btn {% if filter.form.validation_status.value == 'FAILED' %}btn-danger{% else %}btn-outline-secondary{% endif %}">
+              Failed
+            </a>
+          </div>
+        </div>
+
+        <div class="col-12 col-sm-auto d-flex gap-2">
+          <a href="{% url 'ingest:collection_list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fa-solid fa-xmark fa-xs me-1"></i>Clear
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</form>
+
+{# ---- Table ---- #}
+{% if object_list %}
+<div class="card shadow-sm" style="border-top: 3px solid #161b33; border-radius: 8px;">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      {% render_table table %}
+    </div>
+  </div>
 </div>
 
 {% else %}
-<div class="alert alert-info">
-  <p>You haven't created any submissions yet.</p>
+<div class="card shadow-sm text-center py-5" style="border-top: 3px solid #161b33; border-radius: 8px;">
+  <div class="card-body">
+    <i class="fa-solid fa-folder-open fa-3x text-muted mb-3 d-block"></i>
+    {% if request.GET %}
+      <h5 class="fw-semibold mb-1">No submissions match your filters</h5>
+      <p class="text-muted mb-3">Try adjusting your search or clearing the filters.</p>
+      <a href="{% url 'ingest:collection_list' %}" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-xmark me-1"></i>Clear Filters
+      </a>
+    {% else %}
+      <h5 class="fw-semibold mb-1">No submissions yet</h5>
+      <p class="text-muted mb-3">Create your first submission to get started.</p>
+      <a href="{% url 'ingest:collection_create' %}" class="btn"
+         style="background-color:#161b33;color:#fff;border-color:#161b33;">
+        <i class="fa-solid fa-folder-plus me-1"></i>Create Submission
+      </a>
+    {% endif %}
+  </div>
 </div>
 {% endif %}
 
-<hr>
+{% endblock %}
 
-<a href="{% url 'ingest:collection_create' %}" class="btn btn-primary">
-  <span class="glyphicon glyphicon-plus"></span> Create Submission
-</a>
+{% block extra_scripts %}
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(function () {
+  var dt = $('.table-col-constrain').DataTable({
+    paging:    false,
+    searching: true,
+    info:      false,
+    order:     [],
+    dom:       'rt',
+    columnDefs: [
+      { orderable: false, targets: [0, 6] },
+      {
+        targets: '_all',
+        render: function (data, type) {
+          if (type === 'sort' || type === 'type') {
+            var tmp = $('<div>').html(data);
+            var titled = tmp.find('[title]');
+            return titled.length ? titled.attr('title') : tmp.text().trim();
+          }
+          return data;
+        }
+      }
+    ]
+  });
 
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn-primary" value="ignore" formnovalidate>Cancel</button>
-</a>
-
+  dt.on('order.dt', function () {
+    var tbody = $(this).find('tbody');
+    tbody.css('opacity', 0).animate({ opacity: 1 }, 300);
+  });
+});
+</script>
 {% endblock %}

@@ -1,81 +1,159 @@
-{% include 'ingest/wide.html' %}
+{% extends 'ingest/wide.html' %}
 {% load template_tags %}
-<!DOCTYPE html>
-<html>
-<head>
-    <!-- ... other head elements ... -->
-    <!-- Bootstrap 3 CSS and JavaScript includes -->
-    <style>
-        /* ... your other styles ... */
-        .panel-heading {
-            position: relative;
-        }
-        .collapse-btn {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h2>Confirm NHASH Results</h2>
-    <!-- Start loop for each specimen -->
-    {% for nhash_info, specimen in nhash_specimen_list %}
-        <!-- Specimen Header -->
-        <div class="panel-group">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4 class="panel-title">Specimen: 
-                        {{ specimen }}
-                        <!-- Collapsible toggle button -->
-                        <button class="btn btn-default collapse-btn" type="button" data-toggle="collapse" data-target="#collapse{{ forloop.counter }}">
-                            Collapse
-                        </button>
-                    </h4>
-                </div>
-                <!-- Collapsible content -->
-                <div id="collapse{{ forloop.counter }}" class="panel-collapse collapse in">
-                    <div class="panel-body">
-                        <!-- Table for NHASH and Info -->
-                        {% if 'data' in nhash_info %}
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>NHASH</th>
-                                        <th>Info</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for key, value in nhash_info.data.items %}
-                                        <tr>
-                                            <td><strong>{{ key }}</strong></td>
-                                            <td>{{ value|pretty_print }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endfor %}
-    <!-- Confirm Form -->
-    <form id="confirm-form" method="post" action="{% url 'ingest:process_ids' %}">
-        {% csrf_token %}
-        <input type="hidden" name="processed_ids_json" value="{{ processed_ids_json }}">
-        <button type="submit" id="confirm-button" class="btn btn-primary confirm-button">Confirm</button>
-        <button type="button" id="cancel-button" class="btn btn-secondary" onclick="handleCancel()">Cancel</button>
-    </form>
+
+{% block wide %}
+
+{# ── Header ── #}
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
+  <div>
+    <h4 class="fw-semibold mb-1" style="color:#161b33;">
+      <i class="fa-solid fa-microscope me-2"></i>Confirm NHASH Results
+    </h4>
+    <p class="text-muted small mb-0">
+      Review the NHASH data for each specimen, then confirm to save.
+    </p>
+  </div>
+  <form id="confirm-form" method="post" action="{% url 'ingest:process_ids' %}">
+    {% csrf_token %}
+    <input type="hidden" name="processed_ids_json" value="{{ processed_ids_json }}">
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-sm btn-primary">
+        <i class="fa-solid fa-check fa-sm me-1"></i>Confirm All
+      </button>
+      <button type="button" class="btn btn-sm btn-outline-secondary"
+              onclick="window.location.href='{% url 'ingest:collection_list' %}'">
+        <i class="fa-solid fa-xmark fa-sm me-1"></i>Cancel
+      </button>
+    </div>
+  </form>
 </div>
-<br>
+
+{# ── Controls bar ── #}
+<div class="card shadow-sm mb-3" style="border-radius:8px;">
+  <div class="card-body py-2 px-3 d-flex align-items-center gap-3 flex-wrap">
+    <span class="badge text-bg-secondary fs-6 fw-normal" id="specimenCount">
+      <i class="fa-solid fa-vial fa-xs me-1"></i>
+      <span id="specimenCountVal">—</span> specimens
+    </span>
+    <div class="flex-grow-1" style="max-width:320px;">
+      <input type="text" id="specimenSearch" class="form-control form-control-sm"
+             placeholder="Filter by specimen name…" autocomplete="off">
+    </div>
+    <div class="ms-auto d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" id="expandAll">
+        <i class="fa-solid fa-angles-down fa-xs me-1"></i>Expand All
+      </button>
+      <button class="btn btn-sm btn-outline-secondary" id="collapseAll">
+        <i class="fa-solid fa-angles-up fa-xs me-1"></i>Collapse All
+      </button>
+    </div>
+  </div>
+</div>
+
+{# ── Specimen cards ── #}
+<div id="specimenList">
+{% for nhash_info, specimen in nhash_specimen_list %}
+<div class="specimen-card card shadow-sm mb-2" style="border-radius:8px; overflow:hidden;"
+     data-specimen="{{ specimen|lower }}">
+  <div class="card-header d-flex align-items-center justify-content-between py-2 px-3"
+       style="background-color:#161b33; color:#fff; cursor:pointer;"
+       data-bs-toggle="collapse" data-bs-target="#spec{{ forloop.counter }}"
+       aria-expanded="false" aria-controls="spec{{ forloop.counter }}">
+    <span class="fw-semibold">
+      <i class="fa-solid fa-vial fa-sm me-2 opacity-75"></i>{{ specimen }}
+    </span>
+    <i class="fa-solid fa-chevron-down fa-xs toggle-icon"></i>
+  </div>
+  <div id="spec{{ forloop.counter }}" class="collapse">
+    <div class="card-body p-0">
+      {% if 'data' in nhash_info %}
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead style="background-color:#f0f2f6;">
+            <tr>
+              <th class="ps-3 text-muted small fw-semibold" style="width:35%;">Field</th>
+              <th class="text-muted small fw-semibold">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for key, value in nhash_info.data.items %}
+            <tr>
+              <td class="ps-3 fw-semibold small text-secondary">{{ key }}</td>
+              <td class="small">{{ value|pretty_print }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="p-3">
+        <div class="alert alert-warning d-flex gap-2 align-items-start mb-0 py-2">
+          <i class="fa-solid fa-triangle-exclamation mt-1 flex-shrink-0"></i>
+          <span class="small">No NHASH data available for this specimen.</span>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% empty %}
+<div class="card shadow-sm text-center py-5" style="border-radius:8px;">
+  <div class="card-body">
+    <i class="fa-solid fa-vial fa-3x text-muted mb-3 d-block opacity-25"></i>
+    <h5 class="fw-semibold mb-1">No specimens returned</h5>
+    <p class="text-muted mb-0">No NHASH results were found to confirm.</p>
+  </div>
+</div>
+{% endfor %}
+</div>
+
+{# ── No results message (hidden until search filters everything out) ── #}
+<div id="noResults" class="text-center text-muted py-4 d-none">
+  <i class="fa-solid fa-magnifying-glass fa-2x mb-2 d-block opacity-25"></i>
+  No specimens match your search.
+</div>
+
 <script>
-    function handleCancel() {
-        // Redirect to a different page or perform other actions
-        window.location.href = '{% url "ingest:collection_list" %}'; // Change 'desired_cancel_url' to the actual URL
-    }
+  // Expand/collapse all
+  document.getElementById('expandAll').addEventListener('click', function () {
+    document.querySelectorAll('.specimen-card .collapse').forEach(function (el) {
+      bootstrap.Collapse.getOrCreateInstance(el).show();
+    });
+  });
+  document.getElementById('collapseAll').addEventListener('click', function () {
+    document.querySelectorAll('.specimen-card .collapse').forEach(function (el) {
+      bootstrap.Collapse.getOrCreateInstance(el).hide();
+    });
+  });
+
+  // Rotate chevron with collapse state
+  document.querySelectorAll('.specimen-card').forEach(function (card) {
+    var collapseEl = card.querySelector('.collapse');
+    var icon = card.querySelector('.toggle-icon');
+    collapseEl.addEventListener('show.bs.collapse',  function () { icon.style.transform = 'rotate(180deg)'; });
+    collapseEl.addEventListener('hide.bs.collapse',  function () { icon.style.transform = 'rotate(0deg)'; });
+  });
+
+  // Set specimen count from rendered cards
+  document.getElementById('specimenCountVal').textContent =
+    document.querySelectorAll('.specimen-card').length;
+
+  // Live filter by specimen name
+  var filterTimer;
+  document.getElementById('specimenSearch').addEventListener('input', function () {
+    clearTimeout(filterTimer);
+    var term = this.value.trim().toLowerCase();
+    filterTimer = setTimeout(function () {
+      var cards = document.querySelectorAll('.specimen-card');
+      var anyVisible = false;
+      cards.forEach(function (card) {
+        var match = !term || card.dataset.specimen.includes(term);
+        card.classList.toggle('d-none', !match);
+        if (match) anyVisible = true;
+      });
+      document.getElementById('noResults').classList.toggle('d-none', anyVisible);
+    }, 200);
+  });
 </script>
-</body>
-</html>
+
+{% endblock %}

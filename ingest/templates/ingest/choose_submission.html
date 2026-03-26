@@ -1,92 +1,116 @@
-{% include 'ingest/wide.html' %}
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'ingest/wide.html' %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Collection Selection</title>
+{% block wide %}
 
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
 
-  <!-- Select2 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
-
-  <!-- jQuery (required by Select2) -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-  <!-- Select2 JS -->
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
-
-  <style>
-    .collection-form-container {
-      font-family: 'Roboto', sans-serif;
-      background-color: #ffffff;
-      padding: 20px;
-      margin-top: 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .collection-form-container .form-group label {
-      font-weight: 500;
-      margin-bottom: 10px;
-      color: #333333;
-      display: block;
-    }
-
-    .collection-form-container .btn-primary {
-      background-color: #007bff;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 6px;
-      font-size: 16px;
-      color: #ffffff;
-      cursor: pointer;
-      transition: background-color 0.2s ease-in-out;
-      display: inline-block;
-      width: auto;
-    }
-
-    .collection-form-container .btn-primary:hover {
-      background-color: #0056b3;
-    }
-
-    .collection-form-container select {
-      width: 100%;
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid #ced4da;
-      font-size: 16px;
-      margin-bottom: 20px;
-      appearance: none;
-      background-color: #ffffff;
-      color: #333333;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="collection-form-container">
-    <form method="post">
-      {% csrf_token %}
-      <div class="form-group">
-        <label for="{{ form.collection.id_for_label }}">Choose a Collection:</label>
-        {{ form.collection }}
-      </div>
-      <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
+<div class="d-flex align-items-start justify-content-between mb-3">
+  <div>
+    <h1 class="mb-1">Choose a Collection</h1>
+    <p class="text-muted mb-0">Select the collection you want to upload metadata for.</p>
   </div>
+  <div class="d-flex gap-2 mt-1">
+    <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="fa-solid fa-house fa-sm me-1"></i>Dashboard
+    </a>
+  </div>
+</div>
 
-  <script>
-    $(document).ready(function () {
-      $('.collection-select').select2({
-        placeholder: "Search by BIL UUID or Collection Name...",
-        allowClear: true
-      });
-    });
-  </script>
-</body>
+<div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-folder-open fa-sm me-1"></i>Your Collections
+      <span class="badge text-bg-primary ms-1">{{ collections|length }}</span>
+    </p>
 
-</html>
+    {% if collections %}
+    <div class="table-responsive">
+      <table id="tbl-choose-collection" class="table table-sm table-hover align-middle mb-0">
+        <thead style="background-color: #161b33; color: #fff;">
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Modality</th>
+            <th>Submission</th>
+            <th>Validation</th>
+            <th>Locked</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for collection in collections %}
+          <tr>
+            <td>
+              <span class="fw-semibold">{{ collection.name }}</span>
+              <br><small class="text-muted font-monospace">{{ collection.bil_uuid }}</small>
+            </td>
+            <td><small class="text-muted">{{ collection.description|truncatechars:70 }}</small></td>
+            <td>{{ collection.modality|default:"—" }}</td>
+            <td>
+              {% if collection.submission_status == 'SUCCESS' %}
+                <span class="badge text-bg-success">{{ collection.submission_status }}</span>
+              {% elif collection.submission_status == 'FAILURE' %}
+                <span class="badge text-bg-danger">{{ collection.submission_status }}</span>
+              {% elif collection.submission_status == 'PENDING' or collection.submission_status == 'SUBMITTED' %}
+                <span class="badge text-bg-warning">{{ collection.submission_status }}</span>
+              {% else %}
+                <span class="badge text-bg-secondary">{{ collection.submission_status }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if collection.validation_status == 'SUCCESS' %}
+                <span class="badge text-bg-success">{{ collection.validation_status }}</span>
+              {% elif collection.validation_status == 'FAILURE' %}
+                <span class="badge text-bg-danger">{{ collection.validation_status }}</span>
+              {% elif collection.validation_status == 'PENDING' %}
+                <span class="badge text-bg-warning">{{ collection.validation_status }}</span>
+              {% else %}
+                <span class="badge text-bg-secondary">{{ collection.validation_status }}</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if collection.locked %}
+                <span class="badge text-bg-warning"><i class="fa-solid fa-lock fa-xs me-1"></i>Locked</span>
+              {% else %}
+                <span class="badge text-bg-success"><i class="fa-solid fa-lock-open fa-xs me-1"></i>Unlocked</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{% url 'ingest:descriptive_metadata_upload' collection.id %}" class="btn btn-sm btn-primary">
+                <i class="fa-solid fa-check fa-xs me-1"></i>Select
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info d-flex gap-2 align-items-center">
+      <i class="fa-solid fa-circle-info flex-shrink-0"></i>
+      <span>You don't have any collections yet. <a href="{% url 'ingest:collection_create' %}">Create a collection</a> to get started.</span>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('#tbl-choose-collection').DataTable({
+    pageLength: 25,
+    lengthMenu: [10, 25, 50, 100],
+    order: [[0, 'asc']],
+    columnDefs: [
+      { targets: -1, orderable: false, searchable: false, width: '80px' },
+      { targets: 5, width: '90px' },
+      { targets: 3, width: '110px' },
+      { targets: 4, width: '110px' }
+    ]
+  });
+});
+</script>
+
+{% endblock %}

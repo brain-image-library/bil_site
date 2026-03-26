@@ -1,30 +1,39 @@
 {% if funders %}
-<h3>Funders</h3>
-
-  <table class="table">    								
-    <thead>
-    <tr>
-    <th>funderName</th>
-    <th>fundingReferenceIdentifier</th>
-    <th>fundingReferenceIdentifierType</th>
-    <th>awardNumber</th>
-    <th>awardTitle</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% for f in funders %}
-    <tr>
-    <td>{{ f.fundername }}</td>
-    <td>{{ f.funding_reference_identifier }}</td>
-    <td>{{ f.funding_reference_identifier_type }}</td>
-    <td>{{ f.award_number }}</td>
-    <td>{{ f.award_title }}</td>
-    </tr>
-    {% endfor %}
-  </table>
-  
-{% else %}
-  <div class="alert alert-info">
-    <p>There is not Funder data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-hand-holding-dollar fa-sm me-1"></i>Funders
+    </p>
+    <div class="table-responsive">
+      <table id="tbl-funders" class="table table-sm table-bordered table-hover align-middle mb-0">
+        <thead style="background-color:#161b33; color:#fff;">
+          <tr>
+            <th>funderName</th>
+            <th>fundingReferenceIdentifier</th>
+            <th>fundingReferenceIdentifierType</th>
+            <th>awardNumber</th>
+            <th>awardTitle</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in funders %}
+          <tr>
+            <td>{{ f.fundername }}</td>
+            <td>{{ f.funding_reference_identifier }}</td>
+            <td>{{ f.funding_reference_identifier_type }}</td>
+            <td>{{ f.award_number }}</td>
+            <td>{{ f.award_title }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
+</div>
+
+{% else %}
+<div class="alert alert-info d-flex gap-2 align-items-start">
+  <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+  <span>There is no Funder data associated with this dataset. Please contact BIL Support if this is incorrect.</span>
+</div>
 {% endif %}

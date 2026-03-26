@@ -1,14 +1,18 @@
 {% extends 'ingest/base.html' %}
 {% block content %}
-{% load bootstrap4 %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
 
-<br>
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <div class="alert alert-info d-flex gap-2 align-items-start mb-3">
+      <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+      <span>There are no submissions added to this project.</span>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Return to Dashboard
+      </a>
+    </div>
+  </div>
+</div>
 
-<h1>There are no submissions added to this project</h1>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
 {% endblock %}
