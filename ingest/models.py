@@ -543,7 +543,7 @@ class DatasetLinkage(models.Model):
     data_id_1_bil = models.ForeignKey(BIL_ID, on_delete=models.SET_NULL, null=True, blank=True)
     code_id = models.CharField(max_length=64, default="", choices=[('bil', 'BIL'), ('nemo', 'Nemo'),('dandi', 'Dandi')]) 
     data_id_2 = models.CharField(max_length=256, blank=True, null=True)
-    relationship = models.CharField(max_length=64, default="", choices=[('sequence data', 'Sequence Data'), ('neuron tracing', 'Neuron Tracing'), ('derived_data', 'Derived Data'), ('raw', 'Raw'), ('aligned', 'Aligned')]) 
+    relationship = models.CharField(max_length=64, default="", choices=[('sequence data', 'Sequence Data'), ('neuron tracing', 'Neuron Tracing'), ('derived_data', 'Derived Data'), ('raw', 'Raw'), ('aligned', 'Aligned'), ('electrophysiology data', 'Electrophysiology Data')])
     description = models.TextField(blank=True, null=True)
     linkage_date = models.DateField(null=True, blank=True)
 
@@ -553,13 +553,25 @@ class BIL_Specimen_ID(models.Model):
     def __str__(self):
         return self.bil_spc_id
 
+    class Meta:
+        verbose_name = 'BIL Specimen ID'
+        verbose_name_plural = 'BIL Specimen IDs'
+
 class BIL_Instrument_ID(models.Model):
     bil_ins_id = models.CharField(max_length=256, blank=True, null=True)
     instrument_id = models.ForeignKey(Instrument, on_delete=models.SET_NULL, null = True, blank=True)
 
+    class Meta:
+        verbose_name = 'BIL Instrument ID'
+        verbose_name_plural = 'BIL Instrument IDs'
+
 class BIL_Project_ID(models.Model):
     bil_prj_id = models.CharField(max_length=256, blank=True, null=True)
     project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null = True, blank=True)
+
+    class Meta:
+        verbose_name = 'BIL Project ID'
+        verbose_name_plural = 'BIL Project IDs'
 
 class SpecimenLinkage(models.Model):
     specimen_id = models.ForeignKey(BIL_Specimen_ID, on_delete=models.SET_NULL, null=True, blank=True)

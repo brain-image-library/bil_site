@@ -128,7 +128,7 @@
                     </td>
 
                     <td>
-                        <select name="code_id_{{ dataset.id }}" class="form-control code-id-dropdown"
+                        <select name="code_id_{{ dataset.id }}" class="form-select code-id-dropdown"
                             data-dataset-id="{{ dataset.id }}">
                             <option value="">Select Code ID</option>
                             <option value="bil">BIL</option>
@@ -143,13 +143,14 @@
                     </td>
 
                     <td>
-                        <select name="relationship_{{ dataset.id }}" class="form-control">
+                        <select name="relationship_{{ dataset.id }}" class="form-select">
                             <option value="">Select Relationship</option>
                             <option value="sequence data">Sequence Data</option>
                             <option value="neuron tracing">Neuron Tracing</option>
                             <option value="derived_data">Derived Data</option>
                             <option value="raw">Raw</option>
                             <option value="aligned">Aligned</option>
+                            <option value="electrophysiology data">Electrophysiology Data</option>
                         </select>
                     </td>
 
@@ -225,7 +226,7 @@
             if (selectedCode === "bil") {
                 $cell.html(
                     '<select name="data_id_2_' + datasetId + '" id="data_id_2_' + datasetId + '"' +
-                    ' class="form-control identifier-dropdown"></select>'
+                    ' class="form-select identifier-dropdown"></select>'
                 );
 
                 var $dropdown = $("#data_id_2_" + datasetId);
@@ -260,7 +261,7 @@
                 // Plain input, 100% of column
                 $cell.html(
                     '<input type="text" name="data_id_2_' + datasetId + '" id="data_id_2_' + datasetId + '"' +
-                    ' class="form-control identifier-input" placeholder="Data ID 2">'
+                    ' class="form-control identifier-input" placeholder="Data ID 2" style="width:100%">'
                 );
             }
 

@@ -1,0 +1,18 @@
+/* Make inline tables scroll horizontally within their own container
+   instead of causing the whole page to scroll */
+
+.inline-group .tabular {
+    overflow-x: auto;
+    display: block;
+    width: 100%;
+}
+
+.inline-group .tabular fieldset {
+    overflow-x: auto;
+    display: block;
+    width: 100%;
+}
+
+.inline-group .tabular table {
+    min-width: max-content;
+}
