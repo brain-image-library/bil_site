@@ -1,4 +1,4 @@
-brainimagelibrary @ git+https://github.com/brain-image-library/py-brain-sdk.git
+brainimagelibrary @ git+https://github.com/brain-image-library/py-brain-sdk.git@v0.0.14
 amqp==5.0.9
 asgiref==3.5.2
 asn1crypto==0.24.0

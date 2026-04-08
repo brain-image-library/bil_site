@@ -1,9 +1,12 @@
+import os
+import mimetypes
+
 from django.contrib import admin
-from django.urls import reverse
+from django.urls import path, reverse
 from django.utils.http import urlencode
 from django.utils.html import format_html
 from django.core import serializers
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse, Http404
 from django.utils.translation import gettext_lazy
 from django.db.models import F
 
@@ -165,8 +168,38 @@ class SpatialInline(admin.TabularInline):
     raw_id_fields = ('sheet', 'data_set',)
 @admin.register(Sheet)
 class SheetAdmin(admin.ModelAdmin):
-    list_display = ("id","filename", "date_uploaded", "collection",)
-    inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline,SpatialInline,]
+    list_display = ("id", "filename", "date_uploaded", "collection", "download_link")
+    inlines = [ContributorsInline, FundersInline, PublicationsInline, InstrumentsInline, SpecimensInline, DatasetsInline, ImagesInline, SpatialInline]
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom = [
+            path(
+                "<int:sheet_id>/download/",
+                self.admin_site.admin_view(self.download_sheet),
+                name="ingest_sheet_download",
+            ),
+        ]
+        return custom + urls
+
+    def download_sheet(self, request, sheet_id):
+        try:
+            sheet = Sheet.objects.get(pk=sheet_id)
+        except Sheet.DoesNotExist:
+            raise Http404
+        filepath = sheet.filename
+        if not os.path.isfile(filepath):
+            raise Http404("File not found on disk.")
+        mime_type, _ = mimetypes.guess_type(filepath)
+        mime_type = mime_type or "application/octet-stream"
+        response = FileResponse(open(filepath, "rb"), content_type=mime_type)
+        response["Content-Disposition"] = f'attachment; filename="{os.path.basename(filepath)}"'
+        return response
+
+    def download_link(self, obj):
+        url = reverse("admin:ingest_sheet_download", args=[obj.pk])
+        return format_html('<a href="{}">Download</a>', url)
+    download_link.short_description = "Download"
 
 @admin.register(EventsLog)
 class EventsLogAdmin(admin.ModelAdmin):
@@ -215,9 +248,29 @@ class DOIEligibleFilter(admin.SimpleListFilter):
 
 @admin.register(BIL_ID)
 class BIL_IDAdmin(admin.ModelAdmin):
-    list_display = ["bil_id", "v1_ds_id", "v2_ds_id", "metadata_version", "doi_status", "send_to_doi_button"]
+    list_display = ["bil_id", "v1_ds_id", "v2_ds_id", "r24_directory_display", "bildirectory_display", "metadata_version", "doi_status", "send_to_doi_button"]
     search_fields = ["bil_id"]
     list_filter = ["doi", DOIEligibleFilter]
+
+    def r24_directory_display(self, obj):
+        if not obj.v1_ds_id:
+            return "-"
+        val = obj.v1_ds_id.r24_directory or "-"
+        return format_html(
+            '<details><summary style="cursor:pointer;color:#447e9b;">View</summary>{}</details>',
+            val,
+        )
+    r24_directory_display.short_description = "R24 Directory"
+
+    def bildirectory_display(self, obj):
+        if not obj.v2_ds_id:
+            return "-"
+        val = obj.v2_ds_id.bildirectory or "-"
+        return format_html(
+            '<details><summary style="cursor:pointer;color:#447e9b;">View</summary>{}</details>',
+            val,
+        )
+    bildirectory_display.short_description = "BIL Directory"
 
     def doi_status(self, obj):
         ds = obj.v2_ds_id

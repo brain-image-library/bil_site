@@ -1,15 +1,10 @@
 {% extends 'ingest/wide.html' %}
 {% block wide %}
 
-<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
-<script src="/static/ingest/addprojectusers.js"></script>
-
 <div class="d-flex align-items-start justify-content-between mb-3">
   <div>
-    <h1 class="mb-1" name="project_id" id="project_id" value="{{ project.id }}">
-      Add Users to {{ project.name }}
-    </h1>
-    <p class="text-muted mb-0">Check users to add them to this project. Users already in the project are shown but cannot be added again.</p>
+    <h1 class="mb-1">Add Users to {{ project.name }}</h1>
+    <p class="text-muted mb-0">Enter the username of the person you want to add to this project.</p>
   </div>
   <div class="d-flex gap-2 mt-1">
     <a href="{% url 'ingest:view_project_people' project.id %}" class="btn btn-sm btn-outline-secondary">
@@ -27,76 +22,87 @@
 <div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
   <div class="card-body p-4">
     <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
-      <i class="fa-solid fa-user-plus fa-sm me-1"></i>Select Users to Add
+      <i class="fa-solid fa-user-plus fa-sm me-1"></i>Add User by Username
     </p>
 
     <div class="alert alert-info d-flex gap-2 align-items-start mb-3">
       <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
-      <span>If the user you are looking for is not on this list, they may not have logged into the Submission Portal yet.
+      <span>The user must have already logged into the Submission Portal before they can be added.
         <a href="http://www.brainimagelibrary.org/submission.html" target="_blank">See Instructions</a>
       </span>
     </div>
 
-    <form id="rowform">
-      {% csrf_token %}
-      <div class="table-responsive">
-        <table id="usertable" class="table table-sm table-hover align-middle mb-0">
-          <thead style="background-color: #161b33; color: #fff;">
-            <tr>
-              <th style="width: 48px;"></th>
-              <th>Username</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for user in all_users %}
-            {% if user.id in existing_user_ids %}
-            <tr data-user_id="{{ user.id }}" class="table-secondary text-muted">
-              <td><input type="checkbox" class="form-check-input user-checkbox" disabled></td>
-              <td>{{ user.username }}</td>
-              <td><span class="badge text-bg-success"><i class="fa-solid fa-check fa-xs me-1"></i>Already added</span></td>
-            </tr>
-            {% else %}
-            <tr data-user_id="{{ user.id }}">
-              <td><input type="checkbox" class="form-check-input user-checkbox"></td>
-              <td>{{ user.username }}</td>
-              <td><span class="badge text-bg-secondary">Not added</span></td>
-            </tr>
-            {% endif %}
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </form>
+    <div id="add-feedback" class="alert d-none mb-3" role="alert"></div>
 
-    <div class="d-flex gap-2 mt-3">
-      <button class="btn btn-primary" onclick="add_users();">
-        <i class="fa-solid fa-user-plus fa-sm me-1"></i>Add Selected Users
+    <div class="input-group" style="max-width: 420px;">
+      <input type="text" id="username-input" class="form-control" placeholder="Enter username…" autocomplete="off">
+      <button class="btn btn-primary" type="button" onclick="addUserByUsername({{ project.id }})">
+        <i class="fa-solid fa-user-plus fa-sm me-1"></i>Add User
       </button>
-      <a href="{% url 'ingest:view_project_people' project.id %}" class="btn btn-outline-secondary">
-        <i class="fa-solid fa-users fa-sm me-1"></i>View Members
-      </a>
-      <a href="{% url 'ingest:manage_projects' %}" class="btn btn-outline-secondary">
-        <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Manage Projects
-      </a>
     </div>
-
   </div>
 </div>
 
-<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<div class="card shadow-sm" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-users fa-sm me-1"></i>Current Members
+    </p>
+    <ul class="list-group list-group-flush" id="members-list">
+      {% for member in members %}
+      <li class="list-group-item px-0">
+        <i class="fa-solid fa-user fa-xs me-2 text-muted"></i>{{ member.username }}
+      </li>
+      {% empty %}
+      <li class="list-group-item px-0 text-muted" id="no-members-msg">
+        <i class="fa-solid fa-circle-info me-1"></i>No members yet.
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+
 <script>
-$(document).ready(function() {
-  $('#usertable').DataTable({
-    pageLength: 25,
-    lengthMenu: [10, 25, 50, 100],
-    order: [[2, 'asc'], [1, 'asc']],
-    columnDefs: [
-      { targets: 0, orderable: false, searchable: false, width: '48px' },
-      { targets: 2, width: '130px' }
-    ]
-  });
+function addUserByUsername(projectId) {
+    const csrftoken = Cookies.get('csrftoken');
+    const input = document.getElementById('username-input');
+    const username = input.value.trim();
+    if (!username) return;
+
+    fetch(`${window.origin}/ingest/add_user_by_username/`, {
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({username: username, project_id: projectId}),
+        cache: 'no-cache',
+        headers: new Headers({
+            'X-CSRFToken': csrftoken,
+            'content-type': 'application/json'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const feedbackEl = document.getElementById('add-feedback');
+        feedbackEl.classList.remove('d-none', 'alert-success', 'alert-danger');
+        if (data.success) {
+            feedbackEl.classList.add('alert-success');
+            feedbackEl.innerHTML = `<i class="fa-solid fa-check me-1"></i>${data.message}`;
+            input.value = '';
+            const noMembersMsg = document.getElementById('no-members-msg');
+            if (noMembersMsg) noMembersMsg.remove();
+            const li = document.createElement('li');
+            li.className = 'list-group-item px-0';
+            li.innerHTML = `<i class="fa-solid fa-user fa-xs me-2 text-muted"></i>${data.username}`;
+            document.getElementById('members-list').appendChild(li);
+        } else {
+            feedbackEl.classList.add('alert-danger');
+            feedbackEl.innerHTML = `<i class="fa-solid fa-circle-xmark me-1"></i>${data.message}`;
+        }
+    })
+    .catch(error => console.log('Fetch error: ' + error));
+}
+
+document.getElementById('username-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') addUserByUsername({{ project.id }});
 });
 </script>
 

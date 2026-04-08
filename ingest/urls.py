@@ -39,6 +39,7 @@ urlpatterns = [
     path('add_project_user/<int:pk>', views.add_project_user, name = 'add_project_user'),
     path('people_of_pi', views.people_of_pi, name = 'people_of_pi'),
     re_path(r'^write_user_to_project_people/$', views.write_user_to_project_people, name = 'write_user_to_project_people'),
+    path('add_user_by_username/', views.add_user_by_username, name='add_user_by_username'),
     path('collection/ondemandSubmission/<int:pk>', views.ondemandSubmission, name = 'ondemandSubmission'),
     path('submission_view', views.submission_view, name = 'submission_view'),
     path('bican_id_upload/<int:sheet_id>/', views.bican_id_upload, name='bican_id_upload'),
@@ -56,4 +57,5 @@ urlpatterns = [
     path("get_bil_ids/", get_bil_ids, name="get_bil_ids"),
     path("refresh_tables/", views.refresh_tables, name="refresh_tables"),
     path("doi_api/", views.doi_api, name="doi_api"),
+    path('ingest/metadata_errors/<int:associated_collection>/', views.metadata_error_view, name='metadata_error_view'),
 ]

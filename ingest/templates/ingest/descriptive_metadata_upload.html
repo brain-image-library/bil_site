@@ -1,10 +1,6 @@
 {% extends 'ingest/wide.html' %}
 {% load static %}
 
-{% block scripts %}
-<script src="{% static 'ingest/metadataloadingindicator.js' %}"></script>
-{% endblock %}
-
 {% block wide %}
 
 <div class="row justify-content-center">
@@ -72,7 +68,7 @@
               <i class="fa-solid fa-cloud-arrow-up me-2"></i>Choose &amp; Upload Spreadsheet
             </button>
             <input type="file" style="display:none;" id="file" name="spreadsheet_file"
-              onchange="document.getElementById('metadata-upload-form').submit(); loadSpinner();" />
+              />
             <p class="text-muted small mt-2 mb-0">
               <i class="fa-solid fa-circle-info fa-xs me-1"></i>Select a data type above to enable upload
             </p>
@@ -108,11 +104,13 @@
 {# ── Loading modal ── #}
 <div class="modal fade" id="loadMe" tabindex="-1" aria-labelledby="loadMeLabel" aria-hidden="true">
   <div class="modal-dialog modal-sm modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-body text-center py-4">
-        <div class="loader mx-auto mb-3"></div>
-        <p class="mb-1 fw-semibold">Uploading your metadata&hellip;</p>
-        <small class="text-muted">Thanks for your patience.</small>
+    <div class="modal-content border-0 shadow">
+      <div class="modal-body text-center py-5 px-4">
+        <div class="spinner-border text-primary mb-4" style="width:3rem;height:3rem;" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="fw-semibold mb-1">Uploading &amp; validating&hellip;</p>
+        <small class="text-muted">This may take a moment for large spreadsheets.</small>
       </div>
     </div>
   </div>
@@ -134,6 +132,17 @@
   // Clicking the button triggers the hidden file input
   uploadBtn.addEventListener('click', function() {
     fileInput.click();
+  });
+
+  // When a file is chosen: show spinner then submit
+  fileInput.addEventListener('change', function() {
+    if (!fileInput.files.length) return;
+    var modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('loadMe'), {
+      backdrop: 'static',
+      keyboard: false
+    });
+    modal.show();
+    document.getElementById('metadata-upload-form').submit();
   });
 </script>
 

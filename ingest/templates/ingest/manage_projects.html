@@ -33,8 +33,13 @@
         </thead>
         <tbody>
           {% for project in allprojects %}
-          <tr>
-            <td class="fw-semibold">{{ project.name }}</td>
+          <tr {% if project.indent_level > 0 %}class="table-light"{% endif %}>
+            <td class="fw-semibold position-relative" {% if project.indent_level > 0 %}style="padding-left: {{ project.td_padding }}"{% endif %}>
+              {% if project.indent_level > 0 %}
+              <span style="position:absolute;left:{{ project.connector_left }};top:0;height:50%;width:.75rem;border-left:2px solid #ced4da;border-bottom:2px solid #ced4da;border-bottom-left-radius:3px;"></span>
+              {% endif %}
+              {{ project.name }}
+            </td>
             <td>{{ project.funded_by }}</td>
             <td>{{ project.short_names }}</td>
             <td>{{ project.parent_project_names }}</td>
