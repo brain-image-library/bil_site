@@ -1,16 +1,45 @@
 {% extends 'ingest/base.html' %}
 {% load static %}
+
 {% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8 text-center">
 
-<div class="container-fluid white_on_gray">
-  <div class="row">
+      {# ── Big 404 ── #}
+      <div class="mb-4" style="line-height:1;">
+        <span style="font-size:7rem;font-weight:800;color:#dee2e6;letter-spacing:-.02em;">404</span>
+      </div>
 
-    <div class="col-lg-12 big-row-text">
-      <h1>404</h1>
-      <p>The requested page could not be found.</p>
+      <i class="fa-solid fa-brain fa-3x mb-4" style="color:#161b33;opacity:.2;"></i>
+
+      <h1 class="h3 fw-bold mb-2">Page not found</h1>
+      <p class="text-muted mb-4">
+        The page you're looking for doesn't exist or has been moved.<br>
+        If you followed a link, it may be out of date.
+      </p>
+
+      <div class="d-flex gap-2 justify-content-center flex-wrap">
+        <a href="/" class="btn btn-primary">
+          <i class="fa-solid fa-house me-2"></i>Go to Home
+        </a>
+        {% if request.user.is_authenticated %}
+        <a href="{% url 'ingest:collection_list' %}" class="btn btn-outline-secondary">
+          <i class="fa-solid fa-folder-open me-2"></i>My Submissions
+        </a>
+        {% else %}
+        <a href="{% url 'login' %}" class="btn btn-outline-secondary">
+          <i class="fa-solid fa-right-to-bracket me-2"></i>Log in
+        </a>
+        {% endif %}
+      </div>
+
+      <p class="text-muted small mt-5">
+        Need help? Contact
+        <a href="mailto:bil-support@psc.edu" class="text-decoration-none">bil-support@psc.edu</a>
+      </p>
+
     </div>
-
   </div>
 </div>
-
 {% endblock %}

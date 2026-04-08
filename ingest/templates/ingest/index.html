@@ -4,18 +4,33 @@
 
 <div class="container-fluid py-4">
 
-  <!-- Page header -->
-  <div class="d-flex align-items-start justify-content-between mb-4">
-    <div>
-      <h1 class="mb-1">Data Submission Portal</h1>
-      <p class="text-muted mb-0">
-        The Brain Image Library (BIL) is a public resource enabling researchers to deposit, analyze,
-        mine, share and interact with large brain image datasets.
-        More information can be found at
-        <a href="http://www.brainimagelibrary.org/" target="_blank" rel="noopener">www.brainimagelibrary.org</a>.
-        The BIL is supported by the National Institute of Mental Health of the National Institutes of Health
-        under award number R24MH114793.
+  <!-- Page header / hero banner -->
+  <div class="rounded-3 mb-4 px-5 py-4 d-flex align-items-center justify-content-between overflow-hidden position-relative"
+       style="background: linear-gradient(135deg, #161b33 0%, #2a3254 60%, #1e4976 100%); color:#fff; min-height:130px;">
+    <!-- Decorative circle accents -->
+    <div aria-hidden="true" style="position:absolute;right:-40px;top:-40px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.04);"></div>
+    <div aria-hidden="true" style="position:absolute;right:80px;bottom:-60px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.03);"></div>
+
+    <div class="position-relative">
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <span class="badge rounded-pill px-2 py-1" style="background:rgba(255,255,255,.15); font-size:.7rem; letter-spacing:.08em; font-weight:600; text-transform:uppercase;">
+          <i class="fa-solid fa-brain fa-sm me-1"></i>Brain Image Library
+        </span>
+      </div>
+      <h1 class="fw-bold mb-2 text-white" style="font-size:clamp(1.6rem,3vw,2.3rem); letter-spacing:-.5px; line-height:1.15;">
+        Data Submission Portal
+      </h1>
+      <p class="mb-0" style="opacity:.8; font-size:.92rem; max-width:640px; line-height:1.55;">
+        A public resource enabling researchers to deposit, analyze, mine, share and interact with large brain image datasets.
+        Learn more at <a href="http://www.brainimagelibrary.org/" target="_blank" rel="noopener" class="fw-semibold link-light">brainimagelibrary.org</a>.
+        Supported by NIMH award <span class="font-monospace" style="opacity:.75;">R24MH114793</span>.
       </p>
+    </div>
+
+    <!-- Right-side brain icon -->
+    <div class="d-none d-lg-flex align-items-center justify-content-center position-relative flex-shrink-0 ms-4"
+         style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.08);">
+      <img src="{% static 'images/brainicon.png' %}" alt="BIL logo" style="width:48px;height:48px;object-fit:contain;opacity:.85;">
     </div>
   </div>
 

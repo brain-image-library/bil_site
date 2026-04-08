@@ -12,45 +12,56 @@
 </div>
 
 {% for proj in pi_projects %}
-<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
-  <div class="card-header d-flex align-items-center gap-2 py-3" style="background-color: #f8f9fa;">
-    <i class="fa-solid fa-diagram-project text-secondary"></i>
-    <span class="fw-semibold">{{ proj.project_id.name }}</span>
-  </div>
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead style="background-color: #161b33; color: #fff;">
-          <tr>
-            <th>Username</th>
-            <th class="text-center">Active</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for person in proj.related_project_people %}
-          <tr>
-            <td>
-              <i class="fa-solid fa-user fa-sm text-secondary me-1"></i>
-              {{ person.people_id.auth_user_id.username }}
-            </td>
-            <td class="text-center">
-              {% if person.people_id.auth_user_id.is_active %}
-              <span class="badge text-bg-success"><i class="fa-solid fa-check fa-sm me-1"></i>Active</span>
-              {% else %}
-              <span class="badge text-bg-secondary"><i class="fa-solid fa-xmark fa-sm me-1"></i>Inactive</span>
-              {% endif %}
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="2" class="text-center text-muted py-3">No users in this project.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+
+{% if proj.indent_level > 0 %}
+<div class="position-relative mb-3" style="margin-left: {{ proj.card_margin }};">
+  <span style="position:absolute;left:-1.25rem;top:-1rem;height:1.75rem;width:1.25rem;border-left:2px solid #ced4da;border-bottom:2px solid #ced4da;border-bottom-left-radius:4px;display:block;pointer-events:none;"></span>
+  <div class="card shadow-sm" style="border-top: 3px solid #6c757d;">
+{% else %}
+<div class="mb-3">
+  <div class="card shadow-sm" style="border-top: 3px solid #161b33;">
+{% endif %}
+
+    <div class="card-header d-flex align-items-center gap-2 py-3" style="background-color: #f8f9fa;">
+      <i class="fa-solid fa-diagram-project text-secondary"></i>
+      <span class="fw-semibold">{{ proj.project_id.name }}</span>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead style="background-color: #161b33; color: #fff;">
+            <tr>
+              <th>Username</th>
+              <th class="text-center">Active</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for person in proj.related_project_people %}
+            <tr>
+              <td>
+                <i class="fa-solid fa-user fa-sm text-secondary me-1"></i>
+                {{ person.people_id.auth_user_id.username }}
+              </td>
+              <td class="text-center">
+                {% if person.people_id.auth_user_id.is_active %}
+                <span class="badge text-bg-success"><i class="fa-solid fa-check fa-sm me-1"></i>Active</span>
+                {% else %}
+                <span class="badge text-bg-secondary"><i class="fa-solid fa-xmark fa-sm me-1"></i>Inactive</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="2" class="text-center text-muted py-3">No users in this project.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
+
 {% empty %}
 <div class="alert alert-info d-flex gap-2 align-items-start">
   <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
