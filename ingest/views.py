@@ -101,37 +101,17 @@ def _get_public_dataset_stats():
             year_map[row['year']] = year_map.get(row['year'], 0) + row['n']
     datasets_by_year = [{'year': y, 'count': year_map[y]} for y in sorted(year_map)]
 
-    # --- Dataset count + file count ---
-    # TSV reports give a reliable dataset count but don't include number_of_files.
-    # SDK fills in file count independently; the two sources are not mutually exclusive.
-    public_dataset_count = None
-    public_file_count = None
-
-    local_reports = sorted(Path('reports').glob('*.tsv'), reverse=True)
-    if local_reports:
-        try:
-            df = pd.read_csv(local_reports[0], sep='\t')
-            public_dataset_count = len(df)
-            if 'number_of_files' in df.columns:
-                public_file_count = int(df['number_of_files'].sum())
-        except Exception:
-            pass
-
-    # Always try SDK when file count wasn't in the TSV
-    if public_file_count is None:
-        try:
-            data = brainimagelibrary.summary.daily()
-            if data and isinstance(data, dict):
-                public_file_count = int(data.get('number_of_files', 0))
-                if public_dataset_count is None:
-                    public_dataset_count = int(data.get('number_of_datasets', 0))
-        except Exception:
-            pass
-
-    if public_dataset_count is not None and public_file_count is not None:
-        result = (public_dataset_count, public_file_count, datasets_by_year)
-        cache.set('public_dataset_stats', result, 3600)
-        return result
+    # --- Dataset count + file count from SDK ---
+    try:
+        data = brainimagelibrary.summary.daily()
+        if data and isinstance(data, dict):
+            public_dataset_count = int(data.get('number_of_datasets', 0))
+            public_file_count = int(data.get('number_of_files', 0))
+            result = (public_dataset_count, public_file_count, datasets_by_year)
+            cache.set('public_dataset_stats', result, 3600)
+            return result
+    except Exception:
+        pass
 
     # --- ORM fallback for dataset count + file count ---
     public_file_count = (
