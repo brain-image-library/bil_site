@@ -2,8 +2,8 @@
 :root {
   --bil-navy:        #161b33;
   --bil-navy-mid:    #252d52;  /* hover state */
-  --bil-page-bg:     #f0f2f6;  /* soft blue-gray page background */
-  --bil-card-bg:     #ffffff;
+  --bil-page-bg:     #e8edf5;  /* soft blue-gray page background */
+  --bil-card-bg:     #f7f8fb;  /* off-white card surface */
   --bil-heading:     #161b33;
 }
 
@@ -50,6 +50,10 @@ h1, h2, h3, h4, h5 {
   color: #fff !important;
 }
 
+/* ════════════════════════════════════════════════════
+   NAVBAR
+   ════════════════════════════════════════════════════ */
+
 header {
   position: sticky;
   top: 0;
@@ -57,92 +61,239 @@ header {
   width: 100%;
 }
 
-nav.header {
-  background-color: #161b33;
-  border-radius: 0;
-  width: 100%;
-}
+nav.header { width: 100%; }
 
 .navbar.navbar-dark.header {
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1040;
-  background-color: #161b33 !important;
-  border: 0 !important;
-  border-radius: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
-  padding-top: .6rem;
-  padding-bottom: .6rem;
+  background: rgba(11, 14, 27, 0.97) !important;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(0, 201, 167, .18) !important;
+  box-shadow: 0 1px 24px rgba(0, 0, 0, .45);
+  padding-top: .42rem;
+  padding-bottom: .42rem;
 }
 
-/* Brand text — slightly spaced for a wordmark feel */
-.navbar-brand-text {
+/* ── Brand ── */
+.nav-brand-icon {
+  opacity: .95;
+  flex-shrink: 0;
+}
+.nav-brand-divider {
+  display: inline-block;
+  width: 1px;
+  height: 28px;
+  background: rgba(255, 255, 255, .14);
+  margin: 0 .75rem;
+  flex-shrink: 0;
+}
+.nav-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.15;
+}
+.nav-brand-name {
   font-family: 'Lato', sans-serif;
-  font-weight: 300;
-  font-size: 1.1rem;
-  letter-spacing: .06em;
+  font-weight: 700;
+  font-size: .9rem;
+  letter-spacing: -.01em;
   color: #fff;
 }
+.nav-brand-tag {
+  font-family: 'DM Mono', monospace;
+  font-size: .55rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: #2ddfc4; /* brightened from #00c9a7 for ~4.8:1 on near-black */
+}
 
-/* Pill-shaped nav links */
-.nav-link-pill {
-  border-radius: 6px;
-  padding: .35rem .75rem !important;
-  font-size: .875rem;
-  font-weight: 500;
-  transition: background-color .15s ease, color .15s ease;
+/* ── Flat nav links with underline indicator ── */
+.nav-link-flat {
+  position: relative;
+  font-family: 'Lato', sans-serif;
+  font-size: .82rem;
+  font-weight: 600;
+  letter-spacing: .01em;
+  color: rgba(255, 255, 255, .75) !important; /* was .55 — lifts to ~5.1:1 contrast */
+  padding: .5rem .8rem !important;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: color .15s ease;
 }
-.nav-link-pill:hover,
-.nav-link-pill:focus {
-  background-color: rgba(255, 255, 255, .1);
+.nav-link-flat::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: .8rem; right: .8rem;
+  height: 2px;
+  background: #00c9a7;
+  border-radius: 1px 1px 0 0;
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform .2s ease;
 }
-.nav-link-pill.active {
-  background-color: rgba(255, 255, 255, .15);
+.nav-link-flat:hover,
+.nav-link-flat:focus {
   color: #fff !important;
 }
-
-/* "Log in" pill gets a subtle accent border */
-.nav-link-pill--accent {
-  border: 1px solid rgba(255, 255, 255, .35);
+.nav-link-flat:hover::after {
+  transform: scaleX(.6);
 }
-.nav-link-pill--accent:hover {
-  border-color: rgba(255, 255, 255, .6);
-  background-color: rgba(255, 255, 255, .12);
+.nav-link-flat:focus-visible {
+  outline: 2px solid rgba(0, 201, 167, .85);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 201, 167, .18);
+}
+.nav-link-flat.active {
+  color: #fff !important;
+}
+.nav-link-flat.active::after {
+  transform: scaleX(1);
 }
 
-/* User pill — avatar icon slightly larger */
-.user-avatar { font-size: 1.1rem; line-height: 1; }
-.user-name   { font-size: .875rem; font-weight: 500; }
+/* ── "New" create button ── */
+.nav-new-btn {
+  color: #00c9a7 !important;
+  background: rgba(0, 201, 167, .1);
+  border: 1px solid rgba(0, 201, 167, .25);
+  border-radius: 6px;
+  margin-right: .5rem;
+  gap: 5px;
+  display: inline-flex;
+  align-items: center;
+}
+.nav-new-btn::after { display: none !important; }
+.nav-new-btn.dropdown-toggle::after {
+  display: inline-block !important;
+  margin-left: 3px;
+  opacity: .6;
+}
+.nav-new-btn:hover,
+.nav-new-btn:focus {
+  color: #00c9a7 !important;
+  background: rgba(0, 201, 167, .17) !important;
+  border-color: rgba(0, 201, 167, .45) !important;
+}
+.nav-new-btn:focus-visible {
+  outline: 2px solid rgba(0, 201, 167, .85);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 201, 167, .18);
+}
 
-/* Dark custom dropdown that matches the navbar */
+/* ── User toggle ── */
+.nav-user-toggle {
+  font-family: 'Lato', sans-serif;
+  font-size: .82rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, .85) !important; /* was .7 — lifts to ~5.6:1 */
+  padding: .3rem .5rem !important;
+  border-radius: 7px;
+  transition: background .15s, color .15s;
+  text-decoration: none;
+}
+.nav-user-toggle:hover { background: rgba(255,255,255,.07); color: #fff !important; }
+.nav-user-toggle.show  { background: rgba(255,255,255,.1); color: #fff !important; }
+.nav-user-toggle::after { opacity: .5; margin-left: 4px; }
+.nav-user-toggle:focus-visible {
+  outline: 2px solid rgba(0, 201, 167, .85);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 201, 167, .18);
+}
+
+.nav-user-avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00c9a7 0%, #008e77 100%);
+  color: #fff;
+  font-family: 'Lato', sans-serif;
+  font-weight: 800;
+  font-size: .7rem;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1.5px rgba(0, 201, 167, .35);
+}
+.nav-user-name {
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+/* ── "Log in" button ── */
+a.nav-link-login {
+  font-family: 'Lato', sans-serif;
+  font-size: .82rem;
+  font-weight: 600;
+  color: #00c9a7;
+  background: rgba(0, 201, 167, .1);
+  border: 1px solid rgba(0, 201, 167, .3);
+  border-radius: 7px;
+  padding: .38rem .9rem;
+  text-decoration: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background .15s, border-color .15s;
+}
+a.nav-link-login:hover {
+  background: rgba(0, 201, 167, .18);
+  border-color: rgba(0, 201, 167, .55);
+  color: #00c9a7;
+}
+a.nav-link-login:focus-visible {
+  outline: 2px solid rgba(0, 201, 167, .85);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 201, 167, .18);
+}
+
+/* ── Dropdown menu ── */
 .dropdown-menu-dark-custom {
-  background-color: #1e2440;
+  background: #0e1120;
   border: 1px solid rgba(255, 255, 255, .1);
-  border-radius: 8px;
-  padding: .4rem 0;
-  min-width: 180px;
+  border-radius: 10px;
+  padding: .5rem 0;
+  min-width: 196px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, .55), 0 1px 0 rgba(255,255,255,.06) inset;
 }
 .dropdown-menu-dark-custom .dropdown-item {
-  color: rgba(255, 255, 255, .85);
-  font-size: .875rem;
-  padding: .45rem 1rem;
-  border-radius: 4px;
-  margin: 0 .3rem;
+  font-family: 'Lato', sans-serif;
+  color: rgba(255, 255, 255, .9); /* was .75 — lifts to ~6.7:1 */
+  font-size: .82rem;
+  font-weight: 500;
+  padding: .48rem 1rem;
+  border-radius: 5px;
+  margin: 1px .4rem;
   width: auto;
-  transition: background-color .12s ease;
+  display: flex; align-items: center;
+  transition: background .12s ease, color .12s ease;
 }
+.dropdown-menu-dark-custom .dropdown-item i { color: rgba(255,255,255,.45); }
 .dropdown-menu-dark-custom .dropdown-item:hover,
 .dropdown-menu-dark-custom .dropdown-item:focus {
-  background-color: rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .1);
   color: #fff;
 }
-.dropdown-menu-dark-custom .dropdown-item .text-secondary {
-  color: rgba(255, 255, 255, .4) !important;
+.dropdown-menu-dark-custom .dropdown-item:focus-visible {
+  outline: 2px solid rgba(0, 201, 167, .75);
+  outline-offset: -2px;
 }
-.dropdown-menu-dark-custom .dropdown-item-text {
-  color: rgba(255, 255, 255, .5);
-  font-size: .8rem;
+.dropdown-menu-dark-custom .dropdown-item:hover i { color: #00c9a7; }
+
+/* User info card inside dropdown */
+.nav-user-info {
+  display: flex; align-items: center; gap: .65rem;
+}
+.nav-user-info-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00c9a7 0%, #008e77 100%);
+  color: #fff;
+  font-family: 'Lato', sans-serif;
+  font-weight: 800;
+  font-size: .78rem;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.nav-user-info-name {
+  font-family: 'Lato', sans-serif;
+  font-size: .82rem;
+  font-weight: 700;
+  color: #fff;
 }
 
 .navbar.navbar-inverse.header .container-fluid {
@@ -154,6 +305,66 @@ nav.header {
    Neutralize any positioning on it so it doesn't try to be sticky too. */
 .container-fluid.header {
   position: static;
+}
+
+/* ════════════════════════════════════════════════════
+   GLOBAL FOCUS RINGS (WCAG 2.4.7)
+   Teal double-ring visible on both light and dark surfaces.
+   Uses :focus-visible so mouse clicks don't show the ring.
+   ════════════════════════════════════════════════════ */
+
+/* BIL button variants */
+.bil-btn-dark:focus-visible,
+.bil-btn-outline:focus-visible,
+.bil-btn-danger:focus-visible,
+.bil-btn-jump:focus-visible,
+.bil-icon-btn:focus-visible {
+  outline: 2px solid rgba(0, 201, 167, .85);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(0, 201, 167, .15);
+}
+
+/* Form inputs */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid rgba(0, 201, 167, .75);
+  outline-offset: 0;
+  box-shadow: 0 0 0 4px rgba(0, 201, 167, .12) !important;
+  border-color: #00c9a7 !important;
+}
+
+/* Bootstrap nav tabs (sheet tabs) */
+.bil-sheet-tabs .nav-link:focus-visible {
+  outline: 2px solid rgba(0, 201, 167, .85);
+  outline-offset: 2px;
+}
+
+/* ════════════════════════════════════════════════════
+   REDUCED MOTION (WCAG 2.3.3)
+   Respects user's OS-level preference.
+   ════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Fadein elements appear immediately without motion */
+  .bil-fadein {
+    opacity: 1 !important;
+    transform: none !important;
+    animation: none !important;
+  }
+
+  /* Nav underline appears without sliding */
+  .nav-link-flat::after {
+    transition: none !important;
+  }
 }
 
 .site-navbar {
@@ -254,7 +465,7 @@ h4 {
 }
 
 p {
-  font-family: 'Montserrat';
+  font-family: 'Lato', sans-serif;
 }
 
 .save {

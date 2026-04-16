@@ -1,70 +1,157 @@
 {% extends 'ingest/wide.html' %}
+
+{% block scripts %}
+<style>
+:root { --bil-accent: #00c9a7; --bil-accent-dim: rgba(0,201,167,.1); }
+
+.bil-list-header h4 {
+  font-family: 'Lato', sans-serif; font-weight: 800;
+  font-size: clamp(1.3rem,3vw,1.75rem); color: #161b33;
+  letter-spacing: -.03em; margin-bottom: .2rem;
+}
+.bil-list-header .bil-sub {
+  font-family: 'DM Mono', monospace; font-size: .7rem;
+  letter-spacing: .06em; color: #8589a8;
+}
+.bil-btn-dark {
+  background: #161b33; color: #fff; border: none; border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
+  padding: .45rem 1rem; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background .15s, box-shadow .15s, transform .1s;
+}
+.bil-btn-dark:hover { background: #252d52; box-shadow: 0 4px 12px rgba(22,27,51,.2); transform: translateY(-1px); color: #fff; }
+.bil-btn-outline {
+  background: #fff; color: #4a5070;
+  border: 1.5px solid rgba(22,27,51,.15); border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
+  padding: .45rem 1rem; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: border-color .15s, color .15s;
+}
+.bil-btn-outline:hover { border-color: rgba(22,27,51,.3); color: #161b33; }
+
+.bil-table-card {
+  background: #f7f8fb; border-radius: 10px;
+  border: 1.5px solid rgba(22,27,51,.09);
+  box-shadow: 0 2px 10px rgba(22,27,51,.05);
+  overflow: hidden;
+}
+.bil-proj-table { width: 100%; margin: 0; border-collapse: separate; border-spacing: 0; }
+.bil-proj-table thead th {
+  font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.7); font-weight: 500;
+  white-space: nowrap; padding: .75rem .9rem; background: #161b33;
+  border-bottom: none; border-color: rgba(255,255,255,.06);
+}
+.bil-proj-table tbody td {
+  font-family: 'Lato', sans-serif; font-size: .82rem; color: #3d4360;
+  padding: .75rem .9rem; border-bottom: 1px solid rgba(22,27,51,.055);
+  vertical-align: middle; transition: background .12s;
+}
+.bil-proj-table tbody tr:last-child td { border-bottom: none; }
+.bil-proj-table tbody tr:hover td { background: rgba(0,201,167,.04); }
+.bil-proj-table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--bil-accent); }
+.bil-proj-table tbody tr.bil-child td { background: rgba(22,27,51,.012); }
+.bil-proj-table tbody tr.bil-child:hover td { background: rgba(0,201,167,.035); }
+
+.bil-proj-name { font-weight: 700; color: #161b33; }
+.bil-proj-connector {
+  display: inline-block; width: .75rem; height: .8rem;
+  border-left: 2px solid rgba(22,27,51,.15); border-bottom: 2px solid rgba(22,27,51,.15);
+  border-bottom-left-radius: 3px; margin-right: .35rem; vertical-align: middle;
+}
+
+.bil-action-btn {
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .72rem;
+  padding: .28rem .65rem; border-radius: 6px; text-decoration: none;
+  border: 1.5px solid rgba(22,27,51,.15); color: #4a5070; background: transparent;
+  display: inline-flex; align-items: center; gap: 4px;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.bil-action-btn:hover { border-color: rgba(22,27,51,.3); color: #161b33; background: rgba(22,27,51,.03); }
+
+.bil-empty-row td {
+  text-align: center; padding: 3rem 1rem !important;
+  color: #8e92aa !important; font-family: 'Lato', sans-serif !important;
+}
+
+.bil-fadein { opacity: 0; transform: translateY(10px); animation: bil-fade .4s ease forwards; }
+@keyframes bil-fade { to { opacity: 1; transform: translateY(0); } }
+.bil-fadein:nth-child(1) { animation-delay: .04s; }
+.bil-fadein:nth-child(2) { animation-delay: .10s; }
+</style>
+{% endblock %}
+
 {% block wide %}
 
-<div class="d-flex align-items-start justify-content-between mb-3">
-  <div>
-    <h1 class="mb-1">Manage Projects</h1>
-    <p class="text-muted mb-0">Select a project to view its submissions and associated users.</p>
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+  <div class="bil-list-header">
+    <h4><i class="fa-solid fa-diagram-project me-2" style="color:var(--bil-accent);font-size:1.1rem;"></i>Manage Projects</h4>
+    <span class="bil-sub">View, create, and manage your research projects</span>
   </div>
-  <div class="d-flex gap-2 mt-1">
-    <a href="{% url 'ingest:project_form' %}" class="btn btn-primary btn-sm">
-      <i class="fa-solid fa-plus fa-sm me-1"></i>New Project
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'ingest:project_form' %}" class="bil-btn-dark">
+      <i class="fa-solid fa-plus fa-xs"></i>New Project
     </a>
-    <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary btn-sm">
-      <i class="fa-solid fa-arrow-left fa-sm me-1"></i>PI Dashboard
+    <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+      <i class="fa-solid fa-arrow-left fa-xs"></i>PI Dashboard
     </a>
   </div>
 </div>
 
-<div class="card shadow-sm" style="border-top: 3px solid #161b33;">
-  <div class="card-body p-0">
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead style="background-color: #161b33; color: #fff;">
-          <tr>
-            <th>Name</th>
-            <th>Funded By</th>
-            <th>Consortia</th>
-            <th>Parent Project</th>
-            <th>Child Projects</th>
-            <th class="text-center">Personnel</th>
-            <th class="text-center">Submissions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for project in allprojects %}
-          <tr {% if project.indent_level > 0 %}class="table-light"{% endif %}>
-            <td class="fw-semibold position-relative" {% if project.indent_level > 0 %}style="padding-left: {{ project.td_padding }}"{% endif %}>
-              {% if project.indent_level > 0 %}
-              <span style="position:absolute;left:{{ project.connector_left }};top:0;height:50%;width:.75rem;border-left:2px solid #ced4da;border-bottom:2px solid #ced4da;border-bottom-left-radius:3px;"></span>
-              {% endif %}
-              {{ project.name }}
-            </td>
-            <td>{{ project.funded_by }}</td>
-            <td>{{ project.short_names }}</td>
-            <td>{{ project.parent_project_names }}</td>
-            <td>{{ project.child_project_names }}</td>
-            <td class="text-center">
-              <a href="{% url 'ingest:view_project_people' project.id %}" class="btn btn-sm btn-outline-primary">
-                <i class="fa-solid fa-users fa-sm me-1"></i>Personnel
-              </a>
-            </td>
-            <td class="text-center">
-              <a href="{% url 'ingest:view_project_collections' project.id %}" class="btn btn-sm btn-outline-primary">
-                <i class="fa-solid fa-folder-open fa-sm me-1"></i>Submissions
-              </a>
-            </td>
-          </tr>
-          {% empty %}
-          <tr>
-            <td colspan="7" class="text-center text-muted py-4">
-              <i class="fa-solid fa-circle-info me-1"></i>No projects found.
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
+<div class="bil-table-card bil-fadein">
+  <div class="table-responsive">
+    <table class="bil-proj-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Funded By</th>
+          <th>Consortia</th>
+          <th>Parent Project</th>
+          <th>Child Projects</th>
+          <th class="text-center">Personnel</th>
+          <th class="text-center">Submissions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for project in allprojects %}
+        <tr {% if project.indent_level > 0 %}class="bil-child"{% endif %}>
+          <td style="{% if project.indent_level > 0 %}padding-left: {{ project.td_padding }}{% endif %}">
+            {% if project.indent_level > 0 %}
+            <span class="bil-proj-connector"></span>
+            {% endif %}
+            <span class="bil-proj-name">{{ project.name }}</span>
+          </td>
+          <td>
+            {% if project.funded_by %}
+              <span style="font-family:'DM Mono',monospace;font-size:.72rem;color:rgba(22,27,51,.55);">{{ project.funded_by }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>{{ project.short_names|default:"—" }}</td>
+          <td>{{ project.parent_project_names|default:"—" }}</td>
+          <td>{{ project.child_project_names|default:"—" }}</td>
+          <td class="text-center">
+            <a href="{% url 'ingest:view_project_people' project.id %}" class="bil-action-btn">
+              <i class="fa-solid fa-users fa-xs"></i>Personnel
+            </a>
+          </td>
+          <td class="text-center">
+            <a href="{% url 'ingest:view_project_collections' project.id %}" class="bil-action-btn">
+              <i class="fa-solid fa-folder-open fa-xs"></i>Submissions
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr class="bil-empty-row">
+          <td colspan="7">
+            <i class="fa-solid fa-diagram-project fa-lg d-block mb-2 mx-auto" style="color:rgba(22,27,51,.15);"></i>
+            No projects found
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 

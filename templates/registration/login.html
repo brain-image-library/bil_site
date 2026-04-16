@@ -2,86 +2,188 @@
 {% load static %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-center" style="min-height: calc(100vh - 70px); background: #f4f6fb;">
-  <div class="w-100" style="max-width: 420px; padding: 1.5rem;">
+<style>
 
-    {# ── Logo / branding ── #}
-    <div class="text-center mb-4">
-      <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
-           style="width:72px; height:72px; background-color:#161b33; box-shadow: 0 4px 16px rgba(22,27,51,.25);">
-        <img src="{% static 'images/brainicon.png' %}" height="44" alt="BIL logo">
+.bil-login-wrap { min-height: calc(100vh - 70px); display: flex; align-items: stretch; }
+
+/* Left branding panel */
+.bil-login-left {
+  background: #0d1121;
+  flex: 0 0 400px;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 3rem; position: relative; overflow: hidden;
+}
+.bil-login-left::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,201,167,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,201,167,.035) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+.bil-login-left::after {
+  content: '';
+  position: absolute; top: -80px; right: -80px;
+  width: 360px; height: 360px;
+  background: radial-gradient(circle, rgba(0,201,167,.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+.bil-login-brand { position: relative; z-index: 1; }
+.bil-login-brand-icon {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: rgba(0,201,167,.08); border: 1px solid rgba(0,201,167,.2);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 2rem;
+}
+.bil-login-brand-icon img { width: 46px; height: 46px; object-fit: contain; opacity: .8; filter: brightness(0) invert(1); }
+.bil-login-brand h2 {
+  font-family: 'Lato', sans-serif; font-weight: 800; font-size: 1.9rem;
+  color: #fff; letter-spacing: -.03em; line-height: 1.15; margin-bottom: .75rem;
+}
+.bil-login-brand p { font-family: 'Lato', sans-serif; font-size: .82rem; color: rgba(255,255,255,.4); line-height: 1.7; margin: 0; }
+.bil-login-tagline {
+  position: relative; z-index: 1; margin-top: auto; padding-top: 2rem;
+  font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .12em;
+  text-transform: uppercase; color: rgba(0,201,167,.45);
+  display: flex; align-items: center; gap: 8px;
+}
+.bil-login-tagline::before { content: ''; flex: 1; height: 1px; background: rgba(0,201,167,.2); }
+
+/* Right form panel */
+.bil-login-right {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  background: #f0f2f6; padding: 2rem;
+}
+.bil-login-form-wrap { width: 100%; max-width: 360px; }
+.bil-login-form-wrap h3 {
+  font-family: 'Lato', sans-serif; font-weight: 700; font-size: 1.5rem;
+  color: #161b33; letter-spacing: -.02em; margin-bottom: .3rem;
+}
+.bil-form-sub { font-family: 'Lato', sans-serif; font-size: .82rem; color: rgba(22,27,51,.5); margin-bottom: 2rem; }
+
+.bil-field-label {
+  font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(22,27,51,.55); margin-bottom: .35rem; display: block;
+}
+.bil-input-wrap { position: relative; margin-bottom: 1.1rem; }
+.bil-input-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: rgba(22,27,51,.35); font-size: .8rem; pointer-events: none;
+}
+.bil-input-wrap input {
+  width: 100%; padding: .65rem 2.5rem;
+  border: 1.5px solid rgba(22,27,51,.12); border-radius: 8px;
+  font-family: 'Lato', sans-serif; font-size: .875rem; color: #161b33;
+  background: #fff; transition: border-color .15s, box-shadow .15s; outline: none;
+}
+.bil-input-wrap input:focus { border-color: #00c9a7; box-shadow: 0 0 0 3px rgba(0,201,167,.12); }
+.bil-input-wrap input.is-invalid { border-color: #dc3545; }
+.bil-toggle-pw {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: rgba(22,27,51,.35); cursor: pointer;
+  padding: 2px 4px; font-size: .8rem; transition: color .15s;
+}
+.bil-toggle-pw:hover { color: rgba(22,27,51,.65); }
+
+.bil-btn-submit {
+  width: 100%; padding: .7rem; background: #161b33; color: #fff; border: none;
+  border-radius: 8px; font-family: 'Lato', sans-serif; font-weight: 600;
+  font-size: .9rem; cursor: pointer; transition: background .15s, box-shadow .15s, transform .1s;
+  position: relative; overflow: hidden;
+}
+.bil-btn-submit::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, transparent 40%, rgba(0,201,167,.12));
+}
+.bil-btn-submit:hover { background: #252d52; box-shadow: 0 4px 16px rgba(22,27,51,.25); transform: translateY(-1px); }
+.bil-btn-submit:active { transform: translateY(0); }
+
+.bil-error {
+  background: rgba(220,53,69,.07); border: 1px solid rgba(220,53,69,.2);
+  border-radius: 8px; padding: .6rem .85rem;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 1rem;
+  font-family: 'Lato', sans-serif; font-size: .8rem; color: #842029;
+}
+
+.bil-login-footer {
+  margin-top: 1.5rem; text-align: center;
+  font-family: 'Lato', sans-serif; font-size: .78rem; color: rgba(22,27,51,.45);
+}
+.bil-login-footer a {
+  color: #161b33; font-weight: 600; text-decoration: none;
+  border-bottom: 1px solid rgba(22,27,51,.2); transition: border-color .15s, color .15s;
+}
+.bil-login-footer a:hover { border-color: #00c9a7; color: #00a88a; }
+
+@media (max-width: 767px) {
+  .bil-login-wrap { flex-direction: column; }
+  .bil-login-left { flex: none; padding: 2rem; }
+  .bil-login-tagline { display: none; }
+}
+</style>
+
+<div class="bil-login-wrap">
+
+  <div class="bil-login-left">
+    <div class="bil-login-brand">
+      <div class="bil-login-brand-icon">
+        <img src="{% static 'images/brainicon.png' %}" alt="BIL logo">
       </div>
-      <h4 class="fw-bold mb-0" style="color:#161b33;">Brain Image Library</h4>
-      <p class="text-muted small mb-0">Submission Portal</p>
+      <h2>Brain Image<br>Library</h2>
+      <p>A public resource enabling researchers to deposit, analyze, and share large brain image datasets.</p>
     </div>
-
-    {# ── Card ── #}
-    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-      <div class="card-header py-3 text-white fw-semibold text-center"
-           style="background: linear-gradient(135deg, #161b33 0%, #1e2a4a 100%); letter-spacing:.02em;">
-        <i class="fa-solid fa-right-to-bracket me-2 opacity-75"></i>Sign in to your account
-      </div>
-      <div class="card-body p-4">
-        <form method="post" action="{% url 'login' %}">
-          {% csrf_token %}
-
-          <div class="mb-3">
-            <label for="id_username" class="form-label small fw-semibold text-secondary">Username</label>
-            <div class="input-group">
-              <span class="input-group-text bg-light border-end-0 text-secondary">
-                <i class="fa-solid fa-user fa-sm"></i>
-              </span>
-              <input type="text" name="username" id="id_username" required
-                     class="form-control border-start-0 ps-1{% if form.errors %} is-invalid{% endif %}"
-                     placeholder="Enter your username" autocomplete="username" autofocus>
-            </div>
-          </div>
-
-          <div class="mb-4">
-            <label for="id_password" class="form-label small fw-semibold text-secondary">Password</label>
-            <div class="input-group">
-              <span class="input-group-text bg-light border-end-0 text-secondary">
-                <i class="fa-solid fa-lock fa-sm"></i>
-              </span>
-              <input type="password" name="password" id="id_password" required
-                     class="form-control border-start-0 ps-1{% if form.errors %} is-invalid{% endif %}"
-                     placeholder="Enter your password" autocomplete="current-password">
-              <button class="btn btn-outline-secondary border-start-0" type="button" id="togglePassword"
-                      tabindex="-1" title="Show/hide password">
-                <i class="fa-solid fa-eye fa-sm" id="toggleIcon"></i>
-              </button>
-            </div>
-          </div>
-
-          {% if form.errors %}
-          <div class="alert alert-danger d-flex align-items-center gap-2 py-2 mb-3" role="alert">
-            <i class="fa-solid fa-circle-exclamation fa-sm flex-shrink-0"></i>
-            <span class="small">Username or password didn't match. Please try again.</span>
-          </div>
-          {% endif %}
-
-          <button type="submit" class="btn w-100 fw-semibold py-2 text-white"
-                  style="background: linear-gradient(135deg, #161b33 0%, #1e2a4a 100%);">
-            <i class="fa-solid fa-right-to-bracket me-1"></i>Sign In
-          </button>
-        </form>
-      </div>
-      <div class="card-footer bg-light border-0 text-center py-3">
-        <small class="text-muted">
-          Forgot your password?
-          <a href="mailto:bil-support@psc.edu?Subject=Forgot%20password" class="text-decoration-none">
-            Contact support
-          </a>
-        </small>
-      </div>
-    </div>
-
-    <p class="text-center text-muted small mt-3 mb-0">
-      Don't have an account?
-      <a href="{% url 'ingest:signup' %}" class="text-decoration-none fw-semibold">Sign up</a>
-    </p>
-
+    <div class="bil-login-tagline">Supported by NIMH · R24MH114793</div>
   </div>
+
+  <div class="bil-login-right">
+    <div class="bil-login-form-wrap">
+      <h3>Sign In</h3>
+      <p class="bil-form-sub">Use your BIL system credentials to access the portal.</p>
+
+      <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+
+        <div>
+          <label class="bil-field-label" for="id_username">Username</label>
+          <div class="bil-input-wrap">
+            <span class="bil-input-icon"><i class="fa-solid fa-user"></i></span>
+            <input type="text" name="username" id="id_username" required
+                   placeholder="Enter your username" autocomplete="username" autofocus
+                   class="{% if form.errors %}is-invalid{% endif %}">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="bil-field-label" for="id_password">Password</label>
+          <div class="bil-input-wrap">
+            <span class="bil-input-icon"><i class="fa-solid fa-lock"></i></span>
+            <input type="password" name="password" id="id_password" required
+                   placeholder="Enter your password" autocomplete="current-password"
+                   class="{% if form.errors %}is-invalid{% endif %}">
+            <button type="button" class="bil-toggle-pw" id="togglePassword" tabindex="-1">
+              <i class="fa-solid fa-eye" id="toggleIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        {% if form.errors %}
+        <div class="bil-error">
+          <i class="fa-solid fa-circle-exclamation flex-shrink-0"></i>
+          Username or password didn't match. Please try again.
+        </div>
+        {% endif %}
+
+        <button type="submit" class="bil-btn-submit">
+          <i class="fa-solid fa-right-to-bracket me-2"></i>Sign In
+        </button>
+      </form>
+
+      <div class="bil-login-footer">
+        <p class="mb-1">Forgot your password? <a href="mailto:bil-support@psc.edu?Subject=Forgot%20password">Contact support</a></p>
+        <p class="mb-0">Don't have an account? <a href="{% url 'ingest:signup' %}">Sign up</a></p>
+      </div>
+    </div>
+  </div>
+
 </div>
 
 <script>
@@ -89,11 +191,9 @@
     const input = document.getElementById('id_password');
     const icon  = document.getElementById('toggleIcon');
     if (input.type === 'password') {
-      input.type = 'text';
-      icon.classList.replace('fa-eye', 'fa-eye-slash');
+      input.type = 'text'; icon.classList.replace('fa-eye', 'fa-eye-slash');
     } else {
-      input.type = 'password';
-      icon.classList.replace('fa-eye-slash', 'fa-eye');
+      input.type = 'password'; icon.classList.replace('fa-eye-slash', 'fa-eye');
     }
   });
 </script>

@@ -1,58 +1,51 @@
 {% if datasets %}
-<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
-  <div class="card-body p-4">
-    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
-      <i class="fa-solid fa-database fa-sm me-1"></i>Datasets
-    </p>
-    <div class="table-responsive">
-      <table id="tbl-datasets" class="table table-sm table-bordered table-hover align-middle mb-0">
-        <thead style="background-color:#161b33; color:#fff;">
-          <tr>
-            <th>BIL Directory</th>
-            <th>Title</th>
-            <th>Social Media</th>
-            <th>Subject</th>
-            <th>Subject Scheme</th>
-            <th>Rights</th>
-            <th>Rights URI</th>
-            <th>Rights Identifier</th>
-            <th>Image</th>
-            <th>General Modality</th>
-            <th>Technique</th>
-            <th>Other</th>
-            <th>Abstract</th>
-            <th>Methods</th>
-            <th>Technical Info</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for d in datasets %}
-          <tr>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ d.bildirectory }}">{{ d.bildirectory }}</span></td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ d.title }}">{{ d.title }}</span></td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ d.socialmedia }}">{{ d.socialmedia }}</span></td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ d.subject }}">{{ d.subject }}</span></td>
-            <td>{{ d.subjectscheme }}</td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ d.rights }}">{{ d.rights }}</span></td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ d.rightsuri }}">{{ d.rightsuri }}</span></td>
-            <td>{{ d.rightsidentifier }}</td>
-            <td>{{ d.image }}</td>
-            <td>{{ d.generalmodality }}</td>
-            <td>{{ d.technique }}</td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ d.other }}">{{ d.other }}</span></td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ d.abstract }}">{{ d.abstract }}</span></td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ d.methods }}">{{ d.methods }}</span></td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ d.technicalinfo }}">{{ d.technicalinfo }}</span></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+<div class="table-responsive">
+  <table id="tbl-datasets" class="bil-detail-table">
+    <thead>
+      <tr>
+        <th>BIL Directory</th>
+        <th>Title</th>
+        <th>Social Media</th>
+        <th>Subject</th>
+        <th>Subject Scheme</th>
+        <th>Rights</th>
+        <th>Rights URI</th>
+        <th>Rights Identifier</th>
+        <th>Image</th>
+        <th>General Modality</th>
+        <th>Technique</th>
+        <th>Other</th>
+        <th>Abstract</th>
+        <th>Methods</th>
+        <th>Technical Info</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in datasets %}
+      <tr>
+        <td><span class="bil-cell-clamp" data-bs-toggle="tooltip" title="{{ d.bildirectory }}">{{ d.bildirectory }}</span></td>
+        <td><span class="bil-cell-clamp" data-bs-toggle="tooltip" title="{{ d.title }}">{{ d.title }}</span></td>
+        <td><span class="bil-cell-clamp" data-bs-toggle="tooltip" title="{{ d.socialmedia }}">{{ d.socialmedia }}</span></td>
+        <td><span class="bil-cell-clamp" data-bs-toggle="tooltip" title="{{ d.subject }}">{{ d.subject }}</span></td>
+        <td>{{ d.subjectscheme }}</td>
+        <td><span class="bil-cell-clamp" data-bs-toggle="tooltip" title="{{ d.rights }}">{{ d.rights }}</span></td>
+        <td><span class="bil-cell-clamp" data-bs-toggle="tooltip" title="{{ d.rightsuri }}">{{ d.rightsuri }}</span></td>
+        <td>{{ d.rightsidentifier }}</td>
+        <td>{{ d.image }}</td>
+        <td>{{ d.generalmodality }}</td>
+        <td>{{ d.technique }}</td>
+        <td><span class="bil-cell-clamp" data-bs-toggle="tooltip" title="{{ d.other }}">{{ d.other }}</span></td>
+        <td><span class="bil-cell-clamp" data-bs-toggle="tooltip" title="{{ d.abstract }}">{{ d.abstract }}</span></td>
+        <td><span class="bil-cell-clamp" data-bs-toggle="tooltip" title="{{ d.methods }}">{{ d.methods }}</span></td>
+        <td><span class="bil-cell-clamp" data-bs-toggle="tooltip" title="{{ d.technicalinfo }}">{{ d.technicalinfo }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
 {% else %}
-<div class="alert alert-info d-flex gap-2 align-items-start">
-  <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
-  <span>There is no Dataset data associated with this dataset. Please contact BIL Support if this is incorrect.</span>
+<div class="bil-notice-info">
+  <i class="fa-solid fa-circle-info fa-xs"></i>
+  <span>No Dataset data is associated with this metadata sheet.</span>
 </div>
 {% endif %}

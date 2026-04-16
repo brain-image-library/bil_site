@@ -101,17 +101,37 @@ def _get_public_dataset_stats():
             year_map[row['year']] = year_map.get(row['year'], 0) + row['n']
     datasets_by_year = [{'year': y, 'count': year_map[y]} for y in sorted(year_map)]
 
-    # --- Dataset count + file count from SDK ---
-    try:
-        data = brainimagelibrary.summary.daily()
-        if data and isinstance(data, dict):
-            public_dataset_count = int(data.get('number_of_datasets', 0))
-            public_file_count = int(data.get('number_of_files', 0))
-            result = (public_dataset_count, public_file_count, datasets_by_year)
-            cache.set('public_dataset_stats', result, 3600)
-            return result
-    except Exception:
-        pass
+    # --- Dataset count + file count ---
+    # TSV reports give a reliable dataset count but don't include number_of_files.
+    # SDK fills in file count independently; the two sources are not mutually exclusive.
+    public_dataset_count = None
+    public_file_count = None
+
+    local_reports = sorted(Path('reports').glob('*.tsv'), reverse=True)
+    if local_reports:
+        try:
+            df = pd.read_csv(local_reports[0], sep='\t')
+            public_dataset_count = len(df)
+            if 'number_of_files' in df.columns:
+                public_file_count = int(df['number_of_files'].sum())
+        except Exception:
+            pass
+
+    # Always try SDK when file count wasn't in the TSV
+    if public_file_count is None:
+        try:
+            data = brainimagelibrary.summary.daily()
+            if data and isinstance(data, dict):
+                public_file_count = int(data.get('number_of_files', 0))
+                if public_dataset_count is None:
+                    public_dataset_count = int(data.get('number_of_datasets', 0))
+        except Exception:
+            pass
+
+    if public_dataset_count is not None and public_file_count is not None:
+        result = (public_dataset_count, public_file_count, datasets_by_year)
+        cache.set('public_dataset_stats', result, 3600)
+        return result
 
     # --- ORM fallback for dataset count + file count ---
     public_file_count = (
@@ -129,14 +149,10 @@ def _get_public_dataset_stats():
 
 
 def logout(request):
-    messages.success(request, "You've successfully logged out")
     # XXX: this view should be separated from the the ingestion views and
     # placed with other authentication views to allow us to reuse the
     # authentication views with other apps (e.g. data exploration portal).
     auth.logout(request)
-    # Send the user back to the login page when they log out.
-    # XXX: we might want to use django's messaging system to inform them that
-    # they've successfully logged out.
     return redirect('login')
 
 def signup(request):
@@ -191,6 +207,23 @@ def index(request):
     # --- Step 3: Routing logic based on role ---
     public_dataset_count, public_file_count, datasets_by_year = _get_public_dataset_stats()
 
+    # User contribution stats
+    user_public_collections = Collection.objects.filter(
+        user=current_user,
+        submission_status=Collection.SUCCESS,
+        validation_status=Collection.SUCCESS,
+    ).count()
+    user_public_datasets = Dataset.objects.filter(
+        sheet__collection__user=current_user,
+        sheet__collection__submission_status=Collection.SUCCESS,
+        sheet__collection__validation_status=Collection.SUCCESS,
+    ).count()
+    # Submission in progress: submitted for validation, not yet published
+    user_validation_requested = Collection.objects.filter(
+        user=current_user,
+        submission_status=Collection.PENDING,
+    ).count()
+
     try:
         people = People.objects.get(auth_user_id_id=current_user.id)
         project_person = ProjectPeople.objects.filter(people_id=people.id).all()
@@ -200,6 +233,9 @@ def index(request):
                 'public_dataset_count': public_dataset_count,
                 'public_file_count': public_file_count,
                 'datasets_by_year': datasets_by_year,
+                'user_public_collections': user_public_collections,
+                'user_public_datasets': user_public_datasets,
+                'user_validation_requested': user_validation_requested,
             })
         for attribute in project_person:
             if attribute.is_pi:
@@ -208,6 +244,8 @@ def index(request):
                     'public_dataset_count': public_dataset_count,
                     'public_file_count': public_file_count,
                     'datasets_by_year': datasets_by_year,
+                    'user_public_collections': user_public_collections,
+                    'user_public_datasets': user_public_datasets,
                 })
     except Exception as e:
         print(e)
@@ -216,6 +254,8 @@ def index(request):
         'public_dataset_count': public_dataset_count,
         'public_file_count': public_file_count,
         'datasets_by_year': datasets_by_year,
+        'user_public_collections': user_public_collections,
+        'user_public_datasets': user_public_datasets,
     })
 
 
@@ -813,12 +853,16 @@ def collection_send(request):
             )
         except People.DoesNotExist:
             EventsLog.objects.create(
-                collection_id=coll, 
+                collection_id=coll,
                 project_id_id=coll.project_id,
                 notes="(No People record found for user)",
                 timestamp=timezone.now(),
                 event_type="request_validation",
             )
+
+        coll.submission_status = Collection.PENDING
+        coll.validation_status = Collection.PENDING
+        coll.save(update_fields=['submission_status', 'validation_status'])
 
         sent.append(coll.bil_uuid)
 
@@ -961,9 +1005,15 @@ def refresh_tables(request):
                  .annotate(has_sheet=Exists(has_sheet_sq),
                            has_requested=Exists(has_requested_sq)))
 
-    eligible = annotated.filter(has_sheet=True, has_requested=False)
+    in_progress_statuses = [Collection.PENDING, Collection.SUCCESS, Collection.FAILED]
+
+    eligible = annotated.filter(has_sheet=True, has_requested=False).exclude(
+        submission_status__in=in_progress_statuses
+    )
     needs_metadata = annotated.filter(has_sheet=False)
-    already_requested = annotated.filter(has_requested=True)
+    already_requested = annotated.filter(
+        Q(has_requested=True) | Q(submission_status__in=in_progress_statuses)
+    )
 
     return render(request, "ingest/_tables_refresh.html", {
         "eligible_collections": eligible.distinct(),
@@ -1222,9 +1272,15 @@ class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterVi
             has_requested=Exists(has_requested_sq),
         )
 
-        eligible = annotated.filter(has_sheet=True, has_requested=False)
+        in_progress_statuses = [Collection.PENDING, Collection.SUCCESS, Collection.FAILED]
+
+        eligible = annotated.filter(has_sheet=True, has_requested=False).exclude(
+            submission_status__in=in_progress_statuses
+        )
         needs_metadata = annotated.filter(has_sheet=False)
-        already_requested = annotated.filter(has_requested=True)
+        already_requested = annotated.filter(
+            Q(has_requested=True) | Q(submission_status__in=in_progress_statuses)
+        )
 
         context.update({
             'pi': self._is_pi(self.request),

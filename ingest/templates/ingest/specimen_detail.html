@@ -1,53 +1,45 @@
 {% if specimens %}
-<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
-  <div class="card-body p-4">
-    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
-      <i class="fa-solid fa-flask fa-sm me-1"></i>Specimens
-    </p>
-    <div class="table-responsive">
-      <table id="tbl-specimens" class="table table-sm table-bordered table-hover align-middle mb-0">
-        <thead style="background-color:#161b33; color:#fff;">
-          <tr>
-            <th>LocalID</th>
-            <th>Species</th>
-            <th>NCBITaxonomy</th>
-            <th>Age</th>
-            <th>Ageunit</th>
-            <th>Sex</th>
-            <th>Genotype</th>
-            <th>OrganLocalID</th>
-            <th>OrganName</th>
-            <th>SampleLocalID</th>
-            <th>Atlas</th>
-            <th>Locations</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in specimens %}
-          <tr>
-            <td>{{ s.localid }}</td>
-            <td>{{ s.species }}</td>
-            <td>{{ s.ncbitaxonomy }}</td>
-            <td>{{ s.age }}</td>
-            <td>{{ s.ageunit }}</td>
-            <td>{{ s.sex }}</td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ s.genotype }}">{{ s.genotype }}</span></td>
-            <td>{{ s.organlocalid }}</td>
-            <td>{{ s.organname }}</td>
-            <td>{{ s.samplelocalid }}</td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ s.atlas }}">{{ s.atlas }}</span></td>
-            <td><span class="cell-truncate" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ s.locations }}">{{ s.locations }}</span></td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+<div class="table-responsive">
+  <table id="tbl-specimens" class="bil-detail-table">
+    <thead>
+      <tr>
+        <th>LocalID</th>
+        <th>Species</th>
+        <th>NCBITaxonomy</th>
+        <th>Age</th>
+        <th>Ageunit</th>
+        <th>Sex</th>
+        <th>Genotype</th>
+        <th>OrganLocalID</th>
+        <th>OrganName</th>
+        <th>SampleLocalID</th>
+        <th>Atlas</th>
+        <th>Locations</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in specimens %}
+      <tr>
+        <td>{{ s.localid }}</td>
+        <td>{{ s.species }}</td>
+        <td>{{ s.ncbitaxonomy }}</td>
+        <td>{{ s.age }}</td>
+        <td>{{ s.ageunit }}</td>
+        <td>{{ s.sex }}</td>
+        <td>{{ s.genotype }}</td>
+        <td>{{ s.organlocalid }}</td>
+        <td>{{ s.organname }}</td>
+        <td>{{ s.samplelocalid }}</td>
+        <td>{{ s.atlas }}</td>
+        <td>{{ s.locations }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
-
 {% else %}
-<div class="alert alert-info d-flex gap-2 align-items-start">
-  <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
-  <span>There is no Specimen data associated with this dataset. Please contact BIL Support if this is incorrect.</span>
+<div class="bil-notice-info">
+  <i class="fa-solid fa-circle-info fa-xs"></i>
+  <span>No Specimen data is associated with this metadata sheet.</span>
 </div>
 {% endif %}
