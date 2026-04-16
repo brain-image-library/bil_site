@@ -1,61 +1,53 @@
 {% if swcs %}
-<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
-  <div class="card-body p-4">
-    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
-      <i class="fa-solid fa-share-nodes fa-sm me-1"></i>SWC
-    </p>
-    <div class="table-responsive">
-      <table id="tbl-swc" class="table table-sm table-bordered table-hover align-middle mb-0">
-        <thead style="background-color:#161b33; color:#fff;">
-          <tr>
-            <th>tracingFile</th>
-            <th>sourceData</th>
-            <th>sourceDataSample</th>
-            <th>sourceDataSubmission</th>
-            <th>coordinates</th>
-            <th>coordinatesRegistration</th>
-            <th>brainRegion</th>
-            <th>brainRegionAtlas</th>
-            <th>brainRegionAtlasName</th>
-            <th>brainRegionAxonalProjection</th>
-            <th>brainRegionDendriticProjection</th>
-            <th>neuronType</th>
-            <th>segmentTags</th>
-            <th>proofreadingLevel</th>
-            <th>notes</th>
-            <th>swc_uuid</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for s in swcs %}
-          <tr>
-            <td>{{ s.tracingFile }}</td>
-            <td>{{ s.sourceData }}</td>
-            <td>{{ s.sourceDataSample }}</td>
-            <td>{{ s.sourceDataSubmission }}</td>
-            <td>{{ s.coordinates }}</td>
-            <td>{{ s.coordinatesRegistration }}</td>
-            <td>{{ s.brainRegion }}</td>
-            <td>{{ s.brainRegionAtlas }}</td>
-            <td>{{ s.brainRegionAtlasName }}</td>
-            <td>{{ s.brainRegionAxonalProjection }}</td>
-            <td>{{ s.brainRegionDendriticProjection }}</td>
-            <td>{{ s.neuronType }}</td>
-            <td>{{ s.segmentTags }}</td>
-            <td>{{ s.proofreadingLevel }}</td>
-            <td>{{ s.notes }}</td>
-            <td>{{ s.swc_uuid }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+<div class="table-responsive">
+  <table id="tbl-swc" class="bil-detail-table">
+    <thead>
+      <tr>
+        <th>tracingFile</th>
+        <th>sourceData</th>
+        <th>sourceDataSample</th>
+        <th>sourceDataSubmission</th>
+        <th>coordinates</th>
+        <th>coordinatesRegistration</th>
+        <th>brainRegion</th>
+        <th>brainRegionAtlas</th>
+        <th>brainRegionAtlasName</th>
+        <th>brainRegionAxonalProjection</th>
+        <th>brainRegionDendriticProjection</th>
+        <th>neuronType</th>
+        <th>segmentTags</th>
+        <th>proofreadingLevel</th>
+        <th>notes</th>
+        <th>swc_uuid</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in swcs %}
+      <tr>
+        <td>{{ s.tracingFile }}</td>
+        <td>{{ s.sourceData }}</td>
+        <td>{{ s.sourceDataSample }}</td>
+        <td>{{ s.sourceDataSubmission }}</td>
+        <td>{{ s.coordinates }}</td>
+        <td>{{ s.coordinatesRegistration }}</td>
+        <td>{{ s.brainRegion }}</td>
+        <td>{{ s.brainRegionAtlas }}</td>
+        <td>{{ s.brainRegionAtlasName }}</td>
+        <td>{{ s.brainRegionAxonalProjection }}</td>
+        <td>{{ s.brainRegionDendriticProjection }}</td>
+        <td>{{ s.neuronType }}</td>
+        <td>{{ s.segmentTags }}</td>
+        <td>{{ s.proofreadingLevel }}</td>
+        <td>{{ s.notes }}</td>
+        <td>{{ s.swc_uuid }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
-
 {% else %}
-<div class="alert alert-info d-flex gap-2 align-items-start">
-  <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
-  <span>There is no SWC data associated with this dataset. Please contact BIL Support if this is incorrect.</span>
+<div class="bil-notice-info">
+  <i class="fa-solid fa-circle-info fa-xs"></i>
+  <span>No SWC data is associated with this metadata sheet.</span>
 </div>
 {% endif %}

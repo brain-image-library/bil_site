@@ -4,26 +4,182 @@
 {% block content %}
 <div class="container-fluid py-4 px-4">
 
+<style>
+:root { --bil-accent: #00c9a7; --bil-accent-dim: rgba(0,201,167,.1); }
+
+/* ── Page header ── */
+.bil-page-header h2 {
+  font-family: 'Lato', sans-serif; font-weight: 800;
+  font-size: clamp(1.2rem,2.5vw,1.65rem); color: #161b33;
+  letter-spacing: -.03em; margin-bottom: .2rem;
+}
+.bil-page-header .bil-sub {
+  font-family: 'DM Mono', monospace; font-size: .7rem;
+  letter-spacing: .06em; color: #8589a8;
+}
+.bil-btn-outline {
+  background: #fff; color: #4a5070;
+  border: 1.5px solid rgba(22,27,51,.15); border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
+  padding: .45rem 1rem; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: border-color .15s, color .15s;
+}
+.bil-btn-outline:hover { border-color: rgba(22,27,51,.3); color: #161b33; }
+
+/* ── Summary banner ── */
+.bil-summary-alert {
+  border-radius: 9px; padding: .85rem 1.1rem;
+  display: flex; align-items: flex-start; gap: .85rem; margin-bottom: 1rem;
+  font-family: 'Lato', sans-serif; font-size: .88rem;
+}
+.bil-summary-alert--error {
+  background: rgba(220,53,69,.07); border: 1.5px solid rgba(220,53,69,.25); color: #842029;
+}
+.bil-summary-alert--success {
+  background: rgba(25,135,84,.07); border: 1.5px solid rgba(25,135,84,.25); color: #146c43;
+}
+.bil-summary-alert i { flex-shrink: 0; margin-top: 2px; }
+.bil-summary-alert strong { font-weight: 700; }
+
+/* ── Toolbar ── */
+.bil-toolbar {
+  display: flex; align-items: center; gap: 1.25rem;
+  flex-wrap: wrap; margin-bottom: 1rem;
+  font-family: 'Lato', sans-serif; font-size: .875rem; color: #3d4360;
+}
+.bil-toolbar .form-check-label { color: #3d4360; font-weight: 500; }
+.bil-toolbar .form-check-input:checked { background-color: var(--bil-accent); border-color: var(--bil-accent); }
+.bil-btn-jump {
+  background: #fff; color: #842029;
+  border: 1.5px solid rgba(220,53,69,.3); border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .82rem;
+  padding: .35rem .85rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: border-color .15s, background .15s;
+}
+.bil-btn-jump:hover { border-color: rgba(220,53,69,.55); background: rgba(220,53,69,.04); color: #6e1a22; }
+
+/* ── Sheet tabs ── */
+.bil-sheet-tabs { border-bottom: none; gap: 3px; }
+.bil-sheet-tabs .nav-link {
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .82rem;
+  color: #616788; background: #f0f2f7;
+  border: 1.5px solid rgba(22,27,51,.1); border-bottom: none;
+  border-radius: 7px 7px 0 0; padding: .5rem 1rem;
+  transition: color .15s, background .15s;
+}
+.bil-sheet-tabs .nav-link:hover { color: #161b33; background: #e8ecf5; }
+.bil-sheet-tabs .nav-link.active {
+  background: #161b33; color: #fff;
+  border-color: #161b33;
+}
+.bil-sheet-tabs .nav-link.tab-has-errors:not(.active) { color: #842029; }
+.sheet-badge {
+  font-family: 'DM Mono', monospace; font-size: .58rem; font-weight: 500;
+  padding: .2em .5em; border-radius: 4px;
+  background: rgba(22,27,51,.15); color: inherit;
+}
+.sheet-badge.has-errors { background: #dc3545 !important; color: #fff !important; }
+
+/* ── Tab content panel ── */
+.bil-tab-content {
+  background: #f7f8fb; border: 1.5px solid rgba(22,27,51,.09);
+  border-radius: 0 7px 7px 7px;
+  box-shadow: 0 2px 10px rgba(22,27,51,.05);
+  overflow: hidden;
+}
+
+/* ── Scroll area ── */
+.sheet-scroll-area {
+  max-height: 65vh;
+  overflow: auto;
+}
+
+/* ── Spreadsheet table ── */
+.spreadsheet-table {
+  font-size: 0.78rem;
+  white-space: nowrap;
+  border-collapse: collapse;
+  font-family: 'Lato', sans-serif;
+}
+.spreadsheet-table td,
+.spreadsheet-table th {
+  vertical-align: middle;
+  padding: 4px 8px;
+  border: 1px solid rgba(22,27,51,.08);
+  color: #3d4360;
+}
+.spreadsheet-table tbody tr:hover td { background: rgba(0,201,167,.03); }
+.spreadsheet-table tbody tr:hover .row-gutter { background: #e8ecf2; }
+
+/* ── Sticky row-number gutter ── */
+.row-gutter {
+  position: sticky; left: 0; z-index: 2;
+  background: #eef0f7;
+  border-right: 2px solid rgba(22,27,51,.12) !important;
+  min-width: 38px;
+  font-family: 'DM Mono', monospace; font-size: 0.65rem;
+  color: #8589a8; text-align: right;
+}
+
+/* ── Cell content clipping ── */
+.cell-content {
+  overflow: hidden; text-overflow: ellipsis;
+  max-width: 220px; white-space: nowrap;
+}
+
+/* ── Error cell — pattern + border so colorblind users can distinguish ── */
+td.cell-error {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(220, 53, 69, .07) 0px,
+    rgba(220, 53, 69, .07) 4px,
+    rgba(220, 53, 69, .02) 4px,
+    rgba(220, 53, 69, .02) 9px
+  ) !important;
+  outline: 2px solid #dc3545;
+  outline-offset: -2px;
+  border-left: 3px solid #b91c1c !important;
+  cursor: pointer;
+}
+td.cell-error .cell-content {
+  color: #842029; font-weight: 600;
+  white-space: normal; word-break: break-word;
+}
+
+/* ── Hidden rows (errors-only toggle) ── */
+tr.row-no-error.hide-clean { display: none; }
+
+.bil-fadein { opacity: 0; transform: translateY(8px); animation: bil-fade .35s ease forwards; }
+@keyframes bil-fade { to { opacity: 1; transform: translateY(0); } }
+.bil-fadein:nth-child(1) { animation-delay: .03s; }
+.bil-fadein:nth-child(2) { animation-delay: .08s; }
+.bil-fadein:nth-child(3) { animation-delay: .13s; }
+.bil-fadein:nth-child(4) { animation-delay: .18s; }
+@media (prefers-reduced-motion: reduce) {
+  .bil-fadein { opacity: 1; transform: none; animation: none; }
+}
+</style>
+
   {# ── Page header ── #}
-  <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
+  <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4 bil-page-header bil-fadein">
     <div>
-      <h2 class="mb-1 fw-semibold">
-        <i class="fa-solid fa-triangle-exclamation text-danger me-2"></i>Metadata Validation Errors
+      <h2 class="mb-1">
+        <i class="fa-solid fa-triangle-exclamation me-2" style="color:#dc3545;font-size:1.1rem;" aria-hidden="true"></i>Metadata Validation Errors
       </h2>
-      <p class="text-muted mb-0">
-        Fix the highlighted cells in your spreadsheet, then re-upload.
-        Hover over any red cell to see the specific problem.
-      </p>
+      <span class="bil-sub">Fix the highlighted cells in your spreadsheet, then re-upload. Hover over any red cell to see the specific problem.</span>
     </div>
     <a href="{% url 'ingest:descriptive_metadata_upload' associated_collection=associated_collection %}"
-       class="btn btn-outline-secondary">
-      <i class="fa-solid fa-arrow-left me-1"></i>Back to Upload
+       class="bil-btn-outline">
+      <i class="fa-solid fa-arrow-left fa-xs"></i>Back to Upload
     </a>
   </div>
 
-  {# ── Summary banner (JS fills in count and may swap to success style) ── #}
-  <div class="alert alert-danger d-flex align-items-center gap-3 mb-3" role="alert" id="summary-alert">
-    <i class="fa-solid fa-circle-exclamation fa-xl flex-shrink-0"></i>
+  {# ── Summary banner ── #}
+  <div class="bil-summary-alert bil-summary-alert--error bil-fadein"
+       role="alert" aria-live="polite" aria-atomic="true" id="summary-alert">
+    <i class="fa-solid fa-circle-exclamation fa-lg" aria-hidden="true"></i>
     <div>
       <strong><span id="total-error-count">…</span> error(s)</strong> found across your spreadsheet.
       Hover over any red cell to see what needs to be fixed.
@@ -31,18 +187,18 @@
   </div>
 
   {# ── Toolbar ── #}
-  <div class="d-flex align-items-center gap-4 mb-3 flex-wrap">
+  <div class="bil-toolbar bil-fadein">
     <div class="form-check form-switch mb-0">
       <input class="form-check-input" type="checkbox" id="toggle-errors-only" role="switch">
       <label class="form-check-label" for="toggle-errors-only">Show only rows with errors</label>
     </div>
-    <button class="btn btn-sm btn-outline-danger" id="jump-to-error" style="display:none;">
-      <i class="fa-solid fa-arrow-down me-1"></i>Jump to first error
+    <button class="bil-btn-jump" id="jump-to-error" style="display:none;">
+      <i class="fa-solid fa-arrow-down fa-xs" aria-hidden="true"></i>Jump to first error
     </button>
   </div>
 
   {# ── Sheet tabs ── #}
-  <ul class="nav nav-tabs" id="sheetTabs" role="tablist">
+  <ul class="nav bil-sheet-tabs bil-fadein" id="sheetTabs" role="tablist">
     {% for sheet_name, rows in sheets.items %}
     <li class="nav-item" role="presentation">
       <button class="nav-link {% if forloop.first %}active{% endif %}"
@@ -54,7 +210,7 @@
               aria-selected="{% if forloop.first %}true{% else %}false{% endif %}"
               data-sheet-name="{{ sheet_name }}">
         {{ sheet_name }}
-        <span class="badge rounded-pill ms-1 bg-secondary sheet-badge"
+        <span class="sheet-badge ms-1"
               id="badge-{{ forloop.counter0 }}"
               data-sheet-badge="{{ sheet_name }}">0</span>
       </button>
@@ -63,7 +219,7 @@
   </ul>
 
   {# ── Tab panels ── #}
-  <div class="tab-content border border-top-0 rounded-bottom bg-white" id="sheetTabContent">
+  <div class="tab-content bil-tab-content bil-fadein" id="sheetTabContent">
     {% for sheet_name, rows in sheets.items %}
     <div class="tab-pane fade {% if forloop.first %}show active{% endif %}"
          id="sheet-panel-{{ forloop.counter0 }}"
@@ -76,8 +232,7 @@
           <tbody>
             {% for row in rows %}
             <tr data-row-index="{{ forloop.counter0 }}">
-              {# Sticky row-number gutter — 0-based to match error_map keys #}
-              <th scope="row" class="row-gutter text-muted text-end user-select-none">
+              <th scope="row" class="row-gutter user-select-none">
                 {{ forloop.counter0 }}
               </th>
               {% for cell in row %}
@@ -98,76 +253,6 @@
   </div>
 
 </div>{# /container-fluid #}
-
-<style>
-  /* ── Scroll area ── */
-  .sheet-scroll-area {
-    max-height: 65vh;
-    overflow: auto;
-  }
-
-  /* ── Table base ── */
-  .spreadsheet-table {
-    font-size: 0.78rem;
-    white-space: nowrap;
-    border-collapse: collapse;
-  }
-
-  .spreadsheet-table td,
-  .spreadsheet-table th {
-    vertical-align: middle;
-    padding: 3px 8px;
-  }
-
-  /* ── Sticky row-number gutter ── */
-  .row-gutter {
-    position: sticky;
-    left: 0;
-    z-index: 2;
-    background: #f8f9fa;
-    border-right: 2px solid #dee2e6 !important;
-    min-width: 40px;
-    font-size: 0.7rem;
-  }
-
-  /* ── Cell content clipping ── */
-  .cell-content {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 220px;
-    white-space: nowrap;
-  }
-
-  /* ── Error cell ── */
-  td.cell-error {
-    background-color: #fff0f0 !important;
-    outline: 2px solid #dc3545;
-    outline-offset: -2px;
-    cursor: pointer;
-  }
-
-  td.cell-error .cell-content {
-    color: #842029;
-    font-weight: 500;
-    white-space: normal;
-    word-break: break-word;
-  }
-
-  /* ── Hidden rows (errors-only toggle) ── */
-  tr.row-no-error.hide-clean {
-    display: none;
-  }
-
-  /* ── Tab badge when errors present ── */
-  .sheet-badge.has-errors {
-    background-color: #dc3545 !important;
-  }
-
-  /* ── Tab button text colour when sheet has errors ── */
-  .nav-link.tab-has-errors:not(.active) {
-    color: #dc3545;
-  }
-</style>
 
 {% block extra_scripts %}
 <script>
@@ -237,9 +322,9 @@
     document.getElementById('total-error-count').textContent = totalErrors;
     if (totalErrors === 0) {
       const alert = document.getElementById('summary-alert');
-      alert.className = 'alert alert-success d-flex align-items-center gap-3 mb-3';
+      alert.className = 'bil-summary-alert bil-summary-alert--success';
       alert.innerHTML =
-        '<i class="fa-solid fa-circle-check fa-xl flex-shrink-0"></i>' +
+        '<i class="fa-solid fa-circle-check fa-lg flex-shrink-0"></i>' +
         '<div><strong>No errors found.</strong> Your spreadsheet passed validation.</div>';
     }
 
@@ -281,7 +366,8 @@
         if (!activePanel) return;
         const td = sheetFirstError[activePanel.dataset.sheetName];
         if (!td) return;
-        td.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        td.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'center' });
         td.style.transition  = 'box-shadow 0.15s ease';
         td.style.boxShadow   = '0 0 0 5px rgba(220,53,69,0.45)';
         setTimeout(function () { td.style.boxShadow = ''; }, 1400);

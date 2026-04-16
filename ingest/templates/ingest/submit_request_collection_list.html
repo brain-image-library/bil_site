@@ -1,358 +1,456 @@
 {% extends 'ingest/wide.html' %}
 {% load static %}
 
+{% block scripts %}
+<style>
+:root {
+  --bil-accent:     #00c9a7;
+  --bil-accent-dim: rgba(0, 201, 167, 0.1);
+}
+
+/* Page header */
+.bil-list-header h4 {
+  font-family: 'Lato', sans-serif; font-weight: 800;
+  font-size: clamp(1.3rem, 3vw, 1.75rem); color: #161b33;
+  letter-spacing: -.03em; margin-bottom: .2rem;
+}
+.bil-list-header .bil-count {
+  font-family: 'DM Mono', monospace; font-size: .7rem;
+  letter-spacing: .06em; color: #8589a8;
+}
+
+/* Section label */
+.bil-section-label {
+  font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .12em;
+  text-transform: uppercase; color: #6e7290;
+  margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;
+}
+.bil-section-label::after { content: ''; flex: 1; height: 1px; background: currentColor; opacity: .3; }
+
+/* Buttons */
+.bil-btn-dark {
+  background: #161b33; color: #fff; border: none;
+  border-radius: 7px; font-family: 'Lato', sans-serif; font-weight: 600;
+  font-size: .85rem; padding: .5rem 1.1rem; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background .15s, box-shadow .15s, transform .1s;
+}
+.bil-btn-dark:hover { background: #252d52; box-shadow: 0 4px 12px rgba(22,27,51,.2); transform: translateY(-1px); color: #fff; }
+.bil-btn-dark:disabled { opacity: .45; transform: none; cursor: not-allowed; box-shadow: none; }
+.bil-btn-outline {
+  background: #fff; color: #4a5070;
+  border: 1.5px solid rgba(22,27,51,.15); border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
+  padding: .45rem 1rem; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: border-color .15s, color .15s;
+}
+.bil-btn-outline:hover { border-color: rgba(22,27,51,.3); color: #161b33; }
+
+/* Accordion panels */
+.bil-panel {
+  background: #f7f8fb; border-radius: 10px;
+  border: 1.5px solid rgba(22,27,51,.09);
+  box-shadow: 0 2px 10px rgba(22,27,51,.05);
+  overflow: hidden; margin-bottom: .85rem;
+}
+.bil-panel-header {
+  display: flex; align-items: center; gap: .75rem;
+  padding: .9rem 1.25rem; cursor: pointer;
+  user-select: none; border: none; width: 100%; background: transparent;
+  text-align: left;
+}
+.bil-panel-header:hover { background: rgba(22,27,51,.02); }
+.bil-panel-icon {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: .85rem;
+}
+.bil-panel-icon--teal   { background: var(--bil-accent-dim); color: #008e77; }
+.bil-panel-icon--warn   { background: rgba(255,193,7,.12);   color: #856404; }
+.bil-panel-icon--blue   { background: rgba(22,27,51,.07);    color: #616788; }
+.bil-panel-icon--green  { background: rgba(25,135,84,.08);   color: #146c43; }
+.bil-panel-title {
+  font-family: 'Lato', sans-serif; font-weight: 700; font-size: .95rem; color: #161b33;
+}
+.bil-panel-count {
+  font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .06em;
+  background: rgba(22,27,51,.06); color: #616788;
+  padding: .2em .6em; border-radius: 20px; margin-left: auto;
+}
+.bil-panel-chevron {
+  font-size: .7rem; color: #979bb2;
+  transition: transform .2s ease;
+}
+.bil-panel-header[aria-expanded="true"] .bil-panel-chevron { transform: rotate(180deg); }
+.bil-panel-body { border-top: 1px solid rgba(22,27,51,.055); }
+
+/* Tables inside panels */
+.bil-inner-table { width: 100%; margin: 0; }
+.bil-inner-table thead th {
+  font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: .09em;
+  text-transform: uppercase; color: #6e7290;
+  font-weight: 500; padding: .65rem 1rem; background: rgba(22,27,51,.035);
+  border-bottom: 1px solid rgba(22,27,51,.07); white-space: nowrap;
+}
+.bil-inner-table tbody tr td {
+  font-family: 'Lato', sans-serif; font-size: .82rem;
+  color: #3d4360; padding: .65rem 1rem;
+  border-bottom: 1px solid rgba(22,27,51,.05);
+  vertical-align: middle;
+}
+.bil-inner-table tbody tr:last-child td { border-bottom: none; }
+.bil-inner-table tbody tr:hover td { background: rgba(0,201,167,.035); }
+.bil-inner-table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--bil-accent); }
+
+/* Collection name cell */
+.bil-col-name { font-weight: 700; color: #161b33; }
+.bil-col-uuid { font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .04em; color: #8e92aa; }
+
+/* Status badges */
+.bil-badge {
+  font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: .06em;
+  font-weight: 500; padding: .28em .65em; border-radius: 4px; border: 1px solid;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.bil-badge--neutral { background: rgba(22,27,51,.06); color: #616788;  border-color: rgba(22,27,51,.1); }
+.bil-badge--warn    { background: rgba(255,193,7,.1);  color: #856404;  border-color: rgba(255,193,7,.3); }
+.bil-badge--ok      { background: rgba(25,135,84,.08); color: #146c43;  border-color: rgba(25,135,84,.25); }
+.bil-badge--fail    { background: rgba(220,53,69,.08); color: #842029;  border-color: rgba(220,53,69,.2); }
+
+/* Checkbox */
+.bil-check { width: 15px; height: 15px; cursor: pointer; accent-color: #161b33; }
+
+/* Submit action bar */
+.bil-action-bar {
+  padding: .85rem 1rem; border-top: 1px solid rgba(22,27,51,.06);
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+}
+
+/* Empty state */
+.bil-empty-row td {
+  text-align: center; padding: 2.5rem 1rem !important;
+  color: #8e92aa !important; font-family: 'Lato', sans-serif !important;
+  font-size: .82rem !important;
+}
+
+/* Loading modal */
+.bil-modal-content {
+  background: #fff; border-radius: 12px;
+  border: 1.5px solid rgba(22,27,51,.08);
+  box-shadow: 0 20px 60px rgba(22,27,51,.15);
+  padding: 2.5rem; text-align: center;
+}
+.bil-modal-content h5 { font-family: 'Lato', sans-serif; font-weight: 700; color: #161b33; }
+.bil-modal-content p  { font-family: 'Lato', sans-serif; color: #616788; font-size: .85rem; margin: 0; }
+.bil-spinner {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 3px solid rgba(0,201,167,.2);
+  border-top-color: var(--bil-accent);
+  animation: bil-spin .8s linear infinite;
+  margin: 0 auto 1.5rem;
+}
+@keyframes bil-spin { to { transform: rotate(360deg); } }
+
+/* Fade-in */
+.bil-fadein { opacity: 0; transform: translateY(10px); animation: bil-fade .4s ease forwards; }
+@keyframes bil-fade { to { opacity: 1; transform: translateY(0); } }
+.bil-fadein:nth-child(1) { animation-delay: .04s; }
+.bil-fadein:nth-child(2) { animation-delay: .10s; }
+.bil-fadein:nth-child(3) { animation-delay: .16s; }
+.bil-fadein:nth-child(4) { animation-delay: .16s; }
+</style>
+{% endblock %}
+
 {% block wide %}
 <script src="{% static 'ingest/sendemail.js' %}"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
 
-{# ── Page header ── #}
-<div class="d-flex align-items-start justify-content-between mb-4">
-  <div>
-    <h1 class="mb-1">Request Publication</h1>
-    <p class="text-muted mb-0">Select eligible submissions to request validation and publication.</p>
-  </div>
-  <div class="d-flex gap-2 mt-1">
-    {% if pi %}
-    <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary">
-      <i class="fa-solid fa-arrow-left fa-sm me-1"></i>PI Dashboard
-    </a>
-    {% endif %}
-    <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary">
-      <i class="fa-solid fa-house fa-sm me-1"></i>Dashboard
-    </a>
-  </div>
-</div>
-
 {# ── Loading modal ── #}
 <div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered" role="document">
-    <div class="modal-content text-center p-4">
-      <div class="spinner-border text-primary mb-3 mx-auto" role="status" style="width:3rem;height:3rem;">
-        <span class="visually-hidden">Processing...</span>
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 bg-transparent shadow-none">
+      <div class="bil-modal-content">
+        <div class="bil-spinner"></div>
+        <h5>Processing</h5>
+        <p>Your submissions are being queued for validation.</p>
       </div>
-      <h5>Please wait</h5>
-      <p class="mb-0 text-muted">Your submissions are being processed. This may take a few moments...</p>
     </div>
   </div>
 </div>
 
-{# ── Accordion ── #}
-<div class="accordion" id="publicationAccordion">
+{# ── Page header ── #}
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+  <div class="bil-list-header">
+    <h4><i class="fa-solid fa-paper-plane me-2" style="color:var(--bil-accent);font-size:1.1rem;"></i>Publish Request</h4>
+    <span class="bil-count">Select eligible submissions to request validation and publication</span>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if pi %}
+    <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+      <i class="fa-solid fa-arrow-left fa-xs"></i>PI Dashboard
+    </a>
+    {% endif %}
+    <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+      <i class="fa-solid fa-house fa-xs"></i>Dashboard
+    </a>
+  </div>
+</div>
 
-  {# ── 1. Eligible for Validation ── #}
-  <div class="accordion-item shadow-sm mb-3 border-0" style="border-radius:8px; overflow:hidden;">
-    <h2 class="accordion-header" id="headingEligible">
-      <button class="accordion-button fw-semibold" type="button"
-              data-bs-toggle="collapse" data-bs-target="#collapseEligible"
-              aria-expanded="true" aria-controls="collapseEligible"
-              style="background-color:#161b33; color:#fff;">
-        <i class="fa-solid fa-circle-check me-2"></i>
-        Eligible for Validation
-        <span class="badge text-bg-light text-dark ms-2">{{ eligible_collections|length }}</span>
-      </button>
-    </h2>
-    <div id="collapseEligible" class="accordion-collapse collapse show"
-         aria-labelledby="headingEligible" data-bs-parent="#publicationAccordion">
-      <div class="accordion-body p-0">
-        <form id="rowform">
-          {% csrf_token %}
-          <div class="table-responsive">
-            <table id="EligibleTable" class="table table-sm table-hover align-middle mb-0">
-              <thead style="background-color:#1e2540; color:#fff;">
-                <tr>
-                  <th style="width:40px;"></th>
-                  <th>Name</th>
-                  <th>Description</th>
-                  <th>Submission</th>
-                  <th>Validation</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for c in eligible_collections %}
-                <tr>
-                  <td class="ps-3">
-                    <input type="checkbox" class="form-check-input collection-checkbox" value="{{ c.bil_uuid }}">
-                  </td>
-                  <td>
-                    <span class="fw-semibold">{{ c.name }}</span>
-                    <br><small class="text-muted font-monospace">{{ c.bil_uuid }}</small>
-                  </td>
-                  <td><small class="text-muted">{{ c.description|truncatechars:60 }}</small></td>
-                  <td>
-                    {% if c.submission_status == 'SUCCESS' %}
-                      <span class="badge text-bg-success"><i class="fa-solid fa-check fa-xs me-1"></i>Success</span>
-                    {% elif c.submission_status == 'FAILED' %}
-                      <span class="badge text-bg-danger"><i class="fa-solid fa-circle-exclamation fa-xs me-1"></i>Failed</span>
-                    {% elif c.submission_status == 'PENDING' %}
-                      <span class="badge text-bg-warning"><i class="fa-solid fa-clock fa-xs me-1"></i>Pending</span>
-                    {% else %}
-                      <span class="badge text-bg-secondary"><i class="fa-solid fa-minus fa-xs me-1"></i>Not Submitted</span>
-                    {% endif %}
-                  </td>
-                  <td>
-                    {% if c.validation_status == 'SUCCESS' %}
-                      <span class="badge text-bg-success"><i class="fa-solid fa-check fa-xs me-1"></i>Valid</span>
-                    {% elif c.validation_status == 'FAILED' %}
-                      <span class="badge text-bg-danger"><i class="fa-solid fa-circle-exclamation fa-xs me-1"></i>Failed</span>
-                    {% elif c.validation_status == 'PENDING' %}
-                      <span class="badge text-bg-warning"><i class="fa-solid fa-clock fa-xs me-1"></i>Pending</span>
-                    {% else %}
-                      <span class="badge text-bg-secondary"><i class="fa-solid fa-minus fa-xs me-1"></i>Not Validated</span>
-                    {% endif %}
-                  </td>
-                </tr>
-                {% empty %}
-                <tr>
-                  <td colspan="5" class="text-center text-muted py-4">
-                    <i class="fa-solid fa-circle-check fa-2x mb-2 d-block opacity-25"></i>
-                    No eligible submissions.
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </form>
-
-        <div class="p-3 border-top d-flex align-items-start gap-3 flex-wrap">
-          <button id="submitBtn" type="button" class="btn btn-primary" onclick="collection_send();" disabled>
-            <i class="fa-solid fa-paper-plane me-1"></i>Submit Validation Request
-          </button>
-          <div id="curationResults" class="flex-grow-1"></div>
-        </div>
-
+{# ── 1. Eligible for Validation ── #}
+<div class="bil-panel bil-fadein">
+  <button class="bil-panel-header" type="button"
+          data-bs-toggle="collapse" data-bs-target="#collapseEligible"
+          aria-expanded="true" aria-controls="collapseEligible">
+    <span class="bil-panel-icon bil-panel-icon--teal"><i class="fa-solid fa-circle-check"></i></span>
+    <span class="bil-panel-title">Eligible for Validation</span>
+    <span class="bil-panel-count">{{ eligible_collections|length }}</span>
+    <i class="fa-solid fa-chevron-down bil-panel-chevron"></i>
+  </button>
+  <div id="collapseEligible" class="collapse show bil-panel-body">
+    <form id="rowform">
+      {% csrf_token %}
+      <div class="table-responsive">
+        <table id="EligibleTable" class="bil-inner-table">
+          <thead>
+            <tr>
+              <th style="width:40px;"></th>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Submission</th>
+              <th>Validation</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in eligible_collections %}
+            <tr>
+              <td class="ps-3 text-center">
+                <input type="checkbox" class="bil-check collection-checkbox" value="{{ c.bil_uuid }}">
+              </td>
+              <td>
+                <div class="bil-col-name">{{ c.name }}</div>
+                <div class="bil-col-uuid">{{ c.bil_uuid }}</div>
+              </td>
+              <td>{{ c.description|truncatechars:60 }}</td>
+              <td>
+                {% if c.submission_status == 'SUCCESS' %}
+                  <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Success</span>
+                {% elif c.submission_status == 'FAILED' %}
+                  <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+                {% elif c.submission_status == 'PENDING' %}
+                  <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+                {% else %}
+                  <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>Not Submitted</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if c.validation_status == 'SUCCESS' %}
+                  <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Valid</span>
+                {% elif c.validation_status == 'FAILED' %}
+                  <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+                {% elif c.validation_status == 'PENDING' %}
+                  <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+                {% else %}
+                  <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>Not Validated</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr class="bil-empty-row"><td colspan="5"><i class="fa-solid fa-circle-check fa-lg d-block mb-2 mx-auto" style="color:rgba(0,201,167,.3);"></i>No eligible submissions</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
+    </form>
+    <div class="bil-action-bar">
+      <button id="submitBtn" type="button" class="bil-btn-dark" onclick="collection_send();" disabled>
+        <i class="fa-solid fa-paper-plane fa-xs"></i>Submit Validation Request
+      </button>
+      <div id="curationResults" class="flex-grow-1"></div>
     </div>
   </div>
+</div>
 
-  {# ── 2. Need Metadata ── #}
-  <div class="accordion-item shadow-sm mb-3 border-0" style="border-radius:8px; overflow:hidden;">
-    <h2 class="accordion-header" id="headingNeedsMetadata">
-      <button class="accordion-button collapsed fw-semibold" type="button"
-              data-bs-toggle="collapse" data-bs-target="#collapseNeedsMetadata"
-              aria-expanded="false" aria-controls="collapseNeedsMetadata"
-              style="background-color:#f8f9fa; color:#161b33;">
-        <i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>
-        Need Metadata
-        <span class="badge text-bg-warning ms-2">{{ needs_metadata_collections|length }}</span>
-        <span class="ms-2 fw-normal small text-muted"
-              data-bs-toggle="tooltip"
-              title="Submissions need metadata before they can be validated. Upload a spreadsheet to provide metadata.">
-          <i class="fa-solid fa-circle-info"></i>
-        </span>
-      </button>
-    </h2>
-    <div id="collapseNeedsMetadata" class="accordion-collapse collapse"
-         aria-labelledby="headingNeedsMetadata" data-bs-parent="#publicationAccordion">
-      <div class="accordion-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead style="background-color:#161b33; color:#fff;">
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Submission</th>
-                <th>Validation</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for c in needs_metadata_collections %}
-              <tr class="text-muted">
-                <td>
-                  <span class="fw-semibold">{{ c.name }}</span>
-                  <br><small class="font-monospace">{{ c.bil_uuid }}</small>
-                </td>
-                <td><small>{{ c.description|truncatechars:60 }}</small></td>
-                <td>
-                  {% if c.submission_status == 'SUCCESS' %}
-                    <span class="badge text-bg-success"><i class="fa-solid fa-check fa-xs me-1"></i>Success</span>
-                  {% elif c.submission_status == 'FAILED' %}
-                    <span class="badge text-bg-danger"><i class="fa-solid fa-circle-exclamation fa-xs me-1"></i>Failed</span>
-                  {% elif c.submission_status == 'PENDING' %}
-                    <span class="badge text-bg-warning"><i class="fa-solid fa-clock fa-xs me-1"></i>Pending</span>
-                  {% else %}
-                    <span class="badge text-bg-secondary"><i class="fa-solid fa-minus fa-xs me-1"></i>Not Submitted</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if c.validation_status == 'SUCCESS' %}
-                    <span class="badge text-bg-success"><i class="fa-solid fa-check fa-xs me-1"></i>Valid</span>
-                  {% elif c.validation_status == 'FAILED' %}
-                    <span class="badge text-bg-danger"><i class="fa-solid fa-circle-exclamation fa-xs me-1"></i>Failed</span>
-                  {% elif c.validation_status == 'PENDING' %}
-                    <span class="badge text-bg-warning"><i class="fa-solid fa-clock fa-xs me-1"></i>Pending</span>
-                  {% else %}
-                    <span class="badge text-bg-secondary"><i class="fa-solid fa-minus fa-xs me-1"></i>Not Validated</span>
-                  {% endif %}
-                </td>
-                <td class="text-end pe-3">
-                  <a href="{% url 'ingest:descriptive_metadata_upload' c.id %}" class="btn btn-sm btn-warning">
-                    <i class="fa-solid fa-upload fa-xs me-1"></i>Add Metadata
-                  </a>
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="5" class="text-center text-muted py-4">
-                  <i class="fa-solid fa-circle-check fa-2x mb-2 d-block opacity-25"></i>
-                  All set — no submissions missing metadata.
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
+{# ── 2. Need Metadata ── #}
+<div class="bil-panel bil-fadein">
+  <button class="bil-panel-header" type="button"
+          data-bs-toggle="collapse" data-bs-target="#collapseNeedsMetadata"
+          aria-expanded="false" aria-controls="collapseNeedsMetadata">
+    <span class="bil-panel-icon bil-panel-icon--warn"><i class="fa-solid fa-triangle-exclamation"></i></span>
+    <span class="bil-panel-title">Need Metadata</span>
+    <span class="bil-panel-count">{{ needs_metadata_collections|length }}</span>
+    <i class="fa-solid fa-chevron-down bil-panel-chevron" style="transform:rotate(0deg);"></i>
+  </button>
+  <div id="collapseNeedsMetadata" class="collapse bil-panel-body">
+    <div class="table-responsive">
+      <table class="bil-inner-table">
+        <thead>
+          <tr><th>Name</th><th>Description</th><th>Submission</th><th>Validation</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for c in needs_metadata_collections %}
+          <tr>
+            <td>
+              <div class="bil-col-name">{{ c.name }}</div>
+              <div class="bil-col-uuid">{{ c.bil_uuid }}</div>
+            </td>
+            <td>{{ c.description|truncatechars:60 }}</td>
+            <td>
+              {% if c.submission_status == 'SUCCESS' %}
+                <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Success</span>
+              {% elif c.submission_status == 'FAILED' %}
+                <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+              {% elif c.submission_status == 'PENDING' %}
+                <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+              {% else %}
+                <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>Not Submitted</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if c.validation_status == 'SUCCESS' %}
+                <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Valid</span>
+              {% elif c.validation_status == 'FAILED' %}
+                <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+              {% elif c.validation_status == 'PENDING' %}
+                <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+              {% else %}
+                <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>Not Validated</span>
+              {% endif %}
+            </td>
+            <td class="text-end pe-3">
+              <a href="{% url 'ingest:descriptive_metadata_upload' c.id %}" class="bil-btn-outline" style="font-size:.75rem;padding:.3rem .75rem;">
+                <i class="fa-solid fa-upload fa-xs"></i>Add Metadata
+              </a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="bil-empty-row"><td colspan="5"><i class="fa-solid fa-circle-check fa-lg d-block mb-2 mx-auto" style="color:rgba(0,201,167,.3);"></i>All submissions have metadata</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
+</div>
 
-  {# ── 3. Validation In Progress ── #}
-  <div class="accordion-item shadow-sm mb-3 border-0" style="border-radius:8px; overflow:hidden;">
-    <h2 class="accordion-header" id="headingInProgress">
-      <button class="accordion-button collapsed fw-semibold" type="button"
-              data-bs-toggle="collapse" data-bs-target="#collapseInProgress"
-              aria-expanded="false" aria-controls="collapseInProgress"
-              style="background-color:#f8f9fa; color:#161b33;">
-        <i class="fa-solid fa-clock me-2 text-warning"></i>
-        Validation In Progress
-        <span class="badge text-bg-secondary ms-2">{{ already_requested_collections|length }}</span>
-      </button>
-    </h2>
-    <div id="collapseInProgress" class="accordion-collapse collapse"
-         aria-labelledby="headingInProgress" data-bs-parent="#publicationAccordion">
-      <div class="accordion-body p-0">
-        <div class="table-responsive">
-          <table id="AlreadyRequestedTable" class="table table-sm table-hover align-middle mb-0">
-            <thead style="background-color:#161b33; color:#fff;">
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Submission</th>
-                <th>Validation</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for c in already_requested_collections %}
-              <tr>
-                <td>
-                  <span class="fw-semibold">{{ c.name }}</span>
-                  <br><small class="text-muted font-monospace">{{ c.bil_uuid }}</small>
-                </td>
-                <td><small class="text-muted">{{ c.description|truncatechars:60 }}</small></td>
-                <td>
-                  {% if c.submission_status == 'SUCCESS' %}
-                    <span class="badge text-bg-success"><i class="fa-solid fa-check fa-xs me-1"></i>Success</span>
-                  {% elif c.submission_status == 'FAILED' %}
-                    <span class="badge text-bg-danger"><i class="fa-solid fa-circle-exclamation fa-xs me-1"></i>Failed</span>
-                  {% elif c.submission_status == 'PENDING' %}
-                    <span class="badge text-bg-warning"><i class="fa-solid fa-clock fa-xs me-1"></i>Pending</span>
-                  {% else %}
-                    <span class="badge text-bg-secondary"><i class="fa-solid fa-minus fa-xs me-1"></i>Not Submitted</span>
-                  {% endif %}
-                </td>
-                <td>
-                  {% if c.validation_status == 'SUCCESS' %}
-                    <span class="badge text-bg-success"><i class="fa-solid fa-check fa-xs me-1"></i>Valid</span>
-                  {% elif c.validation_status == 'FAILED' %}
-                    <span class="badge text-bg-danger"><i class="fa-solid fa-circle-exclamation fa-xs me-1"></i>Failed</span>
-                  {% elif c.validation_status == 'PENDING' %}
-                    <span class="badge text-bg-warning"><i class="fa-solid fa-clock fa-xs me-1"></i>Pending</span>
-                  {% else %}
-                    <span class="badge text-bg-secondary"><i class="fa-solid fa-minus fa-xs me-1"></i>Not Validated</span>
-                  {% endif %}
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="4" class="text-center text-muted py-4">
-                  <i class="fa-solid fa-clock fa-2x mb-2 d-block opacity-25"></i>
-                  No pending validation requests.
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
+{# ── 3. Validation In Progress ── #}
+<div class="bil-panel bil-fadein">
+  <button class="bil-panel-header" type="button"
+          data-bs-toggle="collapse" data-bs-target="#collapseInProgress"
+          aria-expanded="false" aria-controls="collapseInProgress">
+    <span class="bil-panel-icon bil-panel-icon--blue"><i class="fa-solid fa-clock"></i></span>
+    <span class="bil-panel-title">Validation In Progress</span>
+    <span class="bil-panel-count">{{ already_requested_collections|length }}</span>
+    <i class="fa-solid fa-chevron-down bil-panel-chevron" style="transform:rotate(0deg);"></i>
+  </button>
+  <div id="collapseInProgress" class="collapse bil-panel-body">
+    <div class="table-responsive">
+      <table id="AlreadyRequestedTable" class="bil-inner-table">
+        <thead>
+          <tr><th>Name</th><th>Description</th><th>Submission</th><th>Validation</th></tr>
+        </thead>
+        <tbody>
+          {% for c in already_requested_collections %}
+          <tr>
+            <td>
+              <div class="bil-col-name">{{ c.name }}</div>
+              <div class="bil-col-uuid">{{ c.bil_uuid }}</div>
+            </td>
+            <td>{{ c.description|truncatechars:60 }}</td>
+            <td>
+              {% if c.submission_status == 'SUCCESS' %}
+                <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Success</span>
+              {% elif c.submission_status == 'FAILED' %}
+                <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+              {% elif c.submission_status == 'PENDING' %}
+                <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+              {% else %}
+                <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>Not Submitted</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if c.validation_status == 'SUCCESS' %}
+                <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Valid</span>
+              {% elif c.validation_status == 'FAILED' %}
+                <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+              {% elif c.validation_status == 'PENDING' %}
+                <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+              {% else %}
+                <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>Not Validated</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="bil-empty-row"><td colspan="4"><i class="fa-solid fa-clock fa-lg d-block mb-2 mx-auto" style="color:rgba(22,27,51,.15);"></i>No pending validation requests</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
+</div>
 
-  {# ── 4. Completed ── #}
-  <div class="accordion-item shadow-sm mb-3 border-0" style="border-radius:8px; overflow:hidden;">
-    <h2 class="accordion-header" id="headingCompleted">
-      <button class="accordion-button collapsed fw-semibold" type="button"
-              data-bs-toggle="collapse" data-bs-target="#collapseCompleted"
-              aria-expanded="false" aria-controls="collapseCompleted"
-              style="background-color:#f8f9fa; color:#161b33;">
-        <i class="fa-solid fa-globe me-2 text-success"></i>
-        Completed — Validated &amp; Published
-        <span class="badge text-bg-success ms-2">{{ completed_collections|length }}</span>
-      </button>
-    </h2>
-    <div id="collapseCompleted" class="accordion-collapse collapse"
-         aria-labelledby="headingCompleted" data-bs-parent="#publicationAccordion">
-      <div class="accordion-body p-0">
-        <div class="table-responsive">
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead style="background-color:#161b33; color:#fff;">
-              <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Submission</th>
-                <th>Validation</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for c in completed_collections %}
-              <tr>
-                <td>
-                  <span class="fw-semibold">{{ c.name }}</span>
-                  <br><small class="text-muted font-monospace">{{ c.bil_uuid }}</small>
-                </td>
-                <td><small class="text-muted">{{ c.description|truncatechars:60 }}</small></td>
-                <td><span class="badge text-bg-success"><i class="fa-solid fa-check fa-xs me-1"></i>Success</span></td>
-                <td><span class="badge text-bg-success"><i class="fa-solid fa-check fa-xs me-1"></i>Valid</span></td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="4" class="text-center text-muted py-4">
-                  <i class="fa-solid fa-globe fa-2x mb-2 d-block opacity-25"></i>
-                  No completed submissions yet.
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
+{# ── 4. Completed ── #}
+<div class="bil-panel bil-fadein">
+  <button class="bil-panel-header" type="button"
+          data-bs-toggle="collapse" data-bs-target="#collapseCompleted"
+          aria-expanded="false" aria-controls="collapseCompleted">
+    <span class="bil-panel-icon bil-panel-icon--green"><i class="fa-solid fa-globe"></i></span>
+    <span class="bil-panel-title">Validated &amp; Published</span>
+    <span class="bil-panel-count">{{ completed_collections|length }}</span>
+    <i class="fa-solid fa-chevron-down bil-panel-chevron" style="transform:rotate(0deg);"></i>
+  </button>
+  <div id="collapseCompleted" class="collapse bil-panel-body">
+    <div class="table-responsive">
+      <table class="bil-inner-table">
+        <thead>
+          <tr><th>Name</th><th>Description</th><th>Submission</th><th>Validation</th></tr>
+        </thead>
+        <tbody>
+          {% for c in completed_collections %}
+          <tr>
+            <td>
+              <div class="bil-col-name">{{ c.name }}</div>
+              <div class="bil-col-uuid">{{ c.bil_uuid }}</div>
+            </td>
+            <td>{{ c.description|truncatechars:60 }}</td>
+            <td><span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Success</span></td>
+            <td><span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Valid</span></td>
+          </tr>
+          {% empty %}
+          <tr class="bil-empty-row"><td colspan="4"><i class="fa-solid fa-globe fa-lg d-block mb-2 mx-auto" style="color:rgba(25,135,84,.25);"></i>No completed submissions yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
+</div>
 
-</div>{# /accordion #}
-
+{% block extra_scripts %}
 <script>
   let loadingModal;
   let modalFullyShown = false;
 
   document.addEventListener('DOMContentLoaded', () => {
     const modalEl = document.getElementById('loadingModal');
-    loadingModal = new bootstrap.Modal(modalEl, {
-      backdrop: 'static',
-      keyboard: false
-    });
-    // Track when the modal is fully open/closed to avoid the hide() race condition
+    loadingModal = new bootstrap.Modal(modalEl, { backdrop: 'static', keyboard: false });
     modalEl.addEventListener('shown.bs.modal',  () => { modalFullyShown = true; });
     modalEl.addEventListener('hidden.bs.modal', () => { modalFullyShown = false; });
     bindCheckboxes();
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => new bootstrap.Tooltip(el));
+
+    // Sync chevron state on collapse events
+    document.querySelectorAll('.bil-panel-header').forEach(function(btn) {
+      var target = document.querySelector(btn.getAttribute('data-bs-target'));
+      var chevron = btn.querySelector('.bil-panel-chevron');
+      if (target && chevron) {
+        target.addEventListener('show.bs.collapse',  function() { btn.setAttribute('aria-expanded','true'); });
+        target.addEventListener('hide.bs.collapse',  function() { btn.setAttribute('aria-expanded','false'); });
+      }
+    });
   });
 
   function hideLoadingModal() {
     if (modalFullyShown) {
       loadingModal.hide();
     } else {
-      // Response arrived before the show animation finished — wait for it then hide
       document.getElementById('loadingModal')
         .addEventListener('shown.bs.modal', () => loadingModal.hide(), { once: true });
     }
@@ -371,12 +469,8 @@
   function collection_send() {
     const checked = Array.from(document.querySelectorAll('.collection-checkbox:checked'))
       .map(cb => ({ bil_uuid: cb.value }));
-
     if (!checked.length) return;
-
-    const curationDiv = document.getElementById('curationResults');
-    curationDiv.innerHTML = '';
-
+    document.getElementById('curationResults').innerHTML = '';
     loadingModal.show();
 
     fetch("{% url 'ingest:collection_send' %}", {
@@ -391,60 +485,46 @@
       .then(data => {
         hideLoadingModal();
         let html = '';
-
         if (data.sent && data.sent.length > 0) {
-          html += `
-            <div class="alert alert-success shadow-sm" role="alert">
-              <h5><i class="fa-solid fa-circle-check me-1"></i>Submitted for Validation</h5>
-              <p>The following submissions were successfully sent for validation:</p>
-              <ul>${data.sent.map(u => `<li><strong>${u}</strong></li>`).join('')}</ul>
-            </div>`;
+          html += `<div class="alert alert-success" role="alert">
+            <strong><i class="fa-solid fa-circle-check me-1"></i>Submitted for Validation</strong>
+            <ul class="mb-0 mt-2">${data.sent.map(u => `<li><code>${u}</code></li>`).join('')}</ul>
+          </div>`;
         }
-
         if (data.curation_issues && Object.keys(data.curation_issues).length > 0) {
-          html += `<div class="mb-3">
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <i class="fa-solid fa-triangle-exclamation text-danger"></i>
-              <span class="fw-semibold text-danger">Curation Issues Detected</span>
-            </div>`;
+          html += `<div class="mb-3">`;
           for (const [uuid, info] of Object.entries(data.curation_issues)) {
-            html += `
-              <div class="card border-danger mb-2">
-                <div class="card-header bg-danger-subtle text-danger-emphasis d-flex align-items-center gap-2 py-2">
-                  <i class="fa-solid fa-circle-exclamation fa-sm"></i>
-                  <code class="fw-semibold">${uuid}</code>
-                  ${info.title ? `<span class="ms-auto badge text-bg-danger">${info.title}</span>` : ''}
-                </div>
-                <div class="card-body py-2 px-3 small">
-                  ${info.message ? `<p class="mb-1">${info.message}</p>` : ''}
-                  ${info.details ? `<p class="mb-1 text-muted"><i class="fa-solid fa-circle-info fa-xs me-1"></i>${info.details}</p>` : ''}
-                  ${info.missing?.length ? `<p class="mb-1"><span class="text-danger fw-semibold">Missing:</span> ${info.missing.join(', ')}</p>` : ''}
-                  ${info.extra?.length   ? `<p class="mb-1"><span class="text-warning fw-semibold">Extra:</span> ${info.extra.join(', ')}</p>` : ''}
-                  ${info.suggestion ? `<p class="mb-0 text-success"><i class="fa-solid fa-lightbulb fa-xs me-1"></i><strong>Suggested Fix:</strong> ${info.suggestion}</p>` : ''}
-                </div>
-              </div>`;
+            html += `<div class="card border-danger mb-2">
+              <div class="card-header bg-danger-subtle text-danger-emphasis d-flex align-items-center gap-2 py-2">
+                <i class="fa-solid fa-circle-exclamation fa-sm"></i>
+                <code class="fw-semibold">${uuid}</code>
+                ${info.title ? `<span class="ms-auto badge text-bg-danger">${info.title}</span>` : ''}
+              </div>
+              <div class="card-body py-2 px-3 small">
+                ${info.message  ? `<p class="mb-1">${info.message}</p>` : ''}
+                ${info.details  ? `<p class="mb-1 text-muted">${info.details}</p>` : ''}
+                ${info.missing?.length ? `<p class="mb-1"><span class="text-danger fw-semibold">Missing:</span> ${info.missing.join(', ')}</p>` : ''}
+                ${info.extra?.length   ? `<p class="mb-1"><span class="text-warning fw-semibold">Extra:</span> ${info.extra.join(', ')}</p>` : ''}
+                ${info.suggestion ? `<p class="mb-0 text-success"><strong>Suggested Fix:</strong> ${info.suggestion}</p>` : ''}
+              </div>
+            </div>`;
           }
           html += `</div>`;
         }
-
         for (const [key, arr] of Object.entries(data.skipped || {})) {
           if (arr.length > 0) {
-            html += `
-              <div class="card border-warning mb-2">
-                <div class="card-header bg-warning-subtle text-warning-emphasis d-flex align-items-center gap-2 py-2">
-                  <i class="fa-solid fa-forward fa-sm"></i>
-                  <span class="fw-semibold">Skipped — ${key.replace(/_/g, ' ')}</span>
-                </div>
-                <ul class="list-group list-group-flush">
-                  ${arr.map(s => `<li class="list-group-item py-1 small"><code>${s.uuid}</code> — ${s.reason}</li>`).join('')}
-                </ul>
-              </div>`;
+            html += `<div class="card border-warning mb-2">
+              <div class="card-header bg-warning-subtle text-warning-emphasis py-2">
+                <i class="fa-solid fa-forward fa-sm me-1"></i>Skipped — ${key.replace(/_/g, ' ')}
+              </div>
+              <ul class="list-group list-group-flush">
+                ${arr.map(s => `<li class="list-group-item py-1 small"><code>${s.uuid}</code> — ${s.reason}</li>`).join('')}
+              </ul>
+            </div>`;
           }
         }
-
         if (!html) html = `<div class="alert alert-info">No submissions were processed.</div>`;
-        curationDiv.innerHTML = html;
-
+        document.getElementById('curationResults').innerHTML = html;
         if (data.sent && data.sent.length > 0) {
           refreshTables().then(() => {
             if (
@@ -452,9 +532,7 @@
               (!data.curation_issues || Object.keys(data.curation_issues).length === 0) &&
               Object.values(data.skipped || {}).every(arr => arr.length === 0)
             ) {
-              setTimeout(() => {
-                window.location.href = "{% url 'ingest:index' %}";
-              }, 2500);
+              setTimeout(() => { window.location.href = "{% url 'ingest:index' %}"; }, 2500);
             }
           });
         }
@@ -475,12 +553,10 @@
       const html = await response.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, "text/html");
-
-      const eligibleTable = doc.querySelector("#EligibleTable");
+      const eligibleTable  = doc.querySelector("#EligibleTable");
       const requestedTable = doc.querySelector("#AlreadyRequestedTable");
-
       if (eligibleTable && requestedTable) {
-        document.querySelector("#EligibleTable").outerHTML = eligibleTable.outerHTML;
+        document.querySelector("#EligibleTable").outerHTML  = eligibleTable.outerHTML;
         document.querySelector("#AlreadyRequestedTable").outerHTML = requestedTable.outerHTML;
         bindCheckboxes();
       }
@@ -489,5 +565,6 @@
     }
   }
 </script>
+{% endblock %}
 
 {% endblock %}

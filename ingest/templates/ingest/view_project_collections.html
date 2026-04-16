@@ -1,107 +1,190 @@
 {% extends 'ingest/wide.html' %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+<style>
+:root { --bil-accent: #00c9a7; --bil-accent-dim: rgba(0,201,167,.1); }
+
+.bil-list-header h4 {
+  font-family: 'Lato', sans-serif; font-weight: 800;
+  font-size: clamp(1.3rem,3vw,1.75rem); color: #161b33;
+  letter-spacing: -.03em; margin-bottom: .2rem;
+}
+.bil-list-header .bil-sub {
+  font-family: 'DM Mono', monospace; font-size: .7rem;
+  letter-spacing: .06em; color: #8589a8;
+}
+.bil-btn-outline {
+  background: #fff; color: #4a5070;
+  border: 1.5px solid rgba(22,27,51,.15); border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
+  padding: .45rem 1rem; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: border-color .15s, color .15s;
+}
+.bil-btn-outline:hover { border-color: rgba(22,27,51,.3); color: #161b33; }
+
+.bil-table-card {
+  background: #f7f8fb; border-radius: 10px;
+  border: 1.5px solid rgba(22,27,51,.09);
+  box-shadow: 0 2px 10px rgba(22,27,51,.05);
+  overflow: hidden;
+}
+.bil-data-table { width: 100%; margin: 0; border-collapse: separate; border-spacing: 0; }
+.bil-data-table thead th {
+  font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.7); font-weight: 500;
+  white-space: nowrap; padding: .75rem .9rem; background: #161b33;
+  border-bottom: none;
+}
+.bil-data-table thead th a { color: rgba(255,255,255,.7) !important; text-decoration: none; }
+.bil-data-table thead th a:hover { color: #fff !important; }
+.bil-data-table tbody td {
+  font-family: 'Lato', sans-serif; font-size: .82rem; color: #3d4360;
+  padding: .7rem .9rem; border-bottom: 1px solid rgba(22,27,51,.055);
+  vertical-align: middle; transition: background .12s;
+}
+.bil-data-table tbody tr:last-child td { border-bottom: none; }
+.bil-data-table tbody tr:hover td { background: rgba(0,201,167,.04); }
+.bil-data-table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--bil-accent); }
+
+.bil-col-name { font-weight: 700; color: #161b33; }
+.bil-col-sub  { font-size: .75rem; color: #6e7290; margin-top: 1px; }
+.bil-code { font-family: 'DM Mono', monospace; font-size: .68rem; color: #6e7290; }
+
+.bil-badge {
+  font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: .06em;
+  font-weight: 500; padding: .28em .65em; border-radius: 4px; border: 1px solid;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.bil-badge--neutral { background: rgba(22,27,51,.06); color: #616788;  border-color: rgba(22,27,51,.1); }
+.bil-badge--warn    { background: rgba(255,193,7,.1);  color: #856404;  border-color: rgba(255,193,7,.3); }
+.bil-badge--ok      { background: rgba(25,135,84,.08); color: #146c43;  border-color: rgba(25,135,84,.25); }
+.bil-badge--fail    { background: rgba(220,53,69,.08); color: #842029;  border-color: rgba(220,53,69,.2); }
+
+.bil-icon-btn {
+  width: 30px; height: 30px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1.5px solid rgba(22,27,51,.15); color: #616788;
+  background: transparent; text-decoration: none;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.bil-icon-btn:hover { border-color: rgba(22,27,51,.3); color: #161b33; background: rgba(22,27,51,.03); }
+
+#tbl-collections thead .sorting::after,
+#tbl-collections thead .sorting_asc::after,
+#tbl-collections thead .sorting_desc::after,
+#tbl-collections thead .dt-orderable-asc .dt-column-title::after,
+#tbl-collections thead .dt-orderable-desc .dt-column-title::after { filter: invert(1); opacity: .55; }
+
+.bil-fadein { opacity: 0; transform: translateY(10px); animation: bil-fade .4s ease forwards; }
+@keyframes bil-fade { to { opacity: 1; transform: translateY(0); } }
+.bil-fadein:nth-child(1) { animation-delay: .04s; }
+.bil-fadein:nth-child(2) { animation-delay: .10s; }
+</style>
+{% endblock %}
+
 {% block wide %}
 
-<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
-
-<div class="d-flex align-items-start justify-content-between mb-3">
-  <div>
-    <h1 class="mb-1">Submissions — {{ project.name }}</h1>
-    <p class="text-muted mb-0">All collections associated with this project.</p>
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+  <div class="bil-list-header">
+    <h4><i class="fa-solid fa-folder-open me-2" style="color:var(--bil-accent);font-size:1.1rem;"></i>{{ project.name }}</h4>
+    <span class="bil-sub">{{ project_collections|length }} submission{{ project_collections|length|pluralize }} associated with this project</span>
   </div>
-  <div class="d-flex gap-2 mt-1">
-    <a href="{% url 'ingest:manage_projects' %}" class="btn btn-sm btn-outline-secondary">
-      <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Manage Projects
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'ingest:manage_projects' %}" class="bil-btn-outline">
+      <i class="fa-solid fa-arrow-left fa-xs"></i>Manage Projects
     </a>
-    <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary">
-      <i class="fa-solid fa-house fa-sm me-1"></i>PI Dashboard
+    <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+      <i class="fa-solid fa-house fa-xs"></i>PI Dashboard
     </a>
   </div>
 </div>
 
-<div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
-  <div class="card-body p-4">
-    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
-      <i class="fa-solid fa-box-archive fa-sm me-1"></i>Collections
-      <span class="badge text-bg-primary ms-1">{{ project_collections|length }}</span>
-    </p>
-
-    <div class="table-responsive">
-      <table id="tbl-collections" class="table table-sm table-hover align-middle mb-0">
-        <thead style="background-color: #161b33; color: #fff;">
-          <tr>
-            <th>Name</th>
-            <th>Submitter</th>
-            <th>Modality</th>
-            <th>Grant #</th>
-            <th>Locked</th>
-            <th>Submission</th>
-            <th>Validation</th>
-            <th>Latest Event</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for collection in project_collections %}
-          <tr>
-            <td>
-              <span class="fw-semibold">{{ collection.name }}</span>
-              {% if collection.description %}
-              <br><small class="text-muted">{{ collection.description|truncatechars:60 }}</small>
-              {% endif %}
-            </td>
-            <td><code class="text-muted">{{ collection.owner.username }}</code></td>
-            <td>{{ collection.modality|default:"—" }}</td>
-            <td><small>{{ collection.project_funder_id|default:"—" }}</small></td>
-            <td>
-              {% if collection.locked %}
-                <span class="badge text-bg-warning">Locked</span>
-              {% else %}
-                <span class="badge text-bg-success">Unlocked</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if collection.submission_status == 'SUCCESS' %}
-                <span class="badge text-bg-success">{{ collection.submission_status }}</span>
-              {% elif collection.submission_status == 'FAILURE' %}
-                <span class="badge text-bg-danger">{{ collection.submission_status }}</span>
-              {% elif collection.submission_status == 'PENDING' or collection.submission_status == 'SUBMITTED' %}
-                <span class="badge text-bg-warning">{{ collection.submission_status }}</span>
-              {% else %}
-                <span class="badge text-bg-secondary">{{ collection.submission_status }}</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if collection.validation_status == 'SUCCESS' %}
-                <span class="badge text-bg-success">{{ collection.validation_status }}</span>
-              {% elif collection.validation_status == 'FAILURE' %}
-                <span class="badge text-bg-danger">{{ collection.validation_status }}</span>
-              {% elif collection.validation_status == 'PENDING' %}
-                <span class="badge text-bg-warning">{{ collection.validation_status }}</span>
-              {% else %}
-                <span class="badge text-bg-secondary">{{ collection.validation_status }}</span>
-              {% endif %}
-            </td>
-            <td>
-              {% if collection.event %}
-                <small class="text-muted">{{ collection.event.event_type }}</small>
-              {% else %}
-                <small class="text-muted">—</small>
-              {% endif %}
-            </td>
-            <td>
-              <a href="{% url 'ingest:collection_detail' collection.id %}" class="btn btn-sm btn-outline-primary">
-                <i class="fa-solid fa-eye fa-sm"></i>
-              </a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
+<div class="bil-table-card bil-fadein">
+  <div class="table-responsive">
+    <table id="tbl-collections" class="bil-data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Submitter</th>
+          <th>Modality</th>
+          <th>Grant #</th>
+          <th>Locked</th>
+          <th>Submission</th>
+          <th>Validation</th>
+          <th>Latest Event</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for collection in project_collections %}
+        <tr>
+          <td>
+            <div class="bil-col-name">{{ collection.name }}</div>
+            {% if collection.description %}
+            <div class="bil-col-sub">{{ collection.description|truncatechars:55 }}</div>
+            {% endif %}
+          </td>
+          <td><span class="bil-code">{{ collection.owner.username }}</span></td>
+          <td>{{ collection.modality|default:"—" }}</td>
+          <td><span class="bil-code">{{ collection.project_funder_id|default:"—" }}</span></td>
+          <td>
+            {% if collection.locked %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-lock fa-xs"></i>Locked</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-lock-open fa-xs"></i>Open</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if collection.submission_status == 'SUCCESS' %}
+              <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Success</span>
+            {% elif collection.submission_status == 'FAILURE' %}
+              <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+            {% elif collection.submission_status == 'PENDING' or collection.submission_status == 'SUBMITTED' %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>{{ collection.submission_status }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if collection.validation_status == 'SUCCESS' %}
+              <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Valid</span>
+            {% elif collection.validation_status == 'FAILURE' %}
+              <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+            {% elif collection.validation_status == 'PENDING' %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>{{ collection.validation_status }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if collection.event %}
+              <span class="bil-code">{{ collection.event.event_type }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <a href="{% url 'ingest:collection_detail' collection.id %}" class="bil-icon-btn" title="View detail">
+              <i class="fa-solid fa-arrow-right fa-xs"></i>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" style="text-align:center;padding:3rem 1rem;color:rgba(22,27,51,.35);font-family:'Lato',sans-serif;">
+            <i class="fa-solid fa-folder-open fa-lg d-block mb-2 mx-auto" style="color:rgba(22,27,51,.15);"></i>
+            No submissions for this project
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
 
+{% endblock %}
+
+{% block extra_scripts %}
 <script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
 <script>
@@ -111,7 +194,7 @@ $(document).ready(function() {
     lengthMenu: [10, 25, 50, 100],
     order: [[0, 'asc']],
     columnDefs: [
-      { targets: -1, orderable: false, searchable: false, width: '50px' },
+      { targets: -1, orderable: false, searchable: false, width: '40px' },
       { targets: 4, width: '80px' },
       { targets: 5, width: '100px' },
       { targets: 6, width: '100px' }
@@ -119,5 +202,4 @@ $(document).ready(function() {
   });
 });
 </script>
-
 {% endblock %}

@@ -4,7 +4,7 @@ from django.utils.safestring import mark_safe
 from .models import Collection
 from .models import ImageMetadata
 from .models import DescriptiveMetadata
-from .models import Sheet, Project, ProjectConsortium, Specimen, BIL_Specimen_ID, SpecimenLinkage
+from .models import Sheet, Project, ProjectConsortium, Specimen, BIL_Specimen_ID, SpecimenLinkage, EventsLog
 import django_tables2 as tables
 from django_tables2.utils import A  # alias for Accessor
 
@@ -124,10 +124,31 @@ class CollectionTable(tables.Table):
                     '<span class="badge text-bg-success px-2 py-1">'
                     '<i class="fa-solid fa-globe me-1"></i>Data Public</span>'
                 )
+            elif record.submission_status == 'PENDING':
+                return mark_safe(
+                    '<span class="badge text-bg-warning px-2 py-1">'
+                    '<i class="fa-solid fa-clock me-1"></i>Pub. In Progress</span>'
+                )
+            elif record.submission_status == 'FAILED':
+                return mark_safe(
+                    '<a href="{}" class="btn btn-sm btn-outline-secondary">'
+                    '<i class="fa-solid fa-rotate-right me-1"></i>Retry Publication</a>'.format(
+                        reverse('ingest:submit_request_collection_list')
+                    )
+                )
             elif ProjectConsortium.objects.filter(project=record.project, consortium__short_name='BICAN').exists():
                 specimens = Specimen.objects.filter(sheet=most_recent_sheet)
                 bil_specimen_ids = BIL_Specimen_ID.objects.filter(specimen_id__in=specimens)
                 if SpecimenLinkage.objects.filter(specimen_id__in=bil_specimen_ids).exists():
+                    already_requested = EventsLog.objects.filter(
+                        collection_id=record.id,
+                        event_type='request_validation',
+                    ).exists()
+                    if already_requested:
+                        return mark_safe(
+                            '<span class="badge text-bg-warning px-2 py-1">'
+                            '<i class="fa-solid fa-clock me-1"></i>Pub. In Progress</span>'
+                        )
                     return mark_safe(
                         '<a href="{}" class="btn btn-sm btn-outline-secondary">'
                         '<i class="fa-solid fa-paper-plane me-1"></i>Request Publication</a>'.format(
@@ -142,6 +163,15 @@ class CollectionTable(tables.Table):
                         )
                     )
             else:
+                already_requested = EventsLog.objects.filter(
+                    collection_id=record.id,
+                    event_type='request_validation',
+                ).exists()
+                if already_requested:
+                    return mark_safe(
+                        '<span class="badge text-bg-warning px-2 py-1">'
+                        '<i class="fa-solid fa-clock me-1"></i>Pub. In Progress</span>'
+                    )
                 return mark_safe(
                     '<a href="{}" class="btn btn-sm btn-outline-secondary">'
                     '<i class="fa-solid fa-paper-plane me-1"></i>Request Publication</a>'.format(

@@ -1,78 +1,237 @@
 {% extends 'ingest/wide.html' %}
 
 {% block scripts %}
-<script language="JavaScript">
-  function toggle(source) {
-      checkboxes = document.getElementsByName('selection');
-      for(var i in checkboxes)
-          checkboxes[i].checked = source.checked;
-  }
-  $(document).ready(function(){
-    $(".selection").click(function(){
-      if($(":checkbox").is(":checked"))
-        $("#delete_selected").show();
-      else
-        $("#delete_selected").hide();
-    });
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+<style>
+:root { --bil-accent: #00c9a7; --bil-accent-dim: rgba(0,201,167,.1); }
+
+.bil-list-header h4 {
+  font-family: 'Lato', sans-serif; font-weight: 800;
+  font-size: clamp(1.3rem,3vw,1.75rem); color: #161b33;
+  letter-spacing: -.03em; margin-bottom: .2rem;
+}
+.bil-list-header .bil-sub {
+  font-family: 'DM Mono', monospace; font-size: .7rem;
+  letter-spacing: .06em; color: #8589a8;
+}
+.bil-btn-dark {
+  background: #161b33; color: #fff; border: none; border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
+  padding: .45rem 1rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: background .15s, box-shadow .15s, transform .1s;
+}
+.bil-btn-dark:hover { background: #252d52; box-shadow: 0 4px 12px rgba(22,27,51,.2); transform: translateY(-1px); color: #fff; }
+.bil-btn-outline {
+  background: #fff; color: #4a5070;
+  border: 1.5px solid rgba(22,27,51,.15); border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
+  padding: .45rem 1rem; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: border-color .15s, color .15s;
+}
+.bil-btn-outline:hover { border-color: rgba(22,27,51,.3); color: #161b33; }
+.bil-btn-danger {
+  background: #fff; color: #842029;
+  border: 1.5px solid rgba(220,53,69,.3); border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
+  padding: .45rem 1rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.bil-btn-danger:hover { border-color: rgba(220,53,69,.55); background: rgba(220,53,69,.05); color: #6e1a22; }
+
+/* Section cards */
+.bil-section-card {
+  background: #f7f8fb; border-radius: 10px;
+  border: 1.5px solid rgba(22,27,51,.09);
+  box-shadow: 0 2px 10px rgba(22,27,51,.05);
+  overflow: hidden; margin-bottom: 1rem;
+}
+.bil-section-card-header {
+  padding: .85rem 1.1rem; background: #161b33;
+  display: flex; align-items: center; gap: .65rem;
+}
+.bil-section-icon {
+  width: 28px; height: 28px; border-radius: 6px; flex-shrink: 0;
+  background: var(--bil-accent-dim); color: #008e77;
+  display: flex; align-items: center; justify-content: center; font-size: .78rem;
+}
+.bil-section-title {
+  font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.6);
+}
+.bil-section-body { padding: 1.1rem 1.25rem; }
+
+/* V1 django-tables2 rendered table */
+.bil-v1-table-wrapper table {
+  width: 100%; border-collapse: separate; border-spacing: 0;
+  font-family: 'Lato', sans-serif; font-size: .82rem;
+}
+.bil-v1-table-wrapper table thead th {
+  font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.7); font-weight: 500;
+  padding: .7rem .9rem; background: #161b33; border-bottom: none; white-space: nowrap;
+}
+.bil-v1-table-wrapper table thead th a { color: rgba(255,255,255,.7) !important; text-decoration: none; }
+.bil-v1-table-wrapper table thead th a:hover { color: #fff !important; }
+.bil-v1-table-wrapper table tbody td {
+  color: #3d4360; padding: .65rem .9rem;
+  border-bottom: 1px solid rgba(22,27,51,.055); vertical-align: middle;
+  transition: background .12s;
+}
+.bil-v1-table-wrapper table tbody tr:last-child td { border-bottom: none; }
+.bil-v1-table-wrapper table tbody tr:hover td { background: rgba(0,201,167,.04); }
+.bil-v1-table-wrapper table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--bil-accent); }
+/* Sort arrows */
+.bil-v1-table-wrapper thead .dt-orderable-asc .dt-column-title::after,
+.bil-v1-table-wrapper thead .dt-orderable-desc .dt-column-title::after,
+.bil-v1-table-wrapper thead th a.asc::after,
+.bil-v1-table-wrapper thead th a.desc::after { filter: invert(1); opacity: .55; }
+
+/* V2 data table */
+.bil-data-table { width: 100%; margin: 0; border-collapse: separate; border-spacing: 0; }
+.bil-data-table thead th {
+  font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.7); font-weight: 500;
+  white-space: nowrap; padding: .7rem .9rem; background: #161b33; border-bottom: none;
+}
+.bil-data-table thead th a { color: rgba(255,255,255,.7) !important; text-decoration: none; }
+.bil-data-table thead th a:hover { color: #fff !important; }
+.bil-data-table tbody td {
+  font-family: 'Lato', sans-serif; font-size: .82rem; color: #3d4360;
+  padding: .65rem .9rem; border-bottom: 1px solid rgba(22,27,51,.055);
+  vertical-align: middle; transition: background .12s;
+}
+.bil-data-table tbody tr:last-child td { border-bottom: none; }
+.bil-data-table tbody tr:hover td { background: rgba(0,201,167,.04); }
+.bil-data-table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--bil-accent); }
+#tbl-v2 thead .sorting::after,
+#tbl-v2 thead .sorting_asc::after,
+#tbl-v2 thead .sorting_desc::after,
+#tbl-v2 thead .dt-orderable-asc .dt-column-title::after,
+#tbl-v2 thead .dt-orderable-desc .dt-column-title::after { filter: invert(1); opacity: .55; }
+
+.bil-code { font-family: 'DM Mono', monospace; font-size: .7rem; color: #616788; }
+.bil-icon-btn {
+  width: 30px; height: 30px; border-radius: 6px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1.5px solid rgba(22,27,51,.15); color: #616788;
+  background: transparent; text-decoration: none;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.bil-icon-btn:hover { border-color: rgba(22,27,51,.3); color: #161b33; background: rgba(22,27,51,.03); }
+
+/* Empty notice */
+.bil-notice-info {
+  background: rgba(0,201,167,.06); border: 1px solid rgba(0,201,167,.2);
+  border-radius: 8px; padding: .7rem 1rem;
+  font-family: 'Lato', sans-serif; font-size: .85rem; color: #4a5070;
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.bil-notice-info i { color: var(--bil-accent); flex-shrink: 0; margin-top: 2px; }
+
+.bil-fadein { opacity: 0; transform: translateY(10px); animation: bil-fade .4s ease forwards; }
+@keyframes bil-fade { to { opacity: 1; transform: translateY(0); } }
+.bil-fadein:nth-child(1) { animation-delay: .04s; }
+.bil-fadein:nth-child(2) { animation-delay: .10s; }
+.bil-fadein:nth-child(3) { animation-delay: .16s; }
+@media (prefers-reduced-motion: reduce) {
+  .bil-fadein { opacity: 1; transform: none; animation: none; }
+}
+</style>
+
+<script>
+function toggle(source) {
+  checkboxes = document.getElementsByName('selection');
+  for (var i in checkboxes)
+    checkboxes[i].checked = source.checked;
+}
+$(document).ready(function(){
+  $(".selection").click(function(){
+    if ($(":checkbox").is(":checked"))
+      $("#delete_selected").show();
+    else
+      $("#delete_selected").hide();
   });
+});
 </script>
 {% endblock %}
 
 {% block wide %}
 
-<div class="d-flex align-items-start justify-content-between mb-3">
-  <div>
-    <h1 class="mb-1">Your Metadata</h1>
-    <p class="text-muted mb-0">Manage your uploaded metadata sheets.</p>
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+  <div class="bil-list-header">
+    <h4><i class="fa-solid fa-file-lines me-2" style="color:var(--bil-accent);font-size:1.1rem;" aria-hidden="true"></i>Your Metadata</h4>
+    <span class="bil-sub">Manage your uploaded metadata sheets</span>
   </div>
   {% if pi %}
-  <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">
-    <i class="fa-solid fa-arrow-left fa-sm me-1"></i> Return to PI Dashboard
+  <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+    <i class="fa-solid fa-arrow-left fa-xs" aria-hidden="true"></i>PI Dashboard
   </a>
   {% endif %}
 </div>
 
-<div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
-  <div class="card-body p-4">
-    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
-      <i class="fa-solid fa-file-lines fa-sm me-1"></i>Metadata Version 1
-    </p>
-
+{# ── Version 1 metadata ── #}
+<div class="bil-section-card bil-fadein">
+  <div class="bil-section-card-header">
+    <span class="bil-section-icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span>
+    <span class="bil-section-title">Metadata Version 1</span>
+  </div>
+  <div class="bil-section-body">
     {% if descriptive_metadata %}
-      <form action="" method="post">{% csrf_token %}
-        {% load render_table from django_tables2 %}
-        <div class="table-responsive">
-          {% render_table table %}
-        </div>
-        <div class="mt-3">
-          <button type="submit" class="btn btn-danger" id="delete_selected" style="display:none">
-            <i class="fa-solid fa-trash fa-sm me-1"></i> Delete Selected
-          </button>
-        </div>
-      </form>
-    {% else %}
-      <div class="alert alert-info d-flex gap-2 align-items-start">
-        <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
-        <span>You haven't created any metadata yet.</span>
+    <form action="" method="post">{% csrf_token %}
+      {% load render_table from django_tables2 %}
+      <div class="table-responsive bil-v1-table-wrapper">
+        {% render_table table %}
       </div>
+      <div class="mt-3">
+        <button type="submit" class="bil-btn-danger" id="delete_selected" style="display:none">
+          <i class="fa-solid fa-trash fa-xs" aria-hidden="true"></i>Delete Selected
+        </button>
+      </div>
+    </form>
+    {% else %}
+    <div class="bil-notice-info">
+      <i class="fa-solid fa-circle-info fa-xs" aria-hidden="true"></i>
+      <span>You haven't created any metadata yet.</span>
+    </div>
     {% endif %}
   </div>
 </div>
 
-<div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
-  <div class="card-body p-4">
-    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
-      <i class="fa-solid fa-file-lines fa-sm me-1"></i>Metadata Version 2
-    </p>
-
+{# ── Version 2 metadata ── #}
+<div class="bil-section-card bil-fadein">
+  <div class="bil-section-card-header">
+    <span class="bil-section-icon"><i class="fa-solid fa-file-spreadsheet" aria-hidden="true"></i></span>
+    <span class="bil-section-title">Metadata Version 2</span>
+  </div>
+  <div class="bil-section-body p-0">
     {% include 'ingest/new_metadata_sheet.html' %}
   </div>
 </div>
 
-<div class="d-flex gap-2">
-  <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">
-    <i class="fa-solid fa-xmark fa-sm me-1"></i> Cancel
+<div class="d-flex gap-2 bil-fadein">
+  <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+    <i class="fa-solid fa-xmark fa-xs" aria-hidden="true"></i>Cancel
   </a>
 </div>
 
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+  if ($('#tbl-v2').length) {
+    $('#tbl-v2').DataTable({
+      pageLength: 25,
+      lengthMenu: [10, 25, 50],
+      order: [[3, 'desc']],
+      columnDefs: [{ targets: -1, orderable: false, searchable: false, width: '40px' }]
+    });
+  }
+});
+</script>
 {% endblock %}

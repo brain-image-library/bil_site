@@ -14,8 +14,8 @@
 
   <!-- Favicon + fonts -->
   <link rel="shortcut icon" type="image/ico" href="{% static 'images/favicon.ico' %}" />
-  <link href="https://fonts.googleapis.com/css?family=Montserrat" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css?family=Lato:300" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
   <!-- Site CSS (after Bootstrap) -->
   <link rel="stylesheet" href="{% static 'ingest/style.css' %}">
@@ -32,9 +32,13 @@
       <div class="container-fluid header">
 
         {# ── Brand ── #}
-        <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-          <img src="{% static 'images/brainicon.png' %}" height="34" alt="BIL logo" />
-          <span class="navbar-brand-text">Brain Image Library</span>
+        <a class="navbar-brand d-flex align-items-center gap-0" href="/">
+          <img src="{% static 'images/brainicon.png' %}" height="28" alt="BIL logo" class="nav-brand-icon" />
+          <span class="nav-brand-divider"></span>
+          <div class="nav-brand-text">
+            <span class="nav-brand-name">Brain Image Library</span>
+            <span class="nav-brand-tag">Submission Portal</span>
+          </div>
         </a>
 
         <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse"
@@ -46,41 +50,39 @@
         <div class="collapse navbar-collapse" id="myNavbar">
 
           {# ── Left nav (authenticated only) ── #}
-          <ul class="navbar-nav me-auto gap-1">
+          <ul class="navbar-nav me-auto">
             {% if request.user.is_authenticated %}
 
-            {# "New" has two items → keep as dropdown #}
             <li class="nav-item dropdown">
-              <a class="nav-link nav-link-pill dropdown-toggle" data-bs-toggle="dropdown"
-                href="#" role="button" aria-expanded="false">
-                <i class="fa-solid fa-plus fa-sm me-1"></i>New
+              <a class="nav-link nav-link-flat dropdown-toggle nav-new-btn" data-bs-toggle="dropdown"
+                href="#" role="button" aria-expanded="false" aria-haspopup="true">
+                <i class="fa-solid fa-plus fa-xs" aria-hidden="true"></i>New
               </a>
               <ul class="dropdown-menu dropdown-menu-dark-custom shadow">
                 <li>
                   <a class="dropdown-item" href="{% url 'ingest:collection_create' %}">
-                    <i class="fa-solid fa-folder-plus fa-sm me-2 text-secondary"></i>New Submission
+                    <i class="fa-solid fa-folder-plus fa-xs me-2" aria-hidden="true"></i>New Submission
                   </a>
                 </li>
                 <li>
                   <a class="dropdown-item" href="{% url 'ingest:submission_view' %}">
-                    <i class="fa-solid fa-table-cells fa-sm me-2 text-secondary"></i>Add Metadata
+                    <i class="fa-solid fa-table-cells fa-xs me-2" aria-hidden="true"></i>Add Metadata
                   </a>
                 </li>
               </ul>
             </li>
 
-            {# Single-item → direct link #}
             <li class="nav-item">
-              <a class="nav-link nav-link-pill {% if request.resolver_match.url_name == 'collection_list' %}active{% endif %}"
+              <a class="nav-link nav-link-flat {% if request.resolver_match.url_name == 'collection_list' %}active{% endif %}"
                 href="{% url 'ingest:collection_list' %}">
-                <i class="fa-solid fa-folder-open fa-sm me-1"></i>Submissions
+                <i class="fa-solid fa-folder-open fa-xs me-1" aria-hidden="true"></i>Submissions
               </a>
             </li>
 
             <li class="nav-item">
-              <a class="nav-link nav-link-pill {% if request.resolver_match.url_name == 'submit_request_collection_list' %}active{% endif %}"
+              <a class="nav-link nav-link-flat {% if request.resolver_match.url_name == 'submit_request_collection_list' %}active{% endif %}"
                 href="{% url 'ingest:submit_request_collection_list' %}">
-                <i class="fa-solid fa-paper-plane fa-sm me-1"></i>Publish Request
+                <i class="fa-solid fa-paper-plane fa-xs me-1" aria-hidden="true"></i>Publish Request
               </a>
             </li>
 
@@ -88,39 +90,41 @@
           </ul>
 
           {# ── Right: user area ── #}
-          <ul class="navbar-nav ms-auto">
+          <ul class="navbar-nav ms-auto align-items-center gap-1">
             {% if request.user.username %}
             <li class="nav-item dropdown">
-              <a class="nav-link nav-link-pill user-pill dropdown-toggle d-flex align-items-center gap-2"
-                data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false">
-                <span class="user-avatar">
-                  <i class="fa-solid fa-circle-user"></i>
-                </span>
-                <span class="user-name">{{ request.user.username }}</span>
+              <a class="nav-link nav-user-toggle dropdown-toggle d-flex align-items-center gap-2"
+                data-bs-toggle="dropdown" href="#" role="button" aria-expanded="false"
+                aria-label="User menu for {{ request.user.username }}">
+                <span class="nav-user-avatar" aria-hidden="true">{{ request.user.username|slice:":1"|upper }}</span>
+                <span class="nav-user-name">{{ request.user.username }}</span>
               </a>
               <ul class="dropdown-menu dropdown-menu-dark-custom dropdown-menu-end shadow">
-                <li>
-                  <span class="dropdown-item-text small text-secondary px-3 py-1">
-                    Signed in as <strong>{{ request.user.username }}</strong>
-                  </span>
+                <li class="px-3 pt-2 pb-1">
+                  <div class="nav-user-info">
+                    <div class="nav-user-info-avatar" aria-hidden="true">{{ request.user.username|slice:":1"|upper }}</div>
+                    <div>
+                      <div class="nav-user-info-name">{{ request.user.username }}</div>
+                    </div>
+                  </div>
                 </li>
-                <li><hr class="dropdown-divider border-secondary opacity-25 my-1"></li>
+                <li><hr class="dropdown-divider my-2" style="border-color:rgba(255,255,255,.1);"></li>
                 <li>
                   <a class="dropdown-item" href="{% url 'ingest:logout' %}">
-                    <i class="fa-solid fa-right-from-bracket fa-sm me-2 text-secondary"></i>Log out
+                    <i class="fa-solid fa-right-from-bracket fa-xs me-2" aria-hidden="true"></i>Sign out
                   </a>
                 </li>
               </ul>
             </li>
             {% else %}
             <li class="nav-item">
-              <a class="nav-link nav-link-pill" href="{% url 'ingest:signup' %}">
-                <i class="fa-solid fa-user-plus fa-sm me-1"></i>Sign Up
+              <a class="nav-link nav-link-flat" href="{% url 'ingest:signup' %}">
+                <i class="fa-solid fa-user-plus fa-xs me-1" aria-hidden="true"></i>Sign Up
               </a>
             </li>
             <li class="nav-item">
-              <a class="nav-link nav-link-pill nav-link-pill--accent" href="{% url 'login' %}">
-                <i class="fa-solid fa-right-to-bracket fa-sm me-1"></i>Log in
+              <a class="nav-link-login" href="{% url 'login' %}">
+                <i class="fa-solid fa-right-to-bracket fa-xs me-1" aria-hidden="true"></i>Log in
               </a>
             </li>
             {% endif %}
