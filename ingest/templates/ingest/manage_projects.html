@@ -110,6 +110,7 @@
           <th>Consortia</th>
           <th>Parent Project</th>
           <th>Child Projects</th>
+          <th>Brain Initiative</th>
           <th class="text-center">Personnel</th>
           <th class="text-center">Submissions</th>
         </tr>
@@ -132,6 +133,13 @@
           <td>{{ project.parent_project_names|default:"—" }}</td>
           <td>{{ project.child_project_names|default:"—" }}</td>
           <td class="text-center">
+            <input type="checkbox"
+                   class="bi-toggle"
+                   data-toggle-url="{% url 'ingest:toggle_brain_initiative' project.id %}"
+                   {% if project.is_brain_initiative %}checked{% endif %}
+                   style="width:1.1rem;height:1.1rem;cursor:pointer;accent-color:var(--bil-accent);">
+          </td>
+          <td class="text-center">
             <a href="{% url 'ingest:view_project_people' project.id %}" class="bil-action-btn">
               <i class="fa-solid fa-users fa-xs"></i>Personnel
             </a>
@@ -144,7 +152,7 @@
         </tr>
         {% empty %}
         <tr class="bil-empty-row">
-          <td colspan="7">
+          <td colspan="8">
             <i class="fa-solid fa-diagram-project fa-lg d-block mb-2 mx-auto" style="color:rgba(22,27,51,.15);"></i>
             No projects found
           </td>
@@ -154,5 +162,29 @@
     </table>
   </div>
 </div>
+
+<script>
+(function () {
+  function getCsrf() {
+    return document.cookie.split(';').reduce(function (v, c) {
+      var p = c.trim().split('=');
+      return p[0] === 'csrftoken' ? decodeURIComponent(p[1]) : v;
+    }, '');
+  }
+
+  document.querySelectorAll('.bi-toggle').forEach(function (cb) {
+    cb.addEventListener('change', function () {
+      fetch(cb.dataset.toggleUrl, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'X-CSRFToken': getCsrf(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_brain_initiative: cb.checked })
+      }).then(function (r) {
+        if (!r.ok) { cb.checked = !cb.checked; }
+      }).catch(function () { cb.checked = !cb.checked; });
+    });
+  });
+})();
+</script>
 
 {% endblock %}

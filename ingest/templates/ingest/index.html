@@ -297,6 +297,7 @@ h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
 
   {% if request.user.username %}
 
+  {% if show_stats %}
   <!-- Instrument panel -->
   <div class="bil-instrument bil-fadein">
     <div class="bil-instrument-body">
@@ -338,6 +339,7 @@ h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
       </div>
     </div>
   </div>
+  {% endif %}
 
   <!-- Your Contributions -->
   {% if user_public_collections or user_public_datasets or user_validation_requested %}

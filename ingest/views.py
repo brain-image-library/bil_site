@@ -48,84 +48,52 @@ from django.db.models import OuterRef, Subquery, Q, Exists, Count, F, Sum
 from django.db.models.functions import ExtractYear
 from pathlib import Path
 import jwt, time
+import concurrent.futures
 import brainimagelibrary
 
 
-def _get_public_dataset_stats():
-    """Return (public_dataset_count, public_file_count, datasets_by_year).
+def _sdk_fetch_report():
+    from brainimagelibrary import reports as bil_reports
+    return bil_reports.daily()
 
-    All stats come from brainimagelibrary.summary.daily() (dict response).
-    Falls back to local ORM if the SDK call fails.
-    Results are cached for 1 hour.
+
+def _get_public_dataset_stats():
+    """Return (public_dataset_count, public_file_count, datasets_by_year) or None.
+
+    All three values are derived from the same SDK DataFrame so the bar chart
+    always sums to the headline count. Returns None (hides the section) if the
+    SDK is unavailable or takes too long.
     """
     cached = cache.get('public_dataset_stats')
     if cached is not None:
         return cached
 
-    # --- Per-year breakdown from ORM (always, for the bar chart) ---
-    _latest_sheet_subq = Subquery(
-        Sheet.objects.filter(
-            collection_id=OuterRef('collection_id'),
-        ).order_by('-date_uploaded').values('id')[:1]
-    )
-    latest_sheet_ids = (
-        Sheet.objects
-        .filter(collection__submission_status='SUCCESS',
-                collection__validation_status='SUCCESS')
-        .annotate(latest_id=_latest_sheet_subq)
-        .filter(latest_id=F('id'))
-        .values_list('id', flat=True)
-    )
-    upgraded_v1_ids = BIL_ID.objects.filter(
-        v1_ds_id__isnull=False, v2_ds_id__isnull=False,
-    ).values_list('v1_ds_id', flat=True)
-    v2_by_year = (
-        Dataset.objects.filter(sheet_id__in=latest_sheet_ids)
-        .annotate(year=ExtractYear('sheet__date_uploaded'))
-        .values('year').annotate(n=Count('id')).order_by('year')
-    )
-    v1_by_year = (
-        DescriptiveMetadata.objects
-        .filter(collection__submission_status='SUCCESS',
-                collection__validation_status='SUCCESS')
-        .exclude(id__in=upgraded_v1_ids)
-        .annotate(year=ExtractYear('date_created'))
-        .values('year').annotate(n=Count('id')).order_by('year')
-    )
-    year_map = {}
-    for row in v2_by_year:
-        if row['year']:
-            year_map[row['year']] = year_map.get(row['year'], 0) + row['n']
-    for row in v1_by_year:
-        if row['year']:
-            year_map[row['year']] = year_map.get(row['year'], 0) + row['n']
-    datasets_by_year = [{'year': y, 'count': year_map[y]} for y in sorted(year_map)]
-
-    # --- Dataset count + file count from SDK ---
+    # Enforce a hard timeout — the SDK has an internal scratch-build fallback
+    # that can run for minutes. We avoid the `with` context manager because its
+    # __exit__ calls shutdown(wait=True) and would block until the thread finishes.
+    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     try:
-        data = brainimagelibrary.summary.daily()
-        if data and isinstance(data, dict):
-            public_dataset_count = int(data.get('number_of_datasets', 0))
-            public_file_count = int(data.get('number_of_files', 0))
-            result = (public_dataset_count, public_file_count, datasets_by_year)
-            cache.set('public_dataset_stats', result, 3600)
-            return result
+        future = executor.submit(_sdk_fetch_report)
+        df = future.result(timeout=5)
     except Exception:
-        pass
+        executor.shutdown(wait=False)
+        return None
+    executor.shutdown(wait=False)
 
-    # --- ORM fallback for dataset count + file count ---
-    public_file_count = (
-        Dataset.objects
-        .filter(sheet_id__in=latest_sheet_ids, number_of_files__isnull=False)
-        .aggregate(total=Sum('number_of_files'))['total'] or 0
-    )
-    v2_count = Dataset.objects.filter(sheet_id__in=latest_sheet_ids).count()
-    v1_count = DescriptiveMetadata.objects.filter(
-        collection__submission_status='SUCCESS',
-        collection__validation_status='SUCCESS',
-    ).exclude(id__in=upgraded_v1_ids).count()
-    public_dataset_count = v2_count + v1_count
-    return (public_dataset_count, public_file_count, datasets_by_year)
+    if df is None or df.empty:
+        return None
+
+    public_dataset_count = len(df)
+    public_file_count = int(df['number_of_files'].sum())
+
+    df_dated = df.dropna(subset=['bildate']).copy()
+    df_dated['year'] = df_dated['bildate'].str[:4].astype(int)
+    year_counts = df_dated.groupby('year').size().sort_index()
+    datasets_by_year = [{'year': int(y), 'count': int(c)} for y, c in year_counts.items()]
+
+    result = (public_dataset_count, public_file_count, datasets_by_year)
+    cache.set('public_dataset_stats', result, 3600)
+    return result
 
 
 def logout(request):
@@ -158,6 +126,7 @@ def index(request):
         people.affiliation = ''
         people.affiliation_identifier = ''
         people.is_bil_admin = False
+        people.has_reviewed_brain_initiative = True
         people.auth_user_id = current_user
         people.save()
 
@@ -185,7 +154,14 @@ def index(request):
     )
 
     # --- Step 3: Routing logic based on role ---
-    public_dataset_count, public_file_count, datasets_by_year = _get_public_dataset_stats()
+    _stats = _get_public_dataset_stats()
+    if _stats is not None:
+        public_dataset_count, public_file_count, datasets_by_year = _stats
+        show_stats = True
+    else:
+        public_dataset_count = public_file_count = 0
+        datasets_by_year = []
+        show_stats = False
 
     # User contribution stats
     user_public_collections = Collection.objects.filter(
@@ -213,20 +189,36 @@ def index(request):
                 'public_dataset_count': public_dataset_count,
                 'public_file_count': public_file_count,
                 'datasets_by_year': datasets_by_year,
+                'show_stats': show_stats,
                 'user_public_collections': user_public_collections,
                 'user_public_datasets': user_public_datasets,
                 'user_validation_requested': user_validation_requested,
             })
+        pi_attribute = None
+        pi_projects = []
         for attribute in project_person:
             if attribute.is_pi:
-                return render(request, 'ingest/pi_index.html', {
-                    'project_person': attribute,
-                    'public_dataset_count': public_dataset_count,
-                    'public_file_count': public_file_count,
-                    'datasets_by_year': datasets_by_year,
-                    'user_public_collections': user_public_collections,
-                    'user_public_datasets': user_public_datasets,
+                if pi_attribute is None:
+                    pi_attribute = attribute
+                proj = Project.objects.get(id=attribute.project_id_id)
+                pi_projects.append({
+                    'id': proj.id,
+                    'name': proj.name,
+                    'is_brain_initiative': proj.is_brain_initiative,
                 })
+
+        if pi_attribute is not None:
+            return render(request, 'ingest/pi_index.html', {
+                'project_person': pi_attribute,
+                'public_dataset_count': public_dataset_count,
+                'public_file_count': public_file_count,
+                'datasets_by_year': datasets_by_year,
+                'show_stats': show_stats,
+                'user_public_collections': user_public_collections,
+                'user_public_datasets': user_public_datasets,
+                'show_brain_initiative_modal': not people.has_reviewed_brain_initiative,
+                'pi_projects': pi_projects,
+            })
     except Exception as e:
         print(e)
 
@@ -234,6 +226,7 @@ def index(request):
         'public_dataset_count': public_dataset_count,
         'public_file_count': public_file_count,
         'datasets_by_year': datasets_by_year,
+        'show_stats': show_stats,
         'user_public_collections': user_public_collections,
         'user_public_datasets': user_public_datasets,
     })
@@ -460,9 +453,10 @@ def create_project(request):
         name = item['name']
         consortia_ids = item['consortia_ids']
         parent_project = item['parent_project']
+        is_brain_initiative = item.get('is_brain_initiative', False)
 
-        # write project to the project table   
-        project = Project(funded_by=funded_by, name=name)
+        # write project to the project table
+        project = Project(funded_by=funded_by, name=name, is_brain_initiative=is_brain_initiative)
         project.save()
         save_project_id(project)
         proj_id = project.id
@@ -483,8 +477,68 @@ def create_project(request):
         
         project_person = ProjectPeople(project_id_id=project_id_id, people_id_id=person.id, is_pi=True, is_po=False, doi_role='creator')
         project_person.save()
-    messages.success(request, 'Project Created!')    
+    messages.success(request, 'Project Created!')
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
+
+
+@login_required
+def review_brain_initiative(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405, headers={'Allow': 'POST'})
+
+    current_user = request.user
+    try:
+        people = People.objects.get(auth_user_id_id=current_user.id)
+    except People.DoesNotExist:
+        return JsonResponse({'error': 'User profile not found'}, status=404)
+    owned_ids = set(
+        ProjectPeople.objects
+        .filter(people_id=people.id, is_pi=True)
+        .values_list('project_id_id', flat=True)
+    )
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    for project_id_str, value in data.items():
+        try:
+            project_id = int(project_id_str)
+        except (ValueError, TypeError):
+            continue
+        if project_id in owned_ids:
+            Project.objects.filter(id=project_id).update(is_brain_initiative=bool(value))
+
+    people.has_reviewed_brain_initiative = True
+    people.save()
+    return JsonResponse({'success': True})
+
+
+@login_required
+def toggle_brain_initiative(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405, headers={'Allow': 'POST'})
+
+    current_user = request.user
+    try:
+        people = People.objects.get(auth_user_id_id=current_user.id)
+    except People.DoesNotExist:
+        return JsonResponse({'error': 'User profile not found'}, status=404)
+
+    if not ProjectPeople.objects.filter(people_id=people.id, project_id_id=pk, is_pi=True).exists():
+        return JsonResponse({'error': 'Not authorized'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    value = data.get('is_brain_initiative')
+    if not isinstance(value, bool):
+        return JsonResponse({'error': 'Invalid value'}, status=400)
+    Project.objects.filter(id=pk).update(is_brain_initiative=value)
+    return JsonResponse({'success': True})
 
 
 @login_required
@@ -923,7 +977,8 @@ def check_collection_directories(coll, current_user):
     datasets = Dataset.objects.filter(sheet__collection=coll)
     expected_dirs = sorted([
         Path(ds.bildirectory).name.strip("/")
-        for ds in datasets if ds.bildirectory
+        for ds in datasets
+        if ds.bildirectory and Path(ds.bildirectory).resolve() != base_dir.resolve()
     ])
 
     missing = [d for d in expected_dirs if d not in actual_dirs]

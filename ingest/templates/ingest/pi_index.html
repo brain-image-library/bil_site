@@ -127,6 +127,7 @@ h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
     <p>Manage your projects, submissions, and project users.</p>
   </div>
 
+  {% if show_stats %}
   <div class="bil-instrument bil-fadein">
     <div class="bil-instrument-body">
       <div class="d-flex align-items-center flex-wrap">
@@ -156,6 +157,7 @@ h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
       </div>
     </div>
   </div>
+  {% endif %}
 
   {% if user_public_collections or user_public_datasets or user_validation_requested %}
   <div class="bil-fadein" style="margin-bottom:1.5rem;">
@@ -262,6 +264,59 @@ h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
   </div>
 
 </div>
+
+{% if show_brain_initiative_modal %}
+<div class="modal fade" id="brainInitiativeModal" tabindex="-1"
+     data-bs-backdrop="static" data-bs-keyboard="false"
+     aria-labelledby="brainInitiativeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px;border:1.5px solid rgba(22,27,51,.09);">
+      <div class="modal-header" style="border-bottom:1px solid rgba(22,27,51,.07);padding:1.25rem 1.5rem;">
+        <h5 class="modal-title" id="brainInitiativeModalLabel"
+            style="font-family:'Lato',sans-serif;font-weight:800;color:#161b33;font-size:1.05rem;">
+          <i class="fa-solid fa-brain me-2" style="color:var(--bil-accent);"></i>BRAIN Initiative Data Review
+        </h5>
+      </div>
+      <div class="modal-body" style="padding:1.5rem;">
+        <p style="font-family:'Lato',sans-serif;font-size:.875rem;color:#4a5070;margin-bottom:1.25rem;">
+          The Brain Image Library is now tracking which projects contain
+          <strong>BRAIN Initiative</strong>–funded data. Please review your projects below
+          and check any that include BRAIN Initiative data.
+        </p>
+        <div id="bi-project-list">
+          {% for proj in pi_projects %}
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox"
+                   id="bi-proj-{{ proj.id }}"
+                   data-project-id="{{ proj.id }}"
+                   {% if proj.is_brain_initiative %}checked{% endif %}>
+            <label class="form-check-label" for="bi-proj-{{ proj.id }}"
+                   style="font-family:'Lato',sans-serif;font-size:.875rem;color:#161b33;">
+              {{ proj.name }}
+            </label>
+          </div>
+          {% empty %}
+          <p style="font-family:'Lato',sans-serif;font-size:.82rem;color:#8e92aa;">No projects found.</p>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid rgba(22,27,51,.07);padding:1rem 1.5rem;gap:.5rem;">
+        <button type="button" id="bi-remind-later"
+                style="background:#fff;color:#4a5070;border:1.5px solid rgba(22,27,51,.15);border-radius:7px;
+                       font-family:'Lato',sans-serif;font-weight:600;font-size:.8rem;padding:.45rem 1rem;cursor:pointer;">
+          Remind Me Later
+        </button>
+        <button type="button" id="bi-save-continue"
+                style="background:#161b33;color:#fff;border:none;border-radius:7px;
+                       font-family:'Lato',sans-serif;font-weight:600;font-size:.8rem;padding:.45rem 1rem;cursor:pointer;
+                       display:inline-flex;align-items:center;gap:6px;">
+          <i class="fa-solid fa-floppy-disk fa-xs"></i>Save &amp; Continue
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -332,4 +387,34 @@ h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
   chartEl.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) { new bootstrap.Tooltip(el); });
 })();
 </script>
+{% if show_brain_initiative_modal %}
+<script>
+(function () {
+  var modalEl = document.getElementById('brainInitiativeModal');
+  var modal = new bootstrap.Modal(modalEl);
+  modal.show();
+
+  document.getElementById('bi-remind-later').addEventListener('click', function () {
+    modal.hide();
+  });
+
+  document.getElementById('bi-save-continue').addEventListener('click', function () {
+    var csrftoken = document.cookie.split(';').reduce(function (v, c) {
+      var p = c.trim().split('=');
+      return p[0] === 'csrftoken' ? decodeURIComponent(p[1]) : v;
+    }, '');
+    var payload = {};
+    document.querySelectorAll('#bi-project-list input[type="checkbox"]').forEach(function (cb) {
+      payload[cb.dataset.projectId] = cb.checked;
+    });
+    fetch("{% url 'ingest:review_brain_initiative' %}", {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); }).then(function () { modal.hide(); }).catch(function () { modal.hide(); });
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}

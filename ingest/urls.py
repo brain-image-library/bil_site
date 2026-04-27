@@ -58,4 +58,6 @@ urlpatterns = [
     path("refresh_tables/", views.refresh_tables, name="refresh_tables"),
     path("doi_api/", views.doi_api, name="doi_api"),
     path('ingest/metadata_errors/<int:associated_collection>/', views.metadata_error_view, name='metadata_error_view'),
+    path('review-brain-initiative/', views.review_brain_initiative, name='review_brain_initiative'),
+    path('toggle-brain-initiative/<int:pk>/', views.toggle_brain_initiative, name='toggle_brain_initiative'),
 ]

@@ -127,7 +127,7 @@ class CollectionTable(tables.Table):
             elif record.submission_status == 'PENDING':
                 return mark_safe(
                     '<span class="badge text-bg-warning px-2 py-1">'
-                    '<i class="fa-solid fa-clock me-1"></i>Pub. In Progress</span>'
+                    '<i class="fa-solid fa-clock me-1"></i>Validation Requested</span>'
                 )
             elif record.submission_status == 'FAILED':
                 return mark_safe(
@@ -147,7 +147,7 @@ class CollectionTable(tables.Table):
                     if already_requested:
                         return mark_safe(
                             '<span class="badge text-bg-warning px-2 py-1">'
-                            '<i class="fa-solid fa-clock me-1"></i>Pub. In Progress</span>'
+                            '<i class="fa-solid fa-clock me-1"></i>Validation Requested</span>'
                         )
                     return mark_safe(
                         '<a href="{}" class="btn btn-sm btn-outline-secondary">'
@@ -170,7 +170,7 @@ class CollectionTable(tables.Table):
                 if already_requested:
                     return mark_safe(
                         '<span class="badge text-bg-warning px-2 py-1">'
-                        '<i class="fa-solid fa-clock me-1"></i>Pub. In Progress</span>'
+                        '<i class="fa-solid fa-clock me-1"></i>Validation Requested</span>'
                     )
                 return mark_safe(
                     '<a href="{}" class="btn btn-sm btn-outline-secondary">'
