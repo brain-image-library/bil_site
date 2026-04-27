@@ -17,6 +17,7 @@ class Project(models.Model):
     name = models.CharField(max_length=256, default="Project Name")
     funded_by = models.CharField(max_length=256)
     is_biccn = models.BooleanField(default=False)
+    is_brain_initiative = models.BooleanField(default=False)
 
 class Consortium(models.Model):
     short_name = models.CharField(max_length=256)
@@ -41,6 +42,7 @@ class People(models.Model):
     affiliation = models.CharField(max_length=256)
     affiliation_identifier = models.CharField(max_length=256)
     is_bil_admin = models.BooleanField(default=False)
+    has_reviewed_brain_initiative = models.BooleanField(default=False)
     auth_user_id = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null = True, blank=True)
 
 class Collection(models.Model):

@@ -14,10 +14,13 @@ Run with:
   python manage.py test ingest.tests.CheckContributorsSheetTests
 """
 
+import json
 import os
 import tempfile
 import xlwt
-from django.test import TestCase
+from django.test import TestCase, Client
+from django.contrib.auth.models import User
+from .models import Project, People, ProjectPeople, Consortium
 
 from ingest.views import (
     check_contributors_sheet,
@@ -1048,3 +1051,119 @@ class CheckSpatialSheetTests(TestCase):
             self.assertEqual(check_spatial_sheet(path), [])
         finally:
             _cleanup(path)
+
+
+# ---------------------------------------------------------------------------
+# BrainInitiative
+# ---------------------------------------------------------------------------
+
+class BrainInitiativeTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user('testuser', password='testpass')
+        self.client.login(username='testuser', password='testpass')
+        self.people = People.objects.create(
+            name='Test User',
+            orcid='',
+            affiliation='',
+            affiliation_identifier='',
+            is_bil_admin=False,
+            has_reviewed_brain_initiative=False,
+            auth_user_id=self.user,
+        )
+        self.project = Project.objects.create(
+            name='Test Project',
+            funded_by='NIH',
+            is_brain_initiative=False,
+        )
+        ProjectPeople.objects.create(
+            project_id=self.project,
+            people_id=self.people,
+            is_pi=True,
+            is_po=False,
+            doi_role='creator',
+        )
+
+    def test_create_project_sets_brain_initiative_true(self):
+        payload = [{'name': 'New Proj', 'funded_by': 'NIH', 'consortia_ids': [], 'parent_project': '', 'is_brain_initiative': True}]
+        response = self.client.post(
+            '/ingest/create_project/',
+            data=json.dumps(payload),
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        proj = Project.objects.get(name='New Proj')
+        self.assertTrue(proj.is_brain_initiative)
+
+    def test_create_project_sets_brain_initiative_false_by_default(self):
+        payload = [{'name': 'No BI Proj', 'funded_by': '', 'consortia_ids': [], 'parent_project': '', 'is_brain_initiative': False}]
+        response = self.client.post(
+            '/ingest/create_project/',
+            data=json.dumps(payload),
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        proj = Project.objects.get(name='No BI Proj')
+        self.assertFalse(proj.is_brain_initiative)
+
+    def test_review_brain_initiative_saves_and_sets_flag(self):
+        payload = {str(self.project.id): True}
+        response = self.client.post(
+            '/ingest/review-brain-initiative/',
+            data=json.dumps(payload),
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'success': True})
+        self.people.refresh_from_db()
+        self.assertTrue(self.people.has_reviewed_brain_initiative)
+        self.project.refresh_from_db()
+        self.assertTrue(self.project.is_brain_initiative)
+
+    def test_review_brain_initiative_ignores_unowned_projects(self):
+        other_project = Project.objects.create(name='Other', funded_by='')
+        payload = {str(other_project.id): True}
+        response = self.client.post(
+            '/ingest/review-brain-initiative/',
+            data=json.dumps(payload),
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        other_project.refresh_from_db()
+        self.assertFalse(other_project.is_brain_initiative)
+        self.people.refresh_from_db()
+        self.assertTrue(self.people.has_reviewed_brain_initiative)
+
+    def test_toggle_brain_initiative_on(self):
+        response = self.client.post(
+            f'/ingest/toggle-brain-initiative/{self.project.id}/',
+            data=json.dumps({'is_brain_initiative': True}),
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'success': True})
+        self.project.refresh_from_db()
+        self.assertTrue(self.project.is_brain_initiative)
+
+    def test_toggle_brain_initiative_off(self):
+        self.project.is_brain_initiative = True
+        self.project.save()
+        response = self.client.post(
+            f'/ingest/toggle-brain-initiative/{self.project.id}/',
+            data=json.dumps({'is_brain_initiative': False}),
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.project.refresh_from_db()
+        self.assertFalse(self.project.is_brain_initiative)
+
+    def test_toggle_brain_initiative_unauthorized(self):
+        other_project = Project.objects.create(name='Other', funded_by='')
+        response = self.client.post(
+            f'/ingest/toggle-brain-initiative/{other_project.id}/',
+            data=json.dumps({'is_brain_initiative': True}),
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 403)
+        other_project.refresh_from_db()
+        self.assertFalse(other_project.is_brain_initiative)
