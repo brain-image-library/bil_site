@@ -1,123 +1,255 @@
 {% extends 'ingest/wide.html' %}
 
+{% block scripts %}
+<style>
+:root {
+  --bil-accent:     #00c9a7;
+  --bil-accent-dim: rgba(0, 201, 167, .1);
+}
+
+.bil-page-header h4 {
+  font-family: 'Lato', sans-serif; font-weight: 800;
+  font-size: clamp(1.1rem, 3vw, 1.5rem); color: #161b33;
+  letter-spacing: -.03em; margin-bottom: .2rem;
+}
+.bil-page-header .bil-sub {
+  font-family: 'DM Mono', monospace; font-size: .7rem;
+  letter-spacing: .06em; color: #8589a8;
+}
+
+.bil-btn-outline {
+  background: #fff; color: #4a5070;
+  border: 1.5px solid rgba(22,27,51,.15); border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
+  padding: .45rem 1rem; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: border-color .15s, color .15s;
+}
+.bil-btn-outline:hover { border-color: rgba(22,27,51,.3); color: #161b33; }
+
+.bil-form-card {
+  background: #f7f8fb; border-radius: 12px;
+  border: 1.5px solid rgba(22,27,51,.09);
+  box-shadow: 0 2px 16px rgba(22,27,51,.06);
+  overflow: hidden; margin-bottom: 1.25rem;
+}
+.bil-form-card-header {
+  background: #161b33; padding: .9rem 1.4rem;
+  display: flex; align-items: center; gap: .6rem;
+}
+.bil-form-card-header-icon {
+  width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0;
+  background: var(--bil-accent-dim); color: #008e77;
+  display: flex; align-items: center; justify-content: center; font-size: .8rem;
+}
+.bil-form-card-header-title {
+  font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.6);
+}
+.bil-form-card-body { padding: 1.5rem; }
+
+.bil-info-table { width: 100%; font-size: .82rem; }
+.bil-info-table tr + tr td, .bil-info-table tr + tr th { border-top: 1px solid rgba(22,27,51,.05); }
+.bil-info-table th {
+  font-family: 'DM Mono', monospace; font-size: .59rem; letter-spacing: .08em;
+  text-transform: uppercase; color: #8589a8; font-weight: 500;
+  padding: .6rem 0; width: 36%; vertical-align: top;
+}
+.bil-info-table td { font-family: 'Lato', sans-serif; color: #3d4360; padding: .6rem 0; vertical-align: top; }
+.bil-info-table code {
+  font-family: 'DM Mono', monospace; font-size: .72rem;
+  background: rgba(22,27,51,.04); padding: 2px 6px; border-radius: 4px;
+  color: #252d52; word-break: break-all;
+}
+
+.bil-lock-badge {
+  background: rgba(255,193,7,.07); border: 1px solid rgba(255,193,7,.2);
+  border-radius: 8px; padding: .6rem .85rem; margin-bottom: 1.25rem;
+  font-family: 'Lato', sans-serif; font-size: .82rem; color: #856404;
+  display: flex; align-items: center; gap: 8px;
+}
+
+.bil-fadein { opacity: 0; transform: translateY(10px); animation: bil-fade .4s ease forwards; }
+@keyframes bil-fade { to { opacity: 1; transform: translateY(0); } }
+.bil-fadein:nth-child(1) { animation-delay: .03s; }
+.bil-fadein:nth-child(2) { animation-delay: .09s; }
+.bil-fadein:nth-child(3) { animation-delay: .15s; }
+@media (prefers-reduced-motion: reduce) {
+  .bil-fadein { opacity: 1; transform: none; animation: none; }
+}
+</style>
+{% endblock %}
+
 {% block wide %}
-<div class="d-flex align-items-start justify-content-between mb-3">
-  <div>
-    <h1 class="mb-1">Image Metadata <span class="text-muted fw-normal">{{ descriptive_metadata.project_name }}</span></h1>
-    <p class="text-muted mb-0">Descriptive metadata detail</p>
+
+{# ── Page header ── #}
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+  <div class="bil-page-header">
+    <h4>
+      <i class="fa-solid fa-clock-rotate-left me-2" style="color:var(--bil-accent);font-size:.95rem;" aria-hidden="true"></i>Version 1 Metadata
+    </h4>
+    <span class="bil-sub">{{ descriptive_metadata.sample_id }} &mdash; {{ descriptive_metadata.collection }}</span>
   </div>
-  {% if pi %}
-  <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary mt-1">
-    <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Return to PI Dashboard
+  <a href="{% url 'ingest:collection_detail' descriptive_metadata.collection.pk %}" class="bil-btn-outline">
+    <i class="fa-solid fa-arrow-left fa-xs" aria-hidden="true"></i>Back to Collection
   </a>
-  {% endif %}
 </div>
 
 {% if descriptive_metadata.locked %}
-<div class="alert alert-info d-flex gap-2 align-items-start mb-3">
-  <i class="fa-solid fa-lock mt-1 flex-shrink-0"></i>
+<div class="bil-lock-badge bil-fadein">
+  <i class="fa-solid fa-lock fa-xs flex-shrink-0"></i>
   <span><strong>Submitted metadata cannot be modified or deleted.</strong></span>
 </div>
 {% endif %}
 
-<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
-  <div class="card-body p-4">
-    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
-      <i class="fa-solid fa-circle-info fa-sm me-1"></i>Metadata Fields
-    </p>
-    <div class="table-responsive">
-      <table class="table table-bordered align-middle mb-0">
-        <tbody>
-          <tr>
-            <th class="table-light fw-semibold" style="width:35%">locked</th>
-            <td>{{ descriptive_metadata.locked }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">user</th>
-            <td>{{ descriptive_metadata.user }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">date_created</th>
-            <td>{{ descriptive_metadata.date_created }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">last_edited</th>
-            <td>{{ descriptive_metadata.last_edited }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">submission</th>
-            <td>{{ descriptive_metadata.collection }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">sample_id</th>
-            <td>{{ descriptive_metadata.sample_id }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">organism_type</th>
-            <td>{{ descriptive_metadata.organism_type }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">organism_ncbi_taxonomy_id</th>
-            <td>{{ descriptive_metadata.organism_ncbi_taxonomy_id }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">transgenetic_line_information</th>
-            <td>{{ descriptive_metadata.transgenetic_line_information }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">modality</th>
-            <td>{{ descriptive_metadata.modality }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">method</th>
-            <td>{{ descriptive_metadata.method }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">technique</th>
-            <td>{{ descriptive_metadata.technique }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">anatomical_structure</th>
-            <td>{{ descriptive_metadata.anatomical_structure }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">total_processed_cells</th>
-            <td>{{ descriptive_metadata.total_processed_cells }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">organization</th>
-            <td>{{ descriptive_metadata.organization }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">lab</th>
-            <td>{{ descriptive_metadata.lab }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">investigator</th>
-            <td>{{ descriptive_metadata.investigator }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">grant_number</th>
-            <td>{{ descriptive_metadata.grant_number }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">r24_name</th>
-            <td>{{ descriptive_metadata.r24_name }}</td>
-          </tr>
-          <tr>
-            <th class="table-light fw-semibold">r24_directory</th>
-            <td>{{ descriptive_metadata.r24_directory }}</td>
-          </tr>
-        </tbody>
-      </table>
+{# ── Sample & Organism ── #}
+<div class="bil-form-card bil-fadein">
+  <div class="bil-form-card-header">
+    <div class="bil-form-card-header-icon">
+      <i class="fa-solid fa-vial fa-xs" aria-hidden="true"></i>
     </div>
+    <span class="bil-form-card-header-title">Sample &amp; Organism</span>
+  </div>
+  <div class="bil-form-card-body">
+    <table class="bil-info-table">
+      <tbody>
+        <tr>
+          <th>Sample ID</th>
+          <td>{{ descriptive_metadata.sample_id }}</td>
+        </tr>
+        <tr>
+          <th>Organism Type</th>
+          <td>{{ descriptive_metadata.organism_type }}</td>
+        </tr>
+        <tr>
+          <th>NCBI Taxonomy ID</th>
+          <td><code>{{ descriptive_metadata.organism_ncbi_taxonomy_id }}</code></td>
+        </tr>
+        <tr>
+          <th>Transgenic Line</th>
+          <td>{{ descriptive_metadata.transgenetic_line_information }}</td>
+        </tr>
+        <tr>
+          <th>Anatomical Structure</th>
+          <td>{{ descriptive_metadata.anatomical_structure }}</td>
+        </tr>
+        <tr>
+          <th>Total Processed Cells</th>
+          <td>{{ descriptive_metadata.total_processed_cells }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>
 
-<div class="d-flex gap-2 mt-3">
-  <a href="{% url 'ingest:descriptive_metadata_list' %}" class="btn btn-outline-secondary">
-    <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Back to List
-  </a>
+{# ── Imaging ── #}
+<div class="bil-form-card bil-fadein">
+  <div class="bil-form-card-header">
+    <div class="bil-form-card-header-icon">
+      <i class="fa-solid fa-microscope fa-xs" aria-hidden="true"></i>
+    </div>
+    <span class="bil-form-card-header-title">Imaging</span>
+  </div>
+  <div class="bil-form-card-body">
+    <table class="bil-info-table">
+      <tbody>
+        <tr>
+          <th>Modality</th>
+          <td>{{ descriptive_metadata.modality }}</td>
+        </tr>
+        <tr>
+          <th>Method</th>
+          <td>{{ descriptive_metadata.method }}</td>
+        </tr>
+        <tr>
+          <th>Technique</th>
+          <td>{{ descriptive_metadata.technique }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Provenance ── #}
+<div class="bil-form-card bil-fadein">
+  <div class="bil-form-card-header">
+    <div class="bil-form-card-header-icon">
+      <i class="fa-solid fa-building fa-xs" aria-hidden="true"></i>
+    </div>
+    <span class="bil-form-card-header-title">Provenance</span>
+  </div>
+  <div class="bil-form-card-body">
+    <table class="bil-info-table">
+      <tbody>
+        <tr>
+          <th>Organization</th>
+          <td>{{ descriptive_metadata.organization }}</td>
+        </tr>
+        <tr>
+          <th>Lab</th>
+          <td>{{ descriptive_metadata.lab }}</td>
+        </tr>
+        <tr>
+          <th>Investigator</th>
+          <td>{{ descriptive_metadata.investigator }}</td>
+        </tr>
+        <tr>
+          <th>Grant Number</th>
+          <td><code>{{ descriptive_metadata.grant_number }}</code></td>
+        </tr>
+        <tr>
+          <th>R24 Name</th>
+          <td>{{ descriptive_metadata.r24_name }}</td>
+        </tr>
+        <tr>
+          <th>R24 Directory</th>
+          <td><code>{{ descriptive_metadata.r24_directory }}</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Record info ── #}
+<div class="bil-form-card bil-fadein">
+  <div class="bil-form-card-header">
+    <div class="bil-form-card-header-icon">
+      <i class="fa-solid fa-circle-info fa-xs" aria-hidden="true"></i>
+    </div>
+    <span class="bil-form-card-header-title">Record Info</span>
+  </div>
+  <div class="bil-form-card-body">
+    <table class="bil-info-table">
+      <tbody>
+        <tr>
+          <th>Collection</th>
+          <td>{{ descriptive_metadata.collection }}</td>
+        </tr>
+        <tr>
+          <th>User</th>
+          <td>{{ descriptive_metadata.user }}</td>
+        </tr>
+        <tr>
+          <th>Date Created</th>
+          <td>{{ descriptive_metadata.date_created }}</td>
+        </tr>
+        <tr>
+          <th>Last Edited</th>
+          <td>{{ descriptive_metadata.last_edited }}</td>
+        </tr>
+        <tr>
+          <th>Locked</th>
+          <td>
+            {% if descriptive_metadata.locked %}
+              <i class="fa-solid fa-lock fa-xs" style="color:#856404;"></i> Yes
+            {% else %}
+              <i class="fa-solid fa-lock-open fa-xs" style="color:#8589a8;"></i> No
+            {% endif %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
 {% endblock %}

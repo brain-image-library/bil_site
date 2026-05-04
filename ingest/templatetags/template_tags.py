@@ -34,5 +34,25 @@ def pretty_print(value):
     except (ValueError, TypeError):
         return 'Invalid data'
 
+@register.filter(name='human_key')
+def human_key(value):
+    return str(value).replace('_', ' ').title()
+
+@register.filter(name='nhash_prefix')
+def nhash_prefix(value):
+    return str(value)[:2].lower()
+
+@register.filter(name='is_empty_val')
+def is_empty_val(value):
+    """True when a value should be treated as blank: None, '', {}, []."""
+    if value is None:
+        return True
+    if isinstance(value, (dict, list)):
+        return len(value) == 0
+    return str(value).strip() == ''
+
 # Ensure to register your filter
 register.filter('pretty_print', pretty_print)
+register.filter('human_key', human_key)
+register.filter('nhash_prefix', nhash_prefix)
+register.filter('is_empty_val', is_empty_val)

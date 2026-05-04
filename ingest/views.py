@@ -169,11 +169,27 @@ def index(request):
         submission_status=Collection.SUCCESS,
         validation_status=Collection.SUCCESS,
     ).count()
-    user_public_datasets = Dataset.objects.filter(
-        sheet__collection__user=current_user,
-        sheet__collection__submission_status=Collection.SUCCESS,
-        sheet__collection__validation_status=Collection.SUCCESS,
+
+    public_collections = Collection.objects.filter(
+        user=current_user,
+        submission_status=Collection.SUCCESS,
+        validation_status=Collection.SUCCESS,
+    )
+    # Collections that have v2 datasets (Dataset → Sheet → Collection)
+    v2_collection_ids = set(
+        Dataset.objects.filter(sheet__collection__in=public_collections)
+        .values_list('sheet__collection_id', flat=True)
+        .distinct()
+    )
+    v2_dataset_count = Dataset.objects.filter(
+        sheet__collection_id__in=v2_collection_ids
     ).count()
+    # For collections with no v2 datasets, fall back to v1 (DescriptiveMetadata)
+    v1_only_collections = public_collections.exclude(id__in=v2_collection_ids)
+    v1_dataset_count = DescriptiveMetadata.objects.filter(
+        collection__in=v1_only_collections
+    ).count()
+    user_public_datasets = v2_dataset_count + v1_dataset_count
     # Submission in progress: submitted for validation, not yet published
     user_validation_requested = Collection.objects.filter(
         user=current_user,
@@ -1405,18 +1421,14 @@ def collection_detail(request, pk):
     except ObjectDoesNotExist:
         raise Http404
 
-    descriptive_metadata_queryset = collection.descriptivemetadata_set.last()
+    descriptive_metadata_list = DescriptiveMetadata.objects.filter(collection=collection)
 
-    table = DescriptiveMetadataTable(
-        DescriptiveMetadata.objects.filter(user=request.user, collection=collection))
-    
     return render(
         request,
         'ingest/collection_detail.html',
         {
-            'table': table,
             'collection': collection,
-            'descriptive_metadata_queryset': descriptive_metadata_queryset,
+            'descriptive_metadata_list': descriptive_metadata_list,
             'pi': pi,
             'datasets_list': datasets_list,
             'consortium_tags': consortium_tags,
@@ -1612,6 +1624,7 @@ def create_dataset_linkage(request, collection_id):
             "collection": collection,
             "existing_linkages": existing_linkages,
             "datasets_to_link": datasets_to_link,
+            "all_datasets": all_datasets,
             "bil_id_data": bil_id_data,
         },
     )

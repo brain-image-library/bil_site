@@ -406,20 +406,50 @@ h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
 
             {% include 'ingest/new_metadata_sheet.html' %}
 
-            {% if descriptive_metadata_queryset %}
-            {% load render_table from django_tables2 %}
+            {% if descriptive_metadata_list %}
             <div class="mt-3">
-              <div class="d-flex align-items-center justify-content-between py-2 px-1"
-                   style="cursor:pointer;border-top:1px solid rgba(22,27,51,.06);"
+              <div class="bil-card-hdr--light"
                    data-bs-toggle="collapse" data-bs-target="#collapseV1Metadata"
                    aria-expanded="false" aria-controls="collapseV1Metadata">
-                <span class="bil-card-title--dark">
+                <div class="bil-card-title--dark">
                   <i class="fa-solid fa-clock-rotate-left fa-xs" aria-hidden="true"></i>Version 1 Metadata
-                </span>
+                  <span style="font-family:'DM Mono',monospace;font-size:.6rem;background:rgba(22,27,51,.06);color:#8589a8;padding:.15em .5em;border-radius:4px;">{{ descriptive_metadata_list|length }}</span>
+                </div>
                 <i class="fa-solid fa-chevron-down fa-xs text-secondary" aria-hidden="true"></i>
               </div>
               <div class="collapse" id="collapseV1Metadata">
-                <div class="pt-2">{% render_table table %}</div>
+                <div class="table-responsive">
+                  <table class="bil-data-table">
+                    <thead>
+                      <tr>
+                        <th>Sample ID</th>
+                        <th>Organism</th>
+                        <th>Method</th>
+                        <th>Technique</th>
+                        <th>Modality</th>
+                        <th>Anatomical Structure</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for dm in descriptive_metadata_list %}
+                      <tr>
+                        <td style="font-weight:600;color:#161b33;">{{ dm.sample_id }}</td>
+                        <td>{{ dm.organism_type }}</td>
+                        <td><span class="bil-code">{{ dm.method }}</span></td>
+                        <td><span class="bil-code">{{ dm.technique }}</span></td>
+                        <td>{{ dm.modality }}</td>
+                        <td>{{ dm.anatomical_structure }}</td>
+                        <td>
+                          <a href="{% url 'ingest:descriptive_metadata_detail' dm.pk %}" class="bil-icon-btn" title="View detail">
+                            <i class="fa-solid fa-arrow-right fa-xs"></i>
+                          </a>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
             {% endif %}

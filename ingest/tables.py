@@ -420,9 +420,12 @@ class DescriptiveMetadataTable(tables.Table):
         'ingest:descriptive_metadata_detail',
         verbose_name="",
         args=[A('pk')],
-        text=format_html('<button type="button" class="btn btn-primary">Detail</button>')
-        #text=format_html('<span class="glyphicon glyphicon-cog"></span>'),
-        #attrs={'a': {'class': "btn btn-info", 'role': "button"}}
+        text=format_html(
+            '<button type="button" class="btn btn-sm" '
+            'style="background-color:#161b33;color:#fff;border-color:#161b33;">'
+            '<i class="fa-solid fa-arrow-right me-1"></i>Detail'
+            '</button>'
+        ),
     )
     project_description = tables.Column()
 

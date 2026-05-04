@@ -303,10 +303,21 @@
   </div>
 </div>
 {% else %}
+{% if not all_datasets %}
+<div class="bil-notice-info bil-fadein" style="background:rgba(255,193,7,.07);border-color:rgba(255,193,7,.25);color:#856404;">
+  <i class="fa-solid fa-triangle-exclamation fa-xs" style="color:#d4a017;" aria-hidden="true"></i>
+  <span>
+    <strong>No V2 metadata found for this collection.</strong>
+    Dataset linkages can only be created for collections with V2 metadata uploaded via the metadata spreadsheet.
+    This collection currently uses Version 1 metadata — upload V2 metadata first before creating linkages.
+  </span>
+</div>
+{% else %}
 <div class="bil-notice-info bil-fadein">
   <i class="fa-solid fa-circle-check fa-xs" aria-hidden="true"></i>
   <span>All datasets in this collection already have at least one linkage.</span>
 </div>
+{% endif %}
 {% endif %}
 
 {% endblock %}
