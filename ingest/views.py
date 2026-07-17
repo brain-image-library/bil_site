@@ -48,50 +48,36 @@ from django.db.models import OuterRef, Subquery, Q, Exists, Count, F, Sum
 from django.db.models.functions import ExtractYear
 from pathlib import Path
 import jwt, time
-import concurrent.futures
-import brainimagelibrary
-
-
-def _sdk_fetch_report():
-    from brainimagelibrary import reports as bil_reports
-    return bil_reports.daily()
 
 
 def _get_public_dataset_stats():
-    """Return (public_dataset_count, public_file_count, datasets_by_year) or None.
+    """Return (public_dataset_count, None, None) or None.
 
-    All three values are derived from the same SDK DataFrame so the bar chart
-    always sums to the headline count. Returns None (hides the section) if the
-    SDK is unavailable or takes too long.
+    Fetches dataset count from the BIL public API. Returns None (hides the
+    stats section) if the API is unavailable or takes too long. Failures are
+    cached for 5 minutes to avoid hammering a down endpoint on every request.
     """
+    if cache.get('public_dataset_stats_unavailable'):
+        return None
+
     cached = cache.get('public_dataset_stats')
     if cached is not None:
         return cached
 
-    # Enforce a hard timeout — the SDK has an internal scratch-build fallback
-    # that can run for minutes. We avoid the `with` context manager because its
-    # __exit__ calls shutdown(wait=True) and would block until the thread finishes.
-    executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
     try:
-        future = executor.submit(_sdk_fetch_report)
-        df = future.result(timeout=5)
+        response = requests.get(
+            'https://api.brainimagelibrary.org/stats',
+            params={'type': 'all'},
+            timeout=5,
+        )
+        response.raise_for_status()
+        data = response.json()
+        dataset_count = int(data['dataset_count'])
     except Exception:
-        executor.shutdown(wait=False)
-        return None
-    executor.shutdown(wait=False)
-
-    if df is None or df.empty:
+        cache.set('public_dataset_stats_unavailable', True, 300)
         return None
 
-    public_dataset_count = len(df)
-    public_file_count = int(df['number_of_files'].sum())
-
-    df_dated = df.dropna(subset=['bildate']).copy()
-    df_dated['year'] = df_dated['bildate'].str[:4].astype(int)
-    year_counts = df_dated.groupby('year').size().sort_index()
-    datasets_by_year = [{'year': int(y), 'count': int(c)} for y, c in year_counts.items()]
-
-    result = (public_dataset_count, public_file_count, datasets_by_year)
+    result = (dataset_count, None, None)
     cache.set('public_dataset_stats', result, 3600)
     return result
 
@@ -1388,7 +1374,7 @@ def collection_detail(request, pk):
 
     try:
         datasets_list = []
-        collection = Collection.objects.get(id=pk)
+        collection = Collection.objects.get(id=pk, user=current_user)
         project = collection.project
         project_consortia = ProjectConsortium.objects.filter(project=project).select_related('consortium')
 
@@ -3927,6 +3913,7 @@ def whitelist_filter(obj, *, keep_all_keys=False):
 
     return obj
 
+@login_required
 def bican_id_upload(request, sheet_id):
     if request.method == 'GET':
         specimens = Specimen.objects.filter(sheet_id=sheet_id)
@@ -3948,6 +3935,7 @@ def bican_id_upload(request, sheet_id):
     
     return render(request, 'ingest/specimen_bican.html', context)
 
+@login_required
 def specimen_bican(request, sheet_id):
     # Retrieve Specimen Local IDs corresponding to the uploaded sheet
     specimens = Specimen.objects.filter(sheet_id=sheet_id)
@@ -3979,6 +3967,7 @@ def specimen_bican(request, sheet_id):
 
     return response
 
+@login_required
 def save_bican_spreadsheet(request):
     if request.method == 'POST':
         uploaded_file = request.FILES['file']
@@ -4031,6 +4020,7 @@ def save_bican_spreadsheet(request):
         # Handle GET request
         return render(request, '/')
 
+@login_required
 def save_bican_ids(request):
     if request.method == 'POST':
         sheet_id, csrf_token, data_items = extract_post_data(request)
@@ -4116,6 +4106,7 @@ def specimen_list_mapping(ids_list, specimen_list):
         specimen_ids_mapping[specimen] = ids
     return specimen_ids_mapping
 
+@login_required
 def process_ids(request):
     if request.method == 'POST':
         # Process the received processed_ids list
@@ -4142,6 +4133,7 @@ def process_ids(request):
         print('failed')
         return redirect('ingest:collection_list')  # Redirect to error page
 
+@login_required
 def save_nhash_specimen_list(request):
     if request.method == 'POST':
         # Retrieve the nhash_specimen_list from the POST data
@@ -4161,6 +4153,7 @@ def save_nhash_specimen_list(request):
         # Return an error response if accessed via GET request
         return JsonResponse({'error': 'POST method required'})
 
+@login_required
 def nhash_id_confirm(request):
     # Retrieve the nhash_info_list from the query parameters
     nhash_info_list_str = request.GET.get('nhash_info_list', '')

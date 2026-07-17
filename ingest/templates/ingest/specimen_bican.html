@@ -3,88 +3,7 @@
 
 {% block scripts %}
 <style>
-:root {
-  --bil-accent:     #00c9a7;
-  --bil-accent-dim: rgba(0, 201, 167, .1);
-}
-
-/* ── Page header ── */
-.bil-page-header h4 {
-  font-family: 'Lato', sans-serif; font-weight: 800;
-  font-size: clamp(1.2rem, 3vw, 1.6rem); color: #161b33;
-  letter-spacing: -.03em; margin-bottom: .2rem;
-}
-.bil-page-header .bil-sub {
-  font-family: 'DM Mono', monospace; font-size: .7rem;
-  letter-spacing: .06em; color: #8589a8;
-}
-
-/* ── Buttons ── */
-.bil-btn-dark {
-  background: #161b33; color: #fff; border: none; border-radius: 7px;
-  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
-  padding: .5rem 1.2rem; cursor: pointer;
-  display: inline-flex; align-items: center; gap: 6px;
-  transition: background .15s, box-shadow .15s, transform .1s;
-  text-decoration: none;
-}
-.bil-btn-dark:hover { background: #252d52; box-shadow: 0 4px 12px rgba(22,27,51,.2); transform: translateY(-1px); color: #fff; }
-.bil-btn-dark:disabled, .bil-btn-dark[disabled] {
-  opacity: .45; pointer-events: none; transform: none; box-shadow: none;
-}
-.bil-btn-dark:focus-visible { outline: 2px solid rgba(0,201,167,.85); outline-offset: 2px; }
-.bil-btn-outline {
-  background: #fff; color: #4a5070;
-  border: 1.5px solid rgba(22,27,51,.15); border-radius: 7px;
-  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
-  padding: .45rem 1rem; text-decoration: none;
-  display: inline-flex; align-items: center; gap: 6px;
-  transition: border-color .15s, color .15s;
-}
-.bil-btn-outline:hover { border-color: rgba(22,27,51,.3); color: #161b33; }
-.bil-btn-outline:focus-visible { outline: 2px solid rgba(0,201,167,.85); outline-offset: 2px; }
-
-/* ── Section card ── */
-.bil-form-card {
-  background: #f7f8fb; border-radius: 12px;
-  border: 1.5px solid rgba(22,27,51,.09);
-  box-shadow: 0 2px 16px rgba(22,27,51,.06);
-  overflow: hidden; margin-bottom: 1.25rem;
-}
-.bil-form-card-header {
-  background: #161b33; padding: .9rem 1.4rem;
-  display: flex; align-items: center; gap: .6rem;
-}
-.bil-form-card-header-icon {
-  width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0;
-  background: var(--bil-accent-dim); color: #008e77;
-  display: flex; align-items: center; justify-content: center; font-size: .8rem;
-}
-.bil-form-card-header-title {
-  font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .1em;
-  text-transform: uppercase; color: rgba(255,255,255,.6);
-}
-.bil-form-card-body { padding: 1.5rem; }
-
-/* ── Tables ── */
-.bil-linkage-table {
-  width: 100%; border-collapse: collapse; font-size: .83rem;
-}
-.bil-linkage-table thead th {
-  font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .1em;
-  text-transform: uppercase; color: #8589a8;
-  padding: .6rem .85rem; border-bottom: 1.5px solid rgba(22,27,51,.1);
-  white-space: nowrap; font-weight: 500;
-}
-.bil-linkage-table tbody td {
-  padding: .7rem .85rem; border-bottom: 1px solid rgba(22,27,51,.06);
-  vertical-align: middle; color: #2d3154;
-  font-family: 'Lato', sans-serif;
-}
-.bil-linkage-table tbody tr:last-child td { border-bottom: none; }
-.bil-linkage-table tbody tr:hover td { background: rgba(22,27,51,.025); }
-
-/* ── Table form controls ── */
+/* Table form controls (inline editing within linkage table) */
 .bil-linkage-table .form-control {
   font-family: 'Lato', sans-serif; font-size: .83rem; color: #2d3154;
   background: #fff; border: 1.5px solid rgba(22,27,51,.15); border-radius: 7px;
@@ -96,33 +15,8 @@
   box-shadow: 0 0 0 3px rgba(0,201,167,.12);
 }
 
-/* ── OR divider ── */
-.bil-or-divider {
-  display: flex; align-items: center; gap: 1rem;
-  margin: 1.75rem 0;
-}
-.bil-or-divider hr { flex: 1; margin: 0; border-color: rgba(22,27,51,.1); }
-.bil-or-divider span {
-  font-family: 'DM Mono', monospace; font-size: .62rem; letter-spacing: .1em;
-  text-transform: uppercase; color: #8589a8; white-space: nowrap;
-}
-
-/* ── File input row ── */
 .bil-file-row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
-.bil-file-chosen {
-  font-family: 'DM Mono', monospace; font-size: .72rem; color: #8589a8;
-}
-
-/* ── Fade-in ── */
-.bil-fadein { opacity: 0; transform: translateY(10px); animation: bil-fade .4s ease forwards; }
-@keyframes bil-fade { to { opacity: 1; transform: translateY(0); } }
-.bil-fadein:nth-child(1) { animation-delay: .04s; }
-.bil-fadein:nth-child(2) { animation-delay: .10s; }
-.bil-fadein:nth-child(3) { animation-delay: .16s; }
-.bil-fadein:nth-child(4) { animation-delay: .22s; }
-@media (prefers-reduced-motion: reduce) {
-  .bil-fadein { opacity: 1; transform: none; animation: none; }
-}
+.bil-file-chosen { font-family: 'DM Mono', monospace; font-size: .72rem; color: #8589a8; }
 </style>
 {% endblock %}
 

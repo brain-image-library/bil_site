@@ -3,18 +3,12 @@
 
 {% block scripts %}
 <style>
-:root {
-  --bil-accent:     #00c9a7;
-  --bil-accent-dim: rgba(0, 201, 167, 0.1);
-  --bil-dark-srf:   #0d1121;
-}
+:root { --bil-dark-srf: #0d1121; }
 
 body {
   background-image: radial-gradient(circle, rgba(22,27,51,.11) 1px, transparent 1px);
   background-size: 28px 28px;
 }
-
-h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
 
 /* ── Hero ────────────────────────────────────────────────── */
 .bil-hero {
@@ -249,13 +243,8 @@ h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
   margin: 0;
 }
 
-/* ── Fade-in ─────────────────────────────────────────────── */
-.bil-fadein {
-  opacity: 0;
-  transform: translateY(14px);
-  animation: bil-fade .5s ease forwards;
-}
-@keyframes bil-fade { to { opacity: 1; transform: translateY(0); } }
+/* ── Fade-in (slightly slower/deeper for dashboard hero) ── */
+.bil-fadein { transform: translateY(14px); animation-duration: .5s; }
 .bil-fadein:nth-child(1) { animation-delay: .05s; }
 .bil-fadein:nth-child(2) { animation-delay: .12s; }
 .bil-fadein:nth-child(3) { animation-delay: .19s; }
@@ -311,6 +300,7 @@ h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
           </div>
         </div>
 
+        {% if public_file_count %}
         <div class="bil-divider-v d-none d-md-block"></div>
 
         <div class="flex-shrink-0">
@@ -320,6 +310,7 @@ h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
             <i class="fa-solid fa-database me-1" style="font-size:.6rem;"></i>deposited on BIL
           </div>
         </div>
+        {% endif %}
 
         {% if datasets_by_year %}
         <div class="bil-divider-v d-none d-lg-block"></div>
