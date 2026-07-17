@@ -3,18 +3,12 @@
 
 {% block scripts %}
 <style>
-:root {
-  --bil-accent:     #00c9a7;
-  --bil-accent-dim: rgba(0, 201, 167, 0.1);
-  --bil-dark-srf:   #0d1121;
-}
+:root { --bil-dark-srf: #0d1121; }
 
 body {
   background-image: radial-gradient(circle, rgba(22,27,51,.11) 1px, transparent 1px);
   background-size: 28px 28px;
 }
-
-h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
 
 /* Instrument panel */
 .bil-instrument {
@@ -108,12 +102,7 @@ h1,h2,h3,h4,h5,h6 { font-family: 'Lato', sans-serif !important; }
 }
 .bil-section-label::after { content: ''; flex: 1; height: 1px; background: currentColor; opacity: .3; }
 
-.bil-fadein { opacity: 0; transform: translateY(12px); animation: bil-fade .45s ease forwards; }
-@keyframes bil-fade { to { opacity: 1; transform: translateY(0); } }
-.bil-fadein:nth-child(1) { animation-delay: .04s; }
-.bil-fadein:nth-child(2) { animation-delay: .10s; }
-.bil-fadein:nth-child(3) { animation-delay: .16s; }
-.bil-fadein:nth-child(4) { animation-delay: .22s; }
+.bil-fadein { transform: translateY(12px); animation-duration: .45s; }
 .bil-fadein:nth-child(5) { animation-delay: .28s; }
 
 </style>

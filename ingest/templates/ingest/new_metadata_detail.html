@@ -4,67 +4,13 @@
 {% block scripts %}
 <link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
 <style>
-:root { --bil-accent: #00c9a7; --bil-accent-dim: rgba(0,201,167,.1); }
-
-/* ── Page header ── */
-.bil-page-header h2 {
-  font-family: 'Lato', sans-serif; font-weight: 800;
-  font-size: clamp(1.2rem,2.5vw,1.65rem); color: #161b33;
-  letter-spacing: -.03em; margin-bottom: .2rem;
-}
-.bil-page-header .bil-sub {
-  font-family: 'DM Mono', monospace; font-size: .7rem;
-  letter-spacing: .06em; color: #8589a8;
-}
-.bil-btn-outline {
-  background: #fff; color: #4a5070;
-  border: 1.5px solid rgba(22,27,51,.15); border-radius: 7px;
-  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .85rem;
-  padding: .45rem 1rem; text-decoration: none;
-  display: inline-flex; align-items: center; gap: 6px;
-  transition: border-color .15s, color .15s;
-}
-.bil-btn-outline:hover { border-color: rgba(22,27,51,.3); color: #161b33; }
-
-/* ── Sheet tabs ── */
-.bil-sheet-tabs { border-bottom: none; gap: 3px; flex-wrap: wrap; }
-.bil-sheet-tabs .nav-link {
-  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .82rem;
-  color: #616788; background: #f0f2f7;
-  border: 1.5px solid rgba(22,27,51,.1); border-bottom: none;
-  border-radius: 7px 7px 0 0; padding: .45rem .9rem;
-  transition: color .15s, background .15s; white-space: nowrap;
-}
-.bil-sheet-tabs .nav-link:hover { color: #161b33; background: #e8ecf5; }
-.bil-sheet-tabs .nav-link.active { background: #161b33; color: #fff; border-color: #161b33; }
-.tab-badge {
-  font-family: 'DM Mono', monospace; font-size: .58rem; font-weight: 500;
-  padding: .18em .5em; border-radius: 4px; margin-left: 4px;
-  background: rgba(22,27,51,.12); color: inherit; display: inline-block;
-}
-.bil-sheet-tabs .nav-link.active .tab-badge { background: rgba(255,255,255,.2); color: #fff; }
-.tab-badge.has-data { background: var(--bil-accent); color: #fff; }
-.bil-sheet-tabs .nav-link.active .tab-badge.has-data { background: rgba(0,201,167,.7); }
-
-/* ── Tab content panel ── */
-.bil-tab-content {
-  background: #f7f8fb;
-  border: 1.5px solid rgba(22,27,51,.09);
-  border-radius: 0 7px 7px 7px;
-  box-shadow: 0 2px 10px rgba(22,27,51,.05);
-  overflow: hidden;
-}
-.bil-tab-pane-inner { padding: 1.25rem; }
-
-/* ── Detail tables ── */
-.bil-detail-table { width: 100%; margin: 0; border-collapse: separate; border-spacing: 0; font-size: .8rem; }
-
-/* ── Truncated long-text cells ── */
 .bil-cell-clamp {
   max-width: 240px; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; display: block; cursor: default;
 }
 .bil-cell-clamp:hover { color: #161b33; }
+
+.bil-detail-table { width: 100%; margin: 0; border-collapse: separate; border-spacing: 0; font-size: .8rem; }
 .bil-detail-table thead th {
   font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .08em;
   text-transform: uppercase; color: rgba(255,255,255,.7); font-weight: 500;
@@ -81,20 +27,12 @@
 .bil-detail-table tbody tr:hover td { background: rgba(0,201,167,.04); }
 .bil-detail-table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--bil-accent); }
 
-/* DataTables sort arrows on dark header */
-.bil-tab-content thead .sorting::after,
-.bil-tab-content thead .sorting_asc::after,
-.bil-tab-content thead .sorting_desc::after,
-.bil-tab-content thead .dt-orderable-asc .dt-column-title::after,
-.bil-tab-content thead .dt-orderable-desc .dt-column-title::after { filter: invert(1); opacity: .55; }
-
 /* DataTables toolbar */
 .bil-tab-pane-inner .dataTables_wrapper .dataTables_filter input,
 .bil-tab-pane-inner .dataTables_wrapper .dataTables_length select {
   border: 1.5px solid rgba(22,27,51,.12); border-radius: 6px;
   font-family: 'Lato', sans-serif; font-size: .82rem; color: #3d4360;
-  padding: .3rem .6rem; background: #fff;
-  transition: border-color .15s;
+  padding: .3rem .6rem; background: #fff; transition: border-color .15s;
 }
 .bil-tab-pane-inner .dataTables_wrapper .dataTables_filter input:focus,
 .bil-tab-pane-inner .dataTables_wrapper .dataTables_length select:focus {
@@ -110,23 +48,6 @@
 }
 .bil-tab-pane-inner .dataTables_wrapper .dataTables_paginate .paginate_button.current {
   background: #161b33 !important; border-color: #161b33 !important; color: #fff !important;
-}
-
-/* ── Empty notice ── */
-.bil-notice-info {
-  background: rgba(0,201,167,.06); border: 1px solid rgba(0,201,167,.2);
-  border-radius: 8px; padding: .75rem 1rem;
-  font-family: 'Lato', sans-serif; font-size: .85rem; color: #4a5070;
-  display: flex; align-items: flex-start; gap: 8px;
-}
-.bil-notice-info i { color: var(--bil-accent); flex-shrink: 0; margin-top: 2px; }
-
-.bil-fadein { opacity: 0; transform: translateY(8px); animation: bil-fade .35s ease forwards; }
-@keyframes bil-fade { to { opacity: 1; transform: translateY(0); } }
-.bil-fadein:nth-child(1) { animation-delay: .03s; }
-.bil-fadein:nth-child(2) { animation-delay: .08s; }
-@media (prefers-reduced-motion: reduce) {
-  .bil-fadein { opacity: 1; transform: none; animation: none; }
 }
 </style>
 {% endblock %}
