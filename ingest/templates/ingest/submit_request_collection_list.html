@@ -183,10 +183,11 @@
       <button id="submitBtn" type="button" class="bil-btn-dark" onclick="collection_send();" disabled>
         <i class="fa-solid fa-paper-plane fa-xs"></i>Submit Validation Request
       </button>
-      <div id="curationResults" class="flex-grow-1"></div>
     </div>
   </div>
 </div>
+
+<div id="curationResults" class="mb-3"></div>
 
 {# ── 2. Need Metadata ── #}
 <div class="bil-panel bil-fadein">
@@ -381,6 +382,13 @@
       btn.disabled = !Array.from(checkboxes).some(cb => cb.checked);
     }
     checkboxes.forEach(cb => cb.addEventListener('change', updateBtn));
+
+    const preselect = new URLSearchParams(window.location.search).get('preselect');
+    if (preselect) {
+      const target = document.querySelector(`.collection-checkbox[value="${preselect}"]`);
+      if (target) target.checked = true;
+    }
+
     updateBtn();
   }
 
@@ -423,6 +431,7 @@
                 ${info.details  ? `<p class="mb-1 text-muted">${info.details}</p>` : ''}
                 ${info.missing?.length ? `<p class="mb-1"><span class="text-danger fw-semibold">Missing:</span> ${info.missing.join(', ')}</p>` : ''}
                 ${info.extra?.length   ? `<p class="mb-1"><span class="text-warning fw-semibold">Extra:</span> ${info.extra.join(', ')}</p>` : ''}
+                ${info.bad_paths?.length ? `<div class="mb-1"><span class="text-danger fw-semibold">Invalid BILDirectory paths:</span><ul class="mb-0 mt-1">${info.bad_paths.map(b => `<li><code>${b.path}</code> — ${b.reason}</li>`).join('')}</ul></div>` : ''}
                 ${info.suggestion ? `<p class="mb-0 text-success"><strong>Suggested Fix:</strong> ${info.suggestion}</p>` : ''}
               </div>
             </div>`;

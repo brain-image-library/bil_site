@@ -9,8 +9,19 @@
   --bil-accent-dim:  rgba(0, 201, 167, 0.1);
 }
 
-body {
+html::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background-color: var(--bil-page-bg);
+  background-image: radial-gradient(circle, rgba(22,27,51,.13) 1px, transparent 1px);
+  background-size: 22px 22px;
+  pointer-events: none;
+}
+
+body {
+  background: transparent;
 }
 
 /* Make cards visually distinct from the page background */
@@ -1558,4 +1569,34 @@ table.dataTable thead .sorting_desc::after {
 .bil-form-body .form-control:focus,
 .bil-form-body .form-select:focus {
   border-color: var(--bil-accent); box-shadow: 0 0 0 3px rgba(0,201,167,.1); outline: none;
+}
+
+/* -- Flash messages -- */
+.bil-message {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-family: 'Lato', sans-serif; font-size: .85rem; font-weight: 500;
+  padding: .7rem 1rem; border-radius: 8px; margin-bottom: .75rem;
+  border: 1px solid transparent;
+}
+.bil-message .bil-message-icon { flex-shrink: 0; margin-top: .05em; }
+.bil-message-success {
+  background: rgba(0,201,167,.08);
+  border-color: rgba(0,201,167,.25);
+  color: #007a65;
+}
+.bil-message-error,
+.bil-message-danger {
+  background: rgba(220,53,69,.07);
+  border-color: rgba(220,53,69,.2);
+  color: #b02a37;
+}
+.bil-message-warning {
+  background: rgba(255,193,7,.1);
+  border-color: rgba(255,193,7,.3);
+  color: #8a6200;
+}
+.bil-message-info {
+  background: rgba(22,27,51,.06);
+  border-color: rgba(22,27,51,.12);
+  color: #444d7a;
 }

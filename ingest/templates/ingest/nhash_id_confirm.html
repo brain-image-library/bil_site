@@ -187,14 +187,17 @@
 {# ── Specimen accordion ── #}
 <div id="specimenList">
 {% for nhash_info, specimen in nhash_specimen_list %}
-<div class="bil-specimen-card specimen-card bil-fadein" data-specimen="{{ specimen|lower }}">
+<div class="bil-specimen-card specimen-card bil-fadein" data-specimen="{{ specimen.localid|lower }}">
 
   {# Collapsed header #}
   <div class="bil-specimen-header"
        data-bs-toggle="collapse" data-bs-target="#spec{{ forloop.counter }}"
        aria-expanded="false" aria-controls="spec{{ forloop.counter }}">
     <span class="spec-name">
-      <i class="fa-solid fa-vial" aria-hidden="true"></i>{{ specimen }}
+      <i class="fa-solid fa-vial" aria-hidden="true"></i>{{ specimen.localid }}
+      {% if specimen.samplelocalid %}
+      <span style="font-family:'DM Mono',monospace;font-size:.65rem;color:#8589a8;margin-left:.4em;">({{ specimen.samplelocalid }})</span>
+      {% endif %}
     </span>
     <div class="bil-spec-meta">
       {% if nhash_info.data %}

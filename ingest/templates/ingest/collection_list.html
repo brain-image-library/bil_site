@@ -242,6 +242,16 @@
 {# ── Table / empty state ── #}
 <div class="bil-fadein">
 {% if object_list %}
+<div class="d-flex align-items-center justify-content-end mb-2 gap-2">
+  <span style="font-family:'DM Mono',monospace;font-size:.65rem;letter-spacing:.06em;text-transform:uppercase;color:#8589a8;">Show</span>
+  <div class="d-flex gap-1">
+    {% for size in page_size_options %}
+    <a href="?{% for key, val in request.GET.items %}{% if key != 'per_page' and key != 'page' %}{{ key }}={{ val }}&{% endif %}{% endfor %}per_page={{ size }}"
+       class="bil-pill {% if per_page == size %}active-all{% endif %}"
+       style="padding:.2rem .6rem;">{{ size }}</a>
+    {% endfor %}
+  </div>
+</div>
 <div class="bil-table-card">
   <div class="table-responsive">
     {% render_table table %}

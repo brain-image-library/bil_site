@@ -34,11 +34,12 @@
           <th>Username</th>
           <th>Affiliation</th>
           <th>Role</th>
+          {% if is_pi_of_project %}<th></th>{% endif %}
         </tr>
       </thead>
       <tbody>
         {% for m in members %}
-        <tr>
+        <tr id="member-row-{{ m.project_people_id }}">
           <td style="font-weight:600;color:#161b33;">{{ m.name }}</td>
           <td><span class="bil-code">{{ m.username }}</span></td>
           <td>{{ m.affiliation|default:"—" }}</td>
@@ -51,6 +52,16 @@
               <span class="bil-badge bil-badge--member"><i class="fa-solid fa-user fa-xs"></i>Member</span>
             {% endif %}
           </td>
+          {% if is_pi_of_project %}
+          <td>
+            {% if not m.is_pi %}
+            <button type="button" class="bil-btn-ghost" style="color:#c0392b;font-size:.75rem;"
+                    onclick="removeMember({{ m.project_people_id }})">
+              <i class="fa-solid fa-user-minus fa-xs"></i>Remove
+            </button>
+            {% endif %}
+          </td>
+          {% endif %}
         </tr>
         {% endfor %}
       </tbody>
@@ -77,9 +88,31 @@ $(document).ready(function() {
     pageLength: 25,
     lengthMenu: [10, 25, 50, 100],
     order: [[3, 'asc'], [0, 'asc']],
-    columnDefs: [{ targets: 3, width: '90px' }]
+    columnDefs: [{ targets: -1, orderable: false, width: '80px' }]
   });
   {% endif %}
 });
+
+{% if is_pi_of_project %}
+function removeMember(projectPeopleId) {
+    if (!confirm('Remove this user from the project?')) return;
+    const csrftoken = Cookies.get('csrftoken');
+    fetch(`${window.origin}/ingest/remove_project_user/`, {
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({project_people_id: projectPeopleId}),
+        headers: {'X-CSRFToken': csrftoken, 'content-type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('member-row-' + projectPeopleId).remove();
+        } else {
+            alert(data.message || 'Could not remove user.');
+        }
+    })
+    .catch(err => console.log('Fetch error: ' + err));
+}
+{% endif %}
 </script>
 {% endblock %}

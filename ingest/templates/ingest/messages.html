@@ -1,5 +1,16 @@
 {% if messages %}
 {% for message in messages %}
-  <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+{% with tags=message.tags %}
+<div class="bil-message bil-message-{{ tags }}">
+  <span class="bil-message-icon">
+    {% if tags == 'success' %}<i class="fa-solid fa-circle-check fa-sm" aria-hidden="true"></i>
+    {% elif tags == 'error' or tags == 'danger' %}<i class="fa-solid fa-circle-exclamation fa-sm" aria-hidden="true"></i>
+    {% elif tags == 'warning' %}<i class="fa-solid fa-triangle-exclamation fa-sm" aria-hidden="true"></i>
+    {% else %}<i class="fa-solid fa-circle-info fa-sm" aria-hidden="true"></i>
+    {% endif %}
+  </span>
+  <span>{{ message }}</span>
+</div>
+{% endwith %}
 {% endfor %}
 {% endif %}

@@ -160,6 +160,8 @@
 {% block content %}
 <div class="content container-fluid py-4">
 
+  {% include 'ingest/messages.html' %}
+
   {# ── Page header ── #}
   <div class="bil-detail-header bil-fadein">
     <div>
@@ -255,6 +257,29 @@
               </div>
             </div>
           </div>
+          {% if not publication_requested %}
+          <div class="mt-2">
+            {% if datasets_list %}
+            <a href="{% url 'ingest:submit_request_collection_list' %}?preselect={{ collection.bil_uuid }}" class="bil-btn-outline">
+              <i class="fa-solid fa-paper-plane fa-xs" aria-hidden="true"></i>Request Publication
+            </a>
+            {% else %}
+            <span data-bs-toggle="tooltip"
+                  title="A metadata spreadsheet must be uploaded before this collection can be submitted for publication."
+                  style="display:block;cursor:not-allowed;">
+              <span class="bil-btn-outline" style="opacity:.45;pointer-events:none;">
+                <i class="fa-solid fa-paper-plane fa-xs" aria-hidden="true"></i>Request Publication
+              </span>
+            </span>
+            {% endif %}
+          </div>
+          {% elif not collection_published and collection.submission_status != 'SUCCESS' %}
+          <div class="mt-2" role="note"
+               style="background:rgba(0,201,167,.07);border:1px solid rgba(0,201,167,.25);border-radius:8px;padding:.6rem .85rem;font-family:'Lato',sans-serif;font-size:.82rem;color:#008e77;display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-clock-rotate-left fa-xs" aria-hidden="true"></i>
+            This submission has been sent for validation and is currently under review.
+          </div>
+          {% endif %}
           {% if collection.locked %}
           <div class="bil-lock-warning" role="note">
             <i class="fa-solid fa-lock fa-xs flex-shrink-0" aria-hidden="true"></i>
@@ -277,9 +302,22 @@
             <a href="{% url 'ingest:ondemandSubmission' collection.id %}" class="bil-btn-dark">
               <i class="fa-solid fa-folder-open fa-xs" aria-hidden="true"></i>View Submission Directory
             </a>
+            {% if datasets_list %}
             <a href="{% url 'ingest:create_dataset_linkage' collection.id %}" class="bil-btn-outline">
               <i class="fa-solid fa-link fa-xs" aria-hidden="true"></i>Create Dataset Linkages
             </a>
+            {% else %}
+            <a href="{% url 'ingest:descriptive_metadata_upload' collection.id %}" class="bil-btn-outline">
+              <i class="fa-solid fa-upload fa-xs" aria-hidden="true"></i>Upload Metadata
+            </a>
+            <span data-bs-toggle="tooltip"
+                  title="A metadata spreadsheet must be uploaded before dataset linkages can be created."
+                  style="display:block;cursor:not-allowed;">
+              <span class="bil-btn-outline" style="opacity:.45;pointer-events:none;">
+                <i class="fa-solid fa-link fa-xs" aria-hidden="true"></i>Create Dataset Linkages
+              </span>
+            </span>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -503,7 +541,6 @@
     </div>
   </div>
 
-  {% include 'ingest/messages.html' %}
 
 </div>
 {% endblock %}

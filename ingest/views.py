@@ -47,6 +47,7 @@ from django.db import transaction
 from django.db.models import OuterRef, Subquery, Q, Exists, Count, F, Sum
 from django.db.models.functions import ExtractYear
 from pathlib import Path
+import tempfile
 import jwt, time
 
 
@@ -176,11 +177,17 @@ def index(request):
         collection__in=v1_only_collections
     ).count()
     user_public_datasets = v2_dataset_count + v1_dataset_count
-    # Submission in progress: submitted for validation, not yet published
-    user_validation_requested = Collection.objects.filter(
-        user=current_user,
-        submission_status=Collection.PENDING,
-    ).count()
+    # Submission in progress: has a request_validation event but no collection_public event yet
+    validated_collection_ids = EventsLog.objects.filter(
+        collection_id__user=current_user,
+        event_type='collection_public',
+    ).values_list('collection_id_id', flat=True).distinct()
+    user_validation_requested = EventsLog.objects.filter(
+        collection_id__user=current_user,
+        event_type='request_validation',
+    ).exclude(
+        collection_id_id__in=validated_collection_ids,
+    ).values('collection_id_id').distinct().count()
 
     try:
         people = People.objects.get(auth_user_id_id=current_user.id)
@@ -218,6 +225,7 @@ def index(request):
                 'show_stats': show_stats,
                 'user_public_collections': user_public_collections,
                 'user_public_datasets': user_public_datasets,
+                'user_validation_requested': user_validation_requested,
                 'show_brain_initiative_modal': not people.has_reviewed_brain_initiative,
                 'pi_projects': pi_projects,
             })
@@ -554,7 +562,7 @@ def add_project_user(request, pk):
     members = []
     for ep in existing:
         if ep.people_id and ep.people_id.auth_user_id:
-            members.append(ep.people_id.auth_user_id)
+            members.append({'user': ep.people_id.auth_user_id, 'project_people_id': ep.id})
     return render(request, 'ingest/add_project_user.html', {'project': project, 'pi': pi, 'members': members})
 
 # adds person to a project
@@ -579,6 +587,22 @@ def write_user_to_project_people(request):
             project_person.save()
     messages.success(request, 'User(s) Added!')
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
+
+
+@login_required
+def remove_project_user(request):
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+    data = json.loads(request.body)
+    project_people_id = data.get('project_people_id')
+    current_user = request.user
+    try:
+        people = People.objects.get(auth_user_id_id=current_user.id)
+        pp = ProjectPeople.objects.get(id=project_people_id, project_id__projectpeople__people_id=people, project_id__projectpeople__is_pi=True)
+        pp.delete()
+        return JsonResponse({'success': True})
+    except ProjectPeople.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'User not found or you do not have permission to remove them.'})
 
 
 @login_required
@@ -661,19 +685,23 @@ def view_project_people(request, pk):
             pi = False
     try:
         project = Project.objects.get(id=pk)
+        is_pi_of_project = ProjectPeople.objects.filter(
+            people_id=people, project_id_id=pk, is_pi=True
+        ).exists()
         projectpeople = ProjectPeople.objects.filter(project_id_id=pk).select_related('people_id', 'people_id__auth_user_id').all()
         members = []
         for row in projectpeople:
             person = row.people_id
             if person:
                 members.append({
+                    'project_people_id': row.id,
                     'name': person.name,
                     'username': person.auth_user_id.username if person.auth_user_id else '—',
                     'affiliation': person.affiliation,
                     'is_pi': row.is_pi,
                     'is_po': row.is_po,
                 })
-        return render(request, 'ingest/view_project_people.html', {'project': project, 'members': members})
+        return render(request, 'ingest/view_project_people.html', {'project': project, 'members': members, 'is_pi_of_project': is_pi_of_project})
     except ProjectPeople.DoesNotExist:
         return render(request, 'ingest/no_people.html')
 
@@ -933,90 +961,144 @@ def collection_send(request):
 
 def check_collection_directories(coll, current_user):
     """
-    Verifies that the filesystem directory structure matches expected dataset directories
-    using the collection's stored data_path. Returns a structured dict for UI display.
+    Validates dataset directories against the filesystem before allowing a submission.
+
+    Checks:
+    1. The collection's root landing zone directory exists.
+    2. Each dataset's bildirectory is a valid absolute path inside the collection root
+       (not the root itself — must be a subdirectory like /bil/lz/user/uuid/dataset1).
+    3. Each dataset subdirectory actually exists on disk.
+    4. Every subdirectory on disk under the collection root has a corresponding
+       dataset entry in the metadata (catches missing metadata for uploaded data).
     """
+    base_dir = Path(os.path.normpath(coll.data_path))
 
-    # Use the path recorded in the collection itself
-    base_dir = Path(coll.data_path).expanduser()
-
-    # --- 1. Directory missing entirely ---
+    # --- 1. Collection root must exist ---
     if not base_dir.exists():
         return {
             "status": "missing_path",
             "title": "Collection Directory Missing",
             "message": (
-                f"The collection path recorded in metadata ({coll.data_path}) "
+                f"The landing zone directory for this collection ({coll.data_path}) "
                 "does not exist on disk."
             ),
             "suggestion": (
-                "Contact bil-support@psc.edu so we can investigate why the directory creation failed "
+                "This directory should have been created automatically when you created "
+                "the collection. Contact bil-support@psc.edu if it is missing."
             ),
             "missing": [],
             "extra": [],
+            "bad_paths": [],
         }
 
-    # --- 2. Permission error accessing directory ---
-    try:
-        actual_dirs = sorted([p.name for p in base_dir.iterdir() if p.is_dir()])
-    except PermissionError:
+    datasets = Dataset.objects.filter(sheet__collection=coll)
+
+    # --- 2. Validate bildirectory format for each dataset ---
+    bad_paths = []
+    valid_subdirs = []  # (ds.bildirectory string, normalized Path) for valid entries
+
+    for ds in datasets:
+        if not ds.bildirectory:
+            continue
+
+        raw = ds.bildirectory.strip()
+        bildirectory = Path(os.path.normpath(raw))
+
+        # Must be an absolute path
+        if not bildirectory.is_absolute():
+            bad_paths.append({
+                "path": raw,
+                "reason": (
+                    f"Not an absolute path. The BILDirectory field must contain the full path "
+                    f"to your dataset directory, e.g. {base_dir / raw}."
+                ),
+            })
+            continue
+
+        # Must be inside the collection root
+        try:
+            rel = bildirectory.relative_to(base_dir)
+        except ValueError:
+            bad_paths.append({
+                "path": raw,
+                "reason": (
+                    f"This path is not inside your collection's landing zone ({base_dir}). "
+                    f"Your dataset directories must be subdirectories of that path."
+                ),
+            })
+            continue
+
+        # Must be a subdirectory, not the root itself
+        if not rel.parts:
+            bad_paths.append({
+                "path": raw,
+                "reason": (
+                    f"This is your collection root directory ({base_dir}), not a dataset subdirectory. "
+                    "Each dataset must be in its own subdirectory inside the collection root."
+                ),
+            })
+            continue
+
+        valid_subdirs.append((raw, bildirectory))
+
+    if bad_paths:
         return {
-            "status": "permission_error",
-            "title": "Permission Error",
+            "status": "bad_paths",
+            "title": "Invalid BILDirectory Paths in Metadata",
             "message": (
-                f"Permission denied when reading {base_dir}. "
-                "The web service or test user may not have filesystem access."
+                "One or more BILDirectory entries in your metadata spreadsheet are not "
+                "correctly formatted. Each entry must be the full absolute path to a "
+                "subdirectory inside your landing zone."
             ),
             "suggestion": (
-                "Verify directory ownership and permissions. "
-                "The process running Django must have read access to all subdirectories."
+                f"Your collection root is {base_dir}. "
+                "Each dataset should have its own subdirectory inside it, and the full "
+                "path to that subdirectory should be entered in the BILDirectory column."
             ),
             "missing": [],
             "extra": [],
+            "bad_paths": bad_paths,
         }
 
-    # --- 3. Compare expected vs actual dataset subdirectories ---
-    datasets = Dataset.objects.filter(sheet__collection=coll)
-    expected_dirs = sorted([
-        Path(ds.bildirectory).name.strip("/")
-        for ds in datasets
-        if ds.bildirectory and Path(ds.bildirectory).resolve() != base_dir.resolve()
-    ])
+    # --- 3. Check each expected dataset directory exists on disk ---
+    missing = [raw for raw, p in valid_subdirs if not p.exists()]
 
-    missing = [d for d in expected_dirs if d not in actual_dirs]
-    extra = [d for d in actual_dirs if d not in expected_dirs]
+    # --- 4. Check for subdirectories on disk not represented in metadata ---
+    try:
+        actual_subdirs = set(p.name for p in base_dir.iterdir() if p.is_dir())
+    except PermissionError:
+        actual_subdirs = None  # can't read root — skip extra check
 
-    # --- 4. No issues ---
+    expected_subdir_names = {p.name for _, p in valid_subdirs}
+    extra = (
+        sorted(actual_subdirs - expected_subdir_names)
+        if actual_subdirs is not None else []
+    )
+
     if not missing and not extra:
         return {
             "status": "ok",
             "title": "Directories Verified",
-            "message": "All expected dataset directories are present and match metadata.",
+            "message": "All dataset directories are present and match metadata.",
             "missing": [],
             "extra": [],
+            "bad_paths": [],
         }
-
-    # --- 5. Directory mismatch ---
-    details = []
-    if missing:
-        details.append(f"Missing expected directories: {', '.join(missing)}")
-    if extra:
-        details.append(f"Unexpected extra directories found: {', '.join(extra)}")
 
     return {
         "status": "mismatch",
         "title": "Directory Mismatch Detected",
         "message": (
-            "The directories present under this collection’s data_path do not match "
-            "the dataset directories listed in metadata."
+            "The dataset directories on disk do not match what is listed in your metadata."
         ),
-        "details": " | ".join(details),
         "suggestion": (
-            "Add any missing directories listed in metadata, or remove any extras "
-            "not referenced there, before re-submitting for validation."
+            "Ensure every BILDirectory in your metadata has a corresponding directory in "
+            "your landing zone, and that every directory in your landing zone is listed "
+            "in your metadata."
         ),
         "missing": missing,
         "extra": extra,
+        "bad_paths": [],
     }
 
 @login_required
@@ -1024,7 +1106,7 @@ def refresh_tables(request):
     """Return updated eligible and validation-in-progress table HTML (mirrors SubmitRequestCollectionList logic)."""
     user = request.user
 
-    # Base set: user’s collections excluding already fully completed ones
+    # Base set: user's collections excluding already fully completed ones
     base_qs = (Collection.objects
                .filter(user=user)
                .exclude(Q(submission_status=Collection.SUCCESS) &
@@ -1292,7 +1374,7 @@ class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterVi
             validation_status=Collection.SUCCESS,
         )
 
-        # Base set: user’s collections excluding already fully completed ones
+        # Base set: user's collections excluding already fully completed ones
         base_qs = user_qs.exclude(
             Q(submission_status=Collection.SUCCESS) &
             Q(validation_status=Collection.SUCCESS)
@@ -1340,6 +1422,16 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     model = Collection
     template_name = 'ingest/collection_list.html'
     filterset_class = CollectionFilter
+    PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
+
+    def get_table_pagination(self, table):
+        try:
+            per_page = int(self.request.GET.get('per_page', 25))
+        except (ValueError, TypeError):
+            per_page = 25
+        if per_page not in self.PAGE_SIZE_OPTIONS:
+            per_page = 25
+        return {'per_page': per_page}
 
     def get_queryset(self, **kwargs):
         return Collection.objects.filter(user=self.request.user)
@@ -1348,6 +1440,8 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
         context = super().get_context_data(**kwargs)
         context['total_count'] = Collection.objects.filter(user=self.request.user).count()
         context['filtered_count'] = self.object_list.count()
+        context['per_page'] = self.get_table_pagination(None).get('per_page', 25)
+        context['page_size_options'] = self.PAGE_SIZE_OPTIONS
         return context
          
 @login_required
@@ -1409,6 +1503,16 @@ def collection_detail(request, pk):
 
     descriptive_metadata_list = DescriptiveMetadata.objects.filter(collection=collection)
 
+    publication_requested = EventsLog.objects.filter(
+        collection_id=collection,
+        event_type__in=['request_validation', 'collection_public'],
+    ).exists()
+
+    collection_published = EventsLog.objects.filter(
+        collection_id=collection,
+        event_type='collection_public',
+    ).exists()
+
     return render(
         request,
         'ingest/collection_detail.html',
@@ -1419,7 +1523,9 @@ def collection_detail(request, pk):
             'datasets_list': datasets_list,
             'consortium_tags': consortium_tags,
             'user_tags': user_tags,
-            'used_tags': used_tags
+            'used_tags': used_tags,
+            'publication_requested': publication_requested,
+            'collection_published': collection_published,
         }
     )
 
@@ -1838,7 +1944,7 @@ def check_instrument_sheet(filename):
     return errors
 
 
-def check_dataset_sheet(filename):
+def check_dataset_sheet(filename, collection_data_path=None):
     errors = []
     workbook = xlrd.open_workbook(filename)
     sheetname = 'Dataset'
@@ -1846,6 +1952,7 @@ def check_dataset_sheet(filename):
     colheads = ['BILDirectory', 'title', 'socialMedia', 'subject',
                 'Subjectscheme', 'rights', 'rightsURI', 'rightsIdentifier', 'Image',
                 'GeneralModality', 'Technique', 'Other', 'Abstract', 'Methods', 'TechnicalInfo']
+    required_prefix = (collection_data_path.rstrip('/') + '/') if collection_data_path else None
     GeneralModality = ['cell morphology', 'connectivity', 'population imaging',
                        'spatial transcriptomics', 'other', 'anatomy', 'histology imaging', 'multimodal']
     Technique = ['anterograde tracing', 'retrograde transynaptic tracing', 'TRIO tracing',
@@ -1867,6 +1974,11 @@ def check_dataset_sheet(filename):
         cols = dataset_sheet.row_values(i)
         if cols[0] == "":
             errors.append({"row": i, "col": 0, "message": f'"{colheads[0]}" is required'})
+        elif required_prefix and not str(cols[0]).startswith(required_prefix):
+            errors.append({"row": i, "col": 0, "message": (
+                f'BILDirectory must begin with "{required_prefix}" — '
+                f'found "{cols[0]}"'
+            )})
         if cols[1] == "":
             errors.append({"row": i, "col": 1, "message": f'"{colheads[1]}" is required'})
         if cols[5] == "":
@@ -3327,7 +3439,7 @@ def metadata_version_check(filename):
         version1 = True
     return version1
 
-def check_all_sheets(filename, ingest_method):
+def check_all_sheets(filename, ingest_method, collection_data_path=None):
     """Run all sheet validators and return a structured error map.
 
     Returns a dict mapping "SheetName::row::col" -> [message, ...].
@@ -3346,7 +3458,7 @@ def check_all_sheets(filename, ingest_method):
     merge('Funders', check_funders_sheet(filename))
     merge('Publication', check_publication_sheet(filename))
     merge('Instrument', check_instrument_sheet(filename))
-    merge('Dataset', check_dataset_sheet(filename))
+    merge('Dataset', check_dataset_sheet(filename, collection_data_path=collection_data_path))
     merge('Specimen', check_specimen_sheet(filename))
 
     if ingest_method != 'ingest_5':
@@ -3553,14 +3665,10 @@ def descriptive_metadata_upload(request, associated_collection):
         #if form.is_valid():
         associated_collection = Collection.objects.get(id = associated_collection)
 
-        # for production
-        datapath = associated_collection.data_path.replace("/lz/","/etc/")
-            
-            # for development on vm
-        #datapath = '/Users/luketuite/shared_bil_dev' 
-
-        # for development locally
-        #datapath = '/Users/luketuite/shared_bil_dev' 
+        if settings.FAKE_STORAGE_AREA:
+            datapath = tempfile.gettempdir()
+        else:
+            datapath = associated_collection.data_path.replace("/lz/", "/etc/")
         
         spreadsheet_file = request.FILES['spreadsheet_file']
 
@@ -3577,12 +3685,12 @@ def descriptive_metadata_upload(request, associated_collection):
             error = upload_descriptive_spreadsheet(filename, associated_collection, request)
             if error:
                 return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-            else:         
-                return redirect('ingest:descriptive_metadata_list')
+            else:
+                return redirect('ingest:collection_detail', pk=associated_collection.id)
         
         # using new metadata model
         elif version1 == False:
-            error_map = check_all_sheets(filename, ingest_method)
+            error_map = check_all_sheets(filename, ingest_method, collection_data_path=associated_collection.data_path)
             if error_map:
                 request.session['metadata_errors'] = error_map
                 request.session['metadata_error_filename'] = filename
@@ -3676,7 +3784,7 @@ def descriptive_metadata_upload(request, associated_collection):
                     if ProjectConsortium.objects.filter(project=associated_collection.project, consortium__short_name='BICAN').exists():
                         return redirect('ingest:bican_id_upload', sheet_id=sheet.id)
                     else:
-                        return redirect('ingest:descriptive_metadata_list')
+                        return redirect('ingest:collection_detail', pk=associated_collection.id)
                 else:
                     messages.error(request, f'There was an error saving your metadata. Please contact BIL Support with Error Code: {sheet.id}')
                     return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
@@ -3984,9 +4092,9 @@ def save_bican_spreadsheet(request):
                 spec_id = row['Specimen ID']
                 bican_id = row['BICAN ID']
 
-                spec_bil_id, local_name = process_specimen_id(spec_id)
+                spec_bil_id, local_name, sample_local_id = process_specimen_id(spec_id)
                 specimen_id_list.append(spec_bil_id)
-                specimen_list.append(local_name)
+                specimen_list.append({'localid': local_name, 'samplelocalid': sample_local_id})
 
                 nhash_info, error_message = retrieve_nhash_info(bican_id)
                 if error_message:
@@ -3995,14 +4103,13 @@ def save_bican_spreadsheet(request):
                 nhash_info_list.append(nhash_info)
 
             if error_messages:
-                # Handle errors here
                 return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_messages[0]}')
 
             extracted_ids = []
             for nhash_info in nhash_info_list:
-                ids = extract_ids(nhash_info)  # Extract IDs for each nhash_info individually
+                ids = extract_ids(nhash_info)
                 extracted_ids.append(ids)
-            processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)  # Assuming this function exists
+            processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)
             processed_ids_json = json.dumps(processed_ids)
             nhash_info_list = [whitelist_filter(x) for x in nhash_info_list]
             nhash_specimen_list = zip(nhash_info_list, specimen_list)
@@ -4031,33 +4138,27 @@ def save_bican_ids(request):
         error_messages = []
 
         for spec_id, bican_id in data_items:
-            spec_bil_id, local_name = process_specimen_id(spec_id)
+            spec_bil_id, local_name, sample_local_id = process_specimen_id(spec_id)
             specimen_id_list.append(spec_bil_id)
-            specimen_list.append(local_name)
+            specimen_list.append({'localid': local_name, 'samplelocalid': sample_local_id})
             nhash_info, error_message = retrieve_nhash_info(bican_id)
             if error_message:
                 error_messages.append(error_message)
-                continue  # Proceed with the next iteration if there's an error
+                continue
             nhash_info_list.append(nhash_info)
 
         if error_messages:
-            # If there are any errors, handle them. This could be redirecting or displaying the error.
-            # This example uses the first error message for simplicity.
             return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_messages[0]}')
-        #print("Nhash Info: ", nhash_info)
+
         extracted_ids = []
         for nhash_info in nhash_info_list:
-            ids = extract_ids(nhash_info)  # Extract IDs for each nhash_info individually
+            ids = extract_ids(nhash_info)
             extracted_ids.append(ids)
-        processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)  # Assuming this function exists
+        processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)
         processed_ids_json = json.dumps(processed_ids)
         nhash_info_list = [whitelist_filter(x) for x in nhash_info_list]
         nhash_specimen_list = zip(nhash_info_list, specimen_list)
-        print("TOP KEYS:", nhash_info_list[0].keys())
-        print("DATA KEYS:", list(nhash_info_list[0].get("data", {}).keys()))
-        print("FIRST RECORD KEYS:", list(next(iter(nhash_info_list[0].get("data", {}).values()), {}).keys()))
 
-        
         return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list, 'processed_ids_json': processed_ids_json})
     else:
         # Handle GET request, maybe render the form again or redirect
@@ -4073,7 +4174,7 @@ def extract_post_data(request):
 def process_specimen_id(spec_id):
     spec_bil = BIL_Specimen_ID.objects.get(specimen_id=spec_id)
     spec_local = Specimen.objects.get(id=spec_id)
-    return spec_bil.id, spec_local.localid
+    return spec_bil.id, spec_local.localid, spec_local.samplelocalid
 
 def retrieve_nhash_info(bican_id):
     nhash_info = Specimen_Portal.get_nhash_results(bican_id)
@@ -4126,12 +4227,10 @@ def process_ids(request):
                 elif id.startswith('SC'):
                     linkage = SpecimenLinkage(specimen_id = bil_specimen_id, specimen_id_2 = id, code_id = 'cubie_tissue', specimen_category = 'section')
                 linkage.save()
-        # Redirect to a different view or do other processing
-        return redirect('ingest:collection_list')  # Redirect to success page
+        messages.success(request, 'BICAN specimen linkages saved successfully.')
+        return redirect('ingest:collection_list')
     else:
-        # Handle GET request, maybe render an error page
-        print('failed')
-        return redirect('ingest:collection_list')  # Redirect to error page
+        return redirect('ingest:collection_list')
 
 @login_required
 def save_nhash_specimen_list(request):
