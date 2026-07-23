@@ -88,7 +88,6 @@ INSTALLED_APPS = [
     'django_tables2',
     'django_celery_results',
     'django_filters',
-    'bootstrap4',
     'django_pam',
     'hijack',
     'hijack.contrib.admin',
@@ -143,7 +142,7 @@ if DATABASE == "postgres":
         sys.exit(1)
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'ENGINE': 'django.db.backends.postgresql',
             'NAME': config['Security']['DATABASE_NAME'],
             'USER': config['Security']['DATABASE_USER'],
             'PASSWORD': DATABASE_PASSWORD,
@@ -196,8 +195,6 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
-
-USE_L10N = True
 
 USE_TZ = True
 
