@@ -8,6 +8,7 @@ from django.utils.html import format_html
 from django.core import serializers
 from django.http import HttpResponse, FileResponse, Http404
 from django.utils.translation import gettext_lazy
+from django.utils import timezone
 from django.db.models import F
 
 from .models import (
@@ -73,10 +74,19 @@ class BIL_Specimen_IDInline(admin.TabularInline):
 
 admin.site.disable_action('delete_selected')
 
-@admin.action(description='Mark selected Collection(s) as Validated and Submitted')
-
+@admin.action(description='Mark selected Collection(s) as public (SUCCESS/SUCCESS/locked)')
 def mark_as_validated_and_submitted(modeladmin, request, queryset):
-    queryset.update(submission_status = 'SUCCESS', validation_status = 'SUCCESS')
+    queryset.update(submission_status='SUCCESS', validation_status='SUCCESS', locked=True)
+    now = timezone.now()
+    EventsLog.objects.bulk_create([
+        EventsLog(
+            collection_id=collection,
+            notes='Marked public by BIL admin',
+            timestamp=now,
+            event_type='collection_public',
+        )
+        for collection in queryset
+    ])
 
 @admin.action(description='Export results as JSON')
 

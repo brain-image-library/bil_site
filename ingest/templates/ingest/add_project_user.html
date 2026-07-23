@@ -67,6 +67,10 @@
             <a href="http://www.brainimagelibrary.org/submission.html" target="_blank">See Instructions</a>
           </span>
         </div>
+        <div class="bil-notice mt-2">
+          <i class="fa-solid fa-triangle-exclamation fa-xs"></i>
+          <span>Users are added as standard project members. To promote a user to PI, please contact <a href="mailto:bil-support@psc.edu">bil-support@psc.edu</a>.</span>
+        </div>
 
         <div id="add-feedback" class="d-none" role="alert"></div>
 
@@ -88,9 +92,13 @@
       <div class="bil-form-body">
         <ul class="bil-members-list" id="members-list">
           {% for member in members %}
-          <li>
+          <li id="member-{{ member.project_people_id }}">
             <i class="fa-solid fa-user fa-xs"></i>
-            <span style="font-weight:600;color:#161b33;">{{ member.username }}</span>
+            <span style="font-weight:600;color:#161b33;">{{ member.user.username }}</span>
+            <button type="button" class="bil-btn-ghost ms-auto" style="color:#c0392b;font-size:.75rem;"
+                    onclick="removeMember({{ member.project_people_id }}, this)">
+              <i class="fa-solid fa-user-minus fa-xs"></i>Remove
+            </button>
           </li>
           {% empty %}
           <li class="bil-empty-msg" id="no-members-msg">
@@ -145,6 +153,26 @@ function addUserByUsername(projectId) {
 document.getElementById('username-input').addEventListener('keydown', function(e) {
     if (e.key === 'Enter') addUserByUsername({{ project.id }});
 });
+
+function removeMember(projectPeopleId, btn) {
+    if (!confirm('Remove this user from the project?')) return;
+    const csrftoken = Cookies.get('csrftoken');
+    fetch(`${window.origin}/ingest/remove_project_user/`, {
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({project_people_id: projectPeopleId}),
+        headers: {'X-CSRFToken': csrftoken, 'content-type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('member-' + projectPeopleId).remove();
+        } else {
+            alert(data.message || 'Could not remove user.');
+        }
+    })
+    .catch(error => console.log('Fetch error: ' + error));
+}
 </script>
 
 {% endblock %}
