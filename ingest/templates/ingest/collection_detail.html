@@ -1,360 +1,705 @@
 {% extends 'ingest/base.html' %}
 
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+<style>
+/* ── Page header ── */
+.bil-detail-header {
+  padding: 1.4rem 1.75rem;
+  background: #f7f8fb; border-radius: 12px;
+  border: 1.5px solid rgba(22,27,51,.09);
+  box-shadow: 0 2px 10px rgba(22,27,51,.05);
+  margin-bottom: 1.25rem;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+}
+.bil-detail-header h1 {
+  font-weight: 700 !important; font-size: clamp(1.2rem,3vw,1.7rem);
+  color: #161b33; letter-spacing: -.025em; margin-bottom: .15rem;
+}
+.bil-mono-sub {
+  font-family: 'DM Mono', monospace; font-size: .62rem;
+  letter-spacing: .1em; text-transform: uppercase; color: #8589a8;
+}
+
+/* ── Cards ── */
+.bil-card {
+  background: #f7f8fb; border-radius: 10px;
+  border: 1.5px solid rgba(22,27,51,.09);
+  box-shadow: 0 2px 10px rgba(22,27,51,.05);
+  overflow: hidden; margin-bottom: 1rem;
+}
+.bil-card-hdr {
+  padding: .8rem 1.25rem; background: #161b33;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.bil-card-hdr--light {
+  padding: .8rem 1.25rem; border-bottom: 1px solid rgba(22,27,51,.06);
+  display: flex; align-items: center; justify-content: space-between;
+  cursor: pointer;
+}
+.bil-card-title {
+  font-family: 'DM Mono', monospace; font-size: .62rem;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: rgba(255,255,255,.65);
+  display: flex; align-items: center; gap: 6px;
+}
+.bil-card-title--dark {
+  font-family: 'DM Mono', monospace; font-size: .62rem;
+  letter-spacing: .12em; text-transform: uppercase; color: #616788;
+  display: flex; align-items: center; gap: 6px;
+}
+.bil-card-hdr-icon {
+  width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+  background: var(--bil-accent-dim); color: #008e77;
+  display: flex; align-items: center; justify-content: center; font-size: .72rem;
+}
+.bil-card-body { padding: 1.25rem; }
+
+/* ── LED status pills ── */
+.bil-status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+.bil-status-pill { border-radius: 8px; padding: .85rem 1rem; text-align: center; border: 1.5px solid; }
+.bil-status-lbl {
+  font-family: 'DM Mono', monospace; font-size: .58rem; letter-spacing: .12em;
+  text-transform: uppercase; margin-bottom: .5rem; opacity: .7;
+}
+.bil-status-val {
+  font-family: 'Lato', sans-serif; font-weight: 700; font-size: .82rem;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.bil-led { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+.s-neutral { background: rgba(22,27,51,.03);  border-color: rgba(22,27,51,.1);  color: #616788; }
+.s-neutral .bil-led  { background: rgba(22,27,51,.3); }
+.s-pending { background: rgba(255,193,7,.06);  border-color: rgba(255,193,7,.25); color: #856404; }
+.s-pending .bil-led  { background: #ffc107; animation: led-blink 1.2s ease-in-out infinite; }
+.s-success { background: rgba(25,135,84,.06);  border-color: rgba(25,135,84,.2);  color: #146c43; }
+.s-success .bil-led  { background: #198754; }
+.s-failed  { background: rgba(220,53,69,.06);  border-color: rgba(220,53,69,.2);  color: #842029; }
+.s-failed .bil-led   { background: #dc3545; }
+
+@keyframes led-blink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+/* ── Action buttons (full-width sidebar variants) ── */
+.bil-btn-dark {
+  background: #161b33; color: #fff; border: none; border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .82rem;
+  padding: .55rem 1rem; cursor: pointer; text-decoration: none;
+  display: flex; align-items: center; gap: 7px;
+  transition: background .15s, box-shadow .15s, transform .1s;
+  width: 100%;
+}
+.bil-btn-dark:hover { background: #252d52; box-shadow: 0 4px 12px rgba(22,27,51,.2); transform: translateY(-1px); color: #fff; }
+.bil-btn-dark:focus-visible { outline: 2px solid rgba(0,201,167,.85); outline-offset: 2px; }
+
+.bil-btn-outline {
+  background: #fff; color: #4a5070;
+  border: 1.5px solid rgba(22,27,51,.15); border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .82rem;
+  padding: .5rem 1rem; text-decoration: none;
+  display: flex; align-items: center; gap: 7px;
+  transition: border-color .15s, color .15s;
+  width: 100%;
+}
+.bil-btn-outline:hover { border-color: rgba(22,27,51,.3); color: #161b33; }
+.bil-btn-outline:focus-visible { outline: 2px solid rgba(0,201,167,.85); outline-offset: 2px; }
+
+.bil-actions { display: flex; flex-direction: column; gap: .5rem; }
+
+/* ── Tags section ── */
+.bil-tag-section-label {
+  font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .12em;
+  text-transform: uppercase; color: #8589a8;
+  display: flex; align-items: center; gap: 8px; margin-bottom: 1rem;
+}
+.bil-tag-section-label::after { content: ''; flex: 1; height: 1px; background: rgba(22,27,51,.08); }
+
+/* ── Modal ── */
+.bil-modal .modal-content {
+  border-radius: 12px; border: 1.5px solid rgba(22,27,51,.1);
+  box-shadow: 0 20px 60px rgba(22,27,51,.18); overflow: hidden;
+}
+.bil-modal .modal-header {
+  background: #161b33; border-bottom: none; padding: 1rem 1.4rem;
+}
+.bil-modal .modal-title {
+  font-family: 'Lato', sans-serif; font-weight: 700; font-size: .95rem; color: #fff;
+}
+.bil-modal .modal-subtitle {
+  font-family: 'DM Mono', monospace; font-size: .65rem; color: rgba(255,255,255,.45);
+  margin-top: .25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 340px;
+}
+.bil-modal .btn-close { filter: invert(1) opacity(.6); }
+.bil-modal .btn-close:hover { filter: invert(1) opacity(1); }
+.bil-modal .modal-body { padding: 1.4rem; background: #f7f8fb; }
+.bil-modal .modal-footer { background: #f7f8fb; border-top: 1px solid rgba(22,27,51,.07); padding: .85rem 1.4rem; }
+.bil-modal-tag-group-label {
+  font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .1em;
+  text-transform: uppercase; color: #8589a8; margin-bottom: .5rem;
+}
+.bil-modal .form-check-label { font-family: 'Lato', sans-serif; font-size: .82rem; color: #3d4360; }
+.bil-applied-tags { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; }
+.bil-applied-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(22,27,51,.06); border: 1px solid rgba(22,27,51,.1);
+  border-radius: 5px; padding: 2px 8px;
+  font-family: 'DM Mono', monospace; font-size: .65rem; color: #3d4360;
+}
+.bil-applied-tag button {
+  background: none; border: none; padding: 0; cursor: pointer;
+  color: #9093a8; font-size: .6rem; line-height: 1;
+  transition: color .12s;
+}
+.bil-applied-tag button:hover { color: #dc3545; }
+
+@media (prefers-reduced-motion: reduce) {
+  .s-pending .bil-led { animation: none; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="content container-fluid py-4">
 
-{% if pi %}
-<a href="{% url 'ingest:index' %}" class="btn btn-primary">
-  Return to PI Dashboard
-</a>
-{% endif %}
+  {% include 'ingest/messages.html' %}
 
-<div class="content container-fluid styled-checkbox-container">
-  <div class="row">
-    <div class="col-md-12">
-      <h1 class="h2" style="margin-top:10px;">
-        <strong>Submission Name</strong> {{ collection.name }}
-        {% if collection.locked %}
-        <i class="fa fa-lock" title="Locked"></i>
-        {% else %}
-        <i class="fa fa-unlock" title="Unlocked"></i>
-        {% endif %}
-      </h1>
-    </div>
-  </div>
-
-  <!-- TOP ACTION BAR (Edit only) -->
-  <div class="collection-actions">
-    <div class="btn-toolbar actions-bar" role="toolbar" aria-label="Submission actions">
-      <div class="btn-group secondary-actions" role="group" aria-label="Secondary">
-        <a href="{% url 'ingest:collection_update' pk=collection.pk %}" class="btn btn-default">
-          <span class="glyphicon glyphicon-pencil"></span> Edit Submission
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Submission info -->
-  <div class="row">
-    <div class="col-md-12 submission-info">
-      <div class="list-group">
-        <div class="list-group-item">
-          <h4 class="list-group-item-heading">Submission Description</h4>
-          {{ collection.description }}
-        </div>
-        <div class="list-group-item">
-          <h4 class="list-group-item-heading">Organization</h4>
-          {{ collection.organization_name }}
-        </div>
-        <div class="list-group-item">
-          <h4 class="list-group-item-heading">Lab</h4>
-          {{ collection.lab_name }}
-        </div>
-        <div class="list-group-item">
-          <h4 class="list-group-item-heading">Project funder</h4>
-          {{ collection.project_funder }}
-        </div>
-        <div class="list-group-item">
-          <h4 class="list-group-item-heading">Project funder ID</h4>
-          {{ collection.project_funder_id }}
-        </div>
-        <div class="list-group-item">
-          <h4 class="list-group-item-heading">Submission Directory</h4>
-          {{ collection.data_path }}
-        </div>
-
-        {% if collection.validation_status == "NOT_VALIDATED" %}
-        <div class="list-group-item list-group-item-info">
-          <h4 class="list-group-item-heading">Validation Status</h4> Not validated
-        </div>
-        {% elif collection.validation_status == "PENDING" %}
-        <div class="list-group-item list-group-item-warning">
-          <h4 class="list-group-item-heading">Validation Status</h4> Validation pending
-        </div>
-        {% elif collection.validation_status == "SUCCESS" %}
-        <div class="list-group-item list-group-item-success">
-          <h4 class="list-group-item-heading">Validation Status</h4> Validation successful.
-        </div>
-        {% elif collection.validation_status == "FAILED" %}
-        <div class="list-group-item list-group-item-danger">
-          <h4 class="list-group-item-heading">Validation Status</h4> Validation failed.
-        </div>
-        {% endif %}
-
-        {% if collection.submission_status == "NOT_SUBMITTED" %}
-        <div class="list-group-item list-group-item-info">
-          <h4 class="list-group-item-heading">Submission Status</h4> Not submitted
-        </div>
-        {% elif collection.submission_status == "PENDING" %}
-        <div class="list-group-item list-group-item-warning">
-          <h4 class="list-group-item-heading">Submission Status</h4> Submission pending
-        </div>
-        {% elif collection.submission_status == "SUCCESS" %}
-        <div class="list-group-item list-group-item-success">
-          <h4 class="list-group-item-heading">Submission Status</h4> Submission successful.
-        </div>
-        {% elif collection.submission_status == "FAILED" %}
-        <div class="list-group-item list-group-item-danger">
-          <h4 class="list-group-item-heading">Submission Status</h4> Submission failed.
-        </div>
-        {% endif %}
-      </div>
-
-      <!-- Primary buttons live here -->
-      <div class="below-info-actions">
-        <a href="{% url 'ingest:ondemandSubmission' collection.id %}" class="btn btn-primary btn-lg">
-          <span class="glyphicon glyphicon-folder-open"></span> View Submission Directory
-        </a>
-        <a href="{% url 'ingest:create_dataset_linkage' collection.id %}" class="btn btn-info btn-lg">
-          <span class="glyphicon glyphicon-link"></span> Create Dataset Linkages
-        </a>
-      </div>
-
-      {% if descriptive_metadata_queryset %}
-      <div class="panel panel-default">
-        <div class="panel-heading" data-toggle="collapse" data-target="#collapseOrderMetadata">
-          Metadata <i class="chevron fa fa-fw"></i>
-        </div>
-        <div class="collapse in" id="collapseOrderMetadata">
-          {% load render_table from django_tables2 %}
-          {% render_table table %}
-        </div>
-      </div>
+  {# ── Page header ── #}
+  <div class="bil-detail-header bil-fadein">
+    <div>
       {% if collection.locked %}
-      <div class="alert alert-info">
-        <strong>Locked submissions cannot be modified or deleted.</strong>
+      <div class="bil-lock-badge bil-lock-badge--locked">
+        <i class="fa-solid fa-lock fa-xs" aria-hidden="true"></i>Locked
       </div>
-      {% endif %}
       {% else %}
-      <div class="alert alert-info">
-        <strong>This submission doesn't have any Metadata Version 1.</strong>
+      <div class="bil-lock-badge bil-lock-badge--unlocked">
+        <i class="fa-solid fa-unlock fa-xs" aria-hidden="true"></i>Unlocked
       </div>
       {% endif %}
+      <h1>{{ collection.name }}</h1>
+      <div class="bil-mono-sub">Submission Detail &nbsp;·&nbsp; {{ collection.bil_uuid }}</div>
+    </div>
+    <div class="d-flex gap-2 mt-1 flex-wrap">
+      <a href="{% url 'ingest:collection_update' pk=collection.pk %}" class="bil-btn-inline">
+        <i class="fa-solid fa-pen-to-square fa-xs" aria-hidden="true"></i>Edit
+      </a>
+      {% if pi %}
+      <a href="{% url 'ingest:index' %}" class="bil-btn-inline">
+        <i class="fa-solid fa-arrow-left fa-xs" aria-hidden="true"></i>PI Dashboard
+      </a>
+      {% endif %}
+    </div>
+  </div>
 
-      {# ---- Tags: All datasets ---- #}
-      {% if datasets_list %}
-      <h2>Add Tags to All Datasets</h2>
-      <form id="add-tags-all-form" action="{% url 'ingest:add_tags_all' %}" method="post">
-        {% csrf_token %}
-        <input type="hidden" name="collection_id" value="{{ collection.id }}">
-        <div class="row">
-          <div class="col-md-6">
-            <h4>Consortium Tags</h4>
-            {% for tag in consortium_tags %}
-            <div class="checkbox styled-checkbox">
-              <label>
-                <input type="checkbox" name="tag_text[]" value="{{ tag }}"> {{ tag }}
-              </label>
-            </div>
-            {% endfor %}
-          </div>
-          <div class="col-md-6">
-            <h4>User Tags</h4>
-            {% for tag in user_tags %}
-            <div class="checkbox styled-checkbox">
-              <label>
-                <input type="checkbox" name="tag_text[]" value="{{ tag }}"> {{ tag }}
-              </label>
-            </div>
-            {% endfor %}
+  <div class="row g-3">
+
+    {# ── Left sidebar ── #}
+    <div class="col-lg-4">
+
+      {# Info card #}
+      <div class="bil-card bil-fadein">
+        <div class="bil-card-hdr">
+          <div class="bil-card-title">
+            <span class="bil-card-hdr-icon" aria-hidden="true"><i class="fa-solid fa-circle-info fa-xs"></i></span>
+            Submission Info
           </div>
         </div>
-        <button class="btn btn-primary" type="submit" disabled>
-          <span class="glyphicon glyphicon-plus"></span> Add Tags to All
-        </button>
-      </form>
-
-      <h2 style="margin-top:30px;">Add Tags to Individual Datasets</h2>
-      {% for dataset in datasets_list %}
-      <div class="panel panel-default">
-        <div class="panel-heading" data-toggle="collapse" data-target="#dataset-{{ dataset.id }}">
-          {{ dataset.title }} <i class="chevron fa fa-fw"></i>
+        <div class="bil-card-body">
+          <table class="bil-info-table">
+            <tbody>
+              <tr><th>Description</th><td>{{ collection.description }}</td></tr>
+              <tr><th>Organization</th><td>{{ collection.organization_name|default:"—" }}</td></tr>
+              <tr><th>Lab</th><td>{{ collection.lab_name|default:"—" }}</td></tr>
+              <tr><th>Funder</th><td>{{ collection.project_funder|default:"—" }}</td></tr>
+              <tr><th>Funder ID</th><td>{{ collection.project_funder_id|default:"—" }}</td></tr>
+              <tr><th>Directory</th><td><code>{{ collection.data_path }}</code></td></tr>
+            </tbody>
+          </table>
         </div>
-        <div class="collapse" id="dataset-{{ dataset.id }}">
-          <div class="panel-body">
-            <p>{{ dataset.abstract }}</p>
-            <form id="add-tags-form-{{ dataset.id }}" action="{% url 'ingest:add_tags' %}" method="post">
+      </div>
+
+      {# Status card #}
+      <div class="bil-card bil-fadein">
+        <div class="bil-card-hdr">
+          <div class="bil-card-title">
+            <span class="bil-card-hdr-icon" aria-hidden="true"><i class="fa-solid fa-chart-line fa-xs"></i></span>
+            Status
+          </div>
+        </div>
+        <div class="bil-card-body">
+          <div class="bil-status-grid">
+            <div class="bil-status-pill
+              {% if collection.validation_status == 'SUCCESS' %}s-success
+              {% elif collection.validation_status == 'FAILED' %}s-failed
+              {% elif collection.validation_status == 'PENDING' %}s-pending
+              {% else %}s-neutral{% endif %}">
+              <div class="bil-status-lbl">Validation</div>
+              <div class="bil-status-val">
+                <span class="bil-led" aria-hidden="true"></span>
+                {% if collection.validation_status == "NOT_VALIDATED" %}Not Validated
+                {% elif collection.validation_status == "PENDING" %}Pending
+                {% elif collection.validation_status == "SUCCESS" %}Passed
+                {% elif collection.validation_status == "FAILED" %}Failed
+                {% else %}—{% endif %}
+              </div>
+            </div>
+            <div class="bil-status-pill
+              {% if collection.submission_status == 'SUCCESS' %}s-success
+              {% elif collection.submission_status == 'FAILED' %}s-failed
+              {% elif collection.submission_status == 'PENDING' %}s-pending
+              {% else %}s-neutral{% endif %}">
+              <div class="bil-status-lbl">Submission</div>
+              <div class="bil-status-val">
+                <span class="bil-led" aria-hidden="true"></span>
+                {% if collection.submission_status == "NOT_SUBMITTED" %}Not Submitted
+                {% elif collection.submission_status == "PENDING" %}Pending
+                {% elif collection.submission_status == "SUCCESS" %}Submitted
+                {% elif collection.submission_status == "FAILED" %}Failed
+                {% else %}—{% endif %}
+              </div>
+            </div>
+          </div>
+          {% if not publication_requested %}
+          <div class="mt-2">
+            {% if datasets_list %}
+            <a href="{% url 'ingest:submit_request_collection_list' %}?preselect={{ collection.bil_uuid }}" class="bil-btn-outline">
+              <i class="fa-solid fa-paper-plane fa-xs" aria-hidden="true"></i>Request Publication
+            </a>
+            {% else %}
+            <span data-bs-toggle="tooltip"
+                  title="A metadata spreadsheet must be uploaded before this collection can be submitted for publication."
+                  style="display:block;cursor:not-allowed;">
+              <span class="bil-btn-outline" style="opacity:.45;pointer-events:none;">
+                <i class="fa-solid fa-paper-plane fa-xs" aria-hidden="true"></i>Request Publication
+              </span>
+            </span>
+            {% endif %}
+          </div>
+          {% elif not collection_published and collection.submission_status != 'SUCCESS' %}
+          <div class="mt-2" role="note"
+               style="background:rgba(0,201,167,.07);border:1px solid rgba(0,201,167,.25);border-radius:8px;padding:.6rem .85rem;font-family:'Lato',sans-serif;font-size:.82rem;color:#008e77;display:flex;align-items:center;gap:8px;">
+            <i class="fa-solid fa-clock-rotate-left fa-xs" aria-hidden="true"></i>
+            This submission has been sent for validation and is currently under review.
+          </div>
+          {% endif %}
+          {% if collection.locked %}
+          <div class="bil-lock-warning" role="note">
+            <i class="fa-solid fa-lock fa-xs flex-shrink-0" aria-hidden="true"></i>
+            Locked submissions cannot be modified or deleted.
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      {# Actions card #}
+      <div class="bil-card bil-fadein">
+        <div class="bil-card-hdr">
+          <div class="bil-card-title">
+            <span class="bil-card-hdr-icon" aria-hidden="true"><i class="fa-solid fa-bolt fa-xs"></i></span>
+            Actions
+          </div>
+        </div>
+        <div class="bil-card-body">
+          <div class="bil-actions">
+            <a href="{% url 'ingest:ondemandSubmission' collection.id %}" class="bil-btn-dark">
+              <i class="fa-solid fa-folder-open fa-xs" aria-hidden="true"></i>View Submission Directory
+            </a>
+            {% if datasets_list %}
+            <a href="{% url 'ingest:create_dataset_linkage' collection.id %}" class="bil-btn-outline">
+              <i class="fa-solid fa-link fa-xs" aria-hidden="true"></i>Create Dataset Linkages
+            </a>
+            {% else %}
+            <a href="{% url 'ingest:descriptive_metadata_upload' collection.id %}" class="bil-btn-outline">
+              <i class="fa-solid fa-upload fa-xs" aria-hidden="true"></i>Upload Metadata
+            </a>
+            <span data-bs-toggle="tooltip"
+                  title="A metadata spreadsheet must be uploaded before dataset linkages can be created."
+                  style="display:block;cursor:not-allowed;">
+              <span class="bil-btn-outline" style="opacity:.45;pointer-events:none;">
+                <i class="fa-solid fa-link fa-xs" aria-hidden="true"></i>Create Dataset Linkages
+              </span>
+            </span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    {# ── Right: Metadata ── #}
+    <div class="col-lg-8">
+      <div class="bil-card bil-fadein">
+        <div class="bil-card-hdr--light"
+             data-bs-toggle="collapse" data-bs-target="#collapseOrderMetadata"
+             aria-expanded="true" aria-controls="collapseOrderMetadata">
+          <div class="bil-card-title--dark">
+            <i class="fa-solid fa-table fa-xs" aria-hidden="true"></i>Metadata
+          </div>
+          <i class="fa-solid fa-chevron-down fa-xs text-secondary" aria-hidden="true"></i>
+        </div>
+        <div class="collapse show" id="collapseOrderMetadata">
+          <div class="bil-card-body">
+
+            {% include 'ingest/new_metadata_sheet.html' %}
+
+            {% if descriptive_metadata_list %}
+            <div class="mt-3">
+              <div class="bil-card-hdr--light"
+                   data-bs-toggle="collapse" data-bs-target="#collapseV1Metadata"
+                   aria-expanded="false" aria-controls="collapseV1Metadata">
+                <div class="bil-card-title--dark">
+                  <i class="fa-solid fa-clock-rotate-left fa-xs" aria-hidden="true"></i>Version 1 Metadata
+                  <span style="font-family:'DM Mono',monospace;font-size:.6rem;background:rgba(22,27,51,.06);color:#8589a8;padding:.15em .5em;border-radius:4px;">{{ descriptive_metadata_list|length }}</span>
+                </div>
+                <i class="fa-solid fa-chevron-down fa-xs text-secondary" aria-hidden="true"></i>
+              </div>
+              <div class="collapse" id="collapseV1Metadata">
+                <div class="table-responsive">
+                  <table class="bil-data-table">
+                    <thead>
+                      <tr>
+                        <th>Sample ID</th>
+                        <th>Organism</th>
+                        <th>Method</th>
+                        <th>Technique</th>
+                        <th>Modality</th>
+                        <th>Anatomical Structure</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for dm in descriptive_metadata_list %}
+                      <tr>
+                        <td style="font-weight:600;color:#161b33;">{{ dm.sample_id }}</td>
+                        <td>{{ dm.organism_type }}</td>
+                        <td><span class="bil-code">{{ dm.method }}</span></td>
+                        <td><span class="bil-code">{{ dm.technique }}</span></td>
+                        <td>{{ dm.modality }}</td>
+                        <td>{{ dm.anatomical_structure }}</td>
+                        <td>
+                          <a href="{% url 'ingest:descriptive_metadata_detail' dm.pk %}" class="bil-icon-btn" title="View detail">
+                            <i class="fa-solid fa-arrow-right fa-xs"></i>
+                          </a>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  {# ── Dataset Tags ── #}
+  {% if datasets_list %}
+  <div class="bil-card bil-fadein">
+    <div class="bil-card-hdr--light"
+         data-bs-toggle="collapse" data-bs-target="#collapseTagsSection"
+         aria-expanded="false" aria-controls="collapseTagsSection">
+      <div class="bil-card-title--dark">
+        <i class="fa-solid fa-tags fa-xs" aria-hidden="true"></i>Dataset Tags
+        <span style="font-family:'DM Mono',monospace;font-size:.6rem;background:rgba(22,27,51,.06);
+                     color:#8589a8;padding:.15em .5em;border-radius:4px;">{{ datasets_list|length }}</span>
+      </div>
+      <i class="fa-solid fa-chevron-down fa-xs text-secondary" aria-hidden="true"></i>
+    </div>
+    <div class="collapse" id="collapseTagsSection">
+      <div class="bil-card-body">
+        <div class="row g-4 mb-2">
+
+          {# Add tags to all #}
+          <div class="col-lg-4">
+            <div class="bil-tag-section-label">
+              <i class="fa-solid fa-tags fa-xs" aria-hidden="true"></i>Add Tags to All Datasets
+            </div>
+            <form id="add-tags-all-form" action="{% url 'ingest:add_tags_all' %}" method="post">
               {% csrf_token %}
-              <input type="hidden" name="dataset_id" value="{{ dataset.id }}">
-              <div class="row">
-                <div class="col-md-6">
-                  <h5>Consortium Tags</h5>
+              <input type="hidden" name="collection_id" value="{{ collection.id }}">
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <div class="bil-tag-section-label" style="margin-bottom:.4rem;">Consortium</div>
                   {% for tag in consortium_tags %}
-                  <div class="checkbox">
-                    <label>
-                      <input type="checkbox" name="tag_text[]" value="{{ tag }}" {% if tag in dataset.tag_list %}disabled{% endif %}>
-                      {{ tag }}
-                    </label>
+                  <div class="form-check mb-1">
+                    <input class="form-check-input" type="checkbox" name="tag_text[]" value="{{ tag }}" id="all-ctag-{{ forloop.counter }}">
+                    <label class="form-check-label small" for="all-ctag-{{ forloop.counter }}">{{ tag }}</label>
                   </div>
                   {% endfor %}
                 </div>
-                <div class="col-md-6">
-                  <h5>User Tags</h5>
+                <div class="col-6">
+                  <div class="bil-tag-section-label" style="margin-bottom:.4rem;">User Tags</div>
                   {% for tag in user_tags %}
-                  <div class="checkbox">
-                    <label>
-                      <input type="checkbox" name="tag_text[]" value="{{ tag }}" {% if tag in dataset.tag_list %}disabled{% endif %}>
-                      {{ tag }}
-                    </label>
+                  <div class="form-check mb-1">
+                    <input class="form-check-input" type="checkbox" name="tag_text[]" value="{{ tag }}" id="all-utag-{{ forloop.counter }}">
+                    <label class="form-check-label small" for="all-utag-{{ forloop.counter }}">{{ tag }}</label>
                   </div>
                   {% endfor %}
                 </div>
               </div>
-              <button class="btn btn-primary" type="button" onclick="addTags({{ dataset.id }})" disabled>
-                <span class="glyphicon glyphicon-plus"></span> Add Tags
+              <button class="bil-btn-sm-teal" type="submit" disabled>
+                <i class="fa-solid fa-plus fa-xs" aria-hidden="true"></i>Add Tags to All
               </button>
             </form>
-            <ul id="tag-list-{{ dataset.id }}" style="margin-top:10px;">
-              {% for tag in dataset.tags.all %}
-              <li id="tag-{{ tag.id }}">
-                {{ tag.tag }}
-                <form id="delete-tag-form-{{ tag.id }}" data-url="{% url 'ingest:delete_tag' %}" method="post"
-                  style="display:inline;">
-                  {% csrf_token %}
-                  <input type="hidden" name="tag_id" value="{{ tag.id }}">
-                  <button type="button" class="btn btn-danger btn-xs" onclick="deleteTag({{ tag.id }})">Delete</button>
-                </form>
-              </li>
-              {% endfor %}
-            </ul>
           </div>
+
+          {# Tags by dataset #}
+          <div class="col-lg-8">
+            <div class="bil-tag-section-label">
+              <i class="fa-solid fa-tag fa-xs" aria-hidden="true"></i>Tags by Dataset
+            </div>
+            <div class="table-responsive">
+              <table id="tags-dataset-table" class="table table-sm table-hover align-middle mb-0">
+                <thead style="background-color:#161b33;color:#fff;">
+                  <tr>
+                    <th style="font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.08em;font-weight:500;">Dataset</th>
+                    <th style="font-family:'DM Mono',monospace;font-size:.6rem;letter-spacing:.08em;font-weight:500;">Applied Tags</th>
+                    <th style="width:70px;"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for dataset in datasets_list %}
+                  <tr>
+                    <td class="small" style="font-family:'Lato',sans-serif;color:#3d4360;">{{ dataset.title }}</td>
+                    <td id="row-tags-{{ dataset.id }}">
+                      {% for tag in dataset.tags.all %}
+                        <span class="bil-applied-tag">{{ tag.tag }}</span>
+                      {% empty %}
+                        <span style="font-family:'DM Mono',monospace;font-size:.65rem;color:#9093a8;">—</span>
+                      {% endfor %}
+                    </td>
+                    <td>
+                      <button class="bil-btn-sm-teal" type="button"
+                              data-bs-toggle="modal" data-bs-target="#tagEditModal"
+                              data-dataset-id="{{ dataset.id }}" data-dataset-title="{{ dataset.title }}">
+                        <i class="fa-solid fa-tag fa-xs" aria-hidden="true"></i>Edit
+                      </button>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
       </div>
-      {% endfor %}
-      {% endif %}
-
-      {% include 'ingest/new_metadata_sheet.html' %}
-      {% include 'ingest/messages.html' %}
     </div>
   </div>
+  {% endif %}
+
+  {# ── Tag edit modal ── #}
+  <div class="modal fade bil-modal" id="tagEditModal" tabindex="-1"
+       aria-labelledby="tagEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div>
+            <h6 class="modal-title" id="tagEditModalLabel">Edit Dataset Tags</h6>
+            <p class="modal-subtitle mb-0" id="tagEditDatasetTitle"></p>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="modal-add-tags-form" action="{% url 'ingest:add_tags' %}" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="dataset_id" id="modal-dataset-id">
+            <div class="row g-2 mb-4">
+              <div class="col-6">
+                <div class="bil-modal-tag-group-label">Consortium Tags</div>
+                {% for tag in consortium_tags %}
+                <div class="form-check mb-1">
+                  <input class="form-check-input modal-tag-cb" type="checkbox" name="tag_text[]" value="{{ tag }}" id="modal-ctag-{{ forloop.counter }}">
+                  <label class="form-check-label" for="modal-ctag-{{ forloop.counter }}">{{ tag }}</label>
+                </div>
+                {% endfor %}
+              </div>
+              <div class="col-6">
+                <div class="bil-modal-tag-group-label">User Tags</div>
+                {% for tag in user_tags %}
+                <div class="form-check mb-1">
+                  <input class="form-check-input modal-tag-cb" type="checkbox" name="tag_text[]" value="{{ tag }}" id="modal-utag-{{ forloop.counter }}">
+                  <label class="form-check-label" for="modal-utag-{{ forloop.counter }}">{{ tag }}</label>
+                </div>
+                {% endfor %}
+              </div>
+            </div>
+          </form>
+          <div class="bil-modal-tag-group-label mb-2">Applied Tags</div>
+          <div class="bil-applied-tags" id="modal-tag-list"></div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="bil-btn-inline" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="bil-btn-sm-teal" id="modal-add-tags-btn" disabled>
+            <i class="fa-solid fa-plus fa-xs" aria-hidden="true"></i>Add Tags
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
 </div>
+{% endblock %}
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% block extra_scripts %}
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
 <script>
-  $(function () {
-    var isSubmitting = false;
+var tagCache = {
+  {% for dataset in datasets_list %}
+  "{{ dataset.id }}": [{% for tag in dataset.tags.all %}{"id":{{ tag.id }},"text":"{{ tag.tag|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}]{% if not forloop.last %},{% endif %}
+  {% endfor %}
+};
 
-    // Enable/disable "Add Tags to All" button
-    $('#add-tags-all-form input[type="checkbox"]').on('change', function () {
-      var anyChecked = $('#add-tags-all-form input[type="checkbox"]:checked').length > 0;
-      $('#add-tags-all-form button[type="submit"]').prop('disabled', !anyChecked);
+var deleteTagUrl = "{% url 'ingest:delete_tag' %}";
+var addTagUrl    = "{% url 'ingest:add_tags' %}";
+var csrfToken    = "{{ csrf_token }}";
+var currentModalDatasetId = null;
+
+$(function () {
+  var dtOptions = {
+    pageLength: 10,
+    lengthMenu: [10, 25, 50, 100],
+    ordering: true,
+    searching: true,
+    language: {
+      search: '', searchPlaceholder: 'Search…',
+      lengthMenu: 'Show _MENU_ per page',
+      info: '_START_–_END_ of _TOTAL_',
+      infoEmpty: 'None',
+      paginate: { previous: '‹', next: '›' },
+    },
+    dom: '<"d-flex align-items-center justify-content-between mb-2"fl>rt<"d-flex align-items-center justify-content-between mt-2"ip>',
+  };
+  if ($.fn.DataTable && $('#newMetadata').length) {
+    $('#newMetadata').DataTable($.extend({}, dtOptions, {
+      columnDefs: [{ orderable: false, targets: -1 }],
+    }));
+  }
+  if ($.fn.DataTable && $('#tbl-v2').length) {
+    $('#tbl-v2').DataTable($.extend({}, dtOptions, {
+      pageLength: 25,
+      order: [[3, 'desc']],
+      columnDefs: [{ orderable: false, targets: -1 }],
+    }));
+  }
+  if ($.fn.DataTable && $('#tags-dataset-table').length) {
+    $('#tags-dataset-table').DataTable($.extend({}, dtOptions, {
+      columnDefs: [{ orderable: false, targets: [1, 2] }],
+    }));
+  }
+
+  $('#tagEditModal').on('show.bs.modal', function (e) {
+    var btn = $(e.relatedTarget);
+    currentModalDatasetId = String(btn.data('dataset-id'));
+    $('#modal-dataset-id').val(currentModalDatasetId);
+    $('#tagEditDatasetTitle').text(btn.data('dataset-title'));
+    var appliedTexts = (tagCache[currentModalDatasetId] || []).map(function (t) { return t.text; });
+    $('.modal-tag-cb').each(function () {
+      $(this).prop('checked', false).prop('disabled', appliedTexts.indexOf($(this).val()) !== -1);
     });
+    $('#modal-add-tags-btn').prop('disabled', true);
+    renderModalTags();
+  });
 
-    // Enable/disable per-dataset "Add Tags" buttons
-    $('form[id^="add-tags-form-"] input[type="checkbox"]').on('change', function () {
-      var formId = $(this).closest('form').attr('id');
-      var anyChecked = $('#' + formId + ' input[type="checkbox"]:checked').length > 0;
-      $('#' + formId + ' button[type="button"]').prop('disabled', !anyChecked);
-    });
+  $('.modal-tag-cb').on('change', function () {
+    $('#modal-add-tags-btn').prop('disabled', $('.modal-tag-cb:checked').length === 0);
+  });
 
-    // Submit "Add Tags to All" via AJAX
-    $('#add-tags-all-form').on('submit', function (event) {
-      event.preventDefault();
-      if (isSubmitting) return false;
-
-      var confirmed = confirm('Are you sure you want to add these tags to all datasets? Removing tags will need to be done on datasets individually.');
-      if (!confirmed) return;
-
-      isSubmitting = true;
-      var form = $(this);
-      var url = form.attr('action');
-
-      $.ajax({
-        type: 'POST',
-        url: url,
-        data: form.serialize(),
-        success: function (response) {
-          isSubmitting = false;
-          if (response.status === 'success') {
-            $.each(response.updated_tags, function (datasetId, tags) {
-              var tagList = $('#tag-list-' + datasetId);
-              tagList.empty();
-              tags.forEach(function (tag) {
-                var tagHtml = '<li id="tag-' + tag.id + '">' + tag.text +
-                  ' <form id="delete-tag-form-' + tag.id + '" data-url="' + tag.url + '" method="post" style="display:inline;">' +
-                  '{% csrf_token %}' +
-                  '<input type="hidden" name="tag_id" value="' + tag.id + '">' +
-                  '<button type="button" class="btn btn-danger btn-xs" onclick="deleteTag(' + tag.id + ')">Delete</button>' +
-                  '</form></li>';
-                tagList.append(tagHtml);
-              });
-              tags.forEach(function (tag) {
-                $('#delete-tag-form-' + tag.id).off('click').on('click', function () { deleteTag(tag.id); });
-              });
-              tags.forEach(function (tag) {
-                $('#add-tags-form-' + datasetId + ' input[type="checkbox"][value="' + tag.text + '"]').prop('disabled', true);
-              });
-            });
-            form.find('input[type="checkbox"]:checked').prop('checked', false);
-            $('#add-tags-all-form button[type="submit"]').prop('disabled', true);
-          } else {
-            alert(response.message);
-          }
-        },
-        error: function () {
-          isSubmitting = false;
-          alert('An error occurred while adding tags.');
-        }
-      });
+  $('#modal-add-tags-btn').on('click', function () {
+    $.ajax({
+      type: 'POST', url: addTagUrl, data: $('#modal-add-tags-form').serialize(),
+      success: function (r) {
+        if (r.status === 'success') {
+          tagCache[currentModalDatasetId] = r.tags.map(function (t) { return { id: t.id, text: t.text }; });
+          var appliedTexts = tagCache[currentModalDatasetId].map(function (t) { return t.text; });
+          $('.modal-tag-cb').each(function () {
+            if (appliedTexts.indexOf($(this).val()) !== -1) $(this).prop('checked', false).prop('disabled', true);
+          });
+          $('#modal-add-tags-btn').prop('disabled', true);
+          renderModalTags();
+          refreshTableTagCell(currentModalDatasetId);
+        } else { alert(r.message); }
+      },
+      error: function () { alert('Error adding tags.'); }
     });
   });
 
-  // Add tags to a specific dataset
-  function addTags(datasetId) {
-    var form = $('#add-tags-form-' + datasetId);
-    var url = form.attr('action');
-    $.ajax({
-      type: 'POST',
-      url: url,
-      data: form.serialize(),
-      success: function (response) {
-        if (response.status === 'success') {
-          var tagList = $('#tag-list-' + datasetId);
-          tagList.empty();
-          response.tags.forEach(function (tag) {
-            var tagHtml = '<li id="tag-' + tag.id + '">' + tag.text +
-              ' <form id="delete-tag-form-' + tag.id + '" data-url="' + tag.url + '" method="post" style="display:inline;">' +
-              '{% csrf_token %}' +
-              '<input type="hidden" name="tag_id" value="' + tag.id + '">' +
-              '<button type="button" class="btn btn-danger btn-xs" onclick="deleteTag(' + tag.id + ')">Delete</button>' +
-              '</form></li>';
-            tagList.append(tagHtml);
-          });
-          form.find('input[type="checkbox"]').each(function () {
-            var tagValue = $(this).val();
-            if (response.tags.some(function (t) { return t.text === tagValue; })) {
-              $(this).prop('disabled', true);
-            }
-          });
-          form.find('input[type="checkbox"]:checked').prop('checked', false);
-          form.find('button[type="button"]').prop('disabled', true);
-        } else {
-          alert(response.message);
-        }
-      },
-      error: function () { alert('An error occurred while adding tags.'); }
-    });
-  }
+  var isSubmitting = false;
+  $('#add-tags-all-form input[type="checkbox"]').on('change', function () {
+    $('#add-tags-all-form button[type="submit"]').prop('disabled', $('#add-tags-all-form input:checked').length === 0);
+  });
 
-  // Delete a single tag
-  function deleteTag(tagId) {
-    var form = $('#delete-tag-form-' + tagId);
-    var url = form.data('url');
+  $('#add-tags-all-form').on('submit', function (e) {
+    e.preventDefault();
+    if (isSubmitting) return;
+    if (!confirm('Add these tags to all datasets? Removals must be done per dataset.')) return;
+    isSubmitting = true;
     $.ajax({
-      type: 'POST',
-      url: url,
-      data: form.serialize(),
-      success: function (response) {
-        if (response.status === 'success') {
-          var tagText = response.tag_text.trim();
-          $('#tag-' + tagId).remove();
-          var checkbox = $('input[type="checkbox"][value="' + tagText + '"]');
-          if (checkbox.length) checkbox.prop('disabled', false);
-        } else {
-          alert(response.message);
-        }
+      type: 'POST', url: $(this).attr('action'), data: $(this).serialize(),
+      success: function (r) {
+        isSubmitting = false;
+        if (r.status === 'success') {
+          $.each(r.updated_tags, function (dsId, tags) {
+            tagCache[dsId] = tags.map(function (t) { return { id: t.id, text: t.text }; });
+            refreshTableTagCell(dsId);
+          });
+          $('#add-tags-all-form input:checked').prop('checked', false);
+          $('#add-tags-all-form button[type="submit"]').prop('disabled', true);
+        } else { alert(r.message); }
       },
-      error: function () { alert('An error occurred while deleting the tag.'); }
+      error: function () { isSubmitting = false; alert('Error adding tags.'); }
     });
+  });
+});
+
+function renderModalTags() {
+  var tags = tagCache[currentModalDatasetId] || [];
+  var $list = $('#modal-tag-list').empty();
+  if (!tags.length) {
+    $list.append('<span style="font-family:\'DM Mono\',monospace;font-size:.65rem;color:#9093a8;">No tags applied yet.</span>');
+    return;
   }
+  tags.forEach(function (tag) {
+    var $el = $('<span class="bil-applied-tag"></span>');
+    $el.append(document.createTextNode(tag.text));
+    var $del = $('<button type="button" aria-label="Remove tag"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>');
+    $del.on('click', (function (t) { return function () { modalDeleteTag(t.id, t.text); }; })(tag));
+    $el.append($del);
+    $list.append($el);
+  });
+}
+
+function refreshTableTagCell(dsId) {
+  var tags = tagCache[dsId] || [];
+  var $cell = $('#row-tags-' + dsId).empty();
+  if (!tags.length) {
+    $cell.append('<span style="font-family:\'DM Mono\',monospace;font-size:.65rem;color:#9093a8;">—</span>');
+    return;
+  }
+  tags.forEach(function (t) {
+    $cell.append('<span class="bil-applied-tag">' + $('<span>').text(t.text).html() + '</span>');
+  });
+}
+
+function modalDeleteTag(tagId, tagText) {
+  $.ajax({
+    type: 'POST', url: deleteTagUrl,
+    data: { csrfmiddlewaretoken: csrfToken, tag_id: tagId },
+    success: function (r) {
+      if (r.status === 'success') {
+        tagCache[currentModalDatasetId] = tagCache[currentModalDatasetId].filter(function (t) { return t.id !== tagId; });
+        $('.modal-tag-cb[value="' + tagText.replace(/["\\]/g, '\\$&') + '"]').prop('disabled', false);
+        renderModalTags();
+        refreshTableTagCell(currentModalDatasetId);
+      } else { alert(r.message); }
+    },
+    error: function () { alert('Error deleting tag.'); }
+  });
+}
 </script>
 {% endblock %}

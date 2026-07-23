@@ -2,7 +2,7 @@
 
 {% block wide %}
 {% block scripts %}
-<script language="JavaScript">
+<script>
   function toggle(source) {
       checkboxes = document.getElementsByName('selection');
       for(var i in checkboxes)
@@ -18,30 +18,57 @@
   });
 </script>
 {% endblock %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
-<br>
-<h1>Your Metadata</h1>
-{% if image_metadata %}
-  <form action="" method="post">{% csrf_token %}
-      {% load render_table from django_tables2 %}
-      {% render_table table %}
-      <button type="submit" class="submit btn btn-primary" id="delete_selected" style="display:none">
-        <span class="glyphicon glyphicon-trash"></span> Delete Selected
-      </button>
-  </form>
-{% else %}
-  <div class="alert alert-info">
-    <p>You haven't created any metadata yet.</p>
+
+<div class="row justify-content-center">
+  <div class="col-lg-11">
+
+    {# ── Page header ── #}
+    <div class="d-flex align-items-start justify-content-between mb-3">
+      <div>
+        <h1 class="mb-1">Your Metadata</h1>
+        <p class="text-muted mb-0">Image metadata entries (legacy v1 format).</p>
+      </div>
+      <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary mt-1">
+        <i class="fa-solid fa-arrow-left fa-sm me-1"></i>PI Dashboard
+      </a>
+    </div>
+
+    {# ── Table card ── #}
+    <div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+      <div class="card-body p-4">
+
+        {% if image_metadata %}
+          <form action="" method="post">
+            {% csrf_token %}
+            {% load render_table from django_tables2 %}
+            <div class="table-responsive">
+              {% render_table table %}
+            </div>
+            <div class="mt-3">
+              <button type="submit" class="btn btn-danger" id="delete_selected" style="display:none">
+                <i class="fa-solid fa-trash fa-sm me-1"></i>Delete Selected
+              </button>
+            </div>
+          </form>
+        {% else %}
+          <div class="alert alert-info d-flex gap-2 align-items-start mb-0">
+            <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+            <span>You haven't created any metadata yet.</span>
+          </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    {# ── Actions ── #}
+    <div class="d-flex gap-2">
+      <a href="{% url 'ingest:image_metadata_create' %}" class="btn btn-primary">
+        <i class="fa-solid fa-plus fa-sm me-1"></i>Create Metadata
+      </a>
+      <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">Cancel</a>
+    </div>
+
   </div>
-{% endif %}
-<hr>
-<a href="{% url 'ingest:image_metadata_create' %}" class="btn btn-primary">
-  <span class="glyphicon glyphicon-plus"></span> Create Metadata
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+</div>
+
 {% endblock %}

@@ -1,99 +1,95 @@
 {% extends 'ingest/base.html' %}
 {% block content %}
-{% load bootstrap4 %}
 
 <script src="/static/ingest/updateusers.js"></script>
-<script>$(document).ready(function(){$('table').find('select').on('change', function() {$(this).addClass('modified');});})</script>
+<script>
+  $(document).ready(function(){
+    $('table').find('select').on('change', function() {
+      $(this).addClass('modified');
+    });
+  });
+</script>
 
-<h1>Modify User Access</h1>
-<p>Change user roles.</p>
-<form id="rowform">
-{% csrf_token %}
-<table id="ModifyUserAccess" class="table">
-<thead>
-<tr>
-<th>Username</th>
-<th>Orcid ID</th>
-<th>Affiliation</th>
-<th>Is Project Investigator</th>
-<th>Is Program Officer</th>
-<th>Is BIL Admin</th>
-<th>DOI Role</th>
-</tr>
-</thead>
-<tbody>
+<div class="container-fluid py-4">
 
-{% for user in allusers %}
-<tr data-user_id="{{user.id}}">
-<td>{{user.username}}</td>
-<td>{{user.these_people.orcid_id}}</td>
-<td>{{user.these_people.affiliation}}</td>
-<td>
-<select name="is_pi" id="is_pi">
-    <option value="True" 
-        {% if user.these_project_people.is_pi %}
-        selected
-        {% endif %}
-    >True</option>
-    <option value="False"
-        {% if user.these_project_people.is_pi is False %}
-        selected
-        {% endif %}
-    >False</option>
-    <option value="None"
-        {% if user.these_project_people.is_pi is null %}
-        selected
-        {% endif %}
-    >----</option>
-</select>
-</td>
-<td>
-<select name="is_po" id="is_po">
-    <option value="True" 
-        {% if user.these_project_people.is_po %}
-        selected
-        {% endif %}
-    >True</option>
-    <option value="False"
-        {% if user.these_project_people.is_po is False %}
-            selected
-        {% endif %}
-    >False</option>
-    <option value="None"
-        {% if user.these_project_people.is_po is null %}
-        selected
-        {% endif %}
-    >----</option>
-</select>
-</td>
-<td>
-<select name="is_bil_admin" id="is_bil_admin">
-    <option value="True" 
-        {% if user.these_project_people.is_bil_admin %}
-        selected
-        {% endif %}
-    >True</option>
-        <option value="False"
-        {% if user.these_project_people.is_bil_admin is False %}
-        selected
-        {% endif %}
-    >False</option>
-    <option value="null"
-        {% if user.these_project_people.is_bil_admin is null %}
-        selected
-        {% endif %}
-    >----</option>
-</select>
-</td>
-<td>{{user.these_project_people.doi_role}}</td>
-</tr>
-{% endfor %}
-</table>
-</form>
-<button class="btn btn-primary" onclick="submit_user_changes();">Confirm Changes</button>
-<hr>
+  <div class="d-flex align-items-start justify-content-between mb-3">
+    <div>
+      <h1 class="mb-1">Modify User Access</h1>
+      <p class="text-muted mb-0">Change user roles.</p>
+    </div>
+    <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary mt-1">
+      <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Cancel
+    </a>
+  </div>
 
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+  <div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
+    <div class="card-body p-4">
+      <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+        <i class="fa-solid fa-users-gear fa-sm me-1"></i>Users
+      </p>
+
+      <form id="rowform">
+        {% csrf_token %}
+        <div class="table-responsive">
+          <table id="ModifyUserAccess" class="table table-hover align-middle mb-0">
+            <thead style="background-color: #161b33; color: #fff;">
+              <tr>
+                <th>Username</th>
+                <th>Orcid ID</th>
+                <th>Affiliation</th>
+                <th>Is Project Investigator</th>
+                <th>Is Program Officer</th>
+                <th>Is BIL Admin</th>
+                <th>DOI Role</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in allusers %}
+              <tr data-user_id="{{ user.id }}">
+                <td>{{ user.username }}</td>
+                <td>{{ user.these_people.orcid_id }}</td>
+                <td>{{ user.these_people.affiliation }}</td>
+                <td>
+                  <select name="is_pi" id="is_pi" class="form-select form-select-sm">
+                    <option value="True" {% if user.these_project_people.is_pi %}selected{% endif %}>True</option>
+                    <option value="False" {% if user.these_project_people.is_pi is False %}selected{% endif %}>False</option>
+                    <option value="None" {% if user.these_project_people.is_pi is null %}selected{% endif %}>----</option>
+                  </select>
+                </td>
+                <td>
+                  <select name="is_po" id="is_po" class="form-select form-select-sm">
+                    <option value="True" {% if user.these_project_people.is_po %}selected{% endif %}>True</option>
+                    <option value="False" {% if user.these_project_people.is_po is False %}selected{% endif %}>False</option>
+                    <option value="None" {% if user.these_project_people.is_po is null %}selected{% endif %}>----</option>
+                  </select>
+                </td>
+                <td>
+                  <select name="is_bil_admin" id="is_bil_admin" class="form-select form-select-sm">
+                    <option value="True" {% if user.these_project_people.is_bil_admin %}selected{% endif %}>True</option>
+                    <option value="False" {% if user.these_project_people.is_bil_admin is False %}selected{% endif %}>False</option>
+                    <option value="null" {% if user.these_project_people.is_bil_admin is null %}selected{% endif %}>----</option>
+                  </select>
+                </td>
+                <td>{{ user.these_project_people.doi_role }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </form>
+
+      <div class="d-flex gap-2 mt-3">
+        <button class="btn btn-primary" onclick="submit_user_changes();">
+          <i class="fa-solid fa-check fa-sm me-1"></i>Confirm Changes
+        </button>
+        <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">
+          <i class="fa-solid fa-xmark fa-sm me-1"></i>Cancel
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
 {% endblock %}

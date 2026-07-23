@@ -1,49 +1,126 @@
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %}
-{% block wide %}
 
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-<br>
-<h1>All Project Submissions</h1>
-
-<table class="table">
-<thead>
-<tr>
-<th>Name </th>
-<th>Project Name</th>
-<th>Submitter</th>
-<th>Organization Lab </th>
-<th>Lab Name </th>
-<th>Locked </th>
-<th>Submission Status </th>
-<th>Validation Status </th>
-<th>Modality </th>
-<th>View Details</th>
-</tr>
-</thead>
-<tbody>
-{% for collection in collections %}
-<tr>
-
-<td>{{ collection.name}} </td>
-<td>{{ collection.project.name }}</td>
-<td>{{ collection.user.username}} </td>
-<td>{{ collection.organization_name}} </td>
-<td>{{ collection.lab_name}} </td>
-<td>{{ collection.locked}} </td>
-<td>{{ collection.submission_status}} </td>
-<td>{{ collection.validation_status}} </td>
-<td>{{ collection.modality}} </td>
-
-<td><a href="{% url 'ingest:collection_detail' collection.id %}">View</td>
-</tr>
-{% endfor %}
-</table>
-
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
 {% endblock %}
 
+{% block wide %}
+
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+  <div class="bil-list-header">
+    <h4><i class="fa-solid fa-folder-open me-2" style="color:var(--bil-accent);font-size:1.1rem;" aria-hidden="true"></i>All Project Submissions</h4>
+    <span class="bil-sub">{{ collections|length }} submission{{ collections|length|pluralize }} across your projects</span>
+  </div>
+  <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+    <i class="fa-solid fa-arrow-left fa-xs" aria-hidden="true"></i>PI Dashboard
+  </a>
+</div>
+
+<div class="bil-table-card bil-fadein">
+  <div class="table-responsive">
+    <table id="tbl-manage" class="bil-data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Project</th>
+          <th>Submitter</th>
+          <th>Lab</th>
+          <th>Locked</th>
+          <th>Submission</th>
+          <th>Validation</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for collection in collections %}
+        <tr>
+          <td>
+            <div class="bil-col-name">{{ collection.name }}</div>
+            {% if collection.description %}
+            <div class="bil-col-sub">{{ collection.description|truncatechars:55 }}</div>
+            {% endif %}
+          </td>
+          <td><span class="bil-code">{{ collection.project.name }}</span></td>
+          <td><span class="bil-code">{{ collection.user.username }}</span></td>
+          <td>{{ collection.lab_name|default:"—" }}</td>
+          <td>
+            {% if collection.locked %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-lock fa-xs" aria-hidden="true"></i>Locked</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-lock-open fa-xs" aria-hidden="true"></i>Open</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if collection.submission_status == 'SUCCESS' %}
+              <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs" aria-hidden="true"></i>Success</span>
+            {% elif collection.submission_status == 'FAILED' %}
+              <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs" aria-hidden="true"></i>Failed</span>
+            {% elif collection.submission_status == 'PENDING' %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs" aria-hidden="true"></i>Pending</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs" aria-hidden="true"></i>Not Submitted</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if collection.validation_status == 'SUCCESS' %}
+              <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs" aria-hidden="true"></i>Valid</span>
+            {% elif collection.validation_status == 'FAILED' %}
+              <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs" aria-hidden="true"></i>Failed</span>
+            {% elif collection.validation_status == 'PENDING' %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs" aria-hidden="true"></i>Pending</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs" aria-hidden="true"></i>Not Validated</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'ingest:collection_detail' collection.id %}" class="bil-icon-btn" title="View detail" aria-label="View {{ collection.name }}">
+              <i class="fa-solid fa-arrow-right fa-xs" aria-hidden="true"></i>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" style="text-align:center;padding:3rem 1rem;color:rgba(22,27,51,.35);font-family:'Lato',sans-serif;">
+            <i class="fa-solid fa-folder-open fa-lg d-block mb-2 mx-auto" style="color:rgba(22,27,51,.15);" aria-hidden="true"></i>
+            No submissions found across your projects.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function () {
+  $('#tbl-manage').DataTable({
+    pageLength: 25,
+    lengthMenu: [10, 25, 50, 100],
+    order: [[1, 'asc'], [0, 'asc']],
+    language: {
+      search: '', searchPlaceholder: 'Search submissions…',
+      lengthMenu: 'Show _MENU_ per page',
+      info: '_START_–_END_ of _TOTAL_ submissions',
+      infoEmpty: 'No submissions',
+      paginate: { previous: '‹', next: '›' },
+    },
+    dom: '<"d-flex align-items-center justify-content-between p-3 border-bottom"fl>rt<"d-flex align-items-center justify-content-between p-3"ip>',
+    columnDefs: [
+      { targets: -1, orderable: false, searchable: false, width: '40px' },
+      { targets: 4, width: '80px' },
+      { targets: 5, width: '100px' },
+      { targets: 6, width: '100px' },
+    ],
+    initComplete: function () {
+      $('.dataTables_filter input').addClass('form-control form-control-sm').css('width', '220px');
+      $('.dataTables_length select').addClass('form-select form-select-sm').css('width', 'auto');
+    },
+  });
+});
+</script>
+{% endblock %}

@@ -1,16 +1,403 @@
 {% extends 'ingest/base.html' %}
 {% load static %}
+
+{% block scripts %}
+<style>
+:root { --bil-dark-srf: #0d1121; }
+
+body {
+  background-image: radial-gradient(circle, rgba(22,27,51,.11) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Instrument panel */
+.bil-instrument {
+  background: var(--bil-dark-srf);
+  border-radius: 12px;
+  border: 1px solid rgba(0,201,167,.15);
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+.bil-instrument::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,201,167,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,201,167,.025) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+.bil-instrument-body { position: relative; padding: 1.75rem 2.5rem; }
+.bil-instrument-label {
+  font-family: 'DM Mono', monospace;
+  font-size: .6rem; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--bil-accent); opacity: .8; margin-bottom: .35rem;
+}
+.bil-stat-lg {
+  font-family: 'Lato', sans-serif; font-weight: 800;
+  font-size: 3.5rem; color: #fff; letter-spacing: -.04em; line-height: 1;
+  font-variant-numeric: tabular-nums; display: inline-block;
+}
+.bil-stat-md {
+  font-family: 'Lato', sans-serif; font-weight: 700;
+  font-size: 2rem; color: rgba(255,255,255,.85); letter-spacing: -.03em; line-height: 1;
+  font-variant-numeric: tabular-nums; display: inline-block;
+}
+.bil-status-line {
+  font-family: 'DM Mono', monospace; font-size: .7rem;
+  color: var(--bil-accent); opacity: .65; margin-top: .5rem; letter-spacing: .05em;
+}
+.bil-divider-v { width: 1px; background: rgba(0,201,167,.12); align-self: stretch; margin: 0 2.5rem; }
+
+/* Page header */
+.bil-pi-header h1 {
+  font-weight: 800 !important;
+  font-size: clamp(1.6rem,3vw,2.4rem);
+  color: var(--bil-navy); letter-spacing: -.03em; margin-bottom: .3rem;
+}
+.bil-pi-header p { font-family: 'Lato', sans-serif; color: #616788; font-size: .88rem; }
+
+/* PI nav cards */
+.bil-pi-card {
+  background: #fff; border-radius: 12px;
+  border: 1.5px solid rgba(22,27,51,.07);
+  box-shadow: 0 2px 12px rgba(22,27,51,.06);
+  text-decoration: none; display: block;
+  overflow: hidden; position: relative;
+  transition: all .25s ease;
+}
+.bil-pi-card:hover {
+  box-shadow: 0 10px 32px rgba(22,27,51,.14), 0 0 0 3px rgba(0,201,167,.12);
+  transform: translateY(-3px); border-color: rgba(0,201,167,.3);
+}
+.bil-pi-card-inner { padding: 2.25rem; display: flex; flex-direction: column; height: 100%; }
+.bil-pi-num {
+  font-family: 'Lato', sans-serif; font-size: 5rem; font-weight: 800;
+  color: rgba(22,27,51,.04); line-height: 1;
+  position: absolute; top: 1rem; right: 1.5rem;
+  letter-spacing: -.05em; user-select: none;
+}
+.bil-pi-icon {
+  width: 52px; height: 52px; border-radius: 12px;
+  background: rgba(22,27,51,.05);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--bil-navy); font-size: 1.3rem; margin-bottom: 1.25rem;
+  transition: background .2s, color .2s;
+}
+.bil-pi-card:hover .bil-pi-icon { background: var(--bil-accent-dim); color: #00a88a; }
+.bil-pi-card h5 { font-weight: 700 !important; font-size: 1.15rem; color: var(--bil-navy); margin-bottom: .4rem; }
+.bil-pi-card p { font-family: 'Lato', sans-serif; font-size: .82rem; color: #616788; line-height: 1.6; margin: 0; }
+.bil-pi-card-arrow {
+  margin-top: auto; padding-top: 1.5rem;
+  font-family: 'DM Mono', monospace; font-size: .72rem; letter-spacing: .06em;
+  color: var(--bil-accent); opacity: 0; transform: translateX(-8px);
+  transition: opacity .2s, transform .2s;
+}
+.bil-pi-card:hover .bil-pi-card-arrow { opacity: 1; transform: translateX(0); }
+
+.bil-section-label {
+  font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--bil-navy); opacity: .45;
+  margin-bottom: 1.25rem; display: flex; align-items: center; gap: 8px;
+}
+.bil-section-label::after { content: ''; flex: 1; height: 1px; background: currentColor; opacity: .3; }
+
+.bil-fadein { transform: translateY(12px); animation-duration: .45s; }
+.bil-fadein:nth-child(5) { animation-delay: .28s; }
+
+</style>
+{% endblock %}
+
 {% block content %}
-{% load bootstrap4 %}
+<div class="container-fluid py-4" style="max-width:1100px;margin:0 auto;">
 
+  <div class="bil-pi-header mb-4 bil-fadein">
+    <h1>PI Dashboard</h1>
+    <p>Manage your projects, submissions, and project users.</p>
+  </div>
 
-<div class="container-fluid white_on_gray">
-  <div class="row">
+  {% if show_stats %}
+  <div class="bil-instrument bil-fadein">
+    <div class="bil-instrument-body">
+      <div class="d-flex align-items-center flex-wrap">
+        <div class="flex-shrink-0">
+          <div class="bil-instrument-label">Public Datasets</div>
+          <span id="bil-counter" class="bil-stat-lg" data-target="{{ public_dataset_count }}">0</span>
+          <div class="bil-status-line"><i class="fa-solid fa-circle-check me-1" style="font-size:.6rem;"></i>validated &amp; published</div>
+        </div>
+        {% if datasets_by_year %}
+        <div class="bil-divider-v d-none d-lg-block" style="height:80px;"></div>
+        <div class="flex-grow-1 d-none d-lg-block">
+          <div class="bil-instrument-label mb-3">Cumulative Datasets by Year</div>
+          <div id="bil-barchart" class="d-flex align-items-end gap-2" style="height:72px;" aria-label="Bar chart of public datasets per year">
+            {% for entry in datasets_by_year %}
+            <div data-year="{{ entry.year }}" data-count="{{ entry.count }}" style="display:none;"></div>
+            {% endfor %}
+          </div>
+          <div id="bil-barchart-labels" class="d-flex gap-2 mt-2" style="font-size:.6rem;font-family:'DM Mono',monospace;color:rgba(255,255,255,.35);letter-spacing:.04em;"></div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
-    <div class="col-lg-12 big-row-text">
-      <h1>PI Dashboard</h1>
-   <a href="{% url 'ingest:manage_projects'%}">Manage Projects</a> | <a href="{% url 'ingest:manage_collections'%}">View Submissions</a> | <a href="{% url 'ingest:people_of_pi'%}">View Project Users</a>
- </div>
+  {% if user_public_collections or user_public_datasets or user_validation_requested %}
+  <div class="bil-fadein" style="margin-bottom:1.5rem;">
+    <div class="bil-section-label" style="margin-bottom:.85rem;">
+      <i class="fa-solid fa-star fa-xs"></i>Your Contributions to BIL
+    </div>
+    <div style="background:#f7f8fb;border-radius:12px;border:1.5px solid rgba(22,27,51,.09);
+                box-shadow:0 2px 10px rgba(22,27,51,.05);padding:1.4rem 1.75rem;
+                display:flex;align-items:center;gap:2rem 2.5rem;flex-wrap:wrap;">
+
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.14em;
+                    text-transform:uppercase;color:#8589a8;margin-bottom:.3rem;">Public Submissions</div>
+        <div style="font-family:'Lato',sans-serif;font-weight:800;font-size:2.25rem;
+                    color:#161b33;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;">
+          {{ user_public_collections|default:"0" }}
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--bil-accent);
+                    opacity:.75;margin-top:.3rem;letter-spacing:.04em;">
+          <i class="fa-solid fa-circle-check me-1" style="font-size:.55rem;" aria-hidden="true"></i>validated &amp; published
+        </div>
+      </div>
+
+      <div style="width:1px;background:rgba(22,27,51,.09);align-self:stretch;" class="d-none d-sm-block"></div>
+
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.14em;
+                    text-transform:uppercase;color:#8589a8;margin-bottom:.3rem;">Public Datasets</div>
+        <div style="font-family:'Lato',sans-serif;font-weight:800;font-size:2.25rem;
+                    color:#161b33;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;">
+          {{ user_public_datasets|default:"0" }}
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:var(--bil-accent);
+                    opacity:.75;margin-top:.3rem;letter-spacing:.04em;">
+          <i class="fa-solid fa-database me-1" style="font-size:.55rem;" aria-hidden="true"></i>deposited on BIL
+        </div>
+      </div>
+
+      <div style="width:1px;background:rgba(22,27,51,.09);align-self:stretch;" class="d-none d-sm-block"></div>
+
+      <div>
+        <div style="font-family:'DM Mono',monospace;font-size:.58rem;letter-spacing:.14em;
+                    text-transform:uppercase;color:#8589a8;margin-bottom:.3rem;">Submission in Progress</div>
+        <div style="font-family:'Lato',sans-serif;font-weight:800;font-size:2.25rem;
+                    color:#856404;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;">
+          {{ user_validation_requested|default:"0" }}
+        </div>
+        <div style="font-family:'DM Mono',monospace;font-size:.6rem;color:#856404;
+                    opacity:.65;margin-top:.3rem;letter-spacing:.04em;">
+          <i class="fa-solid fa-clock me-1" style="font-size:.55rem;" aria-hidden="true"></i>awaiting validation
+        </div>
+      </div>
+
+      <div style="margin-left:auto;" class="d-none d-sm-block">
+        <a href="{% url 'ingest:manage_collections' %}" style="font-family:'Lato',sans-serif;font-weight:600;
+           font-size:.8rem;color:#8589a8;text-decoration:none;display:inline-flex;align-items:center;gap:5px;
+           padding:.45rem .9rem;border:1.5px solid rgba(22,27,51,.12);border-radius:7px;
+           transition:border-color .15s,color .15s;" onmouseover="this.style.borderColor='rgba(22,27,51,.3)';this.style.color='#161b33';"
+           onmouseout="this.style.borderColor='rgba(22,27,51,.12)';this.style.color='#8589a8';">
+          <i class="fa-solid fa-folder-open fa-xs" aria-hidden="true"></i>View All Submissions
+        </a>
+      </div>
+
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="bil-section-label bil-fadein">PI Actions</div>
+
+  <div class="row g-3">
+    <div class="col-lg-4 bil-fadein">
+      <a href="{% url 'ingest:manage_projects' %}" class="bil-pi-card h-100">
+        <div class="bil-pi-num">01</div>
+        <div class="bil-pi-card-inner">
+          <div class="bil-pi-icon"><i class="fa-solid fa-diagram-project"></i></div>
+          <h5>Manage Projects</h5>
+          <p>View, create, and manage your research projects and their consortia affiliations.</p>
+          <div class="bil-pi-card-arrow"><i class="fa-solid fa-arrow-right me-1"></i>Go to Projects</div>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg-4 bil-fadein">
+      <a href="{% url 'ingest:manage_collections' %}" class="bil-pi-card h-100">
+        <div class="bil-pi-num">02</div>
+        <div class="bil-pi-card-inner">
+          <div class="bil-pi-icon"><i class="fa-solid fa-folder-open"></i></div>
+          <h5>View Submissions</h5>
+          <p>Browse all submissions across your projects, check their status, and view details.</p>
+          <div class="bil-pi-card-arrow"><i class="fa-solid fa-arrow-right me-1"></i>Go to Submissions</div>
+        </div>
+      </a>
+    </div>
+    <div class="col-lg-4 bil-fadein">
+      <a href="{% url 'ingest:people_of_pi' %}" class="bil-pi-card h-100">
+        <div class="bil-pi-num">03</div>
+        <div class="bil-pi-card-inner">
+          <div class="bil-pi-icon"><i class="fa-solid fa-users"></i></div>
+          <h5>View Project Users</h5>
+          <p>See all users associated with your projects and their active status.</p>
+          <div class="bil-pi-card-arrow"><i class="fa-solid fa-arrow-right me-1"></i>Go to Users</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+</div>
+
+{% if show_brain_initiative_modal %}
+<div class="modal fade" id="brainInitiativeModal" tabindex="-1"
+     data-bs-backdrop="static" data-bs-keyboard="false"
+     aria-labelledby="brainInitiativeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:12px;border:1.5px solid rgba(22,27,51,.09);">
+      <div class="modal-header" style="border-bottom:1px solid rgba(22,27,51,.07);padding:1.25rem 1.5rem;">
+        <h5 class="modal-title" id="brainInitiativeModalLabel"
+            style="font-family:'Lato',sans-serif;font-weight:800;color:#161b33;font-size:1.05rem;">
+          <i class="fa-solid fa-brain me-2" style="color:var(--bil-accent);"></i>BRAIN Initiative Data Review
+        </h5>
+      </div>
+      <div class="modal-body" style="padding:1.5rem;">
+        <p style="font-family:'Lato',sans-serif;font-size:.875rem;color:#4a5070;margin-bottom:1.25rem;">
+          The Brain Image Library is now tracking which projects contain
+          <strong>BRAIN Initiative</strong>–funded data. Please review your projects below
+          and check any that include BRAIN Initiative data.
+        </p>
+        <div id="bi-project-list">
+          {% for proj in pi_projects %}
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox"
+                   id="bi-proj-{{ proj.id }}"
+                   data-project-id="{{ proj.id }}"
+                   {% if proj.is_brain_initiative %}checked{% endif %}>
+            <label class="form-check-label" for="bi-proj-{{ proj.id }}"
+                   style="font-family:'Lato',sans-serif;font-size:.875rem;color:#161b33;">
+              {{ proj.name }}
+            </label>
+          </div>
+          {% empty %}
+          <p style="font-family:'Lato',sans-serif;font-size:.82rem;color:#8e92aa;">No projects found.</p>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="modal-footer" style="border-top:1px solid rgba(22,27,51,.07);padding:1rem 1.5rem;gap:.5rem;">
+        <button type="button" id="bi-remind-later"
+                style="background:#fff;color:#4a5070;border:1.5px solid rgba(22,27,51,.15);border-radius:7px;
+                       font-family:'Lato',sans-serif;font-weight:600;font-size:.8rem;padding:.45rem 1rem;cursor:pointer;">
+          Remind Me Later
+        </button>
+        <button type="button" id="bi-save-continue"
+                style="background:#161b33;color:#fff;border:none;border-radius:7px;
+                       font-family:'Lato',sans-serif;font-weight:600;font-size:.8rem;padding:.45rem 1rem;cursor:pointer;
+                       display:inline-flex;align-items:center;gap:6px;">
+          <i class="fa-solid fa-floppy-disk fa-xs"></i>Save &amp; Continue
+        </button>
+      </div>
+    </div>
   </div>
 </div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(function () {
+  function animateCounter(el, duration) {
+    if (!el) return;
+    var target = parseInt(el.getAttribute('data-target'), 10) || 0;
+    var start = null;
+    function easeOut(t) { return 1 - Math.pow(1 - t, 3); }
+    function step(ts) {
+      if (!start) start = ts;
+      var p = Math.min((ts - start) / duration, 1);
+      el.textContent = Math.floor(easeOut(p) * target).toLocaleString();
+      if (p < 1) requestAnimationFrame(step);
+      else el.textContent = target.toLocaleString();
+    }
+    if (target > 0) requestAnimationFrame(step);
+  }
+  var counterEl = document.getElementById('bil-counter');
+  var fileCounterEl = document.getElementById('bil-file-counter');
+
+  // Pre-size each counter to its final value width so layout doesn't shift during animation
+  [counterEl, fileCounterEl].forEach(function (el) {
+    if (!el) return;
+    var target = parseInt(el.getAttribute('data-target'), 10) || 0;
+    if (!target) return;
+    el.style.visibility = 'hidden';
+    el.textContent = target.toLocaleString();
+    el.style.minWidth = el.offsetWidth + 'px';
+    el.textContent = '0';
+    el.style.visibility = '';
+  });
+
+  function startCounters() { animateCounter(counterEl, 1800); animateCounter(fileCounterEl, 2200); }
+  if (counterEl) {
+    if ('IntersectionObserver' in window) {
+      var obs = new IntersectionObserver(function (e) {
+        if (e[0].isIntersecting) { startCounters(); obs.disconnect(); }
+      }, { threshold: 0.3 });
+      obs.observe(counterEl.closest('.bil-instrument'));
+    } else { startCounters(); }
+  }
+  var chartEl = document.getElementById('bil-barchart');
+  var labelsEl = document.getElementById('bil-barchart-labels');
+  if (!chartEl) return;
+  var bars = chartEl.querySelectorAll('[data-year]');
+  var barData = [];
+  bars.forEach(function (b) { barData.push({ year: b.getAttribute('data-year'), count: parseInt(b.getAttribute('data-count'), 10) }); });
+  if (!barData.length) return;
+  var running = 0;
+  barData.forEach(function (d) { running += d.count; d.cumCount = running; });
+  var maxCount = running;
+  barData.forEach(function (d) {
+    var barH = Math.max(Math.round((maxCount > 0 ? d.cumCount / maxCount : 0) * 72), 3);
+    var bar = document.createElement('div');
+    bar.style.cssText = 'width:18px;flex-shrink:0;height:0;background:rgba(0,201,167,.5);border-radius:2px 2px 0 0;transition:height .9s cubic-bezier(.22,1,.36,1);cursor:default;';
+    bar.setAttribute('title', d.year + ': ' + d.cumCount.toLocaleString() + ' total datasets');
+    bar.setAttribute('data-bs-toggle', 'tooltip');
+    bar.setAttribute('data-bs-placement', 'top');
+    chartEl.appendChild(bar);
+    setTimeout(function (b, h) { b.style.height = h + 'px'; }, 100, bar, barH);
+    var lbl = document.createElement('div');
+    lbl.style.cssText = 'width:18px;flex-shrink:0;text-align:center;';
+    lbl.textContent = String(d.year).slice(2);
+    labelsEl.appendChild(lbl);
+  });
+  chartEl.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) { new bootstrap.Tooltip(el); });
+})();
+</script>
+{% if show_brain_initiative_modal %}
+<script>
+(function () {
+  var modalEl = document.getElementById('brainInitiativeModal');
+  var modal = new bootstrap.Modal(modalEl);
+  modal.show();
+
+  document.getElementById('bi-remind-later').addEventListener('click', function () {
+    modal.hide();
+  });
+
+  document.getElementById('bi-save-continue').addEventListener('click', function () {
+    var csrftoken = document.cookie.split(';').reduce(function (v, c) {
+      var p = c.trim().split('=');
+      return p[0] === 'csrftoken' ? decodeURIComponent(p[1]) : v;
+    }, '');
+    var payload = {};
+    document.querySelectorAll('#bi-project-list input[type="checkbox"]').forEach(function (cb) {
+      payload[cb.dataset.projectId] = cb.checked;
+    });
+    fetch("{% url 'ingest:review_brain_initiative' %}", {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); }).then(function () { modal.hide(); }).catch(function () { modal.hide(); });
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}

@@ -1,34 +1,73 @@
 {% extends 'ingest/base.html' %}
 {% block content %}
-{% load bootstrap4 %}
 
 <script src="/static/ingest/updateusers.js"></script>
-<script>$(document).ready(function(){$('table').find('select').on('change', function() {$(this).addClass('modified');});})</script>
+<script>
+  $(document).ready(function(){
+    $('table').find('select').on('change', function() {
+      $(this).addClass('modified');
+    });
+  });
+</script>
 
+<div class="container-fluid py-4">
 
-<h1>Modify User Access</h1>
-<p>Change user roles.</p>
-<form id="rowform">
-{% csrf_token %}
-<table id="ModifyUserAccess" class="table">
-<thead>
-<tr>
-<th>Username</th>
-<th></th>
-</tr>
-</thead>
-<tbody>
+  <div class="d-flex align-items-start justify-content-between mb-3">
+    <div>
+      <h1 class="mb-1">Modify User Access</h1>
+      <p class="text-muted mb-0">Change user roles.</p>
+    </div>
+    <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary mt-1">
+      <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Cancel
+    </a>
+  </div>
 
-{% for user in allusers %}
-<tr data-user_id="{{user.id}}">
-<td>{{user.username}}</td>
-<td><a href="{% url 'ingest:modify_biladmin_privs' user.id %}">Edit BIL Admin Privs</td>
-<td><a href="{% url 'ingest:modify_user' user.id %}">Edit PI or PO Privs</td>
- 
-{% endfor %}
-</table>
-</form>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+  <div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
+    <div class="card-body p-4">
+      <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+        <i class="fa-solid fa-users fa-sm me-1"></i>All Users
+      </p>
+
+      <form id="rowform">
+        {% csrf_token %}
+        <div class="table-responsive">
+          <table id="ModifyUserAccess" class="table table-hover align-middle mb-0">
+            <thead style="background-color: #161b33; color: #fff;">
+              <tr>
+                <th>Username</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for user in allusers %}
+              <tr data-user_id="{{ user.id }}">
+                <td>{{ user.username }}</td>
+                <td>
+                  <div class="d-flex gap-2">
+                    <a href="{% url 'ingest:modify_biladmin_privs' user.id %}" class="btn btn-sm btn-outline-primary">
+                      <i class="fa-solid fa-shield-halved fa-sm me-1"></i>Edit BIL Admin Privs
+                    </a>
+                    <a href="{% url 'ingest:modify_user' user.id %}" class="btn btn-sm btn-outline-secondary">
+                      <i class="fa-solid fa-user-pen fa-sm me-1"></i>Edit PI or PO Privs
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </form>
+
+      <div class="mt-3">
+        <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">
+          <i class="fa-solid fa-xmark fa-sm me-1"></i>Cancel
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
 {% endblock %}

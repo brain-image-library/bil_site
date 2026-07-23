@@ -1,35 +1,52 @@
 {% extends 'ingest/base.html' %}
 {% block content %}
-{% load bootstrap4 %}
+
 <script src="/static/ingest/changebiladminprivs.js"></script>
 
-<h1 name="person_id" id="person_id" value="{{person.id}}">Change BIL Admin Privileges for {{person.name}}</h1>
+<div class="container-fluid py-4">
 
-<form id="ChangeBILAdminPrivs">
-{% csrf_token %}
-  <label for="is_bil_admin">Is BIL Admin?:</label>
-  <select name="is_bil_admin" id="is_bil_admin">
-    <option value="True" 
-        {% if person.is_bil_admin %}
-        selected
-        {% endif %}
-    >True</option>
-    <option value="False"
-        {% if person.is_bil_admin is False %}
-        selected
-        {% endif %}
-    >False</option>
-    <option value="None"
-        {% if person.is_bil_admin is null %}
-        selected
-        {% endif %}
-    >----</option>
-</select>
-</form>
-<button class="btn btn-primary" onclick="change_bil_admin_privs();">Submit Change</button>
-<hr>
+  <div class="d-flex align-items-start justify-content-between mb-3">
+    <div>
+      <h1 class="mb-1" name="person_id" id="person_id" value="{{ person.id }}">
+        Change BIL Admin Privileges
+      </h1>
+      <p class="text-muted mb-0">Modifying privileges for <strong>{{ person.name }}</strong>.</p>
+    </div>
+    <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary mt-1">
+      <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Cancel
+    </a>
+  </div>
 
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+  <div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
+    <div class="card-body p-4">
+      <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+        <i class="fa-solid fa-shield-halved fa-sm me-1"></i>Admin Privileges
+      </p>
+
+      <form id="ChangeBILAdminPrivs">
+        {% csrf_token %}
+        <div class="mb-3" style="max-width: 300px;">
+          <label for="is_bil_admin" class="form-label fw-semibold">Is BIL Admin?</label>
+          <select name="is_bil_admin" id="is_bil_admin" class="form-select">
+            <option value="True" {% if person.is_bil_admin %}selected{% endif %}>True</option>
+            <option value="False" {% if person.is_bil_admin is False %}selected{% endif %}>False</option>
+            <option value="None" {% if person.is_bil_admin is null %}selected{% endif %}>----</option>
+          </select>
+        </div>
+      </form>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary" onclick="change_bil_admin_privs();">
+          <i class="fa-solid fa-check fa-sm me-1"></i>Submit Change
+        </button>
+        <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">
+          <i class="fa-solid fa-xmark fa-sm me-1"></i>Cancel
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
 {% endblock %}

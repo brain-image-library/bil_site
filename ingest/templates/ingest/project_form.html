@@ -1,62 +1,115 @@
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %}
-{% block wide %}
 
+{% block scripts %}
+<style>
+.bil-select-hint {
+  font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .04em;
+  color: #8e92aa; margin-top: .35rem;
+}
+</style>
+{% endblock %}
+
+{% block wide %}
 <script src="/static/ingest/createproject.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/js-cookie@rc/dist/js.cookie.min.js"></script>
-{% if pi %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
-<br>
-<h1>Create a new project</h1>
-<hr>
 
-<br>
-<div style="min-width:600px">
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-7">
 
-<form id="CreateNewProject">
-{% csrf_token %}
-  <label for="name">Project Name:</label><span style="color:red; margin-right:10px;">*</span>
-  <input type="text" id="name" name="name" placeholder="Name of project">
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+      <div>
+        <h4 style="font-family:'Lato',sans-serif;font-weight:800;font-size:clamp(1.3rem,3vw,1.75rem);color:#161b33;letter-spacing:-.03em;margin-bottom:.2rem;">
+          <i class="fa-solid fa-diagram-project me-2" style="color:var(--bil-accent);font-size:1.1rem;"></i>Create New Project
+        </h4>
+        <span style="font-family:'DM Mono',monospace;font-size:.7rem;letter-spacing:.06em;color:rgba(22,27,51,.4);">Fill in the fields below to register a new project</span>
+      </div>
+      {% if pi %}
+      <a href="{% url 'ingest:index' %}" class="bil-btn-outline" style="font-size:.8rem;padding:.4rem .9rem;">
+        <i class="fa-solid fa-arrow-left fa-xs"></i>PI Dashboard
+      </a>
+      {% endif %}
+    </div>
 
-  <label for="funded_by" style="margin-top:15px;margin-left:55px;margin-right:10px;">Funded By:</label>
-  <input type="text" id="funded_by" name="funded_by" placeholder="Grant number">
+    <form id="CreateNewProject">
+      {% csrf_token %}
 
-  <br>
-  <label for="consortia" style="margin-top:15px;">Consortia Affiliation:</label>
-  <p>Select your project's affiliation(s). Choose all that apply.</p>
-  <div style="margin-left: 50px;">
-    <p style="font-style:italic; margin-top: 20px;"> To choose multiple: Windows users: control-click | Mac users: command-click</p> 
-    <select multiple size={{consortia.count}} style="min-width: 540px;">
-      {% for c in consortia %}
-        <option value={{c.id}}>{{c.long_name}} ({{c.short_name}})</option> 
-      {% endfor %}
-    </select>
+      {# ── Project Details ── #}
+      <div class="bil-form-card bil-fadein">
+        <div class="bil-form-card-header">
+          <span class="bil-form-section-icon"><i class="fa-solid fa-file-lines"></i></span>
+          <span class="bil-form-section-title">Project Details</span>
+        </div>
+        <div class="bil-form-body">
+          <div class="row g-3">
+            <div class="col-sm-7">
+              <label for="name" class="bil-field-label">Project Name <span class="bil-required">*</span></label>
+              <input type="text" class="form-control" id="name" name="name" placeholder="Name of project" autocomplete="off">
+            </div>
+            <div class="col-sm-5">
+              <label for="funded_by" class="bil-field-label">Funded By</label>
+              <input type="text" class="form-control" id="funded_by" name="funded_by" placeholder="Grant number" autocomplete="off">
+            </div>
+          </div>
+          <div class="mt-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="is_brain_initiative" name="is_brain_initiative">
+              <label class="form-check-label" for="is_brain_initiative" style="font-family:'Lato',sans-serif;font-size:.875rem;color:#4a5070;">
+                This project contains <strong>BRAIN Initiative</strong> data
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {# ── Consortia ── #}
+      <div class="bil-form-card bil-fadein">
+        <div class="bil-form-card-header">
+          <span class="bil-form-section-icon"><i class="fa-solid fa-network-wired"></i></span>
+          <span class="bil-form-section-title">Consortia Affiliation</span>
+        </div>
+        <div class="bil-form-body">
+          <label for="consortia" class="bil-field-label">Select all that apply</label>
+          <select multiple size="{{ consortia.count }}" class="form-select" id="consortia" name="consortia">
+            {% for c in consortia %}
+              <option value="{{ c.id }}">{{ c.long_name }} ({{ c.short_name }})</option>
+            {% endfor %}
+          </select>
+          <p class="bil-select-hint"><i class="fa-solid fa-circle-info fa-xs me-1"></i>Windows: Ctrl+click &nbsp;·&nbsp; Mac: Command+click to select multiple</p>
+        </div>
+      </div>
+
+      {# ── Project Affiliation ── #}
+      <div class="bil-form-card bil-fadein">
+        <div class="bil-form-card-header">
+          <span class="bil-form-section-icon"><i class="fa-solid fa-sitemap"></i></span>
+          <span class="bil-form-section-title">Project Affiliation</span>
+        </div>
+        <div class="bil-form-body">
+          <label for="parent_project" class="bil-field-label">Parent Project <span style="color:rgba(22,27,51,.35);font-size:.55rem;">(optional)</span></label>
+          <p style="font-family:'Lato',sans-serif;font-size:.8rem;color:rgba(22,27,51,.45);margin-bottom:.6rem;">Is this a sub-project of another project?</p>
+          <select class="form-select" id="parent_project" name="parent_project">
+            <option value="">— None —</option>
+            {% for a in allprojects %}
+              <option value="{{ a.id }}">{{ a.name }}{% if a.funded_by %} ({{ a.funded_by }}){% endif %}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div class="bil-req-note bil-fadein"><span class="bil-required">*</span> Required fields</div>
+
+      <div class="d-flex gap-2 bil-fadein">
+        <button type="button" class="bil-btn-dark" onclick="create_new_project();">
+          <i class="fa-solid fa-floppy-disk fa-xs"></i>Submit New Project
+        </button>
+        <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+          <i class="fa-solid fa-xmark fa-xs"></i>Cancel
+        </a>
+      </div>
+
+    </form>
+
   </div>
-  <br>
-  <label for="parent_project" style="margin-top:15px;">Project Affiliation:</label>
-  <p>Is this a sub-project of another project? Select your project's parent project.</p>
-  <div style="margin-left: 50px;">
-    <select style="min-width: 540px;">
-      <option></option>
-      {% for a in allprojects %}
-        <option value={{a.id}}>{{a.name}}: ({{a.funded_by}})</option> 
-      {% endfor %}
-    </select>
-  </div>
-</form>
-<div>
-
-<br>
-
-<p style="margin-top:15px;"><b>Required fields are marked with an <span style="color:red;">*</span>.</b></p>
-
-<br>
-<button class="btn btn-primary" onclick="create_new_project();">Submit New Project</button>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+</div>
 
 {% endblock %}

@@ -1,83 +1,98 @@
-<h3>Step 2 of 3: What does your data look like?</h3>
-<table class="table">
-  <tbody>
-    <tr>
-      <td>
-        <input type="radio" id="ingest_method_1" name="ingest_method" value="ingest_1">
-      </td>
-      <td>
-        <p>
-          1. Each dataset was generated from a single sample and donor (e.g. whole brain imaging) on the same
-          instrument.
-          Multiple datasets can be accommodated in a single submission. The lines of the specimen tab in the metadata
-          spreadsheet must match exactly to the lines in the dataset tab (i.e. the specimen listed in specimen tab row 5
-          is the specimen for dataset row 5). Each dataset tab should have a corresponding image tab. There should be
-          exactly one line in the instrument tab.
-        </p>
-      </td>
-    </tr>
+<p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+  <i class="fa-solid fa-microscope fa-sm me-1"></i>Step 2 of 3 — What does your data look like?
+</p>
 
-    <tr>
-      <td>
-        <input type="radio" id="ingest_method_2" name="ingest_method" value="ingest_2">
-      </td>
-      <td>
-        <p>
-          2. The dataset was generated from multiple samples, specimens, or donors on the same instrument.
-          Only a single dataset can be accommodated per submission. Multiple specimens should be listed in the metadata
-          spreadsheet, but only a single dataset. There should be one line in the image tab. There should be exactly
-          one line in the instrument tab.
-        </p>
-      </td>
-    </tr>
+<div class="d-grid gap-2 mb-2" id="ingest-options">
 
-    <tr>
-      <td>
-        <input type="radio" id="ingest_method_3" name="ingest_method" value="ingest_3">
-      </td>
-      <td>
-        <p>
-          3. All datasets were generated from one specimen, but are from unique regions of interest on the specimen.
-          Multiple datasets can be accommodated in a single submission. List the specimen multiple times in the specimen
-          tab. Identify the specific region of interest in the locations column. Multiple donor lines must match exactly
-          in the metadata spreadsheet (i.e. the specimen listed in specimen tab row 5 is the specimen for dataset row
-          5).
-          Each dataset tab should have a corresponding image tab. There should be exactly one line in the instrument
-          tab.
+  <label class="card border-2 option-card" for="ingest_method_1">
+    <div class="card-body d-flex gap-3 align-items-start py-3">
+      <input class="form-check-input mt-1 flex-shrink-0" type="radio" id="ingest_method_1" name="ingest_method" value="ingest_1">
+      <div>
+        <div class="fw-semibold mb-1">1 &mdash; Single sample &amp; donor per dataset</div>
+        <p class="text-muted small mb-0">
+          Each dataset was generated from a single sample and donor (e.g. whole brain imaging) on the same instrument.
+          Multiple datasets can be accommodated in a single submission. Specimen tab rows must match dataset tab rows exactly.
+          Each dataset tab should have a corresponding image tab. One instrument tab entry.
         </p>
-      </td>
-    </tr>
+      </div>
+    </div>
+  </label>
 
-    <tr>
-      <td>
-        <input type="radio" id="ingest_method_4" name="ingest_method" value="ingest_4">
-      </td>
-      <td>
-        <p>
-          4. All datasets were generated from one specimen – but use different experimental (machinery) parameters.
-          Multiple datasets can be accommodated as a single submission. There should be exactly one entry in the
-          specimen
-          tab. The lines listed in the Instrument tab in the metadata spreadsheet must match exactly to the lines in the
-          dataset tab (i.e. the instrument listed in instrument tab row 5 is the instrument for dataset row 5). Each
-          dataset tab should have a corresponding image tab.
+  <label class="card border-2 option-card" for="ingest_method_2">
+    <div class="card-body d-flex gap-3 align-items-start py-3">
+      <input class="form-check-input mt-1 flex-shrink-0" type="radio" id="ingest_method_2" name="ingest_method" value="ingest_2">
+      <div>
+        <div class="fw-semibold mb-1">2 &mdash; Multiple samples or donors, single dataset</div>
+        <p class="text-muted small mb-0">
+          The dataset was generated from multiple samples, specimens, or donors on the same instrument.
+          Only a single dataset per submission. Multiple specimens in the metadata spreadsheet, one dataset entry,
+          one image tab entry, and one instrument tab entry.
         </p>
-      </td>
-    </tr>
+      </div>
+    </div>
+  </label>
 
-    <tr>
-      <td>
-        <input type="radio" id="ingest_method_5" name="ingest_method" value="ingest_5">
-      </td>
-      <td>
-        <p>
-          5. Reconstructed neurons in standardized swc format. All reconstructions were generated from one specimen.
-          There should be one line listed in the specimen tab. There should be one line listed in the dataset tab.
-          No information should be listed in the image tab. File format specification:
-          <a href="http://www.neuronland.org/NLMorphologyConverter/MorphologyFormats/SWC/Spec.html">
-            http://www.neuronland.org/NLMorphologyConverter/MorphologyFormats/SWC/Spec.html
+  <label class="card border-2 option-card" for="ingest_method_3">
+    <div class="card-body d-flex gap-3 align-items-start py-3">
+      <input class="form-check-input mt-1 flex-shrink-0" type="radio" id="ingest_method_3" name="ingest_method" value="ingest_3">
+      <div>
+        <div class="fw-semibold mb-1">3 &mdash; One specimen, multiple regions of interest</div>
+        <p class="text-muted small mb-0">
+          All datasets from one specimen but from unique regions of interest. Multiple datasets per submission.
+          List the specimen multiple times in the specimen tab; identify regions in the locations column.
+          Specimen tab rows must match dataset tab rows exactly. One instrument tab entry.
+        </p>
+      </div>
+    </div>
+  </label>
+
+  <label class="card border-2 option-card" for="ingest_method_4">
+    <div class="card-body d-flex gap-3 align-items-start py-3">
+      <input class="form-check-input mt-1 flex-shrink-0" type="radio" id="ingest_method_4" name="ingest_method" value="ingest_4">
+      <div>
+        <div class="fw-semibold mb-1">4 &mdash; One specimen, varying instrument parameters</div>
+        <p class="text-muted small mb-0">
+          All datasets from one specimen using different experimental parameters. Multiple datasets per submission.
+          One specimen tab entry. Instrument tab rows must match dataset tab rows exactly.
+          Each dataset tab should have a corresponding image tab.
+        </p>
+      </div>
+    </div>
+  </label>
+
+  <label class="card border-2 option-card" for="ingest_method_5">
+    <div class="card-body d-flex gap-3 align-items-start py-3">
+      <input class="form-check-input mt-1 flex-shrink-0" type="radio" id="ingest_method_5" name="ingest_method" value="ingest_5">
+      <div>
+        <div class="fw-semibold mb-1">5 &mdash; Reconstructed neurons (SWC format)</div>
+        <p class="text-muted small mb-0">
+          Reconstructed neurons in standardized SWC format. All reconstructions from one specimen.
+          One specimen tab entry, one dataset tab entry, no image tab entries.
+          <a href="http://www.neuronland.org/NLMorphologyConverter/MorphologyFormats/SWC/Spec.html" target="_blank" rel="noopener" class="text-decoration-none">
+            SWC format spec <i class="fa-solid fa-arrow-up-right-from-square fa-xs"></i>
           </a>
         </p>
-      </td>
-    </tr>
-  </tbody>
-</table>
+      </div>
+    </div>
+  </label>
+
+</div>
+
+<style>
+  .option-card {
+    cursor: pointer;
+    transition: border-color .15s, background-color .15s;
+    border-color: #dee2e6 !important;
+  }
+  .option-card:hover {
+    border-color: #86b7fe !important;
+    background-color: #f8f9ff;
+  }
+  .option-card:has(input:checked) {
+    border-color: #161b33 !important;
+    background-color: #f0f2ff;
+  }
+  .option-card:has(input:checked) .fw-semibold {
+    color: #161b33;
+  }
+</style>

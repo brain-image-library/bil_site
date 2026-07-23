@@ -2,49 +2,93 @@
 
 {% block wide %}
 
-<h1><b>Validation Results for Submission</b> {{ collection.name }} 
-  {% if collection.locked %}<i class="fa fa-lock"></i>
-  {% else %}<i class="fa fa-unlock"></i>
-  {% endif %}
-  </h1>
+<div class="row justify-content-center">
+  <div class="col-lg-9">
 
-  {% if collection.validation_status == "NOT_VALIDATED" %}
-    <div class="alert alert-info">
-      <strong>Not validated.</strong> Once you have validated your submission, the validation results will show up here.
-    </div>
-  {% elif collection.validation_status == "PENDING" %}
-    <div class="alert alert-warning">
-      <strong>Validation pending</strong>. Please check back here later. If you think there may be a problem, please contact us at bil-support@psc.edu.</p>
-    </div>
-  {% elif collection.validation_status == "SUCCESS" %}
-    <div class="alert alert-success">
-      <strong>Validation succeeded.</strong> Please look over the results and correct any irregularities. 
-    </div>
-  {% elif collection.validation_status == "FAILED" %}
-    <div class="alert alert-danger">
-      <strong>Validation failed</strong> Please correct any errors listed and re-validate.
+    {# ── Page header ── #}
+    <div class="d-flex align-items-start justify-content-between mb-3">
+      <div>
+        <h1 class="mb-1">
+          Validation Results
+          {% if collection.locked %}
+            <i class="fa-solid fa-lock fa-sm text-secondary ms-1"></i>
+          {% else %}
+            <i class="fa-solid fa-lock-open fa-sm text-secondary ms-1"></i>
+          {% endif %}
+        </h1>
+        <p class="text-muted mb-0">{{ collection.name }}</p>
+      </div>
+      <a href="{% url 'ingest:collection_list' %}" class="btn btn-sm btn-outline-secondary mt-1">
+        <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Back to Collections
+      </a>
     </div>
 
-    <p>The following directories referenced in the metadata do not exist in the staging area:</p>
+    {# ── Status card ── #}
+    <div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+      <div class="card-body p-4">
 
-    <ul class="list-group">
-    {% for dir in invalid_metadata_directories %}
-      <li class="list-group-item">{{dir}}</li>
-    {% endfor %}
-    </ul>
-  {% endif %}
+        <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+          <i class="fa-solid fa-circle-check fa-sm me-1"></i>Validation Status
+        </p>
 
-  {% if dir_size %}
-    The total size of your submission: <strong>{{ dir_size }}</strong>
-  {% endif %}
+        {% if collection.validation_status == "NOT_VALIDATED" %}
+          <div class="alert alert-info d-flex gap-2 align-items-start">
+            <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+            <span><strong>Not validated.</strong> Once you have validated your submission, the validation results will show up here.</span>
+          </div>
+        {% elif collection.validation_status == "PENDING" %}
+          <div class="alert alert-warning d-flex gap-2 align-items-start">
+            <i class="fa-solid fa-triangle-exclamation mt-1 flex-shrink-0"></i>
+            <span><strong>Validation pending.</strong> Please check back here later. If you think there may be a problem, please contact us at <a href="mailto:bil-support@psc.edu">bil-support@psc.edu</a>.</span>
+          </div>
+        {% elif collection.validation_status == "SUCCESS" %}
+          <div class="alert alert-success d-flex gap-2 align-items-start">
+            <i class="fa-solid fa-circle-check mt-1 flex-shrink-0"></i>
+            <span><strong>Validation succeeded.</strong> Please look over the results and correct any irregularities.</span>
+          </div>
+        {% elif collection.validation_status == "FAILED" %}
+          <div class="alert alert-danger d-flex gap-2 align-items-start">
+            <i class="fa-solid fa-circle-xmark mt-1 flex-shrink-0"></i>
+            <span><strong>Validation failed.</strong> Please correct any errors listed and re-validate.</span>
+          </div>
+          {% if invalid_metadata_directories %}
+            <p class="mt-3 mb-2 fw-semibold">The following directories referenced in the metadata do not exist in the staging area:</p>
+            <ul class="list-group mb-3">
+              {% for dir in invalid_metadata_directories %}
+                <li class="list-group-item list-group-item-danger">
+                  <i class="fa-solid fa-folder-xmark fa-sm me-2"></i>{{ dir }}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endif %}
 
-  {% if output %}
-    <p>The validation log, shown below is available for download at: {{ outfile }}</p>
-    <code><pre>{{ output }}</pre></code>
-  {% endif %}
-  
-  <p></p> 
+        {% if dir_size %}
+          <p class="mt-3 mb-0">
+            <i class="fa-solid fa-hard-drive fa-sm text-secondary me-1"></i>
+            Total size of your submission: <strong>{{ dir_size }}</strong>
+          </p>
+        {% endif %}
 
-</br>
+      </div>
+    </div>
+
+    {# ── Log card ── #}
+    {% if output %}
+    <div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+      <div class="card-body p-4">
+        <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+          <i class="fa-solid fa-file-code fa-sm me-1"></i>Validation Log
+        </p>
+        <p class="text-muted small mb-2">Available for download at: <code>{{ outfile }}</code></p>
+        <div class="bg-light border rounded p-3">
+          <code><pre class="mb-0" style="white-space: pre-wrap; word-break: break-all;">{{ output }}</pre></code>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
 
 {% endblock %}

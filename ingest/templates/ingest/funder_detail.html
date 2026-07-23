@@ -1,30 +1,31 @@
 {% if funders %}
-<h3>Funders</h3>
-
-  <table class="table">    								
+<div class="table-responsive">
+  <table id="tbl-funders" class="bil-detail-table">
     <thead>
-    <tr>
-    <th>funderName</th>
-    <th>fundingReferenceIdentifier</th>
-    <th>fundingReferenceIdentifierType</th>
-    <th>awardNumber</th>
-    <th>awardTitle</th>
-    </tr>
+      <tr>
+        <th>funderName</th>
+        <th>fundingReferenceIdentifier</th>
+        <th>fundingReferenceIdentifierType</th>
+        <th>awardNumber</th>
+        <th>awardTitle</th>
+      </tr>
     </thead>
     <tbody>
-    {% for f in funders %}
-    <tr>
-    <td>{{ f.fundername }}</td>
-    <td>{{ f.funding_reference_identifier }}</td>
-    <td>{{ f.funding_reference_identifier_type }}</td>
-    <td>{{ f.award_number }}</td>
-    <td>{{ f.award_title }}</td>
-    </tr>
-    {% endfor %}
+      {% for f in funders %}
+      <tr>
+        <td>{{ f.fundername }}</td>
+        <td>{{ f.funding_reference_identifier }}</td>
+        <td>{{ f.funding_reference_identifier_type }}</td>
+        <td>{{ f.award_number }}</td>
+        <td>{{ f.award_title }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
   </table>
-  
+</div>
 {% else %}
-  <div class="alert alert-info">
-    <p>There is not Funder data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
-  </div>
+<div class="bil-notice-info">
+  <i class="fa-solid fa-circle-info fa-xs"></i>
+  <span>No Funder data is associated with this metadata sheet.</span>
+</div>
 {% endif %}

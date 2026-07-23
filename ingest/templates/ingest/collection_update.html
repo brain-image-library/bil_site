@@ -1,29 +1,224 @@
 {% extends 'ingest/wide.html' %}
 
-{% block wide %}
-{% if pi %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
-<br>
-  <h1>Edit submission</h1>
-  <form method="POST" class="post-form">
-  {% csrf_token %}
-    {% for field in form  %}
-      <p data-toggle="tooltip" title="{{field.help_text}}">
-        {{ field.label_tag }} {% if field.field.required %} <span style='color:red'>*</span> {% endif %}<br>
-        {{ field }}
-        {% for error in field.errors %}
-          <p style="color: red">{{ error }}</p>
-        {% endfor %}
-      </p>
-    {% endfor %}
-    <p><b>Required fields are marked with an <span style='color:red'>*</span>.</b></p>
+{% block scripts %}
+<style>
+.bil-form-group { margin-bottom: 1.25rem; }
+.bil-form-label {
+  font-family: 'Lato', sans-serif; font-weight: 700; font-size: .82rem;
+  color: #2d3154; margin-bottom: .4rem; display: flex; align-items: center; gap: 5px;
+}
+.bil-form-label i { color: #8589a8; font-size: .75rem; }
+.bil-form-label .req { color: #dc3545; font-size: .75rem; margin-left: 1px; }
+.bil-form-group .helptext {
+  font-family: 'DM Mono', monospace; font-size: .65rem; color: #8589a8;
+  margin-top: .3rem; display: block;
+}
+.bil-form-group input[type="text"],
+.bil-form-group textarea,
+.bil-form-group select {
+  width: 100%;
+  font-family: 'Lato', sans-serif; font-size: .88rem; color: #2d3154;
+  background: #fff;
+  border: 1.5px solid rgba(22,27,51,.15); border-radius: 7px;
+  padding: .55rem .85rem;
+  transition: border-color .15s, box-shadow .15s;
+  outline: none;
+}
+.bil-form-group input[type="text"]:focus,
+.bil-form-group textarea:focus,
+.bil-form-group select:focus {
+  border-color: var(--bil-accent);
+  box-shadow: 0 0 0 3px rgba(0,201,167,.12);
+}
+.bil-form-group textarea { resize: vertical; min-height: 90px; }
+</style>
+{% endblock %}
 
-    <button type="submit" class="save btn btn-lg btn-primary">Update</button>
-  </form>
-<a href="{% url 'ingest:collection_list' %}">
-  <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+{% block wide %}
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-7">
+
+    {# ── Page header ── #}
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+      <div class="bil-page-header">
+        <h4><i class="fa-solid fa-pen-to-square me-2" style="color:var(--bil-accent);font-size:1.1rem;" aria-hidden="true"></i>Edit Submission</h4>
+        <span class="bil-sub">Update the details for this collection</span>
+      </div>
+      {% if pi %}
+      <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+        <i class="fa-solid fa-arrow-left fa-xs" aria-hidden="true"></i>PI Dashboard
+      </a>
+      {% else %}
+      <a href="{% url 'ingest:collection_list' %}" class="bil-btn-outline">
+        <i class="fa-solid fa-arrow-left fa-xs" aria-hidden="true"></i>Collections
+      </a>
+      {% endif %}
+    </div>
+
+    {# ── Form card ── #}
+    <div class="bil-form-card bil-fadein">
+      <div class="bil-form-card-header">
+        <span class="bil-form-card-header-icon" aria-hidden="true"><i class="fa-solid fa-file-pen"></i></span>
+        <span class="bil-form-card-header-title">Collection Details</span>
+      </div>
+      <div class="bil-form-card-body">
+        <form method="POST" class="post-form">
+          {% csrf_token %}
+
+          {# ─── Submission Details ─── #}
+          <div class="bil-section-label" aria-hidden="true">
+            <i class="fa-solid fa-file-lines fa-xs"></i>Submission Details
+          </div>
+
+          <div class="bil-form-group">
+            <label class="bil-form-label" for="{{ form.name.id_for_label }}">
+              <i class="fa-solid fa-tag" aria-hidden="true"></i>{{ form.name.label }}
+              {% if form.name.field.required %}<span class="req" aria-label="required">*</span>{% endif %}
+            </label>
+            {{ form.name }}
+            {% if form.name.help_text %}<span class="helptext">{{ form.name.help_text }}</span>{% endif %}
+            {% for error in form.name.errors %}
+              <div class="bil-field-error" role="alert">
+                <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ error }}
+              </div>
+            {% endfor %}
+          </div>
+
+          <div class="bil-form-group">
+            <label class="bil-form-label" for="{{ form.description.id_for_label }}">
+              <i class="fa-solid fa-align-left" aria-hidden="true"></i>{{ form.description.label }}
+              {% if form.description.field.required %}<span class="req" aria-label="required">*</span>{% endif %}
+            </label>
+            {{ form.description }}
+            {% if form.description.help_text %}<span class="helptext">{{ form.description.help_text }}</span>{% endif %}
+            {% for error in form.description.errors %}
+              <div class="bil-field-error" role="alert">
+                <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ error }}
+              </div>
+            {% endfor %}
+          </div>
+
+          <hr class="bil-divider">
+
+          {# ─── Organization & Funding ─── #}
+          <div class="bil-section-label" aria-hidden="true">
+            <i class="fa-solid fa-building-columns fa-xs"></i>Organization &amp; Funding
+          </div>
+
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <div class="bil-form-group mb-0">
+                <label class="bil-form-label" for="{{ form.organization_name.id_for_label }}">
+                  <i class="fa-solid fa-building" aria-hidden="true"></i>{{ form.organization_name.label }}
+                  {% if form.organization_name.field.required %}<span class="req" aria-label="required">*</span>{% endif %}
+                </label>
+                {{ form.organization_name }}
+                {% if form.organization_name.help_text %}<span class="helptext">{{ form.organization_name.help_text }}</span>{% endif %}
+                {% for error in form.organization_name.errors %}
+                  <div class="bil-field-error" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ error }}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <div class="bil-form-group mb-0">
+                <label class="bil-form-label" for="{{ form.lab_name.id_for_label }}">
+                  <i class="fa-solid fa-flask" aria-hidden="true"></i>{{ form.lab_name.label }}
+                  {% if form.lab_name.field.required %}<span class="req" aria-label="required">*</span>{% endif %}
+                </label>
+                {{ form.lab_name }}
+                {% if form.lab_name.help_text %}<span class="helptext">{{ form.lab_name.help_text }}</span>{% endif %}
+                {% for error in form.lab_name.errors %}
+                  <div class="bil-field-error" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ error }}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <div class="bil-form-group mb-0">
+                <label class="bil-form-label" for="{{ form.project_funder.id_for_label }}">
+                  <i class="fa-solid fa-hand-holding-dollar" aria-hidden="true"></i>{{ form.project_funder.label }}
+                  {% if form.project_funder.field.required %}<span class="req" aria-label="required">*</span>{% endif %}
+                </label>
+                {{ form.project_funder }}
+                {% if form.project_funder.help_text %}<span class="helptext">{{ form.project_funder.help_text }}</span>{% endif %}
+                {% for error in form.project_funder.errors %}
+                  <div class="bil-field-error" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ error }}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="col-sm-6">
+              <div class="bil-form-group mb-0">
+                <label class="bil-form-label" for="{{ form.project_funder_id.id_for_label }}">
+                  <i class="fa-solid fa-hashtag" aria-hidden="true"></i>{{ form.project_funder_id.label }}
+                  {% if form.project_funder_id.field.required %}<span class="req" aria-label="required">*</span>{% endif %}
+                </label>
+                {{ form.project_funder_id }}
+                {% if form.project_funder_id.help_text %}<span class="helptext">{{ form.project_funder_id.help_text }}</span>{% endif %}
+                {% for error in form.project_funder_id.errors %}
+                  <div class="bil-field-error" role="alert">
+                    <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ error }}
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+
+          <hr class="bil-divider">
+
+          {# ─── Project ─── #}
+          <div class="bil-section-label" aria-hidden="true">
+            <i class="fa-solid fa-folder-open fa-xs"></i>Project
+          </div>
+
+          <div class="bil-form-group">
+            <label class="bil-form-label" for="{{ form.project.id_for_label }}">
+              <i class="fa-solid fa-diagram-project" aria-hidden="true"></i>{{ form.project.label }}
+              {% if form.project.field.required %}<span class="req" aria-label="required">*</span>{% endif %}
+            </label>
+            {{ form.project }}
+            {% if form.project.help_text %}<span class="helptext">{{ form.project.help_text }}</span>{% endif %}
+            {% for error in form.project.errors %}
+              <div class="bil-field-error" role="alert">
+                <i class="fa-solid fa-circle-exclamation" aria-hidden="true"></i>{{ error }}
+              </div>
+            {% endfor %}
+          </div>
+
+          <p class="bil-req-note"><span class="req">*</span> Required fields</p>
+
+          {# ─── Actions ─── #}
+          <div class="d-flex gap-2 flex-wrap">
+            <button type="submit" class="bil-btn-dark">
+              <i class="fa-solid fa-floppy-disk fa-xs" aria-hidden="true"></i>Save Changes
+            </button>
+            <a href="{% url 'ingest:collection_list' %}" class="bil-btn-outline">
+              <i class="fa-solid fa-xmark fa-xs" aria-hidden="true"></i>Cancel
+            </a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+    new bootstrap.Tooltip(el);
+  });
+});
+</script>
+{% endblock %}
+
 {% endblock %}

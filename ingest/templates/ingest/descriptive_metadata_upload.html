@@ -1,120 +1,298 @@
-<head>
-  <script src="/static/ingest/metadataloadingindicator.js"></script>
-  <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-</head>
-
 {% extends 'ingest/wide.html' %}
-
-{% block wide %}
 {% load static %}
 
+{% block scripts %}
+<style>
+/* Template download buttons */
+.bil-dl-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .78rem;
+  padding: .35rem .85rem; border-radius: 6px; text-decoration: none;
+  border: 1.5px solid rgba(22,27,51,.15); color: #4a5070;
+  background: #fff; transition: border-color .15s, color .15s;
+}
+.bil-dl-btn:hover { border-color: rgba(22,27,51,.3); color: #161b33; }
 
-{% if pi %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
+/* Upload drop zone */
+.bil-upload-zone {
+  border: 2px dashed rgba(22,27,51,.12); border-radius: 10px;
+  background: rgba(22,27,51,.015); padding: 2.5rem 2rem;
+  text-align: center; transition: border-color .2s, background .2s;
+  margin-top: 1.25rem;
+}
+.bil-upload-zone:hover, .bil-upload-zone.dragover {
+  border-color: var(--bil-accent); background: var(--bil-accent-dim);
+}
+.bil-upload-icon {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: rgba(22,27,51,.05); border: 1.5px solid rgba(22,27,51,.08);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem; color: #a4a8bc; margin: 0 auto 1rem;
+}
+.bil-upload-zone h6 { font-family: 'Lato', sans-serif; font-weight: 700; color: #161b33; margin-bottom: .25rem; }
+.bil-upload-zone p  { font-family: 'Lato', sans-serif; font-size: .8rem; color: #8589a8; margin: 0; }
 
-<br>
-<h1>Upload Metadata Spreadsheet</h1>
-<h3>Please note that BIL has adopted a new metadata schema. Please use the template provided below.</h3>
-<form method="post" enctype="multipart/form-data">
-  {% include 'ingest/metadata_questions.html' %}
+/* Upload button */
+.bil-btn-upload {
+  background: #161b33; color: #fff; border: none;
+  border-radius: 8px; font-family: 'Lato', sans-serif; font-weight: 600;
+  font-size: .875rem; padding: .65rem 1.5rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px; margin-top: 1.1rem;
+  transition: background .15s, box-shadow .15s, transform .1s;
+}
+.bil-btn-upload:hover:not(:disabled) { background: #252d52; box-shadow: 0 4px 14px rgba(22,27,51,.2); transform: translateY(-1px); }
+.bil-btn-upload:disabled { opacity: .38; cursor: not-allowed; }
+.bil-btn-upload-hint {
+  font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .05em;
+  color: #979bb2; margin-top: .5rem;
+}
 
-  <h3>Step 3 of 3: Upload metadata for associated submission</h3>
-  {% if collections %}
-  <ul class="list-group">
-    <li class="list-group-item">
-      Download and fill out either the
-      <a href="{% static 'ingest/BIL_Metadata_TemplateV3.xlsx' %}">Excel</a> or
-      <a href="{% static '/ingest/BIL_Metadata_TemplateV3.ods' %}">LibreOffice Calc</a> template.
-    </li>
-    <li class="list-group-item">Choose a submission, then upload your metadata.</li>
-  </ul>
-  <hr>
-  {% csrf_token %}
-  {{ form }}
-  </br>
+/* Empty state */
+.bil-empty-card {
+  background: #f7f8fb; border-radius: 12px;
+  border: 1.5px solid rgba(22,27,51,.09);
+  box-shadow: 0 2px 10px rgba(22,27,51,.05);
+  padding: 3rem 2rem; text-align: center;
+}
+.bil-empty-card .bil-empty-icon {
+  width: 64px; height: 64px; border-radius: 14px;
+  background: rgba(22,27,51,.04); border: 1.5px solid rgba(22,27,51,.07);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.25rem; font-size: 1.5rem; color: #adb1c5;
+}
+.bil-empty-card h5 { font-family: 'Lato', sans-serif; font-weight: 700; color: #161b33; margin-bottom: .35rem; }
+.bil-empty-card p  { font-size: .85rem; color: #6e7290; margin-bottom: 1.25rem; }
 
-  </br>
-  <input type="button" class="btn btn-lg btn-primary" id="UploadMetadata" value="Upload Metadata"
-    onclick="document.getElementById('file').click();" />
+/* Loading modal */
+.bil-modal-content {
+  background: #fff; border-radius: 12px;
+  border: 1.5px solid rgba(22,27,51,.08);
+  box-shadow: 0 20px 60px rgba(22,27,51,.15);
+  padding: 2.25rem 2.5rem; text-align: center;
+}
+.bil-modal-content h5 { font-family: 'Lato', sans-serif; font-weight: 700; color: #161b33; margin-bottom: .25rem; }
+.bil-modal-content .bil-modal-sub { font-family: 'Lato', sans-serif; color: #616788; font-size: .85rem; margin: 0 0 1.5rem; }
 
-  <input type="file" style="display:none;" id="file" name="spreadsheet_file" onchange="form.submit();loadSpinner();" />
-  </br>
-</form>
-{% else %}
-<div class="alert alert-info">
-  <p>You need to create a submission before uploading a metadata spreadsheet</p>
-</div>
-{% endif %}
+/* Progress track */
+.bil-progress-track {
+  height: 6px; background: rgba(22,27,51,.08); border-radius: 99px;
+  overflow: hidden; margin-bottom: .6rem;
+}
+.bil-progress-fill {
+  height: 100%; background: var(--bil-accent); border-radius: 99px;
+  width: 0%; transition: width .25s ease;
+}
+.bil-progress-fill.indeterminate {
+  width: 100% !important; transition: none;
+  background: linear-gradient(90deg, var(--bil-accent-dim) 0%, var(--bil-accent) 40%, var(--bil-accent-dim) 100%);
+  background-size: 200% 100%;
+  animation: bil-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes bil-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.bil-progress-label {
+  font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .06em;
+  color: #8589a8; margin: 0;
+}
+</style>
+{% endblock %}
 
-</br>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn-lg btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+{% block wide %}
 
-<!-- Modal -->
-<div class="modal fade" id="loadMe" tabindex="-1" role="dialog" aria-labelledby="loadMeLabel">
-  <div class="modal-dialog modal-sm" role="document">
-    <div class="modal-content">
-      <div class="modal-body text-center">
-        <div class="loader"></div>
-        <div clas="loader-txt">
-          <p>Please wait while we upload your metadata!<br><br><small>Thanks very much for your patience.</small></p>
+{# ── Loading modal ── #}
+<div class="modal fade" id="loadMe" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 bg-transparent shadow-none">
+      <div class="bil-modal-content">
+        <h5 id="progress-title">Uploading Spreadsheet</h5>
+        <p class="bil-modal-sub" id="progress-sub">Transferring file to server…</p>
+        <div class="bil-progress-track">
+          <div class="bil-progress-fill" id="progress-fill"></div>
         </div>
+        <p class="bil-progress-label" id="progress-label">0%</p>
       </div>
     </div>
   </div>
 </div>
 
+<div class="row justify-content-center">
+  <div class="col-lg-9 col-xl-8">
+
+    {# ── Page header ── #}
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+      <div>
+        <h4 style="font-family:'Lato',sans-serif;font-weight:800;font-size:clamp(1.3rem,3vw,1.75rem);color:#161b33;letter-spacing:-.03em;margin-bottom:.35rem;">
+          <i class="fa-solid fa-file-spreadsheet me-2" style="color:var(--bil-accent);font-size:1.1rem;"></i>Upload Metadata
+        </h4>
+        <div class="bil-steps">
+          <span class="bil-step bil-step--inactive">Step 1 — Create Submission</span>
+          <i class="fa-solid fa-arrow-right bil-steps-arrow"></i>
+          <span class="bil-step bil-step--active">Step 2 — Upload Metadata</span>
+        </div>
+      </div>
+      {% if pi %}
+      <a href="{% url 'ingest:index' %}" class="bil-btn-outline" style="font-size:.8rem;padding:.4rem .9rem;">
+        <i class="fa-solid fa-arrow-left fa-xs"></i>PI Dashboard
+      </a>
+      {% endif %}
+    </div>
+
+    {% if collections %}
+
+    <form method="post" enctype="multipart/form-data" id="metadata-upload-form">
+      {% csrf_token %}
+
+      {# ── Card: Data type ── #}
+      <div class="bil-form-card bil-fadein">
+        <div class="bil-form-card-header">
+          <span class="bil-form-section-icon"><i class="fa-solid fa-sliders"></i></span>
+          <span class="bil-form-section-title">Select Data Type</span>
+        </div>
+        <div class="bil-form-body">
+          {% include 'ingest/metadata_questions.html' %}
+        </div>
+      </div>
+
+      {# ── Card: Upload ── #}
+      <div class="bil-form-card bil-fadein">
+        <div class="bil-form-card-header">
+          <span class="bil-form-section-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span>
+          <span class="bil-form-section-title">Upload Spreadsheet</span>
+        </div>
+        <div class="bil-form-body">
+
+          <div class="bil-notice mb-4">
+            <i class="fa-solid fa-circle-info fa-sm"></i>
+            <div>
+              BIL has adopted a new metadata schema. Download and fill out the template before uploading.
+              <div class="d-flex gap-2 flex-wrap mt-2">
+                <a href="{% static 'ingest/BIL_Metadata_TemplateV3.xlsx' %}" class="bil-dl-btn">
+                  <i class="fa-solid fa-file-excel fa-xs"></i>Excel Template
+                </a>
+                <a href="{% static '/ingest/BIL_Metadata_TemplateV3.ods' %}" class="bil-dl-btn">
+                  <i class="fa-solid fa-file fa-xs"></i>LibreOffice Template
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {{ form }}
+
+          <div class="bil-upload-zone" id="upload-zone">
+            <div class="bil-upload-icon"><i class="fa-solid fa-file-spreadsheet"></i></div>
+            <h6>Choose your metadata spreadsheet</h6>
+            <p>.xlsx or .ods format</p>
+            <button type="button" class="bil-btn-upload" id="UploadMetadata" disabled>
+              <i class="fa-solid fa-cloud-arrow-up fa-xs"></i>Choose &amp; Upload
+            </button>
+            <input type="file" style="display:none;" id="file" name="spreadsheet_file">
+            <p class="bil-btn-upload-hint mt-2" id="upload-hint">Select a data type above to enable upload</p>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="d-flex gap-2 mt-1 bil-fadein">
+        <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+          <i class="fa-solid fa-xmark fa-xs"></i>Cancel
+        </a>
+      </div>
+
+    </form>
+
+    {% else %}
+
+    <div class="bil-empty-card bil-fadein">
+      <div class="bil-empty-icon"><i class="fa-solid fa-folder-open"></i></div>
+      <h5>No submissions yet</h5>
+      <p>You need to create a submission before uploading a metadata spreadsheet.</p>
+      <a href="{% url 'ingest:collection_create' %}" class="bil-btn-dark" style="display:inline-flex;">
+        <i class="fa-solid fa-folder-plus fa-xs"></i>Create a Submission
+      </a>
+    </div>
+
+    {% endif %}
+
+  </div>
+</div>
+
+{% block extra_scripts %}
 <script>
-  // Disable upload button until an ingest method is selected
-  let uploadMetadataButton = document.getElementById('UploadMetadata').disabled = true;
-  let radio1 = document.getElementById('ingest_method_1');
-  let radio2 = document.getElementById('ingest_method_2');
-  let radio3 = document.getElementById('ingest_method_3');
-  let radio4 = document.getElementById('ingest_method_4');
-  let radio5 = document.getElementById('ingest_method_5');
-  let radio6 = document.getElementById('ingest_method_6');  // NEW: Spatial ingest
+  const uploadBtn  = document.getElementById('UploadMetadata');
+  const fileInput  = document.getElementById('file');
+  const uploadHint = document.getElementById('upload-hint');
+  const uploadZone = document.getElementById('upload-zone');
+  const radios     = document.querySelectorAll('input[name="ingest_method"]');
 
-  $(radio1).on('change', () => {
-    if (radio1.checked == true) {
-      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-    }
-  });
-
-  $(radio2).on('change', () => {
-    if (radio2.checked == true) {
-      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-    }
-  });
-
-  $(radio3).on('change', () => {
-    if (radio3.checked == true) {
-      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-    }
-  });
-
-  $(radio4).on('change', () => {
-    if (radio4.checked == true) {
-      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-    }
-  });
-
-  $(radio5).on('change', () => {
-    if (radio5.checked == true) {
-      uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-    }
-  });
-
-  // NEW: enable when Spatial (ingest_method_6) is selected
-  if (radio6) {
-    $(radio6).on('change', () => {
-      if (radio6.checked == true) {
-        uploadMetadataButton = document.getElementById('UploadMetadata').disabled = false;
-      }
+  radios.forEach(function(radio) {
+    radio.addEventListener('change', function() {
+      uploadBtn.disabled = false;
+      if (uploadHint) uploadHint.style.display = 'none';
+      uploadZone.style.borderColor = 'var(--bil-accent)';
     });
-  }
+  });
+
+  uploadBtn.addEventListener('click', function() { fileInput.click(); });
+
+  fileInput.addEventListener('change', function() {
+    if (!fileInput.files.length) return;
+
+    const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('loadMe'), {
+      backdrop: 'static', keyboard: false
+    });
+    modal.show();
+
+    const form      = document.getElementById('metadata-upload-form');
+    const fill      = document.getElementById('progress-fill');
+    const label     = document.getElementById('progress-label');
+    const title     = document.getElementById('progress-title');
+    const sub       = document.getElementById('progress-sub');
+
+    const xhr = new XMLHttpRequest();
+
+    // Phase 1: file transfer — update the determinate bar
+    xhr.upload.addEventListener('progress', function(e) {
+      if (!e.lengthComputable) return;
+      const pct = Math.min(Math.round(e.loaded / e.total * 100), 100);
+      fill.style.width = pct + '%';
+      label.textContent = pct + '%';
+    });
+
+    // Phase 2: upload done, server is validating — switch to indeterminate shimmer
+    xhr.upload.addEventListener('load', function() {
+      title.textContent = 'Validating Metadata';
+      sub.textContent   = 'Running validation checks\u2026';
+      fill.classList.add('indeterminate');
+      label.textContent = 'Processing\u2026';
+    });
+
+    // Done — use the response we already received (don't navigate again,
+    // because session.pop() in the error view means a second GET would find empty session)
+    xhr.addEventListener('load', function() {
+      if (xhr.responseURL !== window.location.href) {
+        window.history.replaceState({}, '', xhr.responseURL);
+      }
+      document.open();
+      document.write(xhr.responseText);
+      document.close();
+    });
+
+    xhr.addEventListener('error', function() {
+      modal.hide();
+      alert('Upload failed. Please check your connection and try again.');
+    });
+
+    xhr.open('POST', form.action || window.location.href);
+    xhr.send(new FormData(form));
+  });
+
+  // Drag-and-drop visual feedback
+  ['dragover', 'dragenter'].forEach(function(evt) {
+    uploadZone.addEventListener(evt, function(e) { e.preventDefault(); uploadZone.classList.add('dragover'); });
+  });
+  ['dragleave', 'drop'].forEach(function(evt) {
+    uploadZone.addEventListener(evt, function() { uploadZone.classList.remove('dragover'); });
+  });
 </script>
+{% endblock %}
+
 {% endblock %}

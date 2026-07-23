@@ -1,53 +1,99 @@
 {% extends 'ingest/wide.html' %}
 
 {% block scripts %}
-<script language="JavaScript">
-  function toggle(source) {
-      checkboxes = document.getElementsByName('selection');
-      for(var i in checkboxes)
-          checkboxes[i].checked = source.checked;
-  }
-  $(document).ready(function(){
-    $(".selection").click(function(){
-      if($(":checkbox").is(":checked"))
-        $("#delete_selected").show();
-      else
-        $("#delete_selected").hide();
-    });
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+
+<script>
+function toggle(source) {
+  checkboxes = document.getElementsByName('selection');
+  for (var i in checkboxes)
+    checkboxes[i].checked = source.checked;
+}
+$(document).ready(function(){
+  $(".selection").click(function(){
+    if ($(":checkbox").is(":checked"))
+      $("#delete_selected").show();
+    else
+      $("#delete_selected").hide();
   });
+});
 </script>
 {% endblock %}
+
 {% block wide %}
-{% if pi %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
-<br>
-<h1>Your Metadata (version 1)</h1>
-{% if descriptive_metadata %}
-  <form action="" method="post">{% csrf_token %}
-      {% load render_table from django_tables2 %}
-      {% render_table table %}
-      <button type="submit" class="submit btn btn-primary" id="delete_selected" style="display:none">
-        <span class="glyphicon glyphicon-trash"></span> Delete Selected
-      </button>
-  </form>
-{% else %}
-  <div class="alert alert-info">
-    <p>You haven't created any metadata yet.</p>
+
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+  <div class="bil-list-header">
+    <h4><i class="fa-solid fa-file-lines me-2" style="color:var(--bil-accent);font-size:1.1rem;" aria-hidden="true"></i>Your Metadata</h4>
+    <span class="bil-sub">Manage your uploaded metadata sheets</span>
   </div>
-{% endif %}
-<hr>
+  {% if pi %}
+  <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+    <i class="fa-solid fa-arrow-left fa-xs" aria-hidden="true"></i>PI Dashboard
+  </a>
+  {% endif %}
+</div>
 
-<h1>Your Metadata (version 2)</h1>
+{# ── Version 1 metadata ── #}
+<div class="bil-section-card bil-fadein">
+  <div class="bil-section-card-header">
+    <span class="bil-section-icon"><i class="fa-solid fa-file-lines" aria-hidden="true"></i></span>
+    <span class="bil-section-title">Metadata Version 1</span>
+  </div>
+  <div class="bil-section-body">
+    {% if descriptive_metadata %}
+    <form action="" method="post">{% csrf_token %}
+      {% load render_table from django_tables2 %}
+      <div class="table-responsive bil-v1-table-wrapper">
+        {% render_table table %}
+      </div>
+      <div class="mt-3">
+        <button type="submit" class="bil-btn-danger" id="delete_selected" style="display:none">
+          <i class="fa-solid fa-trash fa-xs" aria-hidden="true"></i>Delete Selected
+        </button>
+      </div>
+    </form>
+    {% else %}
+    <div class="bil-notice-info">
+      <i class="fa-solid fa-circle-info fa-xs" aria-hidden="true"></i>
+      <span>You haven't created any metadata yet.</span>
+    </div>
+    {% endif %}
+  </div>
+</div>
 
+{# ── Version 2 metadata ── #}
+<div class="bil-section-card bil-fadein">
+  <div class="bil-section-card-header">
+    <span class="bil-section-icon"><i class="fa-solid fa-file-spreadsheet" aria-hidden="true"></i></span>
+    <span class="bil-section-title">Metadata Version 2</span>
+  </div>
+  <div class="bil-section-body p-0">
+    {% include 'ingest/new_metadata_sheet.html' %}
+  </div>
+</div>
 
-{% include 'ingest/new_metadata_sheet.html' %}
+<div class="d-flex gap-2 bil-fadein">
+  <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+    <i class="fa-solid fa-xmark fa-xs" aria-hidden="true"></i>Cancel
+  </a>
+</div>
 
+{% endblock %}
 
-
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+{% block extra_scripts %}
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+  if ($('#tbl-v2').length) {
+    $('#tbl-v2').DataTable({
+      pageLength: 25,
+      lengthMenu: [10, 25, 50],
+      order: [[3, 'desc']],
+      columnDefs: [{ targets: -1, orderable: false, searchable: false, width: '40px' }]
+    });
+  }
+});
+</script>
 {% endblock %}

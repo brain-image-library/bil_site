@@ -1,28 +1,29 @@
 {% if publications %}
-<h3>Publication</h3>
-
-  <table class="table">    								
+<div class="table-responsive">
+  <table id="tbl-publications" class="bil-detail-table">
     <thead>
-    <tr>
-    <th>relatedIdentifier</th>
-    <th>relatedIdentifierType</th>
-    <th>PMCID</th>
-    <th>citation</th>
-    </tr>
+      <tr>
+        <th>relatedIdentifier</th>
+        <th>relatedIdentifierType</th>
+        <th>PMCID</th>
+        <th>citation</th>
+      </tr>
     </thead>
     <tbody>
-    {% for p in publications %}
-    <tr>
-    <td>{{ p.relatedidentifier }}</td>
-    <td>{{ p.relatedidentifiertype }}</td>
-    <td>{{ p.pmcid }}</td>
-    <td>{{ p.citation }}</td>
-    </tr>
-    {% endfor %}
+      {% for p in publications %}
+      <tr>
+        <td>{{ p.relatedidentifier }}</td>
+        <td>{{ p.relatedidentifiertype }}</td>
+        <td>{{ p.pmcid }}</td>
+        <td>{{ p.citation }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
   </table>
-  
+</div>
 {% else %}
-  <div class="alert alert-info">
-    <p>There is not Publication data associated with this dataset. Please contact BIL Support if this is incorrect.</p>
-  </div>
+<div class="bil-notice-info">
+  <i class="fa-solid fa-circle-info fa-xs"></i>
+  <span>No Publication data is associated with this metadata sheet.</span>
+</div>
 {% endif %}

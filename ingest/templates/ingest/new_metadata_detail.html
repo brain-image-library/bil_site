@@ -1,13 +1,221 @@
-{% extends 'ingest/wide.html' %}
-{% block wide %}
-<h1>Detail of New Metadata</h1>
-{% include 'ingest/contributor_detail.html' %}
-{% include 'ingest/funder_detail.html' %}
-{% include 'ingest/publication_detail.html' %}
-{% include 'ingest/instrument_detail.html' %}
-{% include 'ingest/dataset_detail.html' %}
-{% include 'ingest/specimen_detail.html' %}
-{% include 'ingest/image_detail.html' %}
-{% include 'ingest/swc_detail.html' %}
+{% extends "ingest/base.html" %}
+{% block title %}Metadata Detail{% endblock %}
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+<style>
+.bil-cell-clamp {
+  max-width: 240px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; display: block; cursor: default;
+}
+.bil-cell-clamp:hover { color: #161b33; }
+
+.bil-detail-table { width: 100%; margin: 0; border-collapse: separate; border-spacing: 0; font-size: .8rem; }
+.bil-detail-table thead th {
+  font-family: 'DM Mono', monospace; font-size: .6rem; letter-spacing: .08em;
+  text-transform: uppercase; color: rgba(255,255,255,.7); font-weight: 500;
+  padding: .65rem .8rem; background: #161b33; border-bottom: none; white-space: nowrap;
+}
+.bil-detail-table thead th a { color: rgba(255,255,255,.7) !important; text-decoration: none; }
+.bil-detail-table thead th a:hover { color: #fff !important; }
+.bil-detail-table tbody td {
+  font-family: 'Lato', sans-serif; color: #3d4360;
+  padding: .55rem .8rem; border-bottom: 1px solid rgba(22,27,51,.055);
+  vertical-align: middle; transition: background .12s;
+}
+.bil-detail-table tbody tr:last-child td { border-bottom: none; }
+.bil-detail-table tbody tr:hover td { background: rgba(0,201,167,.04); }
+.bil-detail-table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--bil-accent); }
+
+/* DataTables toolbar */
+.bil-tab-pane-inner .dataTables_wrapper .dataTables_filter input,
+.bil-tab-pane-inner .dataTables_wrapper .dataTables_length select {
+  border: 1.5px solid rgba(22,27,51,.12); border-radius: 6px;
+  font-family: 'Lato', sans-serif; font-size: .82rem; color: #3d4360;
+  padding: .3rem .6rem; background: #fff; transition: border-color .15s;
+}
+.bil-tab-pane-inner .dataTables_wrapper .dataTables_filter input:focus,
+.bil-tab-pane-inner .dataTables_wrapper .dataTables_length select:focus {
+  border-color: var(--bil-accent); outline: none; box-shadow: 0 0 0 3px rgba(0,201,167,.1);
+}
+.bil-tab-pane-inner .dataTables_wrapper .dataTables_filter label,
+.bil-tab-pane-inner .dataTables_wrapper .dataTables_length label,
+.bil-tab-pane-inner .dataTables_wrapper .dataTables_info {
+  font-family: 'Lato', sans-serif; font-size: .8rem; color: #616788;
+}
+.bil-tab-pane-inner .dataTables_wrapper .dataTables_paginate .paginate_button {
+  border-radius: 5px !important; font-family: 'Lato', sans-serif; font-size: .8rem;
+}
+.bil-tab-pane-inner .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+  background: #161b33 !important; border-color: #161b33 !important; color: #fff !important;
+}
+</style>
 {% endblock %}
 
+{% block content %}
+<div class="container-fluid py-4 px-4">
+
+  {# ── Page header ── #}
+  <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4 bil-page-header bil-fadein">
+    <div>
+      <h2 class="mb-1">
+        <i class="fa-solid fa-file-spreadsheet me-2" style="color:var(--bil-accent);font-size:1.1rem;" aria-hidden="true"></i>Metadata Detail
+      </h2>
+      <span class="bil-sub">Detailed view of uploaded metadata sheet</span>
+    </div>
+    <a href="javascript:history.back()" class="bil-btn-outline">
+      <i class="fa-solid fa-arrow-left fa-xs" aria-hidden="true"></i>Back
+    </a>
+  </div>
+
+  {# ── Tabs ── #}
+  <ul class="nav bil-sheet-tabs bil-fadein" id="metadataTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+      <button class="nav-link active" id="tab-contributors" data-bs-toggle="tab"
+              data-bs-target="#pane-contributors" type="button" role="tab"
+              aria-selected="true" aria-controls="pane-contributors">
+        <i class="fa-solid fa-user-group fa-xs me-1" aria-hidden="true"></i>Contributors
+        <span class="tab-badge {% if contributors %}has-data{% endif %}" aria-label="{{ contributors|length }} records">{{ contributors|length }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-funding" data-bs-toggle="tab"
+              data-bs-target="#pane-funding" type="button" role="tab"
+              aria-selected="false" aria-controls="pane-funding">
+        <i class="fa-solid fa-hand-holding-dollar fa-xs me-1" aria-hidden="true"></i>Funding
+        <span class="tab-badge {% if funders %}has-data{% endif %}" aria-label="{{ funders|length }} records">{{ funders|length }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-publications" data-bs-toggle="tab"
+              data-bs-target="#pane-publications" type="button" role="tab"
+              aria-selected="false" aria-controls="pane-publications">
+        <i class="fa-solid fa-book-open fa-xs me-1" aria-hidden="true"></i>Publications
+        <span class="tab-badge {% if publications %}has-data{% endif %}" aria-label="{{ publications|length }} records">{{ publications|length }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-instrument" data-bs-toggle="tab"
+              data-bs-target="#pane-instrument" type="button" role="tab"
+              aria-selected="false" aria-controls="pane-instrument">
+        <i class="fa-solid fa-microscope fa-xs me-1" aria-hidden="true"></i>Instrument
+        <span class="tab-badge {% if instruments %}has-data{% endif %}" aria-label="{{ instruments|length }} records">{{ instruments|length }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-dataset" data-bs-toggle="tab"
+              data-bs-target="#pane-dataset" type="button" role="tab"
+              aria-selected="false" aria-controls="pane-dataset">
+        <i class="fa-solid fa-database fa-xs me-1" aria-hidden="true"></i>Dataset
+        <span class="tab-badge {% if datasets %}has-data{% endif %}" aria-label="{{ datasets|length }} records">{{ datasets|length }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-specimen" data-bs-toggle="tab"
+              data-bs-target="#pane-specimen" type="button" role="tab"
+              aria-selected="false" aria-controls="pane-specimen">
+        <i class="fa-solid fa-dna fa-xs me-1" aria-hidden="true"></i>Specimen
+        <span class="tab-badge {% if specimens %}has-data{% endif %}" aria-label="{{ specimens|length }} records">{{ specimens|length }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-image" data-bs-toggle="tab"
+              data-bs-target="#pane-image" type="button" role="tab"
+              aria-selected="false" aria-controls="pane-image">
+        <i class="fa-solid fa-image fa-xs me-1" aria-hidden="true"></i>Image
+        <span class="tab-badge {% if images %}has-data{% endif %}" aria-label="{{ images|length }} records">{{ images|length }}</span>
+      </button>
+    </li>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link" id="tab-swc" data-bs-toggle="tab"
+              data-bs-target="#pane-swc" type="button" role="tab"
+              aria-selected="false" aria-controls="pane-swc">
+        <i class="fa-solid fa-diagram-project fa-xs me-1" aria-hidden="true"></i>SWC
+        <span class="tab-badge {% if swcs %}has-data{% endif %}" aria-label="{{ swcs|length }} records">{{ swcs|length }}</span>
+      </button>
+    </li>
+  </ul>
+
+  {# ── Tab panels ── #}
+  <div class="tab-content bil-tab-content bil-fadein" id="metadataTabContent">
+
+    <div class="tab-pane fade show active" id="pane-contributors" role="tabpanel" aria-labelledby="tab-contributors">
+      <div class="bil-tab-pane-inner">{% include 'ingest/contributor_detail.html' %}</div>
+    </div>
+    <div class="tab-pane fade" id="pane-funding" role="tabpanel" aria-labelledby="tab-funding">
+      <div class="bil-tab-pane-inner">{% include 'ingest/funder_detail.html' %}</div>
+    </div>
+    <div class="tab-pane fade" id="pane-publications" role="tabpanel" aria-labelledby="tab-publications">
+      <div class="bil-tab-pane-inner">{% include 'ingest/publication_detail.html' %}</div>
+    </div>
+    <div class="tab-pane fade" id="pane-instrument" role="tabpanel" aria-labelledby="tab-instrument">
+      <div class="bil-tab-pane-inner">{% include 'ingest/instrument_detail.html' %}</div>
+    </div>
+    <div class="tab-pane fade" id="pane-dataset" role="tabpanel" aria-labelledby="tab-dataset">
+      <div class="bil-tab-pane-inner">{% include 'ingest/dataset_detail.html' %}</div>
+    </div>
+    <div class="tab-pane fade" id="pane-specimen" role="tabpanel" aria-labelledby="tab-specimen">
+      <div class="bil-tab-pane-inner">{% include 'ingest/specimen_detail.html' %}</div>
+    </div>
+    <div class="tab-pane fade" id="pane-image" role="tabpanel" aria-labelledby="tab-image">
+      <div class="bil-tab-pane-inner">{% include 'ingest/image_detail.html' %}</div>
+    </div>
+    <div class="tab-pane fade" id="pane-swc" role="tabpanel" aria-labelledby="tab-swc">
+      <div class="bil-tab-pane-inner">{% include 'ingest/swc_detail.html' %}</div>
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(function () {
+  var dtDefaults = {
+    pageLength: 25,
+    lengthMenu: [10, 25, 50, 100],
+    searching: true,
+    ordering: true,
+    language: {
+      search: '', searchPlaceholder: 'Search\u2026',
+      lengthMenu: 'Show _MENU_ per page',
+      info: '_START_\u2013_END_ of _TOTAL_',
+      infoEmpty: 'No records',
+      paginate: { previous: '\u2039', next: '\u203a' },
+    },
+    dom: '<"d-flex align-items-center justify-content-between mb-2"fl>rt<"d-flex align-items-center justify-content-between mt-2"ip>',
+  };
+
+  ['#tbl-contributors','#tbl-funders','#tbl-publications','#tbl-instruments',
+   '#tbl-datasets','#tbl-specimens','#tbl-swc'].forEach(function (sel) {
+    if ($(sel).length) $(sel).DataTable($.extend({}, dtDefaults));
+  });
+
+  if ($('#tbl-images').length) {
+    $('#tbl-images').DataTable($.extend({}, dtDefaults, {
+      scrollX: true, scrollCollapse: true,
+    }));
+  }
+
+  $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
+    $.fn.DataTable.tables({ visible: true, api: true }).columns.adjust();
+  });
+
+  // Tooltips for truncated cells
+  document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+    new bootstrap.Tooltip(el, { placement: 'top', trigger: 'hover focus' });
+  });
+
+  // Accessible labels on DataTables-generated inputs (WCAG 1.3.1)
+  document.querySelectorAll('.dataTables_filter input[type="search"]').forEach(function (el) {
+    el.setAttribute('aria-label', 'Search table');
+  });
+  document.querySelectorAll('.dataTables_length select').forEach(function (el) {
+    el.setAttribute('aria-label', 'Rows per page');
+  });
+});
+</script>
+{% endblock %}

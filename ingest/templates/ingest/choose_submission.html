@@ -1,92 +1,160 @@
-{% include 'ingest/wide.html' %}
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'ingest/wide.html' %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Collection Selection</title>
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+<style>
+.bil-choose-table { width: 100%; margin: 0; border-collapse: separate; border-spacing: 0; }
+.bil-choose-table thead th {
+  font-family: 'DM Mono', monospace; font-size: .65rem; letter-spacing: .1em;
+  text-transform: uppercase; color: rgba(255,255,255,.7);
+  font-weight: 500; white-space: nowrap;
+  padding: .75rem .9rem; background: #161b33;
+  border-bottom: none; border-color: rgba(255,255,255,.06);
+}
+.bil-choose-table thead th a { color: rgba(255,255,255,.7) !important; text-decoration: none; }
+.bil-choose-table thead th a:hover { color: #fff !important; }
+.bil-choose-table tbody td {
+  font-family: 'Lato', sans-serif; font-size: .82rem;
+  color: #3d4360; padding: .7rem .9rem;
+  border-bottom: 1px solid rgba(22,27,51,.055);
+  vertical-align: middle; transition: background .12s;
+}
+.bil-choose-table tbody tr:last-child td { border-bottom: none; }
+.bil-choose-table tbody tr:hover td { background: rgba(0,201,167,.04); }
+.bil-choose-table tbody tr:hover td:first-child { box-shadow: inset 3px 0 0 var(--bil-accent); }
+.bil-choose-table thead .sorting::after,
+.bil-choose-table thead .sorting_asc::after,
+.bil-choose-table thead .sorting_desc::after,
+.bil-choose-table thead .dt-orderable-asc .dt-column-title::after,
+.bil-choose-table thead .dt-orderable-desc .dt-column-title::after { filter: invert(1); opacity: .55; }
 
-  <!-- Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+.bil-select-btn {
+  font-family: 'Lato', sans-serif; font-weight: 600; font-size: .75rem;
+  padding: .32rem .75rem; border-radius: 6px; text-decoration: none;
+  background: #161b33; color: #fff; border: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  transition: background .15s, box-shadow .15s;
+}
+.bil-select-btn:hover { background: #252d52; box-shadow: 0 2px 8px rgba(22,27,51,.2); color: #fff; }
+</style>
+{% endblock %}
 
-  <!-- Select2 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+{% block wide %}
 
-  <!-- jQuery (required by Select2) -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-  <!-- Select2 JS -->
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
-
-  <style>
-    .collection-form-container {
-      font-family: 'Roboto', sans-serif;
-      background-color: #ffffff;
-      padding: 20px;
-      margin-top: 30px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .collection-form-container .form-group label {
-      font-weight: 500;
-      margin-bottom: 10px;
-      color: #333333;
-      display: block;
-    }
-
-    .collection-form-container .btn-primary {
-      background-color: #007bff;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 6px;
-      font-size: 16px;
-      color: #ffffff;
-      cursor: pointer;
-      transition: background-color 0.2s ease-in-out;
-      display: inline-block;
-      width: auto;
-    }
-
-    .collection-form-container .btn-primary:hover {
-      background-color: #0056b3;
-    }
-
-    .collection-form-container select {
-      width: 100%;
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid #ced4da;
-      font-size: 16px;
-      margin-bottom: 20px;
-      appearance: none;
-      background-color: #ffffff;
-      color: #333333;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="collection-form-container">
-    <form method="post">
-      {% csrf_token %}
-      <div class="form-group">
-        <label for="{{ form.collection.id_for_label }}">Choose a Collection:</label>
-        {{ form.collection }}
-      </div>
-      <button type="submit" class="btn btn-primary">Submit</button>
-    </form>
+{# ── Page header ── #}
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+  <div class="bil-list-header">
+    <h4><i class="fa-solid fa-folder-open me-2" style="color:var(--bil-accent);font-size:1.1rem;"></i>Choose a Collection</h4>
+    <span class="bil-count">Select the collection you want to upload metadata for</span>
   </div>
+  <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+    <i class="fa-solid fa-house fa-xs"></i>Dashboard
+  </a>
+</div>
 
-  <script>
-    $(document).ready(function () {
-      $('.collection-select').select2({
-        placeholder: "Search by BIL UUID or Collection Name...",
-        allowClear: true
-      });
+{# ── Table / empty ── #}
+<div class="bil-table-card bil-fadein">
+  {% if collections %}
+  <div class="table-responsive">
+    <table id="tbl-choose-collection" class="bil-choose-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+          <th>Modality</th>
+          <th>Submission</th>
+          <th>Validation</th>
+          <th>Locked</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for collection in collections %}
+        <tr>
+          <td>
+            <div class="bil-col-name">{{ collection.name }}</div>
+            <div class="bil-col-uuid">{{ collection.bil_uuid }}</div>
+          </td>
+          <td style="max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            {{ collection.description|truncatechars:70 }}
+          </td>
+          <td>{{ collection.modality|default:"—" }}</td>
+          <td>
+            {% if collection.submission_status == 'SUCCESS' %}
+              <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Success</span>
+            {% elif collection.submission_status == 'FAILURE' %}
+              <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+            {% elif collection.submission_status == 'PENDING' or collection.submission_status == 'SUBMITTED' %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>{{ collection.submission_status }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if collection.validation_status == 'SUCCESS' %}
+              <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Valid</span>
+            {% elif collection.validation_status == 'FAILURE' %}
+              <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+            {% elif collection.validation_status == 'PENDING' %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>{{ collection.validation_status }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if collection.locked %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-lock fa-xs"></i>Locked</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-lock-open fa-xs"></i>Open</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{% url 'ingest:descriptive_metadata_upload' collection.id %}" class="bil-select-btn">
+              <i class="fa-solid fa-arrow-right fa-xs"></i>Select
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="bil-empty">
+    <div class="bil-empty-icon"><i class="fa-solid fa-folder-open"></i></div>
+    <h5>No collections yet</h5>
+    <p>Create a collection first, then come back to upload metadata.</p>
+    <a href="{% url 'ingest:collection_create' %}" class="bil-btn-dark">
+      <i class="fa-solid fa-folder-plus fa-xs"></i>Create a Collection
+    </a>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+  var dt = $('#tbl-choose-collection').DataTable({
+    pageLength: 25,
+    lengthMenu: [10, 25, 50, 100],
+    order: [[0, 'asc']],
+    columnDefs: [
+      { targets: -1, orderable: false, searchable: false, width: '80px' },
+      { targets: 5, width: '90px' },
+      { targets: 3, width: '120px' },
+      { targets: 4, width: '120px' }
+    ]
+  });
+
+  // Re-init tooltips after DataTables draws
+  dt.on('draw.dt', function() {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+      bootstrap.Tooltip.getOrCreateInstance(el, { trigger: 'hover' });
     });
-  </script>
-</body>
-
-</html>
+  });
+});
+</script>
+{% endblock %}

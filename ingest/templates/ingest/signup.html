@@ -2,35 +2,53 @@
 
 {% block wide %}
 
-<h2>Sign Up to Deposit Data</h2>
-
-
-<p>To deposit data in the Brain Image Library (BIL), a depositor account will need to be 
-created. There is no charge for creating this account or depositing data into the 
-Brain Image Library. To create a depositor account, first create an account on the
-<a href="https://portal.xsede.org/">XSEDE portal (portal.xsede.org)</a>.
-Next, send an email message to 
-<a href="mailto:bil-support@psc.edu?Subject=BIL%20account%20creation">bil-support@psc.edu</a>
-requesting that a BIL depositor account be set up along with the following information:</p>
-
-<div class="list-group">
-  <div class="list-group-item">Your XSEDE portal account</div>
-  <div class="list-group-item">If your project received funding from any agency (e.g. The NIH BRAIN Initiative), the project 
-  you are associated with including the agency funding identifier and the name of the PI.</div>
+<div class="d-flex align-items-start justify-content-between mb-3">
+  <div>
+    <h1 class="mb-1">Sign Up to Deposit Data</h1>
+    <p class="text-muted mb-0">Create a depositor account to submit data to the Brain Image Library.</p>
+  </div>
 </div>
 
-<p>After your account is created, you will receive an email regarding your
-account and how to set the initial password on it through 
-<a href="https://apr.psc.edu">https://apr.psc.edu</a> along with instructions on password
-policies and how to set or change your password.</p>
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-circle-info fa-sm me-1"></i>Account Creation
+    </p>
 
-<p>BIL provides data depositors with helpdesk support that includes phone and 
-email to resolve problems and questions. The helpdesk can assist users with all 
-aspects of data submission, including the preparation of data in the proper 
-submission format, uploading initial data sets and revisions, resolving networking 
-issues, and tracking the status of their submitted data. To access this service, 
-send email to bil-support@psc.edu or call 412-268-6350.
-</p>
+    <p>To deposit data in the Brain Image Library (BIL), a depositor account will need to be
+    created. There is no charge for creating this account or depositing data into the
+    Brain Image Library. To create a depositor account, first create an account on the
+    <a href="https://portal.xsede.org/">XSEDE portal (portal.xsede.org)</a>.
+    Next, send an email message to
+    <a href="mailto:bil-support@psc.edu?Subject=BIL%20account%20creation">bil-support@psc.edu</a>
+    requesting that a BIL depositor account be set up along with the following information:</p>
 
+    <ul class="list-group list-group-flush mb-3">
+      <li class="list-group-item">Your XSEDE portal account</li>
+      <li class="list-group-item">If your project received funding from any agency (e.g. The NIH BRAIN Initiative), the project
+      you are associated with including the agency funding identifier and the name of the PI.</li>
+    </ul>
+
+    <p>After your account is created, you will receive an email regarding your
+    account and how to set the initial password on it through
+    <a href="https://apr.psc.edu">https://apr.psc.edu</a> along with instructions on password
+    policies and how to set or change your password.</p>
+  </div>
+</div>
+
+<div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-headset fa-sm me-1"></i>Support
+    </p>
+
+    <p class="mb-0">BIL provides data depositors with helpdesk support that includes phone and
+    email to resolve problems and questions. The helpdesk can assist users with all
+    aspects of data submission, including the preparation of data in the proper
+    submission format, uploading initial data sets and revisions, resolving networking
+    issues, and tracking the status of their submitted data. To access this service,
+    send email to <a href="mailto:bil-support@psc.edu">bil-support@psc.edu</a> or call 412-268-6350.</p>
+  </div>
+</div>
 
 {% endblock %}

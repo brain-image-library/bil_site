@@ -44,20 +44,50 @@ from django.utils.timezone import now
 from django.utils import timezone
 from django.db import transaction
 
-from django.db.models import OuterRef, Subquery, Q, Exists
+from django.db.models import OuterRef, Subquery, Q, Exists, Count, F, Sum
+from django.db.models.functions import ExtractYear
 from pathlib import Path
+import tempfile
 import jwt, time
 
 
+def _get_public_dataset_stats():
+    """Return (public_dataset_count, None, None) or None.
+
+    Fetches dataset count from the BIL public API. Returns None (hides the
+    stats section) if the API is unavailable or takes too long. Failures are
+    cached for 5 minutes to avoid hammering a down endpoint on every request.
+    """
+    if cache.get('public_dataset_stats_unavailable'):
+        return None
+
+    cached = cache.get('public_dataset_stats')
+    if cached is not None:
+        return cached
+
+    try:
+        response = requests.get(
+            'https://api.brainimagelibrary.org/stats',
+            params={'type': 'all'},
+            timeout=5,
+        )
+        response.raise_for_status()
+        data = response.json()
+        dataset_count = int(data['dataset_count'])
+    except Exception:
+        cache.set('public_dataset_stats_unavailable', True, 300)
+        return None
+
+    result = (dataset_count, None, None)
+    cache.set('public_dataset_stats', result, 3600)
+    return result
+
+
 def logout(request):
-    messages.success(request, "You've successfully logged out")
     # XXX: this view should be separated from the the ingestion views and
     # placed with other authentication views to allow us to reuse the
     # authentication views with other apps (e.g. data exploration portal).
     auth.logout(request)
-    # Send the user back to the login page when they log out.
-    # XXX: we might want to use django's messaging system to inform them that
-    # they've successfully logged out.
     return redirect('login')
 
 def signup(request):
@@ -83,6 +113,7 @@ def index(request):
         people.affiliation = ''
         people.affiliation_identifier = ''
         people.is_bil_admin = False
+        people.has_reviewed_brain_initiative = True
         people.auth_user_id = current_user
         people.save()
 
@@ -110,18 +141,105 @@ def index(request):
     )
 
     # --- Step 3: Routing logic based on role ---
+    _stats = _get_public_dataset_stats()
+    if _stats is not None:
+        public_dataset_count, public_file_count, datasets_by_year = _stats
+        show_stats = True
+    else:
+        public_dataset_count = public_file_count = 0
+        datasets_by_year = []
+        show_stats = False
+
+    # User contribution stats
+    user_public_collections = Collection.objects.filter(
+        user=current_user,
+        submission_status=Collection.SUCCESS,
+        validation_status=Collection.SUCCESS,
+    ).count()
+
+    public_collections = Collection.objects.filter(
+        user=current_user,
+        submission_status=Collection.SUCCESS,
+        validation_status=Collection.SUCCESS,
+    )
+    # Collections that have v2 datasets (Dataset → Sheet → Collection)
+    v2_collection_ids = set(
+        Dataset.objects.filter(sheet__collection__in=public_collections)
+        .values_list('sheet__collection_id', flat=True)
+        .distinct()
+    )
+    v2_dataset_count = Dataset.objects.filter(
+        sheet__collection_id__in=v2_collection_ids
+    ).count()
+    # For collections with no v2 datasets, fall back to v1 (DescriptiveMetadata)
+    v1_only_collections = public_collections.exclude(id__in=v2_collection_ids)
+    v1_dataset_count = DescriptiveMetadata.objects.filter(
+        collection__in=v1_only_collections
+    ).count()
+    user_public_datasets = v2_dataset_count + v1_dataset_count
+    # Submission in progress: has a request_validation event but no collection_public event yet
+    validated_collection_ids = EventsLog.objects.filter(
+        collection_id__user=current_user,
+        event_type='collection_public',
+    ).values_list('collection_id_id', flat=True).distinct()
+    user_validation_requested = EventsLog.objects.filter(
+        collection_id__user=current_user,
+        event_type='request_validation',
+    ).exclude(
+        collection_id_id__in=validated_collection_ids,
+    ).values('collection_id_id').distinct().count()
+
     try:
         people = People.objects.get(auth_user_id_id=current_user.id)
         project_person = ProjectPeople.objects.filter(people_id=people.id).all()
         if people.is_bil_admin:
-            return render(request, 'ingest/bil_index.html', {'people': people})
+            return render(request, 'ingest/bil_index.html', {
+                'people': people,
+                'public_dataset_count': public_dataset_count,
+                'public_file_count': public_file_count,
+                'datasets_by_year': datasets_by_year,
+                'show_stats': show_stats,
+                'user_public_collections': user_public_collections,
+                'user_public_datasets': user_public_datasets,
+                'user_validation_requested': user_validation_requested,
+            })
+        pi_attribute = None
+        pi_projects = []
         for attribute in project_person:
             if attribute.is_pi:
-                return render(request, 'ingest/pi_index.html', {'project_person': attribute})
+                if pi_attribute is None:
+                    pi_attribute = attribute
+                proj = Project.objects.get(id=attribute.project_id_id)
+                pi_projects.append({
+                    'id': proj.id,
+                    'name': proj.name,
+                    'is_brain_initiative': proj.is_brain_initiative,
+                })
+
+        if pi_attribute is not None:
+            return render(request, 'ingest/pi_index.html', {
+                'project_person': pi_attribute,
+                'public_dataset_count': public_dataset_count,
+                'public_file_count': public_file_count,
+                'datasets_by_year': datasets_by_year,
+                'show_stats': show_stats,
+                'user_public_collections': user_public_collections,
+                'user_public_datasets': user_public_datasets,
+                'user_validation_requested': user_validation_requested,
+                'show_brain_initiative_modal': not people.has_reviewed_brain_initiative,
+                'pi_projects': pi_projects,
+            })
     except Exception as e:
         print(e)
 
-    return render(request, 'ingest/index.html')
+    return render(request, 'ingest/index.html', {
+        'public_dataset_count': public_dataset_count,
+        'public_file_count': public_file_count,
+        'datasets_by_year': datasets_by_year,
+        'show_stats': show_stats,
+        'user_public_collections': user_public_collections,
+        'user_public_datasets': user_public_datasets,
+    })
 
 
 @login_required
@@ -246,6 +364,9 @@ def manageProjects(request):
         proj_assocs = ProjectAssociation.objects.filter(project_id=project.id).all()
         parent_proj_assocs = ProjectAssociation.objects.filter(parent_project_id=project.id).all()
 
+        project.parent_ids = [p.parent_project_id for p in proj_assocs]
+        project.is_child = bool(project.parent_ids)
+
         project.parent_project_names = []
         for p in proj_assocs:
             parent_project_name = Project.objects.get(id=p.parent_project_id).name
@@ -258,7 +379,30 @@ def manageProjects(request):
             project.child_project_names.append(child_project_name)
         project.child_project_names = ', '.join(project.child_project_names)
 
-    return render(request, 'ingest/manage_projects.html', {'allprojects':allprojects, 'pi':pi})
+    # Recursively sort so children of children are placed correctly at any depth
+    placed = set()
+    sorted_projects = []
+
+    def place_project(p, level):
+        if p.id in placed:
+            return
+        placed.add(p.id)
+        p.indent_level = level
+        p.td_padding = f'{level * 1.5 + 0.5}rem' if level > 0 else ''
+        p.connector_left = f'{(level - 1) * 1.5 + 0.75}rem' if level > 0 else ''
+        sorted_projects.append(p)
+        for child in allprojects:
+            if child.id not in placed and p.id in child.parent_ids:
+                place_project(child, level + 1)
+
+    for p in allprojects:
+        if not p.is_child:
+            place_project(p, 0)
+    for p in allprojects:
+        if p.id not in placed:
+            place_project(p, 1)
+
+    return render(request, 'ingest/manage_projects.html', {'allprojects': sorted_projects, 'pi': pi})
 
 # this functions allows pi to see all the collections
 @login_required
@@ -319,9 +463,10 @@ def create_project(request):
         name = item['name']
         consortia_ids = item['consortia_ids']
         parent_project = item['parent_project']
+        is_brain_initiative = item.get('is_brain_initiative', False)
 
-        # write project to the project table   
-        project = Project(funded_by=funded_by, name=name)
+        # write project to the project table
+        project = Project(funded_by=funded_by, name=name, is_brain_initiative=is_brain_initiative)
         project.save()
         save_project_id(project)
         proj_id = project.id
@@ -342,23 +487,83 @@ def create_project(request):
         
         project_person = ProjectPeople(project_id_id=project_id_id, people_id_id=person.id, is_pi=True, is_po=False, doi_role='creator')
         project_person.save()
-    messages.success(request, 'Project Created!')    
+    messages.success(request, 'Project Created!')
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
+
+
+@login_required
+def review_brain_initiative(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405, headers={'Allow': 'POST'})
+
+    current_user = request.user
+    try:
+        people = People.objects.get(auth_user_id_id=current_user.id)
+    except People.DoesNotExist:
+        return JsonResponse({'error': 'User profile not found'}, status=404)
+    owned_ids = set(
+        ProjectPeople.objects
+        .filter(people_id=people.id, is_pi=True)
+        .values_list('project_id_id', flat=True)
+    )
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    for project_id_str, value in data.items():
+        try:
+            project_id = int(project_id_str)
+        except (ValueError, TypeError):
+            continue
+        if project_id in owned_ids:
+            Project.objects.filter(id=project_id).update(is_brain_initiative=bool(value))
+
+    people.has_reviewed_brain_initiative = True
+    people.save()
+    return JsonResponse({'success': True})
+
+
+@login_required
+def toggle_brain_initiative(request, pk):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405, headers={'Allow': 'POST'})
+
+    current_user = request.user
+    try:
+        people = People.objects.get(auth_user_id_id=current_user.id)
+    except People.DoesNotExist:
+        return JsonResponse({'error': 'User profile not found'}, status=404)
+
+    if not ProjectPeople.objects.filter(people_id=people.id, project_id_id=pk, is_pi=True).exists():
+        return JsonResponse({'error': 'Not authorized'}, status=403)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    value = data.get('is_brain_initiative')
+    if not isinstance(value, bool):
+        return JsonResponse({'error': 'Invalid value'}, status=400)
+    Project.objects.filter(id=pk).update(is_brain_initiative=value)
+    return JsonResponse({'success': True})
 
 
 @login_required
 def add_project_user(request, pk):
     current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-    for attribute in project_person:
-        if attribute.is_pi:
-            pi = True
-        else:
-            pi = False
-    all_users = User.objects.all()
-    project = Project.objects.get(id=pk) 
-    return render(request, 'ingest/add_project_user.html', {'all_users':all_users, 'project':project, 'pi':pi})
+    people = People.objects.get(auth_user_id_id=current_user.id)
+    project_person = ProjectPeople.objects.filter(people_id=people.id).all()
+    pi = any(attr.is_pi for attr in project_person)
+    project = Project.objects.get(id=pk)
+    existing = ProjectPeople.objects.filter(project_id_id=pk).select_related('people_id')
+    members = []
+    for ep in existing:
+        if ep.people_id and ep.people_id.auth_user_id:
+            members.append({'user': ep.people_id.auth_user_id, 'project_people_id': ep.id})
+    return render(request, 'ingest/add_project_user.html', {'project': project, 'pi': pi, 'members': members})
 
 # adds person to a project
 @login_required
@@ -383,6 +588,45 @@ def write_user_to_project_people(request):
     messages.success(request, 'User(s) Added!')
     return HttpResponse(json.dumps({'url': reverse('ingest:manage_projects')}))
 
+
+@login_required
+def remove_project_user(request):
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+    data = json.loads(request.body)
+    project_people_id = data.get('project_people_id')
+    current_user = request.user
+    try:
+        people = People.objects.get(auth_user_id_id=current_user.id)
+        pp = ProjectPeople.objects.get(id=project_people_id, project_id__projectpeople__people_id=people, project_id__projectpeople__is_pi=True)
+        pp.delete()
+        return JsonResponse({'success': True})
+    except ProjectPeople.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'User not found or you do not have permission to remove them.'})
+
+
+@login_required
+def add_user_by_username(request):
+    if request.method != 'POST':
+        return HttpResponse(status=405)
+    data = json.loads(request.body)
+    username = data.get('username', '').strip()
+    project_id = data.get('project_id')
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return HttpResponse(json.dumps({'success': False, 'message': f'No user found with username "{username}". They may not have logged into the portal yet.'}), content_type='application/json')
+    try:
+        person = People.objects.get(auth_user_id_id=user.id)
+    except People.DoesNotExist:
+        return HttpResponse(json.dumps({'success': False, 'message': f'User "{username}" has not set up a profile in the portal yet.'}), content_type='application/json')
+    project = Project.objects.get(id=project_id)
+    if ProjectPeople.objects.filter(project_id_id=project.id, people_id_id=person.id).exists():
+        return HttpResponse(json.dumps({'success': False, 'message': f'"{username}" is already a member of this project.'}), content_type='application/json')
+    ProjectPeople(project_id_id=project.id, people_id_id=person.id, is_pi=False, is_po=False, doi_role='').save()
+    return HttpResponse(json.dumps({'success': True, 'message': f'"{username}" has been added to the project.', 'username': username}), content_type='application/json')
+
+
 # presents all people on the projects of the pi who is logged in
 @login_required
 def people_of_pi(request):
@@ -397,10 +641,36 @@ def people_of_pi(request):
     
     pi = People.objects.get(auth_user_id_id=current_user.id)
     # filters the project_people table down to the rows where it's the pi's people_id_id AND is_pi=true
-    pi_projects = ProjectPeople.objects.filter(people_id_id=pi.id, is_pi=True).all()
+    pi_projects = list(ProjectPeople.objects.filter(people_id_id=pi.id, is_pi=True).all())
     for proj in pi_projects:
         proj.related_project_people = ProjectPeople.objects.filter(project_id=proj.project_id_id).all()
-    return render(request, 'ingest/people_of_pi.html', {'pi_projects':pi_projects, 'pi':pi})
+        proj_assocs = ProjectAssociation.objects.filter(project_id=proj.project_id_id).all()
+        proj.parent_ids = [p.parent_project_id for p in proj_assocs]
+        proj.is_child = bool(proj.parent_ids)
+
+    # Recursively sort so children of children are placed correctly at any depth
+    placed = set()
+    sorted_projs = []
+
+    def place_proj(proj, level):
+        if proj.project_id_id in placed:
+            return
+        placed.add(proj.project_id_id)
+        proj.indent_level = level
+        proj.card_margin = f'{level * 2}rem' if level > 0 else '0'
+        sorted_projs.append(proj)
+        for child in pi_projects:
+            if child.project_id_id not in placed and proj.project_id_id in child.parent_ids:
+                place_proj(child, level + 1)
+
+    for proj in pi_projects:
+        if not proj.is_child:
+            place_proj(proj, 0)
+    for proj in pi_projects:
+        if proj.project_id_id not in placed:
+            place_proj(proj, 1)
+
+    return render(request, 'ingest/people_of_pi.html', {'pi_projects': sorted_projs, 'pi': pi})
 
 
 @login_required
@@ -415,18 +685,25 @@ def view_project_people(request, pk):
             pi = False
     try:
         project = Project.objects.get(id=pk)
-        # get all of the project people rows with the project_id matching the project.id
-        projectpeople = ProjectPeople.objects.filter(project_id_id=pk).all()
-        # get all of the people who are in those projectpeople rows
-        allpeople = []
+        is_pi_of_project = ProjectPeople.objects.filter(
+            people_id=people, project_id_id=pk, is_pi=True
+        ).exists()
+        projectpeople = ProjectPeople.objects.filter(project_id_id=pk).select_related('people_id', 'people_id__auth_user_id').all()
+        members = []
         for row in projectpeople:
-            person_id = row.people_id_id
-            person = People.objects.get(id=person_id)
-            allpeople.append(person)
-        return render(request, 'ingest/view_project_people.html', { 'project':project, 'allpeople':allpeople })
+            person = row.people_id
+            if person:
+                members.append({
+                    'project_people_id': row.id,
+                    'name': person.name,
+                    'username': person.auth_user_id.username if person.auth_user_id else '—',
+                    'affiliation': person.affiliation,
+                    'is_pi': row.is_pi,
+                    'is_po': row.is_po,
+                })
+        return render(request, 'ingest/view_project_people.html', {'project': project, 'members': members, 'is_pi_of_project': is_pi_of_project})
     except ProjectPeople.DoesNotExist:
         return render(request, 'ingest/no_people.html')
-    return render(request, 'ingest/view_project_people.html', {'allpeople':allpeople, 'project':project, 'pi':pi})
 
 # fallback for when a project has no collections associated with it
 @login_required
@@ -640,12 +917,16 @@ def collection_send(request):
             )
         except People.DoesNotExist:
             EventsLog.objects.create(
-                collection_id=coll, 
+                collection_id=coll,
                 project_id_id=coll.project_id,
                 notes="(No People record found for user)",
                 timestamp=timezone.now(),
                 event_type="request_validation",
             )
+
+        coll.submission_status = Collection.PENDING
+        coll.validation_status = Collection.PENDING
+        coll.save(update_fields=['submission_status', 'validation_status'])
 
         sent.append(coll.bil_uuid)
 
@@ -680,89 +961,144 @@ def collection_send(request):
 
 def check_collection_directories(coll, current_user):
     """
-    Verifies that the filesystem directory structure matches expected dataset directories
-    using the collection's stored data_path. Returns a structured dict for UI display.
+    Validates dataset directories against the filesystem before allowing a submission.
+
+    Checks:
+    1. The collection's root landing zone directory exists.
+    2. Each dataset's bildirectory is a valid absolute path inside the collection root
+       (not the root itself — must be a subdirectory like /bil/lz/user/uuid/dataset1).
+    3. Each dataset subdirectory actually exists on disk.
+    4. Every subdirectory on disk under the collection root has a corresponding
+       dataset entry in the metadata (catches missing metadata for uploaded data).
     """
+    base_dir = Path(os.path.normpath(coll.data_path))
 
-    # Use the path recorded in the collection itself
-    base_dir = Path(coll.data_path).expanduser()
-
-    # --- 1. Directory missing entirely ---
+    # --- 1. Collection root must exist ---
     if not base_dir.exists():
         return {
             "status": "missing_path",
             "title": "Collection Directory Missing",
             "message": (
-                f"The collection path recorded in metadata ({coll.data_path}) "
+                f"The landing zone directory for this collection ({coll.data_path}) "
                 "does not exist on disk."
             ),
             "suggestion": (
-                "Contact bil-support@psc.edu so we can investigate why the directory creation failed "
+                "This directory should have been created automatically when you created "
+                "the collection. Contact bil-support@psc.edu if it is missing."
             ),
             "missing": [],
             "extra": [],
+            "bad_paths": [],
         }
 
-    # --- 2. Permission error accessing directory ---
-    try:
-        actual_dirs = sorted([p.name for p in base_dir.iterdir() if p.is_dir()])
-    except PermissionError:
+    datasets = Dataset.objects.filter(sheet__collection=coll)
+
+    # --- 2. Validate bildirectory format for each dataset ---
+    bad_paths = []
+    valid_subdirs = []  # (ds.bildirectory string, normalized Path) for valid entries
+
+    for ds in datasets:
+        if not ds.bildirectory:
+            continue
+
+        raw = ds.bildirectory.strip()
+        bildirectory = Path(os.path.normpath(raw))
+
+        # Must be an absolute path
+        if not bildirectory.is_absolute():
+            bad_paths.append({
+                "path": raw,
+                "reason": (
+                    f"Not an absolute path. The BILDirectory field must contain the full path "
+                    f"to your dataset directory, e.g. {base_dir / raw}."
+                ),
+            })
+            continue
+
+        # Must be inside the collection root
+        try:
+            rel = bildirectory.relative_to(base_dir)
+        except ValueError:
+            bad_paths.append({
+                "path": raw,
+                "reason": (
+                    f"This path is not inside your collection's landing zone ({base_dir}). "
+                    f"Your dataset directories must be subdirectories of that path."
+                ),
+            })
+            continue
+
+        # Must be a subdirectory, not the root itself
+        if not rel.parts:
+            bad_paths.append({
+                "path": raw,
+                "reason": (
+                    f"This is your collection root directory ({base_dir}), not a dataset subdirectory. "
+                    "Each dataset must be in its own subdirectory inside the collection root."
+                ),
+            })
+            continue
+
+        valid_subdirs.append((raw, bildirectory))
+
+    if bad_paths:
         return {
-            "status": "permission_error",
-            "title": "Permission Error",
+            "status": "bad_paths",
+            "title": "Invalid BILDirectory Paths in Metadata",
             "message": (
-                f"Permission denied when reading {base_dir}. "
-                "The web service or test user may not have filesystem access."
+                "One or more BILDirectory entries in your metadata spreadsheet are not "
+                "correctly formatted. Each entry must be the full absolute path to a "
+                "subdirectory inside your landing zone."
             ),
             "suggestion": (
-                "Verify directory ownership and permissions. "
-                "The process running Django must have read access to all subdirectories."
+                f"Your collection root is {base_dir}. "
+                "Each dataset should have its own subdirectory inside it, and the full "
+                "path to that subdirectory should be entered in the BILDirectory column."
             ),
             "missing": [],
             "extra": [],
+            "bad_paths": bad_paths,
         }
 
-    # --- 3. Compare expected vs actual dataset subdirectories ---
-    datasets = Dataset.objects.filter(sheet__collection=coll)
-    expected_dirs = sorted([
-        Path(ds.bildirectory).name.strip("/")
-        for ds in datasets if ds.bildirectory
-    ])
+    # --- 3. Check each expected dataset directory exists on disk ---
+    missing = [raw for raw, p in valid_subdirs if not p.exists()]
 
-    missing = [d for d in expected_dirs if d not in actual_dirs]
-    extra = [d for d in actual_dirs if d not in expected_dirs]
+    # --- 4. Check for subdirectories on disk not represented in metadata ---
+    try:
+        actual_subdirs = set(p.name for p in base_dir.iterdir() if p.is_dir())
+    except PermissionError:
+        actual_subdirs = None  # can't read root — skip extra check
 
-    # --- 4. No issues ---
+    expected_subdir_names = {p.name for _, p in valid_subdirs}
+    extra = (
+        sorted(actual_subdirs - expected_subdir_names)
+        if actual_subdirs is not None else []
+    )
+
     if not missing and not extra:
         return {
             "status": "ok",
             "title": "Directories Verified",
-            "message": "All expected dataset directories are present and match metadata.",
+            "message": "All dataset directories are present and match metadata.",
             "missing": [],
             "extra": [],
+            "bad_paths": [],
         }
-
-    # --- 5. Directory mismatch ---
-    details = []
-    if missing:
-        details.append(f"Missing expected directories: {', '.join(missing)}")
-    if extra:
-        details.append(f"Unexpected extra directories found: {', '.join(extra)}")
 
     return {
         "status": "mismatch",
         "title": "Directory Mismatch Detected",
         "message": (
-            "The directories present under this collection’s data_path do not match "
-            "the dataset directories listed in metadata."
+            "The dataset directories on disk do not match what is listed in your metadata."
         ),
-        "details": " | ".join(details),
         "suggestion": (
-            "Add any missing directories listed in metadata, or remove any extras "
-            "not referenced there, before re-submitting for validation."
+            "Ensure every BILDirectory in your metadata has a corresponding directory in "
+            "your landing zone, and that every directory in your landing zone is listed "
+            "in your metadata."
         ),
         "missing": missing,
         "extra": extra,
+        "bad_paths": [],
     }
 
 @login_required
@@ -770,7 +1106,7 @@ def refresh_tables(request):
     """Return updated eligible and validation-in-progress table HTML (mirrors SubmitRequestCollectionList logic)."""
     user = request.user
 
-    # Base set: user’s collections excluding already fully completed ones
+    # Base set: user's collections excluding already fully completed ones
     base_qs = (Collection.objects
                .filter(user=user)
                .exclude(Q(submission_status=Collection.SUCCESS) &
@@ -788,9 +1124,15 @@ def refresh_tables(request):
                  .annotate(has_sheet=Exists(has_sheet_sq),
                            has_requested=Exists(has_requested_sq)))
 
-    eligible = annotated.filter(has_sheet=True, has_requested=False)
+    in_progress_statuses = [Collection.PENDING, Collection.SUCCESS, Collection.FAILED]
+
+    eligible = annotated.filter(has_sheet=True, has_requested=False).exclude(
+        submission_status__in=in_progress_statuses
+    )
     needs_metadata = annotated.filter(has_sheet=False)
-    already_requested = annotated.filter(has_requested=True)
+    already_requested = annotated.filter(
+        Q(has_requested=True) | Q(submission_status__in=in_progress_statuses)
+    )
 
     return render(request, "ingest/_tables_refresh.html", {
         "eligible_collections": eligible.distinct(),
@@ -974,11 +1316,11 @@ def submission_view(request):
         form = CollectionChoice(request.user, request.POST)
         if form.is_valid():
             selected_collection = form.cleaned_data['collection']
-            # Process the selected collection
             return redirect('ingest:descriptive_metadata_upload', associated_collection=selected_collection.id)
-    else:
-        form = CollectionChoice(request.user)
-    return render(request, 'ingest/choose_submission.html', {'form': form})
+    collections = Collection.objects.filter(user=request.user).exclude(
+        submission_status='SUCCESS', validation_status='SUCCESS'
+    ).order_by('name')
+    return render(request, 'ingest/choose_submission.html', {'collections': collections})
 
 class SubmitValidateCollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     """ A list of all a user's collections. """
@@ -1032,7 +1374,7 @@ class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterVi
             validation_status=Collection.SUCCESS,
         )
 
-        # Base set: user’s collections excluding already fully completed ones
+        # Base set: user's collections excluding already fully completed ones
         base_qs = user_qs.exclude(
             Q(submission_status=Collection.SUCCESS) &
             Q(validation_status=Collection.SUCCESS)
@@ -1049,9 +1391,15 @@ class SubmitRequestCollectionList(LoginRequiredMixin, SingleTableMixin, FilterVi
             has_requested=Exists(has_requested_sq),
         )
 
-        eligible = annotated.filter(has_sheet=True, has_requested=False)
+        in_progress_statuses = [Collection.PENDING, Collection.SUCCESS, Collection.FAILED]
+
+        eligible = annotated.filter(has_sheet=True, has_requested=False).exclude(
+            submission_status__in=in_progress_statuses
+        )
         needs_metadata = annotated.filter(has_sheet=False)
-        already_requested = annotated.filter(has_requested=True)
+        already_requested = annotated.filter(
+            Q(has_requested=True) | Q(submission_status__in=in_progress_statuses)
+        )
 
         context.update({
             'pi': self._is_pi(self.request),
@@ -1074,22 +1422,27 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
     model = Collection
     template_name = 'ingest/collection_list.html'
     filterset_class = CollectionFilter
+    PAGE_SIZE_OPTIONS = [10, 25, 50, 100]
+
+    def get_table_pagination(self, table):
+        try:
+            per_page = int(self.request.GET.get('per_page', 25))
+        except (ValueError, TypeError):
+            per_page = 25
+        if per_page not in self.PAGE_SIZE_OPTIONS:
+            per_page = 25
+        return {'per_page': per_page}
 
     def get_queryset(self, **kwargs):
         return Collection.objects.filter(user=self.request.user)
 
     def get_context_data(self, **kwargs):
-        # Call the base implementation first to get a context
         context = super().get_context_data(**kwargs)
-        context['collections'] = Collection.objects.filter(user=self.request.user)
+        context['total_count'] = Collection.objects.filter(user=self.request.user).count()
+        context['filtered_count'] = self.object_list.count()
+        context['per_page'] = self.get_table_pagination(None).get('per_page', 25)
+        context['page_size_options'] = self.PAGE_SIZE_OPTIONS
         return context
-
-    def get_filterset_kwargs(self, filterset_class):
-        """ Sets the default collection filter status. """
-        kwargs = super().get_filterset_kwargs(filterset_class)
-        if kwargs["data"] is None:
-            kwargs["data"] = {"submit_status": "NOT_SUBMITTED"}
-        return kwargs
          
 @login_required
 def collection_data_path(request, pk):
@@ -1115,7 +1468,7 @@ def collection_detail(request, pk):
 
     try:
         datasets_list = []
-        collection = Collection.objects.get(id=pk)
+        collection = Collection.objects.get(id=pk, user=current_user)
         project = collection.project
         project_consortia = ProjectConsortium.objects.filter(project=project).select_related('consortium')
 
@@ -1148,23 +1501,31 @@ def collection_detail(request, pk):
     except ObjectDoesNotExist:
         raise Http404
 
-    descriptive_metadata_queryset = collection.descriptivemetadata_set.last()
+    descriptive_metadata_list = DescriptiveMetadata.objects.filter(collection=collection)
 
-    table = DescriptiveMetadataTable(
-        DescriptiveMetadata.objects.filter(user=request.user, collection=collection))
-    
+    publication_requested = EventsLog.objects.filter(
+        collection_id=collection,
+        event_type__in=['request_validation', 'collection_public'],
+    ).exists()
+
+    collection_published = EventsLog.objects.filter(
+        collection_id=collection,
+        event_type='collection_public',
+    ).exists()
+
     return render(
         request,
         'ingest/collection_detail.html',
         {
-            'table': table,
             'collection': collection,
-            'descriptive_metadata_queryset': descriptive_metadata_queryset,
+            'descriptive_metadata_list': descriptive_metadata_list,
             'pi': pi,
             'datasets_list': datasets_list,
             'consortium_tags': consortium_tags,
             'user_tags': user_tags,
-            'used_tags': used_tags
+            'used_tags': used_tags,
+            'publication_requested': publication_requested,
+            'collection_published': collection_published,
         }
     )
 
@@ -1355,6 +1716,7 @@ def create_dataset_linkage(request, collection_id):
             "collection": collection,
             "existing_linkages": existing_linkages,
             "datasets_to_link": datasets_to_link,
+            "all_datasets": all_datasets,
             "bil_id_data": bil_id_data,
         },
     )
@@ -1441,565 +1803,412 @@ def collection_delete(request, pk):
         request, 'ingest/collection_delete.html', {'collection': collection, 'pi':pi})
 
 def check_contributors_sheet(filename):
-    errormsg=""
-    workbook=xlrd.open_workbook(filename)
+    errors = []
+    workbook = xlrd.open_workbook(filename)
     sheetname = 'Contributors'
     contributors_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['contributorName','Creator','contributorType',
-                 'nameType','nameIdentifier','nameIdentifierScheme',
-                 'affiliation', 'affiliationIdentifier', 'affiliationIdentifierScheme']
+    colheads = ['contributorName', 'Creator', 'contributorType',
+                'nameType', 'nameIdentifier', 'nameIdentifierScheme',
+                'affiliation', 'affiliationIdentifier', 'affiliationIdentifierScheme']
     creator = ['Yes', 'No']
-    contributortype = ['ProjectLeader','ResearchGroup','ContactPerson', 'DataCollector', 'DataCurator', 'ProjectLeader', 'ProjectManager', 'ProjectMember','RelatedPerson', 'Researcher', 'ResearchGroup','Other' ]
+    contributortype = ['ProjectLeader', 'ResearchGroup', 'ContactPerson', 'DataCollector',
+                       'DataCurator', 'ProjectManager', 'ProjectMember', 'RelatedPerson',
+                       'Researcher', 'Other']
     nametype = ['Personal', 'Organizational']
-    nameidentifierscheme = ['ORCID','ISNI','ROR','GRID','RRID' ]
-    affiliationidentifierscheme = ['ORCID','ISNI','ROR','GRID','RRID' ]
-    cellcols=['A','B','C','D','E','F','G','H','I']
-    cols=contributors_sheet.row_values(2)
-    for i in range(0,len(colheads)):
-        if cols[i] != colheads[i]:
-            errormsg = errormsg + ' Tab: "Contributors" cell heading found: "' + cols[i] + \
-                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-    if errormsg != "":
-        return [ True, errormsg ]
-    for i in range(6,contributors_sheet.nrows):
-        cols=contributors_sheet.row_values(i)
+    nameidentifierscheme = ['ORCID', 'ISNI', 'ROR', 'GRID', 'RRID']
+    affiliationidentifierscheme = ['ORCID', 'ISNI', 'ROR', 'GRID', 'RRID']
+    header_row = 2
+    cols = contributors_sheet.row_values(header_row)
+    for i in range(len(colheads)):
+        if i >= len(cols) or cols[i] != colheads[i]:
+            found = cols[i] if i < len(cols) else ''
+            errors.append({"row": header_row, "col": i,
+                           "message": f'Expected heading "{colheads[i]}", found "{found}"'})
+    if errors:
+        return errors
+    for i in range(6, contributors_sheet.nrows):
+        cols = contributors_sheet.row_values(i)
         if cols[0] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+            errors.append({"row": i, "col": 0, "message": f'"{colheads[0]}" is required'})
         if cols[1] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        if cols[1] not in creator:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
+            errors.append({"row": i, "col": 1, "message": f'"{colheads[1]}" is required'})
+        elif cols[1] not in creator:
+            errors.append({"row": i, "col": 1, "message": f'"{colheads[1]}" invalid value "{cols[1]}" — must be one of: {", ".join(creator)}'})
         if cols[2] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
-        if cols[2] not in contributortype:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
+            errors.append({"row": i, "col": 2, "message": f'"{colheads[2]}" is required'})
+        elif cols[2] not in contributortype:
+            errors.append({"row": i, "col": 2, "message": f'"{colheads[2]}" invalid value "{cols[2]}" — must be one of: {", ".join(contributortype)}'})
         if cols[3] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-        if cols[3] not in nametype:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
+            errors.append({"row": i, "col": 3, "message": f'"{colheads[3]}" is required'})
+        elif cols[3] not in nametype:
+            errors.append({"row": i, "col": 3, "message": f'"{colheads[3]}" invalid value "{cols[3]}" — must be one of: {", ".join(nametype)}'})
         if cols[3] == "Personal":
             if cols[4] == "":
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+                errors.append({"row": i, "col": 4, "message": f'"{colheads[4]}" is required when nameType is Personal'})
             if cols[5] == "":
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
-            if cols[5] not in nameidentifierscheme:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
-        #else:
-            #check nameIdentifier and nameIdentifierScheme ensure they are empty
+                errors.append({"row": i, "col": 5, "message": f'"{colheads[5]}" is required when nameType is Personal'})
+            elif cols[5] not in nameidentifierscheme:
+                errors.append({"row": i, "col": 5, "message": f'"{colheads[5]}" invalid value "{cols[5]}" — must be one of: {", ".join(nameidentifierscheme)}'})
         if cols[6] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
+            errors.append({"row": i, "col": 6, "message": f'"{colheads[6]}" is required'})
         if cols[7] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
+            errors.append({"row": i, "col": 7, "message": f'"{colheads[7]}" is required'})
         if cols[8] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
-        if cols[8] not in affiliationidentifierscheme:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" Incorrect CV value found: "' + cols[8] + '" in cell "' + cellcols[8] + str(i+1) + '". '
-    return errormsg
+            errors.append({"row": i, "col": 8, "message": f'"{colheads[8]}" is required'})
+        elif cols[8] not in affiliationidentifierscheme:
+            errors.append({"row": i, "col": 8, "message": f'"{colheads[8]}" invalid value "{cols[8]}" — must be one of: {", ".join(affiliationidentifierscheme)}'})
+    return errors
 
 def check_funders_sheet(filename):
-    errormsg=""
-    workbook=xlrd.open_workbook(filename)
+    errors = []
+    workbook = xlrd.open_workbook(filename)
     sheetname = 'Funders'
     funders_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['funderName','fundingReferenceIdentifier','fundingReferenceIdentifierType',
-                 'awardNumber','awardTitle']
+    colheads = ['funderName', 'fundingReferenceIdentifier', 'fundingReferenceIdentifierType',
+                'awardNumber', 'awardTitle']
     fundingReferenceIdentifierType = ['ROR', 'GRID', 'ORCID', 'ISNI']
-    cellcols=['A','B','C','D','E']
-    cols=funders_sheet.row_values(3)
-    for i in range(0,len(colheads)):
-        if cols[i] != colheads[i]:
-            errormsg = errormsg + ' Tab: "Funders" cell heading found: "' + cols[i] + \
-                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-    if errormsg != "":
-        return [ True, errormsg ]
-    for i in range(6,funders_sheet.nrows):
-        cols=funders_sheet.row_values(i)
+    header_row = 3
+    cols = funders_sheet.row_values(header_row)
+    for i in range(len(colheads)):
+        if i >= len(cols) or cols[i] != colheads[i]:
+            found = cols[i] if i < len(cols) else ''
+            errors.append({"row": header_row, "col": i,
+                           "message": f'Expected heading "{colheads[i]}", found "{found}"'})
+    if errors:
+        return errors
+    for i in range(6, funders_sheet.nrows):
+        cols = funders_sheet.row_values(i)
         if cols[0] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
-        
+            errors.append({"row": i, "col": 0, "message": f'"{colheads[0]}" is required'})
         if cols[1] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+            errors.append({"row": i, "col": 1, "message": f'"{colheads[1]}" is required'})
         if cols[2] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
-        if cols[2] not in fundingReferenceIdentifierType:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
+            errors.append({"row": i, "col": 2, "message": f'"{colheads[2]}" is required'})
+        elif cols[2] not in fundingReferenceIdentifierType:
+            errors.append({"row": i, "col": 2, "message": f'"{colheads[2]}" invalid value "{cols[2]}" — must be one of: {", ".join(fundingReferenceIdentifierType)}'})
         if cols[3] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+            errors.append({"row": i, "col": 3, "message": f'"{colheads[3]}" is required'})
         if cols[4] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
-    return errormsg
+            errors.append({"row": i, "col": 4, "message": f'"{colheads[4]}" is required'})
+    return errors
 
 def check_publication_sheet(filename):
-    errormsg=""
-    workbook=xlrd.open_workbook(filename)
+    errors = []
+    workbook = xlrd.open_workbook(filename)
     sheetname = 'Publication'
     publication_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['relatedIdentifier','relatedIdentifierType','PMCID',
-                 'relationType','citation']
+    colheads = ['relatedIdentifier', 'relatedIdentifierType', 'PMCID', 'relationType', 'citation']
     relatedIdentifierType = ['arcXiv', 'DOI', 'PMID', 'ISBN']
     relationType = ['IsCitedBy', 'IsDocumentedBy']
-    cellcols=['A','B','C','D','E']
-    cols=publication_sheet.row_values(3)
-    for i in range(0,len(colheads)):
-        if cols[i] != colheads[i]:
-            errormsg = errormsg + ' Tab: "Publication" cell heading found: "' + cols[i] + \
-                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-    if errormsg != "":
-        return [ True, errormsg ]
-    # if 1 field is filled out the rest should be other than PMCID
-    for i in range(6,publication_sheet.nrows):
-        cols=publication_sheet.row_values(i)
-        #if cols[0] == "":
-        #     errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
-        #if cols[1] == "":
-        #     errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+    header_row = 3
+    cols = publication_sheet.row_values(header_row)
+    for i in range(len(colheads)):
+        if i >= len(cols) or cols[i] != colheads[i]:
+            found = cols[i] if i < len(cols) else ''
+            errors.append({"row": header_row, "col": i,
+                           "message": f'Expected heading "{colheads[i]}", found "{found}"'})
+    if errors:
+        return errors
+    for i in range(6, publication_sheet.nrows):
+        cols = publication_sheet.row_values(i)
         if cols[1] != '':
             if cols[1] not in relatedIdentifierType:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
-        #if cols[2] == "":
-            #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" value expected but not found in cell "' + cellcols[2] + str(i+1) + '". '
-        #if cols[3] == "":
-             #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-        if cols[3] != "":
+                errors.append({"row": i, "col": 1, "message": f'"{colheads[1]}" invalid value "{cols[1]}" — must be one of: {", ".join(relatedIdentifierType)}'})
+        if cols[3] != '':
             if cols[3] not in relationType:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
-        #if cols[4] == "":
-           #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
-    return errormsg
+                errors.append({"row": i, "col": 3, "message": f'"{colheads[3]}" invalid value "{cols[3]}" — must be one of: {", ".join(relationType)}'})
+    return errors
 
 def check_instrument_sheet(filename):
-    instrument_count = 0
-    errormsg=""
-    workbook=xlrd.open_workbook(filename)
+    errors = []
+    workbook = xlrd.open_workbook(filename)
     sheetname = 'Instrument'
     instrument_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['MicroscopeType','MicroscopeManufacturerAndModel','ObjectiveName',
-                 'ObjectiveImmersion','ObjectiveNA', 'ObjectiveMagnification', 'DetectorType', 'DetectorModel', 'IlluminationTypes', 'IlluminationWavelength', 'DetectionWavelength', 'SampleTemperature']
-    cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
-    cols=instrument_sheet.row_values(3)
-    for i in range(0,len(colheads)):
-        if cols[i] != colheads[i]:
-            errormsg = errormsg + ' Tab: "Instrument" cell heading found: "' + cols[i] + \
-                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-    if errormsg != "":
-        return [ True, errormsg ]
-    for i in range(6,instrument_sheet.nrows):
-        instrument_count = instrument_count + 1
-        cols=instrument_sheet.row_values(i)
+    colheads = ['MicroscopeType', 'MicroscopeManufacturerAndModel', 'ObjectiveName',
+                'ObjectiveImmersion', 'ObjectiveNA', 'ObjectiveMagnification', 'DetectorType',
+                'DetectorModel', 'IlluminationTypes', 'IlluminationWavelength',
+                'DetectionWavelength', 'SampleTemperature']
+    header_row = 3
+    cols = instrument_sheet.row_values(header_row)
+    for i in range(len(colheads)):
+        if i >= len(cols) or cols[i] != colheads[i]:
+            found = cols[i] if i < len(cols) else ''
+            errors.append({"row": header_row, "col": i,
+                           "message": f'Expected heading "{colheads[i]}", found "{found}"'})
+    if errors:
+        return errors
+    for i in range(6, instrument_sheet.nrows):
+        cols = instrument_sheet.row_values(i)
         if cols[0] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
-        #if cols[1] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        #if cols[2] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        #if cols[3] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-        #if cols[4] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
-        #if cols[5] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
-        #if cols[6] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
-        #if cols[7] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-        #if cols[8] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
-        #if cols[9] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
-        #if cols[10] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
-        #if cols[11] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
-    return errormsg
+            errors.append({"row": i, "col": 0, "message": f'"{colheads[0]}" is required'})
+    return errors
 
 
-def check_dataset_sheet(filename):
-    dataset_count = 0
-    errormsg=""
-    workbook=xlrd.open_workbook(filename)
+def check_dataset_sheet(filename, collection_data_path=None):
+    errors = []
+    workbook = xlrd.open_workbook(filename)
     sheetname = 'Dataset'
     dataset_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['BILDirectory','title','socialMedia','subject',
-                 'Subjectscheme','rights', 'rightsURI', 'rightsIdentifier', 'Image', 'GeneralModality', 'Technique', 'Other', 'Abstract', 'Methods', 'TechnicalInfo']
-    GeneralModality = ['cell morphology', 'connectivity', 'population imaging', 'spatial transcriptomics', 'other', 'anatomy', 'histology imaging', 'multimodal']
-    Technique = ['anterograde tracing', 'retrograde transynaptic tracing', 'TRIO tracing', 'smFISH', 'DARTFISH', 'MERFISH', 'Patch-seq', 'fMOST', 'other', 'cre-dependent anterograde tracing','enhancer virus labeling', 'FISH', 'MORF genetic sparse labeling', 'mouselight', 'neuron morphology reconstruction', 'Patch-seq', 'retrograde tracing', 'retrograde transsynaptic tracing', 'seqFISH', 'STPT', 'VISor', 'confocal microscopy']
-    cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O']
-    cols=dataset_sheet.row_values(3)
-    for i in range(0,len(colheads)):
-        if cols[i] != colheads[i]:
-            errormsg = errormsg + ' Tab: "Dataset" cell heading found: "' + cols[i] + \
-                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-    if errormsg != "":
-        return [ True, errormsg ]
-    for i in range(6,dataset_sheet.nrows):
-        dataset_count = dataset_count + 1
-        cols=dataset_sheet.row_values(i)
+    colheads = ['BILDirectory', 'title', 'socialMedia', 'subject',
+                'Subjectscheme', 'rights', 'rightsURI', 'rightsIdentifier', 'Image',
+                'GeneralModality', 'Technique', 'Other', 'Abstract', 'Methods', 'TechnicalInfo']
+    required_prefix = (collection_data_path.rstrip('/') + '/') if collection_data_path else None
+    GeneralModality = ['cell morphology', 'connectivity', 'population imaging',
+                       'spatial transcriptomics', 'other', 'anatomy', 'histology imaging', 'multimodal']
+    Technique = ['anterograde tracing', 'retrograde transynaptic tracing', 'TRIO tracing',
+                 'smFISH', 'DARTFISH', 'MERFISH', 'Patch-seq', 'fMOST', 'other',
+                 'cre-dependent anterograde tracing', 'enhancer virus labeling', 'FISH',
+                 'MORF genetic sparse labeling', 'mouselight', 'neuron morphology reconstruction',
+                 'retrograde tracing', 'retrograde transsynaptic tracing', 'seqFISH', 'STPT',
+                 'VISor', 'confocal microscopy']
+    header_row = 3
+    cols = dataset_sheet.row_values(header_row)
+    for i in range(len(colheads)):
+        if i >= len(cols) or cols[i] != colheads[i]:
+            found = cols[i] if i < len(cols) else ''
+            errors.append({"row": header_row, "col": i,
+                           "message": f'Expected heading "{colheads[i]}", found "{found}"'})
+    if errors:
+        return errors
+    for i in range(6, dataset_sheet.nrows):
+        cols = dataset_sheet.row_values(i)
         if cols[0] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+            errors.append({"row": i, "col": 0, "message": f'"{colheads[0]}" is required'})
+        elif required_prefix and not str(cols[0]).startswith(required_prefix):
+            errors.append({"row": i, "col": 0, "message": (
+                f'BILDirectory must begin with "{required_prefix}" — '
+                f'found "{cols[0]}"'
+            )})
         if cols[1] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        #if cols[2] == "":
-             #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        #if cols[3] == "":
-            #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-        #if cols[4] == "":
-            #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+            errors.append({"row": i, "col": 1, "message": f'"{colheads[1]}" is required'})
         if cols[5] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
+            errors.append({"row": i, "col": 5, "message": f'"{colheads[5]}" is required'})
         if cols[6] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
+            errors.append({"row": i, "col": 6, "message": f'"{colheads[6]}" is required'})
         if cols[7] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-        #if cols[8] == "":
-            #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
-        #if cols[9] == "":
-            #errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
+            errors.append({"row": i, "col": 7, "message": f'"{colheads[7]}" is required'})
         if cols[9] != '':
             if cols[9] not in GeneralModality:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" incorrect CV value found: "' + cols[9] + '" in cell "' + cellcols[9] + str(i+1) + '". '
+                errors.append({"row": i, "col": 9, "message": f'"{colheads[9]}" invalid value "{cols[9]}" — must be one of: {", ".join(GeneralModality)}'})
         if cols[10] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
-        if cols[10] != '':
-            if cols[10] not in Technique:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
-        if cols[9] == "other" or cols[10] == "other":
-            if cols[11] == "":
-        #change to if GeneralModality and Technique = other
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
+            errors.append({"row": i, "col": 10, "message": f'"{colheads[10]}" is required'})
+        elif cols[10] not in Technique:
+            errors.append({"row": i, "col": 10, "message": f'"{colheads[10]}" invalid value "{cols[10]}" — must be one of: {", ".join(Technique)}'})
+        if (cols[9] == "other" or cols[10] == "other") and cols[11] == "":
+            errors.append({"row": i, "col": 11, "message": f'"{colheads[11]}" is required when GeneralModality or Technique is "other"'})
         if cols[12] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-        #if cols[13] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[13] + '" value expected but not found in cell "' + cellcols[13] + str(i+1) + '". '
-        #if cols[14] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[14] + '" value expected but not found in cell "' + cellcols[14] + str(i+1) + '". '
-    return errormsg
+            errors.append({"row": i, "col": 12, "message": f'"{colheads[12]}" is required'})
+    return errors
 
 def check_specimen_sheet(filename):
-    specimen_count = 0
-    errormsg=""
-    workbook=xlrd.open_workbook(filename)
+    errors = []
+    workbook = xlrd.open_workbook(filename)
     sheetname = 'Specimen'
     specimen_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['LocalID', 'Species', 'NCBITaxonomy', 'Age', 'Ageunit', 'Sex', 'Genotype', 'OrganLocalID', 'OrganName', 'SampleLocalID', 'Atlas', 'Locations']
+    colheads = ['LocalID', 'Species', 'NCBITaxonomy', 'Age', 'Ageunit', 'Sex', 'Genotype',
+                'OrganLocalID', 'OrganName', 'SampleLocalID', 'Atlas', 'Locations']
     Sex = ['Male', 'Female', 'Unknown']
-    cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
-    cols=specimen_sheet.row_values(3)
-    for i in range(0,len(colheads)):
-        if cols[i] != colheads[i]:
-            errormsg = errormsg + ' Tab: "Specimen" cell heading found: "' + cols[i] + \
-                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-    if errormsg != "":
-        return [ True, errormsg ]
-    for i in range(6,specimen_sheet.nrows):
-        specimen_count = specimen_count + 1
-        cols=specimen_sheet.row_values(i)
-        #if cols[0] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+    header_row = 3
+    cols = specimen_sheet.row_values(header_row)
+    for i in range(len(colheads)):
+        if i >= len(cols) or cols[i] != colheads[i]:
+            found = cols[i] if i < len(cols) else ''
+            errors.append({"row": header_row, "col": i,
+                           "message": f'Expected heading "{colheads[i]}", found "{found}"'})
+    if errors:
+        return errors
+    for i in range(6, specimen_sheet.nrows):
+        cols = specimen_sheet.row_values(i)
         if cols[1] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+            errors.append({"row": i, "col": 1, "message": f'"{colheads[1]}" is required'})
         if cols[2] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
+            errors.append({"row": i, "col": 2, "message": f'"{colheads[2]}" is required'})
         if cols[3] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
+            errors.append({"row": i, "col": 3, "message": f'"{colheads[3]}" is required'})
         if cols[4] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
+            errors.append({"row": i, "col": 4, "message": f'"{colheads[4]}" is required'})
         if cols[5] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
-        if cols[5] not in Sex:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[6] + str(i+1) + '". '
-        #if cols[6] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
-        #if cols[7] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-        #if cols[8] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
+            errors.append({"row": i, "col": 5, "message": f'"{colheads[5]}" is required'})
+        elif cols[5] not in Sex:
+            errors.append({"row": i, "col": 5, "message": f'"{colheads[5]}" invalid value "{cols[5]}" — must be one of: {", ".join(Sex)}'})
         if cols[9] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
-        #if cols[10] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
-        #if cols[11] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
-    return errormsg
+            errors.append({"row": i, "col": 9, "message": f'"{colheads[9]}" is required'})
+    return errors
 
 def check_image_sheet(filename):
-    image_count = 0
-    errormsg=""
-    workbook=xlrd.open_workbook(filename)
+    errors = []
+    workbook = xlrd.open_workbook(filename)
     sheetname = 'Image'
     image_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['xAxis','obliqueXdim1','obliqueXdim2',
-                 'obliqueXdim3','yAxis', 'obliqueYdim1', 'obliqueYdim2', 'obliqueYdim3', 'zAxis', 'obliqueZdim1', 'obliqueZdim2', 'obliqueZdim3', 'landmarkName', 'landmarkX', 'landmarkY', 'landmarkZ', 'Number', 'displayColor', 'Representation', 'Flurophore', 'stepSizeX', 'stepSizeY', 'stepSizeZ', 'stepSizeT', 'Channels', 'Slices', 'z', 'Xsize', 'Ysize', 'Zsize', 'Gbytes', 'Files', 'DimensionOrder']
-    ObliqueZdim3 = ['Superior', 'Inferior']
-    ObliqueZdim2 = ['Anterior', 'Posterior']
-    ObliqueZdim1 = ['Right', 'Left']
-    zAxis = ['right-to-left', 'left-to-right', 'anterior-to-posterior', 'posterior-to-anterior', 'superior-to-inferior', 'inferior-to-superior', 'oblique',  'NA', 'N/A', 'na', 'N/A']
-    obliqueYdim3 = ['Superior', 'Inferior']
-    obliqueYdim2 = ['Anterior', 'Posterior']
-    obliqueYdim1 = ['Right', 'Left']
-    yAxis = ['right-to-left', 'left-to-right', 'anterior-to-posterior', 'posterior-to-anterior', 'superior-to-inferior', 'inferior-to-superior', 'oblique',  'NA', 'N/A', 'na', 'N/A']
-    obliqueXdim3 = ['Superior', 'Inferior']
-    obliqueXdim2 = ['Anterior', 'Posterior']
-    obliqueXdim1 = ['Right', 'Left']
-    xAxis = ['right-to-left', 'left-to-right', 'anterior-to-posterior', 'posterior-to-anterior', 'superior-to-inferior', 'inferior-to-superior', 'oblique', 'NA', 'N/A', 'na', 'N/A']
-
-    cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG']
-    cols=image_sheet.row_values(3)
-    for i in range(0,len(colheads)):
-        if cols[i] != colheads[i]:
-            errormsg = errormsg + ' Tab: "Image" cell heading found: "' + cols[i] + \
-                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-    if errormsg != "":
-        return [ True, errormsg ]
-    for i in range(6,image_sheet.nrows):
-        image_count = image_count + 1
-        cols=image_sheet.row_values(i)
-        #if xAxis is oblique, oblique cols should reflect 
+    colheads = ['xAxis', 'obliqueXdim1', 'obliqueXdim2', 'obliqueXdim3',
+                'yAxis', 'obliqueYdim1', 'obliqueYdim2', 'obliqueYdim3',
+                'zAxis', 'obliqueZdim1', 'obliqueZdim2', 'obliqueZdim3',
+                'landmarkName', 'landmarkX', 'landmarkY', 'landmarkZ',
+                'Number', 'displayColor', 'Representation', 'Flurophore',
+                'stepSizeX', 'stepSizeY', 'stepSizeZ', 'stepSizeT',
+                'Channels', 'Slices', 'z', 'Xsize', 'Ysize', 'Zsize',
+                'Gbytes', 'Files', 'DimensionOrder']
+    zAxis = yAxis = xAxis = ['right-to-left', 'left-to-right', 'anterior-to-posterior',
+                              'posterior-to-anterior', 'superior-to-inferior',
+                              'inferior-to-superior', 'oblique', 'NA', 'N/A', 'na']
+    obliqueXdim1 = obliqueYdim1 = ObliqueZdim1 = ['Right', 'Left']
+    obliqueXdim2 = obliqueYdim2 = ObliqueZdim2 = ['Anterior', 'Posterior']
+    obliqueXdim3 = obliqueYdim3 = ObliqueZdim3 = ['Superior', 'Inferior']
+    header_row = 3
+    cols = image_sheet.row_values(header_row)
+    for i in range(len(colheads)):
+        if i >= len(cols) or cols[i] != colheads[i]:
+            found = cols[i] if i < len(cols) else ''
+            errors.append({"row": header_row, "col": i,
+                           "message": f'Expected heading "{colheads[i]}", found "{found}"'})
+    if errors:
+        return errors
+    for i in range(6, image_sheet.nrows):
+        cols = image_sheet.row_values(i)
         if cols[0] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
-        if cols[0] not in xAxis:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[0] + '" incorrect CV value found: "' + cols[0] + '" in cell "' + cellcols[0] + str(i+1) + '". '
-        #if cols[1] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[1] + str(i+1) + '". '
-        if cols[1] != "":
-            if cols[1] not in obliqueXdim1:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" incorrect CV value found: "' + cols[1] + '" in cell "' + cellcols[1] + str(i+1) + '". '
-        #if cols[2] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[1] + '" value expected but not found in cell: "' + cellcols[2] + str(i+1) + '". '
-        if cols[2] != "":
-            if cols[2] not in obliqueXdim2:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[2] + '" incorrect CV value found: "' + cols[2] + '" in cell "' + cellcols[2] + str(i+1) + '". '
-        #if cols[3] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" value expected but not found in cell "' + cellcols[3] + str(i+1) + '". '
-        if cols[3] != "":
-            if cols[3] not in obliqueXdim3:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[3] + '" incorrect CV value found: "' + cols[3] + '" in cell "' + cellcols[3] + str(i+1) + '". '
+            errors.append({"row": i, "col": 0, "message": f'"{colheads[0]}" is required'})
+        elif cols[0] not in xAxis:
+            errors.append({"row": i, "col": 0, "message": f'"{colheads[0]}" invalid value "{cols[0]}" — must be one of: {", ".join(xAxis)}'})
+        if cols[1] != "" and cols[1] not in obliqueXdim1:
+            errors.append({"row": i, "col": 1, "message": f'"{colheads[1]}" invalid value "{cols[1]}" — must be one of: {", ".join(obliqueXdim1)}'})
+        if cols[2] != "" and cols[2] not in obliqueXdim2:
+            errors.append({"row": i, "col": 2, "message": f'"{colheads[2]}" invalid value "{cols[2]}" — must be one of: {", ".join(obliqueXdim2)}'})
+        if cols[3] != "" and cols[3] not in obliqueXdim3:
+            errors.append({"row": i, "col": 3, "message": f'"{colheads[3]}" invalid value "{cols[3]}" — must be one of: {", ".join(obliqueXdim3)}'})
         if cols[4] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" value expected but not found in cell "' + cellcols[4] + str(i+1) + '". '
-        if cols[4] not in yAxis:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[4] + '" incorrect CV value found: "' + cols[4] + '" in cell "' + cellcols[4] + str(i+1) + '". '
-        #if cols[5] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
-        if cols[5] != "":
-            if cols[5] not in obliqueYdim1:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
-        #if cols[6] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
-        if cols[6] != "":
-            if cols[6] not in obliqueYdim2:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" incorrect CV value found: "' + cols[6] + '" in cell "' + cellcols[6] + str(i+1) + '". '
-        #if cols[7] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-        if cols[7] != "":
-            if cols[7] not in obliqueYdim3:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" incorrect CV value found: "' + cols[7] + '" in cell "' + cellcols[7] + str(i+1) + '". '
+            errors.append({"row": i, "col": 4, "message": f'"{colheads[4]}" is required'})
+        elif cols[4] not in yAxis:
+            errors.append({"row": i, "col": 4, "message": f'"{colheads[4]}" invalid value "{cols[4]}" — must be one of: {", ".join(yAxis)}'})
+        if cols[5] != "" and cols[5] not in obliqueYdim1:
+            errors.append({"row": i, "col": 5, "message": f'"{colheads[5]}" invalid value "{cols[5]}" — must be one of: {", ".join(obliqueYdim1)}'})
+        if cols[6] != "" and cols[6] not in obliqueYdim2:
+            errors.append({"row": i, "col": 6, "message": f'"{colheads[6]}" invalid value "{cols[6]}" — must be one of: {", ".join(obliqueYdim2)}'})
+        if cols[7] != "" and cols[7] not in obliqueYdim3:
+            errors.append({"row": i, "col": 7, "message": f'"{colheads[7]}" invalid value "{cols[7]}" — must be one of: {", ".join(obliqueYdim3)}'})
         if cols[8] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
-        if cols[8] not in zAxis:
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" incorrect CV value found: "' + cols[8] + '" in cell "' + cellcols[8] + str(i+1) + '". '
-        #if cols[9] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" value expected but not found in cell "' + cellcols[9] + str(i+1) + '". '
-        if cols[9] != "":
-            if cols[9] not in ObliqueZdim1:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[9] + '" incorrect CV value found: "' + cols[9] + '" in cell "' + cellcols[9] + str(i+1) + '". '
-        #if cols[10] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" value expected but not found in cell "' + cellcols[10] + str(i+1) + '". '
-        if cols[10] != "":
-            if cols[10] not in ObliqueZdim2:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[10] + '" incorrect CV value found: "' + cols[10] + '" in cell "' + cellcols[10] + str(i+1) + '". '
-        #if cols[11] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" value expected but not found in cell "' + cellcols[11] + str(i+1) + '". '
-        if cols[11] != "":
-            if cols[11] not in ObliqueZdim3:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[11] + '" incorrect CV value found: "' + cols[11] + '" in cell "' + cellcols[11] + str(i+1) + '". '
-        #if cols[12] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-        #if cols[13] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[13] + '" value expected but not found in cell "' + cellcols[13] + str(i+1) + '". '
-        #if cols[14] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-        # if cols[15] == "":
-        #     errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[15] + '" value expected but not found in cell "' + cellcols[15] + str(i+1) + '". '
+            errors.append({"row": i, "col": 8, "message": f'"{colheads[8]}" is required'})
+        elif cols[8] not in zAxis:
+            errors.append({"row": i, "col": 8, "message": f'"{colheads[8]}" invalid value "{cols[8]}" — must be one of: {", ".join(zAxis)}'})
+        if cols[9] != "" and cols[9] not in ObliqueZdim1:
+            errors.append({"row": i, "col": 9, "message": f'"{colheads[9]}" invalid value "{cols[9]}" — must be one of: {", ".join(ObliqueZdim1)}'})
+        if cols[10] != "" and cols[10] not in ObliqueZdim2:
+            errors.append({"row": i, "col": 10, "message": f'"{colheads[10]}" invalid value "{cols[10]}" — must be one of: {", ".join(ObliqueZdim2)}'})
+        if cols[11] != "" and cols[11] not in ObliqueZdim3:
+            errors.append({"row": i, "col": 11, "message": f'"{colheads[11]}" invalid value "{cols[11]}" — must be one of: {", ".join(ObliqueZdim3)}'})
         if cols[16] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+            errors.append({"row": i, "col": 16, "message": f'"{colheads[16]}" is required'})
         if cols[17] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
-        #if cols[18] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[18] + '" value expected but not found in cell "' + cellcols[18] + str(i+1) + '". '
-        #if cols[19] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[12] + '" value expected but not found in cell "' + cellcols[12] + str(i+1) + '". '
+            errors.append({"row": i, "col": 17, "message": f'"{colheads[17]}" is required'})
         if cols[20] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[20] + '" value expected but not found in cell "' + cellcols[20] + str(i+1) + '". '
+            errors.append({"row": i, "col": 20, "message": f'"{colheads[20]}" is required'})
         if cols[21] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[21] + '" value expected but not found in cell "' + cellcols[21] + str(i+1) + '". '
-        #if cols[22] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[22] + '" value expected but not found in cell "' + cellcols[22] + str(i+1) + '". '
-        #if cols[23] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[23] + '" value expected but not found in cell "' + cellcols[23] + str(i+1) + '". '
-        #if cols[24] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[24] + '" value expected but not found in cell "' + cellcols[24] + str(i+1) + '". '
-        #if cols[25] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[25] + '" value expected but not found in cell "' + cellcols[25] + str(i+1) + '". '
-        #if cols[26] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[26] + '" value expected but not found in cell "' + cellcols[26] + str(i+1) + '". '
-        #if cols[27] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[27] + '" value expected but not found in cell "' + cellcols[27] + str(i+1) + '". '
-        #if cols[28] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[28] + '" value expected but not found in cell "' + cellcols[28] + str(i+1) + '". '
-        #if cols[29] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[29] + '" value expected but not found in cell "' + cellcols[29] + str(i+1) + '". '
-        #if cols[30] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[30] + '" value expected but not found in cell "' + cellcols[30] + str(i+1) + '". '
-        #if cols[31] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[31] + '" value expected but not found in cell "' + cellcols[31] + str(i+1) + '". '
-        #if cols[32] == "":
-        #    errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[32] + '" value expected but not found in cell "' + cellcols[32] + str(i+1) + '". '
-    return errormsg
+            errors.append({"row": i, "col": 21, "message": f'"{colheads[21]}" is required'})
+    return errors
 
 
 def check_swc_sheet(filename):
-    swc_count = 0
-    errormsg=""
-    workbook=xlrd.open_workbook(filename)
+    errors = []
+    workbook = xlrd.open_workbook(filename)
     sheetname = 'SWC'
     swc_sheet = workbook.sheet_by_name(sheetname)
-    colheads=['tracingFile', 'sourceData', 'sourceDataSample', 'sourceDataSubmission', 'coordinates', 'coordinatesRegistration', 'brainRegion', 'brainRegionAtlas', 'brainRegionAtlasName', 'brainRegionAxonalProjection', 'brainRegionDendriticProjection', 'neuronType', 'segmentTags', 'proofreadingLevel', 'Notes']
-    cellcols=['A','B','C','D','E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O']
+    colheads = ['tracingFile', 'sourceData', 'sourceDataSample', 'sourceDataSubmission',
+                'coordinates', 'coordinatesRegistration', 'brainRegion', 'brainRegionAtlas',
+                'brainRegionAtlasName', 'brainRegionAxonalProjection',
+                'brainRegionDendriticProjection', 'neuronType', 'segmentTags',
+                'proofreadingLevel', 'Notes']
     coordinatesRegistration = ['Yes', 'No']
-    cols=swc_sheet.row_values(3)
-    for i in range(0,len(colheads)):
-        if cols[i] != colheads[i]:
-            errormsg = errormsg + ' Tab: "SWC" cell heading found: "' + cols[i] + \
-                       '" but expected: "' + colheads[i] + '" at cell: "' + cellcols[i] + '3". '
-    if errormsg != "":
-        return [ True, errormsg ]
-    for i in range(6,swc_sheet.nrows):
-        swc_count = swc_count + 1
-        cols=swc_sheet.row_values(i)
-        #if xAxis is oblique, oblique cols should reflect 
+    header_row = 3
+    cols = swc_sheet.row_values(header_row)
+    for i in range(len(colheads)):
+        if i >= len(cols) or cols[i] != colheads[i]:
+            found = cols[i] if i < len(cols) else ''
+            errors.append({"row": header_row, "col": i,
+                           "message": f'Expected heading "{colheads[i]}", found "{found}"'})
+    if errors:
+        return errors
+    for i in range(6, swc_sheet.nrows):
+        cols = swc_sheet.row_values(i)
         if cols[0] == "":
-            errormsg = errormsg + 'On spreadsheet tab:' + sheetname + 'Column: "' + colheads[0] + '" value expected but not found in cell: "' + cellcols[0] + str(i+1) + '". '
+            errors.append({"row": i, "col": 0, "message": f'"{colheads[0]}" is required'})
         if cols[5] == "":
-           errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" value expected but not found in cell "' + cellcols[5] + str(i+1) + '". '
-        if cols[5] != "":
-            if cols[5] not in coordinatesRegistration:
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[5] + '" incorrect CV value found: "' + cols[5] + '" in cell "' + cellcols[5] + str(i+1) + '". '
-            if cols[5] == 'Yes':
-              if cols[6] == "":
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[6] + '" value expected but not found in cell "' + cellcols[6] + str(i+1) + '". '
-              if cols[7] == "":
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[7] + '" value expected but not found in cell "' + cellcols[7] + str(i+1) + '". '
-              if cols[8] == "":
-                errormsg = errormsg + 'On spreadsheet tab:' + sheetname +  'Column: "' + colheads[8] + '" value expected but not found in cell "' + cellcols[8] + str(i+1) + '". '
-    return errormsg
+            errors.append({"row": i, "col": 5, "message": f'"{colheads[5]}" is required'})
+        elif cols[5] not in coordinatesRegistration:
+            errors.append({"row": i, "col": 5, "message": f'"{colheads[5]}" invalid value "{cols[5]}" — must be one of: {", ".join(coordinatesRegistration)}'})
+        elif cols[5] == 'Yes':
+            if cols[6] == "":
+                errors.append({"row": i, "col": 6, "message": f'"{colheads[6]}" is required when coordinatesRegistration is Yes'})
+            if cols[7] == "":
+                errors.append({"row": i, "col": 7, "message": f'"{colheads[7]}" is required when coordinatesRegistration is Yes'})
+            if cols[8] == "":
+                errors.append({"row": i, "col": 8, "message": f'"{colheads[8]}" is required when coordinatesRegistration is Yes'})
+    return errors
 
 def check_spatial_sheet(filename):
-    errormsg = ""
+    errors = []
     workbook = xlrd.open_workbook(filename)
     sheetname = 'Spatial'
     try:
         spatial_sheet = workbook.sheet_by_name(sheetname)
     except xlrd.biffh.XLRDError:
-        errormsg += 'Tab "Spatial" not found in spreadsheet. '
-        return errormsg
+        errors.append({"row": 0, "col": 0, "message": 'Tab "Spatial" not found in spreadsheet'})
+        return errors
 
     colheads = [
-        'DataAvailability','HistologicalStainName','NuclearStainName','ProbeSetDOI',
-        'ProbeSequencesDOI','LightTreatmentTime','LightTreatmentTimeUnits',
-        'NumberTargetedRNA','GenePanelName','PlatformName','MachineName',
-        'MachineSoftwareVersion','NumberZSections','SegmentationMethod',
-        'SegmentationModel','SegmentationMethodVersion','ClusteringMethod',
-        'LabelTransferMethod','LabelTransferReference','NuclearImageTransform',
-        'HistologicalImageTransform','FilterCriteria','XYZPosition','CellID',
-        'CellCentroidLocation','CellAreaVolume'
+        'DataAvailability', 'HistologicalStainName', 'NuclearStainName', 'ProbeSetDOI',
+        'ProbeSequencesDOI', 'LightTreatmentTime', 'LightTreatmentTimeUnits',
+        'NumberTargetedRNA', 'GenePanelName', 'PlatformName', 'MachineName',
+        'MachineSoftwareVersion', 'NumberZSections', 'SegmentationMethod',
+        'SegmentationModel', 'SegmentationMethodVersion', 'ClusteringMethod',
+        'LabelTransferMethod', 'LabelTransferReference', 'NuclearImageTransform',
+        'HistologicalImageTransform', 'FilterCriteria', 'XYZPosition', 'CellID',
+        'CellCentroidLocation', 'CellAreaVolume'
     ]
-
-    cellcols = ['A','B','C','D','E','F','G','H','I','J','K','L','M',
-                'N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
-
     data_availability_cv = ['raw', 'segmented', 'raw and segmented']
     platform_name_cv = ['MERSCOPE', 'DBit-Seq', 'Slide-Tags', 'Stereo-seq', 'Xenium']
-
-    cols = spatial_sheet.row_values(3)
-
-    # Header check
+    header_row = 3
+    cols = spatial_sheet.row_values(header_row)
     for i in range(len(colheads)):
         sheet_val = cols[i] if i < len(cols) else ""
         if sheet_val != colheads[i]:
-            errormsg += (
-                f' Tab: "Spatial" cell heading found: "{sheet_val}" '
-                f'but expected: "{colheads[i]}" at cell: "{cellcols[i]}4". '
-            )
-    if errormsg:
-        return errormsg
+            errors.append({"row": header_row, "col": i,
+                           "message": f'Expected heading "{colheads[i]}", found "{sheet_val}"'})
+    if errors:
+        return errors
 
-    # ---- SAFE helper ----
     def get_val(row_vals, idx):
         return "" if idx >= len(row_vals) else str(row_vals[idx]).strip()
 
-    # Row-level checks
     for i in range(6, spatial_sheet.nrows):
         row_vals = spatial_sheet.row_values(i)
-
-        # Skip blank rows
         if not any(str(v).strip() for v in row_vals):
             continue
-
-        # 0: DataAvailability
         val = get_val(row_vals, 0)
         if val == "":
-            errormsg += (
-                f'On spreadsheet tab: {sheetname} Column: "{colheads[0]}" '
-                f'value expected but not found in cell "{cellcols[0]}{i+1}". '
-            )
+            errors.append({"row": i, "col": 0, "message": f'"{colheads[0]}" is required'})
         elif val not in data_availability_cv:
-            errormsg += (
-                f'On spreadsheet tab: {sheetname} Column: "{colheads[0]}" '
-                f'incorrect CV value "{val}" in cell "{cellcols[0]}{i+1}". '
-            )
-
-        # LightTreatmentTime (#5)
+            errors.append({"row": i, "col": 0, "message": f'"{colheads[0]}" invalid value "{val}" — must be one of: {", ".join(data_availability_cv)}'})
         val = get_val(row_vals, 5)
         if val != "":
             try:
                 float(val)
-            except:
-                errormsg += (
-                    f'On spreadsheet tab: {sheetname} Column: "{colheads[5]}" '
-                    f'must be numeric in cell "{cellcols[5]}{i+1}". '
-                )
-
-        # NumberTargetedRNA (#7)
+            except (ValueError, TypeError):
+                errors.append({"row": i, "col": 5, "message": f'"{colheads[5]}" must be numeric'})
         val = get_val(row_vals, 7)
         if val != "":
             try:
                 int(float(val))
-            except:
-                errormsg += (
-                    f'On spreadsheet tab: {sheetname} Column: "{colheads[7]}" '
-                    f'must be an integer in cell "{cellcols[7]}{i+1}". '
-                )
-
-        # PlatformName (#9)
+            except (ValueError, TypeError):
+                errors.append({"row": i, "col": 7, "message": f'"{colheads[7]}" must be an integer'})
         val = get_val(row_vals, 9)
         if val != "" and val not in platform_name_cv:
-            errormsg += (
-                f'On spreadsheet tab: {sheetname} Column: "{colheads[9]}" '
-                f'incorrect CV value "{val}" in cell "{cellcols[9]}{i+1}". '
-            )
-
-        # File columns (#23–26)
+            errors.append({"row": i, "col": 9, "message": f'"{colheads[9]}" invalid value "{val}" — must be one of: {", ".join(platform_name_cv)}'})
         file_cols = [22, 23, 24, 25]
         any_file_val = any(get_val(row_vals, idx) != "" for idx in file_cols)
-
         if any_file_val:
             for idx in file_cols:
                 if get_val(row_vals, idx) == "":
-                    errormsg += (
-                        f'On spreadsheet tab: {sheetname} Column: "{colheads[idx]}" '
-                        f'value expected but not found in cell "{cellcols[idx]}{i+1}". '
-                    )
-
-    return errormsg
+                    errors.append({"row": i, "col": idx, "message": f'"{colheads[idx]}" is required when any file column is filled'})
+    return errors
 
 def ingest_contributors_sheet(filename):
     fn = xlrd.open_workbook(filename)
@@ -2865,19 +3074,13 @@ def save_images_sheet_method_4(images, sheet, saved_datasets):
 
 def save_all_generic_sheets(contributors, funders, publications, sheet):
     try:
-        saved_contribs = save_contributors_sheet(contributors, sheet)
-        if saved_contribs:
-            saved_funders = save_funders_sheet(funders, sheet)
-            if saved_funders:
-                saved_pubs = save_publication_sheet(publications, sheet)
-                if saved_pubs:
-                    return True
-                else:
-                    False
-            else:
-                False
-        else:
-            False
+        if not save_contributors_sheet(contributors, sheet):
+            return False
+        if not save_funders_sheet(funders, sheet):
+            return False
+        if not save_publication_sheet(publications, sheet):
+            return False
+        return True
     except Exception as e:
         print(repr(e))
         return False
@@ -2887,27 +3090,21 @@ def save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet,
     # only 1 single instrument row
     try:
         saved_datasets = save_dataset_sheet_method_1_or_3(datasets, sheet)
-        if saved_datasets:
-            saved_instruments = save_instrument_sheet_method_1(instruments, sheet)
-            if saved_instruments:
-                saved_specimens = save_specimen_sheet_method_1(specimen_set, sheet, saved_datasets)
-                if saved_specimens:
-                    saved_images = save_images_sheet_method_1(images, sheet, saved_datasets)
-                    if saved_images:
-                        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
-                        if saved_generic:
-                            return True
-                        else:
-                            False
-                    else:
-                        False
-                else:
-                    False
-            else:
-                False
-        else:
-            False
-
+        if not saved_datasets:
+            return False
+        saved_instruments = save_instrument_sheet_method_1(instruments, sheet)
+        if not saved_instruments:
+            return False
+        saved_specimens = save_specimen_sheet_method_1(specimen_set, sheet, saved_datasets)
+        if not saved_specimens:
+            return False
+        saved_images = save_images_sheet_method_1(images, sheet, saved_datasets)
+        if not saved_images:
+            return False
+        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
+        if not saved_generic:
+            return False
+        return True
     except Exception as e:
         print(repr(e))
         return False
@@ -2917,30 +3114,21 @@ def save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet,
     # 1 dataset row, 1 instrument row, multiple specimens(have dataset FK)
     try:
         saved_datasets = save_dataset_sheet_method_2(datasets, sheet)
-        if saved_datasets:
-            saved_instruments = save_instrument_sheet_method_2(instruments, sheet)
-            if saved_instruments:
-                saved_specimens = save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets)
-                if saved_specimens:
-                    saved_images = save_images_sheet_method_2(images, sheet, saved_datasets)
-                    if saved_images:
-                        #o = open("/tmp/submiterror.txt", "a")
-                        #o.write('save_images is true')
-                        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
-                        if saved_generic:
-                            #o.write('saved_generic is true')
-                            return True
-                        else:
-                            #o.write('saved_generic is FALSE')
-                            False
-                    else:
-                        False
-                else:
-                    False
-            else:
-                False
-        else:
-            False
+        if not saved_datasets:
+            return False
+        saved_instruments = save_instrument_sheet_method_2(instruments, sheet)
+        if not saved_instruments:
+            return False
+        saved_specimens = save_specimen_sheet_method_2(specimen_set, sheet, saved_datasets)
+        if not saved_specimens:
+            return False
+        saved_images = save_images_sheet_method_2(images, sheet, saved_datasets)
+        if not saved_images:
+            return False
+        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
+        if not saved_generic:
+            return False
+        return True
     except Exception as e:
         print(repr(e))
         return False
@@ -2950,92 +3138,72 @@ def save_all_sheets_method_3(instruments, specimen_set, images, datasets, sheet,
     # only 1 single instrument row
     try:
         saved_datasets = save_dataset_sheet_method_1_or_3(datasets, sheet)
-        if saved_datasets:
-            saved_instruments = save_instrument_sheet_method_3(instruments, sheet)
-            if saved_instruments:
-                saved_specimens = save_specimen_sheet_method_3(specimen_set, sheet, saved_datasets)
-                if saved_specimens:
-                    saved_images = save_images_sheet_method_3(images, sheet, saved_datasets)
-                    if saved_images:
-                        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
-                        if saved_generic:
-                            return True
-                        else:
-                            False
-                    else:
-                        False
-                else:
-                    False
-            else:
-                False
-        else:
-            False
+        if not saved_datasets:
+            return False
+        saved_instruments = save_instrument_sheet_method_3(instruments, sheet)
+        if not saved_instruments:
+            return False
+        saved_specimens = save_specimen_sheet_method_3(specimen_set, sheet, saved_datasets)
+        if not saved_specimens:
+            return False
+        saved_images = save_images_sheet_method_3(images, sheet, saved_datasets)
+        if not saved_images:
+            return False
+        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
+        if not saved_generic:
+            return False
+        return True
     except Exception as e:
         print(repr(e))
         return False
 
 def save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications):
-    # instrument:dataset:images are 1:1:1 
+    # instrument:dataset:images are 1:1:1
     # 1 entry in specimen tab so each dataset gets the specimen id
     try:
         specimen_object_method_4 = save_specimen_sheet_method_4(specimen_set, sheet)
-        if specimen_object_method_4:
-            saved_datasets = save_dataset_sheet_method_4(datasets, sheet, specimen_object_method_4)
-            if saved_datasets:
-                saved_instruments = save_instrument_sheet_method_4(instruments, sheet, saved_datasets)
-                if saved_instruments:
-                    saved_images = save_images_sheet_method_4(images, sheet, saved_datasets)
-                    if saved_images:
-                        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
-                        if saved_generic:
-                            return True
-                        else:
-                            return False
-                    else:
-                        False
-                else:
-                    False
-            else:
-                False
-        else:
-            False
+        if not specimen_object_method_4:
+            return False
+        saved_datasets = save_dataset_sheet_method_4(datasets, sheet, specimen_object_method_4)
+        if not saved_datasets:
+            return False
+        saved_instruments = save_instrument_sheet_method_4(instruments, sheet, saved_datasets)
+        if not saved_instruments:
+            return False
+        saved_images = save_images_sheet_method_4(images, sheet, saved_datasets)
+        if not saved_images:
+            return False
+        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
+        if not saved_generic:
+            return False
+        return True
     except Exception as e:
         print(repr(e))
-        saved = False
+        return False
 
 def save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs):
-	# if swc tab filled out we don't want images
-	# 1 dataset row should be filled out
-	# many SWC : 1 dataset
-    # 1 specimen
-    # 1 instrument
-	# 1 datasest
-
+    # if swc tab filled out we don't want images
+    # many SWC : 1 dataset : 1 specimen : 1 instrument
     try:
         specimen_object_method_5 = save_specimen_sheet_method_5(specimen_set, sheet)
-        if specimen_object_method_5:
-            saved_datasets = save_dataset_sheet_method_5(datasets, sheet, specimen_object_method_5)
-            if saved_datasets:
-                saved_instruments = save_instrument_sheet_method_5(instruments, sheet, saved_datasets)
-                if saved_instruments:
-                  saved_swc = save_swc_sheet(swcs, sheet, saved_datasets)
-                  if saved_swc:
-                      saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
-                      if saved_generic:
-                          return True
-                      else:
-                          return False
-                  else:
-                    False
-                else:
-                    False
-            else:
-                False
-        else:
-            False
+        if not specimen_object_method_5:
+            return False
+        saved_datasets = save_dataset_sheet_method_5(datasets, sheet, specimen_object_method_5)
+        if not saved_datasets:
+            return False
+        saved_instruments = save_instrument_sheet_method_5(instruments, sheet, saved_datasets)
+        if not saved_instruments:
+            return False
+        saved_swc = save_swc_sheet(swcs, sheet, saved_datasets)
+        if not saved_swc:
+            return False
+        saved_generic = save_all_generic_sheets(contributors, funders, publications, sheet)
+        if not saved_generic:
+            return False
+        return True
     except Exception as e:
         print(repr(e))
-        saved = False
+        return False
 
 def save_all_sheets_method_6(
     instruments,
@@ -3271,42 +3439,38 @@ def metadata_version_check(filename):
         version1 = True
     return version1
 
-def check_all_sheets(filename, ingest_method):
+def check_all_sheets(filename, ingest_method, collection_data_path=None):
+    """Run all sheet validators and return a structured error map.
+
+    Returns a dict mapping "SheetName::row::col" -> [message, ...].
+    An empty dict means no errors were found.
+    """
     workbook = xlrd.open_workbook(filename)
     sheetnames = workbook.sheet_names()
-    ingest_method = ingest_method
-    errormsg = check_contributors_sheet(filename)
-    if errormsg != '':
-        return errormsg
-    errormsg = check_funders_sheet(filename)
-    if errormsg != '':
-        return errormsg
-    errormsg = check_publication_sheet(filename)
-    if errormsg != '':
-        return errormsg
-    errormsg = check_instrument_sheet(filename)
-    if errormsg != '':
-        return errormsg
-    errormsg = check_dataset_sheet(filename)
-    if errormsg != '':
-        return errormsg
-    errormsg = check_specimen_sheet(filename)
-    if errormsg != '':
-        return errormsg
+    error_map = {}
+
+    def merge(sheet_name, errs):
+        for e in errs:
+            key = f"{sheet_name}::{e['row']}::{e['col']}"
+            error_map.setdefault(key, []).append(e['message'])
+
+    merge('Contributors', check_contributors_sheet(filename))
+    merge('Funders', check_funders_sheet(filename))
+    merge('Publication', check_publication_sheet(filename))
+    merge('Instrument', check_instrument_sheet(filename))
+    merge('Dataset', check_dataset_sheet(filename, collection_data_path=collection_data_path))
+    merge('Specimen', check_specimen_sheet(filename))
+
     if ingest_method != 'ingest_5':
-        errormsg = check_image_sheet(filename)
-        if errormsg != '':
-            return errormsg
+        merge('Image', check_image_sheet(filename))
+
     if ingest_method == 'ingest_5':
-        errormsg = check_swc_sheet(filename)
-        if errormsg != '':
-            return errormsg
+        merge('SWC', check_swc_sheet(filename))
+
     if ingest_method in ('ingest_1', 'ingest_2') and 'Spatial' in sheetnames:
-        print('hit logic')
-        errormsg = check_spatial_sheet(filename)
-        if errormsg != '':
-            return errormsg
-    return errormsg
+        merge('Spatial', check_spatial_sheet(filename))
+
+    return error_map
 
 def make_ingest_jwt(sub: str = "django") -> str:
     now = int(time.time())
@@ -3434,6 +3598,50 @@ def doi_api(request):
         return JsonResponse({"error": f"Request failed: {str(e)}"}, status=500)
     
 @login_required
+@login_required
+def metadata_error_view(request, associated_collection):
+    """Display spreadsheet validation errors with per-cell highlighting."""
+    import json as _json
+    error_map = request.session.pop('metadata_errors', None)
+    filename = request.session.pop('metadata_error_filename', None)
+
+    if not error_map or not filename:
+        return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection)
+
+    workbook = xlrd.open_workbook(filename)
+    sheets = {}
+    for sheet_name in workbook.sheet_names():
+        ws = workbook.sheet_by_name(sheet_name)
+        rows = []
+        for row_idx in range(ws.nrows):
+            row = []
+            for col_idx in range(ws.ncols):
+                cell = ws.cell(row_idx, col_idx)
+                row.append(str(cell.value) if cell.value != '' else '')
+            rows.append(row)
+        sheets[sheet_name] = rows
+
+    return render(request, 'ingest/metadata_error_view.html', {
+        'sheets': sheets,
+        'error_map_json': _json.dumps(error_map),
+        'associated_collection': associated_collection,
+    })
+
+
+def _report_bil_id_errors(request, result):
+    """Attach save_bil_ids error(s) to the request messages framework.
+
+    save_bil_ids returns None on success, a dict {"success": False, "errors": [...]}
+    for dev-spreadsheet validation failures, or a plain string for other errors.
+    """
+    if isinstance(result, dict):
+        for err in result.get('errors', []):
+            messages.error(request, err)
+    else:
+        messages.error(request, str(result))
+
+
+@login_required
 def descriptive_metadata_upload(request, associated_collection):
     current_user = request.user
     try:
@@ -3457,14 +3665,10 @@ def descriptive_metadata_upload(request, associated_collection):
         #if form.is_valid():
         associated_collection = Collection.objects.get(id = associated_collection)
 
-        # for production
-        datapath = associated_collection.data_path.replace("/lz/","/etc/")
-            
-            # for development on vm
-        #datapath = '/Users/luketuite/shared_bil_dev' 
-
-        # for development locally
-        #datapath = '/Users/luketuite/shared_bil_dev' 
+        if settings.FAKE_STORAGE_AREA:
+            datapath = tempfile.gettempdir()
+        else:
+            datapath = associated_collection.data_path.replace("/lz/", "/etc/")
         
         spreadsheet_file = request.FILES['spreadsheet_file']
 
@@ -3481,15 +3685,16 @@ def descriptive_metadata_upload(request, associated_collection):
             error = upload_descriptive_spreadsheet(filename, associated_collection, request)
             if error:
                 return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-            else:         
-                return redirect('ingest:descriptive_metadata_list')
+            else:
+                return redirect('ingest:collection_detail', pk=associated_collection.id)
         
         # using new metadata model
         elif version1 == False:
-            errormsg = check_all_sheets(filename, ingest_method)
-            if errormsg != '':
-                messages.error(request, errormsg)
-                return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
+            error_map = check_all_sheets(filename, ingest_method, collection_data_path=associated_collection.data_path)
+            if error_map:
+                request.session['metadata_errors'] = error_map
+                request.session['metadata_error_filename'] = filename
+                return redirect('ingest:metadata_error_view', associated_collection=associated_collection.id)
 
             else:
                 saved = False
@@ -3509,19 +3714,17 @@ def descriptive_metadata_upload(request, associated_collection):
                     spatials = []
 
                 # choose save method depending on ingest_method value from radio button
-                # want to pull this out into a helper function
                 if ingest_method == 'ingest_1':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
                     if has_spatial:
                         ingested_datasets = list(Dataset.objects.filter(sheet=sheet))
                         save_spatial_sheet(spatials, sheet, ingested_datasets)
-                    ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    ingested_datasets = Dataset.objects.filter(sheet=sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
-                    errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets, filename)
-                    if errormsg != None:
-                        messages.error(request, errormsg)
+                    bil_id_result = save_bil_ids(ingested_datasets, filename)
+                    if bil_id_result is not None:
+                        _report_bil_id_errors(request, bil_id_result)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
                     save_specimen_ids(ingested_specimens)
                 elif ingest_method == 'ingest_2':
@@ -3530,159 +3733,61 @@ def descriptive_metadata_upload(request, associated_collection):
                     if has_spatial:
                         ingested_datasets = list(Dataset.objects.filter(sheet=sheet))
                         save_spatial_sheet(spatials, sheet, ingested_datasets)
-                    ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    ingested_datasets = Dataset.objects.filter(sheet=sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
-                    errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets, filename)
-                    if errormsg != None:
-                        messages.error(request, errormsg)
+                    bil_id_result = save_bil_ids(ingested_datasets, filename)
+                    if bil_id_result is not None:
+                        _report_bil_id_errors(request, bil_id_result)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
                     save_specimen_ids(ingested_specimens)
                 elif ingest_method == 'ingest_3':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                    ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    ingested_datasets = Dataset.objects.filter(sheet=sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
-                    errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets, filename)
-                    if errormsg != None:
-                        messages.error(request, errormsg)
+                    bil_id_result = save_bil_ids(ingested_datasets, filename)
+                    if bil_id_result is not None:
+                        _report_bil_id_errors(request, bil_id_result)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
                     save_specimen_ids(ingested_specimens)
                 elif ingest_method == 'ingest_4':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                    ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    ingested_datasets = Dataset.objects.filter(sheet=sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
-                    errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets, filename)
-                    if errormsg != None:
-                        messages.error(request, errormsg)
+                    bil_id_result = save_bil_ids(ingested_datasets, filename)
+                    if bil_id_result is not None:
+                        _report_bil_id_errors(request, bil_id_result)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
                     save_specimen_ids(ingested_specimens)
                 elif ingest_method == 'ingest_5':
                     sheet = save_sheet_row(ingest_method, filename, collection)
                     saved = save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs)
-                    ingested_datasets = Dataset.objects.filter(sheet = sheet)
+                    ingested_datasets = Dataset.objects.filter(sheet=sheet)
                     ingested_specimens = Specimen.objects.filter(sheet=sheet)
-                    errormsg = ''
-                    errormsg = save_bil_ids(ingested_datasets, filename)
-                    if errormsg != None:
-                        messages.error(request, errormsg)
+                    bil_id_result = save_bil_ids(ingested_datasets, filename)
+                    if bil_id_result is not None:
+                        _report_bil_id_errors(request, bil_id_result)
                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
                     save_specimen_ids(ingested_specimens)
-                elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4' and ingest_method != 'ingest_5':
-                        saved = False
-                        messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')                         
-                        return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                if saved == True:
-                    saved_datasets = Dataset.objects.filter(sheet_id = sheet.id).all()
+                else:
+                    messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')
+                    return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
+
+                if saved:
+                    saved_datasets = Dataset.objects.filter(sheet_id=sheet.id).all()
                     for dataset in saved_datasets:
                         time = datetime.now()
-                        event = DatasetEventsLog(dataset_id = dataset, collection_id = collection, project_id_id = collection.project_id, notes = '', timestamp = time, event_type = 'uploaded')
+                        event = DatasetEventsLog(dataset_id=dataset, collection_id=collection, project_id_id=collection.project_id, notes='', timestamp=time, event_type='uploaded')
                         event.save()
-                    
                     messages.success(request, 'Descriptive Metadata successfully uploaded!!')
-                    #return redirect('ingest:descriptive_metadata_list')
                     if ProjectConsortium.objects.filter(project=associated_collection.project, consortium__short_name='BICAN').exists():
-                        return redirect('ingest:bican_id_upload',sheet_id = sheet.id)
+                        return redirect('ingest:bican_id_upload', sheet_id=sheet.id)
                     else:
-                        return redirect('ingest:descriptive_metadata_list')
+                        return redirect('ingest:collection_detail', pk=associated_collection.id)
                 else:
-                    saved = False
-                    collection = Collection.objects.get(name=associated_collection.name)
-                    contributors = ingest_contributors_sheet(filename)
-                    funders = ingest_funders_sheet(filename)
-                    publications = ingest_publication_sheet(filename)
-                    instruments = ingest_instrument_sheet(filename)
-                    datasets = ingest_dataset_sheet(filename)
-                    specimen_set = ingest_specimen_sheet(filename)
-                    images = ingest_image_sheet(filename)
-                    swcs = ingest_swc_sheet(filename)
-
-                    # choose save method depending on ingest_method value from radio button
-                    # want to pull this out into a helper function
-                    if ingest_method == 'ingest_1':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
-                        saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
-                        ingested_specimens = Specimen.objects.filter(sheet = sheet)
-                        ingested_instruments = Instrument.objects.filter(sheet = sheet)
-                        errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets, filename)
-                        if errormsg != None:
-                            messages.error(request, errormsg)
-                            return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                        save_specimen_ids(ingested_specimens)
-                        save_instrument_ids(ingested_instruments)
-                    elif ingest_method == 'ingest_2':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
-                        saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
-                        ingested_specimens = Specimen.objects.filter(sheet = sheet)
-                        ingested_instruments = Instrument.objects.filter(sheet = sheet)
-                        errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets, filename)
-                        if errormsg != None:
-                            messages.error(request, errormsg)
-                            return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                        save_specimen_ids(ingested_specimens)
-                        save_instrument_ids(ingested_instruments)
-                    elif ingest_method == 'ingest_3':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
-                        saved = save_all_sheets_method_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
-                        ingested_specimens = Specimen.objects.filter(sheet = sheet)
-                        ingested_instruments = Instrument.objects.filter(sheet = sheet)
-                        errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets, filename)
-                        if errormsg != None:
-                            messages.error(request, errormsg)
-                            return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                        save_specimen_ids(ingested_specimens)
-                        save_instrument_ids(ingested_instruments)
-                    elif ingest_method == 'ingest_4':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
-                        saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
-                        ingested_specimens = Specimen.objects.filter(sheet = sheet)
-                        ingested_instruments = Instrument.objects.filter(sheet = sheet)
-                        errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets, filename)
-                        if errormsg != None:
-                            messages.error(request, errormsg)
-                            return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                        save_specimen_ids(ingested_specimens)
-                        save_instrument_ids(ingested_instruments)
-                    elif ingest_method == 'ingest_5':
-                        sheet = save_sheet_row(ingest_method, filename, collection)
-                        saved = save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs)
-                        ingested_datasets = Dataset.objects.filter(sheet = sheet)
-                        ingested_specimens = Specimen.objects.filter(sheet = sheet)
-                        ingested_instruments = Instrument.objects.filter(sheet = sheet)
-                        errormsg = ''
-                        errormsg = save_bil_ids(ingested_datasets, filename)
-                        if errormsg != None:
-                            messages.error(request, errormsg)
-                            return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                        save_specimen_ids(ingested_specimens)
-                        save_instrument_ids(ingested_instruments)
-                    elif ingest_method != 'ingest_1' and ingest_method != 'ingest_2' and ingest_method != 'ingest_3' and ingest_method != 'ingest_4' and ingest_method != 'ingest_5':
-                         saved = False
-                         messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')                         
-                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                    if saved == True:
-                        saved_datasets = Dataset.objects.filter(sheet_id = sheet.id).all()
-                        for dataset in saved_datasets:
-                           time = datetime.now()
-                           event = DatasetEventsLog(dataset_id = dataset, collection_id = collection, project_id_id = collection.project_id, notes = '', timestamp = time, event_type = 'uploaded')
-                           event.save()
-                        messages.success(request, 'Descriptive Metadata successfully uploaded!!')
-                        return redirect('ingest:descriptive_metadata_list')
-                    else:
-                         error_code = sheet.id
-                         messages.error(request, 'There has been an error. Please contact BIL Support. Error Code: ', error_code)
-                         return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
+                    messages.error(request, f'There was an error saving your metadata. Please contact BIL Support with Error Code: {sheet.id}')
+                    return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
 
 
     # This is the GET (just show the metadata upload page)
@@ -3916,6 +4021,7 @@ def whitelist_filter(obj, *, keep_all_keys=False):
 
     return obj
 
+@login_required
 def bican_id_upload(request, sheet_id):
     if request.method == 'GET':
         specimens = Specimen.objects.filter(sheet_id=sheet_id)
@@ -3937,6 +4043,7 @@ def bican_id_upload(request, sheet_id):
     
     return render(request, 'ingest/specimen_bican.html', context)
 
+@login_required
 def specimen_bican(request, sheet_id):
     # Retrieve Specimen Local IDs corresponding to the uploaded sheet
     specimens = Specimen.objects.filter(sheet_id=sheet_id)
@@ -3968,6 +4075,7 @@ def specimen_bican(request, sheet_id):
 
     return response
 
+@login_required
 def save_bican_spreadsheet(request):
     if request.method == 'POST':
         uploaded_file = request.FILES['file']
@@ -3984,9 +4092,9 @@ def save_bican_spreadsheet(request):
                 spec_id = row['Specimen ID']
                 bican_id = row['BICAN ID']
 
-                spec_bil_id, local_name = process_specimen_id(spec_id)
+                spec_bil_id, local_name, sample_local_id = process_specimen_id(spec_id)
                 specimen_id_list.append(spec_bil_id)
-                specimen_list.append(local_name)
+                specimen_list.append({'localid': local_name, 'samplelocalid': sample_local_id})
 
                 nhash_info, error_message = retrieve_nhash_info(bican_id)
                 if error_message:
@@ -3995,14 +4103,13 @@ def save_bican_spreadsheet(request):
                 nhash_info_list.append(nhash_info)
 
             if error_messages:
-                # Handle errors here
                 return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_messages[0]}')
 
             extracted_ids = []
             for nhash_info in nhash_info_list:
-                ids = extract_ids(nhash_info)  # Extract IDs for each nhash_info individually
+                ids = extract_ids(nhash_info)
                 extracted_ids.append(ids)
-            processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)  # Assuming this function exists
+            processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)
             processed_ids_json = json.dumps(processed_ids)
             nhash_info_list = [whitelist_filter(x) for x in nhash_info_list]
             nhash_specimen_list = zip(nhash_info_list, specimen_list)
@@ -4020,6 +4127,7 @@ def save_bican_spreadsheet(request):
         # Handle GET request
         return render(request, '/')
 
+@login_required
 def save_bican_ids(request):
     if request.method == 'POST':
         sheet_id, csrf_token, data_items = extract_post_data(request)
@@ -4030,33 +4138,27 @@ def save_bican_ids(request):
         error_messages = []
 
         for spec_id, bican_id in data_items:
-            spec_bil_id, local_name = process_specimen_id(spec_id)
+            spec_bil_id, local_name, sample_local_id = process_specimen_id(spec_id)
             specimen_id_list.append(spec_bil_id)
-            specimen_list.append(local_name)
+            specimen_list.append({'localid': local_name, 'samplelocalid': sample_local_id})
             nhash_info, error_message = retrieve_nhash_info(bican_id)
             if error_message:
                 error_messages.append(error_message)
-                continue  # Proceed with the next iteration if there's an error
+                continue
             nhash_info_list.append(nhash_info)
 
         if error_messages:
-            # If there are any errors, handle them. This could be redirecting or displaying the error.
-            # This example uses the first error message for simplicity.
             return HttpResponseRedirect(reverse('ingest:bican_id_upload', args=[sheet_id]) + f'?error_message={error_messages[0]}')
-        #print("Nhash Info: ", nhash_info)
+
         extracted_ids = []
         for nhash_info in nhash_info_list:
-            ids = extract_ids(nhash_info)  # Extract IDs for each nhash_info individually
+            ids = extract_ids(nhash_info)
             extracted_ids.append(ids)
-        processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)  # Assuming this function exists
+        processed_ids = specimen_list_mapping(extracted_ids, specimen_id_list)
         processed_ids_json = json.dumps(processed_ids)
         nhash_info_list = [whitelist_filter(x) for x in nhash_info_list]
         nhash_specimen_list = zip(nhash_info_list, specimen_list)
-        print("TOP KEYS:", nhash_info_list[0].keys())
-        print("DATA KEYS:", list(nhash_info_list[0].get("data", {}).keys()))
-        print("FIRST RECORD KEYS:", list(next(iter(nhash_info_list[0].get("data", {}).values()), {}).keys()))
 
-        
         return render(request, 'ingest/nhash_id_confirm.html', {'nhash_specimen_list': nhash_specimen_list, 'processed_ids_json': processed_ids_json})
     else:
         # Handle GET request, maybe render the form again or redirect
@@ -4072,7 +4174,7 @@ def extract_post_data(request):
 def process_specimen_id(spec_id):
     spec_bil = BIL_Specimen_ID.objects.get(specimen_id=spec_id)
     spec_local = Specimen.objects.get(id=spec_id)
-    return spec_bil.id, spec_local.localid
+    return spec_bil.id, spec_local.localid, spec_local.samplelocalid
 
 def retrieve_nhash_info(bican_id):
     nhash_info = Specimen_Portal.get_nhash_results(bican_id)
@@ -4105,6 +4207,7 @@ def specimen_list_mapping(ids_list, specimen_list):
         specimen_ids_mapping[specimen] = ids
     return specimen_ids_mapping
 
+@login_required
 def process_ids(request):
     if request.method == 'POST':
         # Process the received processed_ids list
@@ -4124,13 +4227,12 @@ def process_ids(request):
                 elif id.startswith('SC'):
                     linkage = SpecimenLinkage(specimen_id = bil_specimen_id, specimen_id_2 = id, code_id = 'cubie_tissue', specimen_category = 'section')
                 linkage.save()
-        # Redirect to a different view or do other processing
-        return redirect('ingest:collection_list')  # Redirect to success page
+        messages.success(request, 'BICAN specimen linkages saved successfully.')
+        return redirect('ingest:collection_list')
     else:
-        # Handle GET request, maybe render an error page
-        print('failed')
-        return redirect('ingest:collection_list')  # Redirect to error page
+        return redirect('ingest:collection_list')
 
+@login_required
 def save_nhash_specimen_list(request):
     if request.method == 'POST':
         # Retrieve the nhash_specimen_list from the POST data
@@ -4150,6 +4252,7 @@ def save_nhash_specimen_list(request):
         # Return an error response if accessed via GET request
         return JsonResponse({'error': 'POST method required'})
 
+@login_required
 def nhash_id_confirm(request):
     # Retrieve the nhash_info_list from the query parameters
     nhash_info_list_str = request.GET.get('nhash_info_list', '')

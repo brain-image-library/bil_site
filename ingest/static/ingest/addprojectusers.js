@@ -5,7 +5,7 @@ function add_users() {
     $('tbody>tr').each(function(i, e){
         let $e = $(e);
         // $e is the tr element
-        let user_is_checked = $e.find('#user_is_checked').is(':checked');
+        let user_is_checked = $e.find('.user-checkbox').is(':checked');
         // user_is_checked is a boolean of whether that row is checked or not
              
         if(user_is_checked)

@@ -1,48 +1,178 @@
-<head>
-<script src="/static/ingest/addprojectusers.js"></script>
-</head>
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %} 
-{% block wide %}
-<a href="{% url 'ingest:manage_projects' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-<br>
-<form id="rowform">
-<h1 name="project_id" id="project_id" value="{{ project.id }}">Add a user to your project named {{project.name}}</h1>
-<p>Select checkboxes for each user to add them to the project</p>
-<p>If the user you are looking for is not on this list, it may be because they have no logged into the Submission Portal, or they have not been added to the system. <a href="http://www.brainimagelibrary.org/submission.html">See Instructions</a>
-{% csrf_token %}
-<table id="usertable" class="table">
-<thead>
-<tr>
-<th></th>
-<th>Name</th>
 
-</tr>
-</thead>
-<tbody>
-{% for user in all_users %}
-<tr data-user_id="{{user.id}}">
-<td><input type="checkbox" id="user_is_checked"></td>
-<td name="username" id="username">{{user.username}}</td>
-<td>
-</tr>
-{% endfor %}
-</table>
-</form>
-<button class="btn btn-primary" onclick="add_users();">Submit</button>
-<hr>
+{% block scripts %}
+<style>
+.bil-input-group { display: flex; gap: 8px; align-items: center; }
+.bil-input-group .form-control {
+  border: 1.5px solid rgba(22,27,51,.12); border-radius: 7px;
+  font-family: 'Lato', sans-serif; font-size: .875rem; color: #161b33;
+  background: #fff; transition: border-color .15s, box-shadow .15s; max-width: 360px;
+}
+.bil-input-group .form-control:focus {
+  border-color: var(--bil-accent); box-shadow: 0 0 0 3px rgba(0,201,167,.1); outline: none;
+}
 
+#add-feedback {
+  border-radius: 7px; font-family: 'Lato', sans-serif; font-size: .85rem;
+  padding: .6rem 1rem; margin-bottom: 1rem;
+}
+#add-feedback.alert-success { background: rgba(25,135,84,.08); border: 1px solid rgba(25,135,84,.25); color: #146c43; }
+#add-feedback.alert-danger  { background: rgba(220,53,69,.07); border: 1px solid rgba(220,53,69,.2); color: #842029; }
 
-<a href="{% url 'ingest:manage_projects' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
+.bil-members-list { list-style: none; padding: 0; margin: 0; }
+.bil-members-list li {
+  font-family: 'Lato', sans-serif; font-size: .85rem; color: #3d4360;
+  padding: .55rem 0; border-bottom: 1px solid rgba(22,27,51,.055);
+  display: flex; align-items: center; gap: 8px;
+}
+.bil-members-list li:last-child { border-bottom: none; }
+.bil-members-list li i { color: #979bb2; flex-shrink: 0; }
+.bil-members-list .bil-empty-msg { color: #8e92aa; font-size: .82rem; }
+</style>
 {% endblock %}
 
+{% block wide %}
+
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-7">
+
+    <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+      <div class="bil-list-header">
+        <h4><i class="fa-solid fa-user-plus me-2" style="color:var(--bil-accent);font-size:1.1rem;"></i>Add Users</h4>
+        <span class="bil-sub">{{ project.name }}</span>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'ingest:view_project_people' project.id %}" class="bil-btn-outline">
+          <i class="fa-solid fa-users fa-xs"></i>View Members
+        </a>
+        <a href="{% url 'ingest:manage_projects' %}" class="bil-btn-outline">
+          <i class="fa-solid fa-arrow-left fa-xs"></i>Manage Projects
+        </a>
+        <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+          <i class="fa-solid fa-house fa-xs"></i>PI Dashboard
+        </a>
+      </div>
+    </div>
+
+    {# ── Add User ── #}
+    <div class="bil-form-card bil-fadein">
+      <div class="bil-form-card-header">
+        <span class="bil-form-section-icon"><i class="fa-solid fa-user-plus"></i></span>
+        <span class="bil-form-section-title">Add User by Username</span>
+      </div>
+      <div class="bil-form-body">
+        <div class="bil-notice">
+          <i class="fa-solid fa-circle-info fa-xs"></i>
+          <span>The user must have already logged into the Submission Portal before they can be added.
+            <a href="http://www.brainimagelibrary.org/submission.html" target="_blank">See Instructions</a>
+          </span>
+        </div>
+        <div class="bil-notice mt-2">
+          <i class="fa-solid fa-triangle-exclamation fa-xs"></i>
+          <span>Users are added as standard project members. To promote a user to PI, please contact <a href="mailto:bil-support@psc.edu">bil-support@psc.edu</a>.</span>
+        </div>
+
+        <div id="add-feedback" class="d-none" role="alert"></div>
+
+        <div class="bil-input-group">
+          <input type="text" id="username-input" class="form-control" placeholder="Enter username…" autocomplete="off">
+          <button class="bil-btn-dark" type="button" onclick="addUserByUsername({{ project.id }})">
+            <i class="fa-solid fa-user-plus fa-xs"></i>Add User
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {# ── Current Members ── #}
+    <div class="bil-form-card bil-fadein">
+      <div class="bil-form-card-header">
+        <span class="bil-form-section-icon"><i class="fa-solid fa-users"></i></span>
+        <span class="bil-form-section-title">Current Members</span>
+      </div>
+      <div class="bil-form-body">
+        <ul class="bil-members-list" id="members-list">
+          {% for member in members %}
+          <li id="member-{{ member.project_people_id }}">
+            <i class="fa-solid fa-user fa-xs"></i>
+            <span style="font-weight:600;color:#161b33;">{{ member.user.username }}</span>
+            <button type="button" class="bil-btn-ghost ms-auto" style="color:#c0392b;font-size:.75rem;"
+                    onclick="removeMember({{ member.project_people_id }}, this)">
+              <i class="fa-solid fa-user-minus fa-xs"></i>Remove
+            </button>
+          </li>
+          {% empty %}
+          <li class="bil-empty-msg" id="no-members-msg">
+            <i class="fa-solid fa-circle-info fa-xs"></i>No members yet.
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function addUserByUsername(projectId) {
+    const csrftoken = Cookies.get('csrftoken');
+    const input = document.getElementById('username-input');
+    const username = input.value.trim();
+    if (!username) return;
+
+    fetch(`${window.origin}/ingest/add_user_by_username/`, {
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({username: username, project_id: projectId}),
+        cache: 'no-cache',
+        headers: new Headers({
+            'X-CSRFToken': csrftoken,
+            'content-type': 'application/json'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        const feedbackEl = document.getElementById('add-feedback');
+        feedbackEl.classList.remove('d-none', 'alert-success', 'alert-danger');
+        if (data.success) {
+            feedbackEl.classList.add('alert-success');
+            feedbackEl.innerHTML = `<i class="fa-solid fa-check me-1"></i>${data.message}`;
+            input.value = '';
+            const noMembersMsg = document.getElementById('no-members-msg');
+            if (noMembersMsg) noMembersMsg.remove();
+            const li = document.createElement('li');
+            li.innerHTML = `<i class="fa-solid fa-user fa-xs" style="color:rgba(22,27,51,.3);flex-shrink:0;"></i><span style="font-weight:600;color:#161b33;">${data.username}</span>`;
+            document.getElementById('members-list').appendChild(li);
+        } else {
+            feedbackEl.classList.add('alert-danger');
+            feedbackEl.innerHTML = `<i class="fa-solid fa-circle-xmark me-1"></i>${data.message}`;
+        }
+    })
+    .catch(error => console.log('Fetch error: ' + error));
+}
+
+document.getElementById('username-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') addUserByUsername({{ project.id }});
+});
+
+function removeMember(projectPeopleId, btn) {
+    if (!confirm('Remove this user from the project?')) return;
+    const csrftoken = Cookies.get('csrftoken');
+    fetch(`${window.origin}/ingest/remove_project_user/`, {
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({project_people_id: projectPeopleId}),
+        headers: {'X-CSRFToken': csrftoken, 'content-type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('member-' + projectPeopleId).remove();
+        } else {
+            alert(data.message || 'Could not remove user.');
+        }
+    })
+    .catch(error => console.log('Fetch error: ' + error));
+}
+</script>
+
+{% endblock %}

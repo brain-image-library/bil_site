@@ -1,55 +1,100 @@
 {% extends 'ingest/wide.html' %}
 
 {% block wide %}
-{% if pi %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
-<br>
-<h1><b>Results for Submission</b> {{ collection.name }} 
-  {% if collection.locked %}<i class="fa fa-lock"></i>
-  {% else %}<i class="fa fa-unlock"></i>
-  {% endif %}
-  </h1>
 
-  {% if collection.submission_status == "NOT_SUBMITTED" %}
-    <div class="alert alert-info">
-      <strong>Not submitted.</strong> Once you have completed your submission, the results will show up here.
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+
+    {# ── Page header ── #}
+    <div class="d-flex align-items-start justify-content-between mb-3">
+      <div>
+        <h1 class="mb-1">
+          Submission Results
+          {% if collection.locked %}
+            <i class="fa-solid fa-lock fa-sm text-secondary ms-1"></i>
+          {% else %}
+            <i class="fa-solid fa-lock-open fa-sm text-secondary ms-1"></i>
+          {% endif %}
+        </h1>
+        <p class="text-muted mb-0">{{ collection.name }}</p>
+      </div>
+      {% if pi %}
+      <a href="{% url 'ingest:index' %}" class="btn btn-sm btn-outline-secondary mt-1">
+        <i class="fa-solid fa-arrow-left fa-sm me-1"></i>PI Dashboard
+      </a>
+      {% else %}
+      <a href="{% url 'ingest:collection_list' %}" class="btn btn-sm btn-outline-secondary mt-1">
+        <i class="fa-solid fa-arrow-left fa-sm me-1"></i>Back to Collections
+      </a>
+      {% endif %}
     </div>
-  {% elif collection.submission_status == "PENDING" %}
-    <div class="alert alert-warning">
-      <strong>Submission pending</strong>. Please check back here later. If you think there may be a problem, please contact us at bil-support@psc.edu.</p>
+
+    {# ── Status card ── #}
+    <div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+      <div class="card-body p-4">
+
+        <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+          <i class="fa-solid fa-paper-plane fa-sm me-1"></i>Submission Status
+        </p>
+
+        {% if collection.submission_status == "NOT_SUBMITTED" %}
+          <div class="alert alert-info d-flex gap-2 align-items-start">
+            <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+            <span><strong>Not submitted.</strong> Once you have completed your submission, the results will show up here.</span>
+          </div>
+        {% elif collection.submission_status == "PENDING" %}
+          <div class="alert alert-warning d-flex gap-2 align-items-start">
+            <i class="fa-solid fa-triangle-exclamation mt-1 flex-shrink-0"></i>
+            <span><strong>Submission pending.</strong> Please check back here later. If you think there may be a problem, please contact us at <a href="mailto:bil-support@psc.edu">bil-support@psc.edu</a>.</span>
+          </div>
+        {% elif collection.submission_status == "SUCCESS" %}
+          <div class="alert alert-success d-flex gap-2 align-items-start">
+            <i class="fa-solid fa-circle-check mt-1 flex-shrink-0"></i>
+            <span><strong>Submission succeeded.</strong> Please look over the log for any irregularities. If you notice a problem, contact us at <a href="mailto:bil-support@psc.edu">bil-support@psc.edu</a>.</span>
+          </div>
+        {% elif collection.submission_status == "FAILED" %}
+          <div class="alert alert-danger d-flex gap-2 align-items-start">
+            <i class="fa-solid fa-circle-xmark mt-1 flex-shrink-0"></i>
+            <span><strong>Submission failed.</strong> Please correct any errors listed and resubmit when you are ready.</span>
+          </div>
+          {% if invalid_metadata_directories %}
+            <p class="mt-3 mb-2 fw-semibold">The following directories referenced in the metadata do not exist in the staging area:</p>
+            <ul class="list-group mb-3">
+              {% for dir in invalid_metadata_directories %}
+                <li class="list-group-item list-group-item-danger">
+                  <i class="fa-solid fa-folder-xmark fa-sm me-2"></i>{{ dir }}
+                </li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endif %}
+
+        {% if dir_size %}
+          <p class="mt-3 mb-0">
+            <i class="fa-solid fa-hard-drive fa-sm text-secondary me-1"></i>
+            Total size of your submission: <strong>{{ dir_size }}</strong>
+          </p>
+        {% endif %}
+
+      </div>
     </div>
-  {% elif collection.submission_status == "SUCCESS" %}
-    <div class="alert alert-success">
-      <strong>Submission succeeded.</strong> Please look over the log for any irregularities. If you notice a problem, contact us at bil-support@psc.edu.
+
+    {# ── Log card ── #}
+    {% if output %}
+    <div class="card shadow-sm mb-3" style="border-top: 3px solid #161b33;">
+      <div class="card-body p-4">
+        <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+          <i class="fa-solid fa-file-code fa-sm me-1"></i>Submission Log
+        </p>
+        <p class="text-muted small mb-2">Available for download at: <code>{{ outfile }}</code></p>
+        <div class="bg-light border rounded p-3">
+          <code><pre class="mb-0" style="white-space: pre-wrap; word-break: break-all;">{{ output }}</pre></code>
+        </div>
+      </div>
     </div>
-  {% elif collection.submission_status == "FAILED" %}
-    <div class="alert alert-danger">
-      <strong>Submission failed</strong> Please correct any errors listed and resubmit when you are ready.
-    </div>
+    {% endif %}
 
-    <p>The following directories referenced in the metadata do not exist in the staging area:</p>
-
-    <ul class="list-group">
-    {% for dir in invalid_metadata_directories %}
-      <li class="list-group-item">{{dir}}</li>
-    {% endfor %}
-    </ul>
-  {% endif %}
-
-  {% if dir_size %}
-    The total size of your submission: <strong>{{ dir_size }}</strong>
-  {% endif %}
-  
-  {% if output %}
-    <p>The validation log, shown below is available for download at: {{ outfile }}</p>
-    <code><pre>{{ output }}</pre></code>
-  {% endif %}
-
-  <p></p> 
-
-</br>
+  </div>
+</div>
 
 {% endblock %}

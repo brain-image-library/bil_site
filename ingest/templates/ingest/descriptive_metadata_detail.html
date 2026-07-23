@@ -1,69 +1,175 @@
 {% extends 'ingest/wide.html' %}
 
 {% block wide %}
-{% if pi %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
-<br>
-<h1><b>Image Metadata</b> {{ descriptive_metadata.project_name }}</h1>
-  <div class="list-group">
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">locked</h4> {{descriptive_metadata.locked}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">user</h4>  {{descriptive_metadata.user}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">date_created</h4> {{descriptive_metadata.date_created}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">last_edited</h4> {{descriptive_metadata.last_edited}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">submission</h4>  {{descriptive_metadata.collection}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">sample_id</h4> {{descriptive_metadata.sample_id}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">organism_type</h4> {{descriptive_metadata.organism_type}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">organism_ncbi_taxonomy_id</h4> {{descriptive_metadata.organism_ncbi_taxonomy_id}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">transgenetic_line_information</h4> {{descriptive_metadata.transgenetic_line_information}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">modality</h4> {{descriptive_metadata.modality}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">method</h4> {{descriptive_metadata.method}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">technique</h4> {{descriptive_metadata.technique}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">anatomical_structure</h4> {{descriptive_metadata.anatomical_structure}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">total_processed_cells</h4>  {{descriptive_metadata.total_processed_cells}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">organization</h4>  {{descriptive_metadata.organization}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">lab</h4>  {{descriptive_metadata.lab}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">investigator</h4>  {{descriptive_metadata.investigator}}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">grant_number</h4>  {{descriptive_metadata.grant_number }}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">r24_name</h4>  {{descriptive_metadata.r24_name }}
-    </a>
-    <a href="#" class="list-group-item"><h4 class="list-group-item-heading">r24_directory</h4> {{descriptive_metadata.r24_directory}}
-    </a>
-  </div>
-{% if descriptive_metadata.locked %}
-  <p></p>
-  <div class="alert alert-info">
-      <strong>Submitted metadata cannot be modified or deleted.</strong>
-  </div>
-{% else %}
-  <div class='btn-group btn-group-lg'>
-  </div>
 
-  </br>
+{# ── Page header ── #}
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+  <div class="bil-page-header">
+    <h4>
+      <i class="fa-solid fa-clock-rotate-left me-2" style="color:var(--bil-accent);font-size:.95rem;" aria-hidden="true"></i>Version 1 Metadata
+    </h4>
+    <span class="bil-sub">{{ descriptive_metadata.sample_id }} &mdash; {{ descriptive_metadata.collection }}</span>
+  </div>
+  <a href="{% url 'ingest:collection_detail' descriptive_metadata.collection.pk %}" class="bil-btn-outline">
+    <i class="fa-solid fa-arrow-left fa-xs" aria-hidden="true"></i>Back to Collection
+  </a>
+</div>
+
+{% if descriptive_metadata.locked %}
+<div class="bil-lock-warning mb-4 bil-fadein">
+  <i class="fa-solid fa-lock fa-xs flex-shrink-0"></i>
+  <span><strong>Submitted metadata cannot be modified or deleted.</strong></span>
+</div>
 {% endif %}
-  </br>
-    <a href="{% url 'ingest:descriptive_metadata_list' %}">
-      <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-    </a>
+
+{# ── Sample & Organism ── #}
+<div class="bil-form-card bil-fadein">
+  <div class="bil-form-card-header">
+    <div class="bil-form-card-header-icon">
+      <i class="fa-solid fa-vial fa-xs" aria-hidden="true"></i>
+    </div>
+    <span class="bil-form-card-header-title">Sample &amp; Organism</span>
+  </div>
+  <div class="bil-form-card-body">
+    <table class="bil-info-table">
+      <tbody>
+        <tr>
+          <th>Sample ID</th>
+          <td>{{ descriptive_metadata.sample_id }}</td>
+        </tr>
+        <tr>
+          <th>Organism Type</th>
+          <td>{{ descriptive_metadata.organism_type }}</td>
+        </tr>
+        <tr>
+          <th>NCBI Taxonomy ID</th>
+          <td><code>{{ descriptive_metadata.organism_ncbi_taxonomy_id }}</code></td>
+        </tr>
+        <tr>
+          <th>Transgenic Line</th>
+          <td>{{ descriptive_metadata.transgenetic_line_information }}</td>
+        </tr>
+        <tr>
+          <th>Anatomical Structure</th>
+          <td>{{ descriptive_metadata.anatomical_structure }}</td>
+        </tr>
+        <tr>
+          <th>Total Processed Cells</th>
+          <td>{{ descriptive_metadata.total_processed_cells }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Imaging ── #}
+<div class="bil-form-card bil-fadein">
+  <div class="bil-form-card-header">
+    <div class="bil-form-card-header-icon">
+      <i class="fa-solid fa-microscope fa-xs" aria-hidden="true"></i>
+    </div>
+    <span class="bil-form-card-header-title">Imaging</span>
+  </div>
+  <div class="bil-form-card-body">
+    <table class="bil-info-table">
+      <tbody>
+        <tr>
+          <th>Modality</th>
+          <td>{{ descriptive_metadata.modality }}</td>
+        </tr>
+        <tr>
+          <th>Method</th>
+          <td>{{ descriptive_metadata.method }}</td>
+        </tr>
+        <tr>
+          <th>Technique</th>
+          <td>{{ descriptive_metadata.technique }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Provenance ── #}
+<div class="bil-form-card bil-fadein">
+  <div class="bil-form-card-header">
+    <div class="bil-form-card-header-icon">
+      <i class="fa-solid fa-building fa-xs" aria-hidden="true"></i>
+    </div>
+    <span class="bil-form-card-header-title">Provenance</span>
+  </div>
+  <div class="bil-form-card-body">
+    <table class="bil-info-table">
+      <tbody>
+        <tr>
+          <th>Organization</th>
+          <td>{{ descriptive_metadata.organization }}</td>
+        </tr>
+        <tr>
+          <th>Lab</th>
+          <td>{{ descriptive_metadata.lab }}</td>
+        </tr>
+        <tr>
+          <th>Investigator</th>
+          <td>{{ descriptive_metadata.investigator }}</td>
+        </tr>
+        <tr>
+          <th>Grant Number</th>
+          <td><code>{{ descriptive_metadata.grant_number }}</code></td>
+        </tr>
+        <tr>
+          <th>R24 Name</th>
+          <td>{{ descriptive_metadata.r24_name }}</td>
+        </tr>
+        <tr>
+          <th>R24 Directory</th>
+          <td><code>{{ descriptive_metadata.r24_directory }}</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{# ── Record info ── #}
+<div class="bil-form-card bil-fadein">
+  <div class="bil-form-card-header">
+    <div class="bil-form-card-header-icon">
+      <i class="fa-solid fa-circle-info fa-xs" aria-hidden="true"></i>
+    </div>
+    <span class="bil-form-card-header-title">Record Info</span>
+  </div>
+  <div class="bil-form-card-body">
+    <table class="bil-info-table">
+      <tbody>
+        <tr>
+          <th>Collection</th>
+          <td>{{ descriptive_metadata.collection }}</td>
+        </tr>
+        <tr>
+          <th>User</th>
+          <td>{{ descriptive_metadata.user }}</td>
+        </tr>
+        <tr>
+          <th>Date Created</th>
+          <td>{{ descriptive_metadata.date_created }}</td>
+        </tr>
+        <tr>
+          <th>Last Edited</th>
+          <td>{{ descriptive_metadata.last_edited }}</td>
+        </tr>
+        <tr>
+          <th>Locked</th>
+          <td>
+            {% if descriptive_metadata.locked %}
+              <i class="fa-solid fa-lock fa-xs" style="color:#856404;"></i> Yes
+            {% else %}
+              <i class="fa-solid fa-lock-open fa-xs" style="color:#8589a8;"></i> No
+            {% endif %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
 
 {% endblock %}

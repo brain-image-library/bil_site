@@ -1,42 +1,118 @@
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %} 
+
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
 {% block wide %}
-<a href="{% url 'ingest:add_project_user' project.id %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Add Users to Project</button>
-</a>
-<a href="{% url 'ingest:manage_projects' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-<br>
-<h1>Personnel on {{project.name}}</h1>
 
-<table id="ProjectTable" class="table">
-<thead>
-<tr>
-<th>Name</th>
-</tr>
-</thead>
-<tbody>
-{% for person in allpeople %}
-<tr>
- <td>{{ person.name }}</td>
-</tr>
-{% endfor %}
-</table>
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+  <div class="bil-list-header">
+    <h4><i class="fa-solid fa-users me-2" style="color:var(--bil-accent);font-size:1.1rem;"></i>{{ project.name }}</h4>
+    <span class="bil-sub">{{ members|length }} member{{ members|length|pluralize }} assigned to this project</span>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'ingest:add_project_user' project.id %}" class="bil-btn-dark">
+      <i class="fa-solid fa-user-plus fa-xs"></i>Add Users
+    </a>
+    <a href="{% url 'ingest:manage_projects' %}" class="bil-btn-outline">
+      <i class="fa-solid fa-arrow-left fa-xs"></i>Manage Projects
+    </a>
+    <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+      <i class="fa-solid fa-house fa-xs"></i>PI Dashboard
+    </a>
+  </div>
+</div>
 
-<hr>
-<a href="{% url 'ingest:add_project_user' project.id %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Add Users to Project</button>
-</a>
-<a href="{% url 'ingest:manage_projects' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
+<div class="bil-table-card bil-fadein">
+  {% if members %}
+  <div class="table-responsive">
+    <table id="tbl-project-people" class="bil-data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Affiliation</th>
+          <th>Role</th>
+          {% if is_pi_of_project %}<th></th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in members %}
+        <tr id="member-row-{{ m.project_people_id }}">
+          <td style="font-weight:600;color:#161b33;">{{ m.name }}</td>
+          <td><span class="bil-code">{{ m.username }}</span></td>
+          <td>{{ m.affiliation|default:"—" }}</td>
+          <td>
+            {% if m.is_pi %}
+              <span class="bil-badge bil-badge--pi"><i class="fa-solid fa-star fa-xs"></i>PI</span>
+            {% elif m.is_po %}
+              <span class="bil-badge bil-badge--po"><i class="fa-solid fa-user-tie fa-xs"></i>PO</span>
+            {% else %}
+              <span class="bil-badge bil-badge--member"><i class="fa-solid fa-user fa-xs"></i>Member</span>
+            {% endif %}
+          </td>
+          {% if is_pi_of_project %}
+          <td>
+            {% if not m.is_pi %}
+            <button type="button" class="bil-btn-ghost" style="color:#c0392b;font-size:.75rem;"
+                    onclick="removeMember({{ m.project_people_id }})">
+              <i class="fa-solid fa-user-minus fa-xs"></i>Remove
+            </button>
+            {% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="bil-empty">
+    <div class="bil-empty-icon"><i class="fa-solid fa-users"></i></div>
+    <h6>No members yet</h6>
+    <p>Add users to this project to get started.</p>
+  </div>
+  {% endif %}
+</div>
 
 {% endblock %}
 
+{% block extra_scripts %}
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+  {% if members %}
+  $('#tbl-project-people').DataTable({
+    pageLength: 25,
+    lengthMenu: [10, 25, 50, 100],
+    order: [[3, 'asc'], [0, 'asc']],
+    columnDefs: [{ targets: -1, orderable: false, width: '80px' }]
+  });
+  {% endif %}
+});
+
+{% if is_pi_of_project %}
+function removeMember(projectPeopleId) {
+    if (!confirm('Remove this user from the project?')) return;
+    const csrftoken = Cookies.get('csrftoken');
+    fetch(`${window.origin}/ingest/remove_project_user/`, {
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({project_people_id: projectPeopleId}),
+        headers: {'X-CSRFToken': csrftoken, 'content-type': 'application/json'}
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('member-row-' + projectPeopleId).remove();
+        } else {
+            alert(data.message || 'Could not remove user.');
+        }
+    })
+    .catch(err => console.log('Fetch error: ' + err));
+}
+{% endif %}
+</script>
+{% endblock %}

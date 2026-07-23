@@ -1,32 +1,44 @@
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %} 
 
 {% block wide %}
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-{% endif %}
-<br>
-<h1>Validate Submissions</h1>
 
-{% if collections %}
-  {% load render_table from django_tables2 %}
-  {% render_table table %} 
-{% else %}
-  <div class="alert alert-info">
-    <p>You haven't created any submissions yet.</p>
+<div class="d-flex align-items-start justify-content-between mb-3">
+  <div>
+    <h1 class="mb-1">Validate Submissions</h1>
+    <p class="text-muted mb-0">Review and validate your collections before submission.</p>
   </div>
-{% endif %}
+  <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">
+    <i class="fa-solid fa-arrow-left fa-sm me-1"></i> Return to PI Dashboard
+  </a>
+</div>
 
-<hr>
+<div class="card shadow-sm mb-4" style="border-top: 3px solid #161b33;">
+  <div class="card-body p-4">
+    <p class="text-uppercase text-muted fw-semibold small mb-3" style="letter-spacing:.07em;">
+      <i class="fa-solid fa-list-check fa-sm me-1"></i>Collections
+    </p>
 
-<a href="{% url 'ingest:collection_create' %}" class="btn btn-primary">
-  <span class="glyphicon glyphicon-plus"></span> Create Submission
-</a>
+    {% if collections %}
+      {% load render_table from django_tables2 %}
+      <div class="table-responsive">
+        {% render_table table %}
+      </div>
+    {% else %}
+      <div class="alert alert-info d-flex gap-2 align-items-start">
+        <i class="fa-solid fa-circle-info mt-1 flex-shrink-0"></i>
+        <span>You haven't created any submissions yet.</span>
+      </div>
+    {% endif %}
+  </div>
+</div>
 
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Cancel</button>
-</a>
+<div class="d-flex gap-2">
+  <a href="{% url 'ingest:collection_create' %}" class="btn btn-primary">
+    <i class="fa-solid fa-plus fa-sm me-1"></i> Create Submission
+  </a>
+  <a href="{% url 'ingest:index' %}" class="btn btn-outline-secondary">
+    <i class="fa-solid fa-xmark fa-sm me-1"></i> Cancel
+  </a>
+</div>
 
 {% endblock %}
-

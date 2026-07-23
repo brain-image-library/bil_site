@@ -1,60 +1,125 @@
 {% extends 'ingest/wide.html' %}
-{% load bootstrap4 %} 
-{% block wide %}
-<a href="{% url 'ingest:manage_projects' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
-<br>
-<h1>Submissions for Project: {{ project.name }}</h1>
 
-<table class="table">
-<thead>
-<tr>
-<th>Name </th>
-<th>Description </th>
-<th>Submitter </th>
-<th>Organization Lab </th>
-<th>Lab Name </th>
-<th>Project Funder ID </th>
-<th>Project Funder </th>
-<th>BIL Uuid </th>
-<th>Locked </th>
-<th>Submission Status </th>
-<th>Validation Status </th>
-<th>Modality </th>
-<th>Current Status </th>
-<th>View Details </th>
-</tr>
-</thead>
-<tbody>
-{% for collection in project_collections %}
-<tr>
-
-<td>{{ collection.name}} </td>
-<td>{{ collection.description}} </td>
-<td>{{ collection.owner.username}} </td>
-<td>{{ collection.organization_name}} </td>
-<td>{{ collection.lab_name}} </td>
-<td>{{ collection.project_funder_id}} </td>
-<td>{{ collection.project_funder}} </td>
-<td>{{ collection.bil_uuid}} </td>
-<td>{{ collection.locked}} </td>
-<td>{{ collection.submission_status}} </td>
-<td>{{ collection.validation_status}} </td>
-<td>{{ collection.modality}} </td>
-<td>{{ collection.event.event_type}} </td>
-<td><a href="{% url 'ingest:collection_detail' collection.id %}">View</td>
-</tr>
-{% endfor %}
-</table>
-<a href="{% url 'ingest:manage_projects' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to Manage Projects</button>
-</a>
-<a href="{% url 'ingest:index' %}">
-  <button class="cancel btn btn btn-primary" value="ignore" formnovalidate="">Return to PI Dashboard</button>
-</a>
+{% block scripts %}
+<link rel="stylesheet" href="https://cdn.datatables.net/2.1.8/css/dataTables.bootstrap5.min.css">
 {% endblock %}
 
+{% block wide %}
+
+<div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4 bil-fadein">
+  <div class="bil-list-header">
+    <h4><i class="fa-solid fa-folder-open me-2" style="color:var(--bil-accent);font-size:1.1rem;"></i>{{ project.name }}</h4>
+    <span class="bil-sub">{{ project_collections|length }} submission{{ project_collections|length|pluralize }} associated with this project</span>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'ingest:manage_projects' %}" class="bil-btn-outline">
+      <i class="fa-solid fa-arrow-left fa-xs"></i>Manage Projects
+    </a>
+    <a href="{% url 'ingest:index' %}" class="bil-btn-outline">
+      <i class="fa-solid fa-house fa-xs"></i>PI Dashboard
+    </a>
+  </div>
+</div>
+
+<div class="bil-table-card bil-fadein">
+  <div class="table-responsive">
+    <table id="tbl-collections" class="bil-data-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Submitter</th>
+          <th>Modality</th>
+          <th>Grant #</th>
+          <th>Locked</th>
+          <th>Submission</th>
+          <th>Validation</th>
+          <th>Latest Event</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for collection in project_collections %}
+        <tr>
+          <td>
+            <div class="bil-col-name">{{ collection.name }}</div>
+            {% if collection.description %}
+            <div class="bil-col-sub">{{ collection.description|truncatechars:55 }}</div>
+            {% endif %}
+          </td>
+          <td><span class="bil-code">{{ collection.owner.username }}</span></td>
+          <td>{{ collection.modality|default:"—" }}</td>
+          <td><span class="bil-code">{{ collection.project_funder_id|default:"—" }}</span></td>
+          <td>
+            {% if collection.locked %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-lock fa-xs"></i>Locked</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-lock-open fa-xs"></i>Open</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if collection.submission_status == 'SUCCESS' %}
+              <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Success</span>
+            {% elif collection.submission_status == 'FAILURE' %}
+              <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+            {% elif collection.submission_status == 'PENDING' or collection.submission_status == 'SUBMITTED' %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>{{ collection.submission_status }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if collection.validation_status == 'SUCCESS' %}
+              <span class="bil-badge bil-badge--ok"><i class="fa-solid fa-check fa-xs"></i>Valid</span>
+            {% elif collection.validation_status == 'FAILURE' %}
+              <span class="bil-badge bil-badge--fail"><i class="fa-solid fa-circle-exclamation fa-xs"></i>Failed</span>
+            {% elif collection.validation_status == 'PENDING' %}
+              <span class="bil-badge bil-badge--warn"><i class="fa-solid fa-clock fa-xs"></i>Pending</span>
+            {% else %}
+              <span class="bil-badge bil-badge--neutral"><i class="fa-solid fa-minus fa-xs"></i>{{ collection.validation_status }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if collection.event %}
+              <span class="bil-code">{{ collection.event.event_type }}</span>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            <a href="{% url 'ingest:collection_detail' collection.id %}" class="bil-icon-btn" title="View detail">
+              <i class="fa-solid fa-arrow-right fa-xs"></i>
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" style="text-align:center;padding:3rem 1rem;color:rgba(22,27,51,.35);font-family:'Lato',sans-serif;">
+            <i class="fa-solid fa-folder-open fa-lg d-block mb-2 mx-auto" style="color:rgba(22,27,51,.15);"></i>
+            No submissions for this project
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.bootstrap5.min.js"></script>
+<script>
+$(document).ready(function() {
+  $('#tbl-collections').DataTable({
+    pageLength: 25,
+    lengthMenu: [10, 25, 50, 100],
+    order: [[0, 'asc']],
+    columnDefs: [
+      { targets: -1, orderable: false, searchable: false, width: '40px' },
+      { targets: 4, width: '80px' },
+      { targets: 5, width: '100px' },
+      { targets: 6, width: '100px' }
+    ]
+  });
+});
+</script>
+{% endblock %}
