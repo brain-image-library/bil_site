@@ -991,7 +991,8 @@ def check_collection_directories(coll, current_user):
             "bad_paths": [],
         }
 
-    datasets = Dataset.objects.filter(sheet__collection=coll)
+    latest_sheet = Sheet.objects.filter(collection=coll).order_by('-date_uploaded').first()
+    datasets = Dataset.objects.filter(sheet=latest_sheet) if latest_sheet else Dataset.objects.none()
 
     # --- 2. Validate bildirectory format for each dataset ---
     bad_paths = []
