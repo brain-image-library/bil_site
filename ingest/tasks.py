@@ -1,6 +1,5 @@
 from __future__ import absolute_import, unicode_literals
 from celery import shared_task
-from fabric import Connection
 from django.conf import settings
 import os
 import subprocess
