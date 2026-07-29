@@ -15,6 +15,7 @@ import configparser
 import sys
 import mimetypes
 from django.contrib import messages
+from django.templatetags.static import static
 
 mimetypes.add_type("text/javascript", ".js", True)
 
@@ -64,6 +65,10 @@ FAKE_STORAGE_AREA = config['Security'].getboolean('FAKE_STORAGE_AREA')
 IMG_DATA_HOST = config['Security']['IMG_DATA_HOST']
 STAGING_AREA_ROOT = config['Security']['STAGING_AREA_ROOT']
 
+# Google Drive configuration
+GOOGLE_SERVICE_ACCOUNT_JSON = config.get('googledrive', 'GOOGLE_SERVICE_ACCOUNT_JSON', fallback=None)
+DRIVE_INTEGRATION_FILES_FOLDER_ID = config.get('googledrive', 'DRIVE_INTEGRATION_FILES_FOLDER_ID', fallback=None)
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -78,6 +83,8 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    'unfold',
+    'unfold.contrib.filters',
     'ingest.apps.IngestConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -239,3 +246,30 @@ MONGO_INGEST_API_URL = "http://127.0.0.1:8095/v1/doi-datasets"
 DOI_JWT_SECRET = "dev-secret-change-me"
 DOI_JWT_ISSUER = "django"
 DOI_JWT_AUDIENCE = "doi-ingest-api"
+
+# django-unfold admin theme
+UNFOLD = {
+    "SITE_TITLE": "Brain Image Library",
+    "SITE_HEADER": "Brain Image Library Admin Portal",
+    "SITE_URL": "/",
+    "SHOW_HISTORY": True,
+    "SHOW_VIEW_ON_SITE": True,
+    "COLORS": {
+        "primary": {
+            "50": "240 249 255",
+            "100": "224 242 254",
+            "200": "186 230 253",
+            "300": "125 211 252",
+            "400": "56 189 248",
+            "500": "14 165 233",
+            "600": "2 132 199",
+            "700": "3 105 161",
+            "800": "7 89 133",
+            "900": "12 74 110",
+            "950": "8 47 73",
+        },
+    },
+    "STYLES": [
+        lambda request: static("ingest/admin/admin_wide.css"),
+    ],
+}
