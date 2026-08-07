@@ -65,9 +65,7 @@ FAKE_STORAGE_AREA = config['Security'].getboolean('FAKE_STORAGE_AREA')
 IMG_DATA_HOST = config['Security']['IMG_DATA_HOST']
 STAGING_AREA_ROOT = config['Security']['STAGING_AREA_ROOT']
 
-# Google Drive configuration
-GOOGLE_SERVICE_ACCOUNT_JSON = config.get('googledrive', 'GOOGLE_SERVICE_ACCOUNT_JSON', fallback=None)
-DRIVE_INTEGRATION_FILES_FOLDER_ID = config.get('googledrive', 'DRIVE_INTEGRATION_FILES_FOLDER_ID', fallback=None)
+V2_SPREADSHEET_DIR = config.get('v2integration', 'V2_SPREADSHEET_DIR', fallback=None)
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

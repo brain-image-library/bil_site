@@ -1,0 +1,119 @@
+/* Remove Tailwind container max-width on admin change/list pages */
+#content {
+    max-width: none !important;
+}
+
+/* ── Changelist list_editable inputs ───────────────────────────────────────── */
+
+#result_list input[type="text"],
+#result_list input[type="number"],
+#result_list input[type="email"],
+#result_list input[type="url"],
+#result_list textarea,
+#result_list select {
+    box-sizing: border-box;
+    width: 100%;
+    font-size: 0.75rem;
+    font-family: inherit;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid rgb(var(--color-base-200));
+    background: rgb(var(--color-base-50));
+    color: rgb(var(--color-base-900));
+    min-height: 28px;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.dark #result_list input[type="text"],
+.dark #result_list input[type="number"],
+.dark #result_list input[type="email"],
+.dark #result_list input[type="url"],
+.dark #result_list textarea,
+.dark #result_list select {
+    border-color: rgb(var(--color-base-700));
+    background: rgb(var(--color-base-800));
+    color: rgb(var(--color-base-100));
+    box-shadow: none;
+}
+
+#result_list input[type="text"]:focus,
+#result_list input[type="number"]:focus,
+#result_list input[type="email"]:focus,
+#result_list input[type="url"]:focus,
+#result_list textarea:focus,
+#result_list select:focus {
+    outline: none;
+    border-color: rgb(var(--color-primary-600));
+    box-shadow: 0 0 0 3px rgb(var(--color-primary-300) / 0.45);
+}
+
+.dark #result_list input[type="text"]:focus,
+.dark #result_list input[type="number"]:focus,
+.dark #result_list input[type="email"]:focus,
+.dark #result_list input[type="url"]:focus,
+.dark #result_list textarea:focus,
+.dark #result_list select:focus {
+    border-color: rgb(var(--color-primary-700));
+    box-shadow: 0 0 0 3px rgb(var(--color-primary-700) / 0.35);
+}
+
+#result_list textarea {
+    resize: vertical;
+    min-height: 64px;
+    line-height: 1.4;
+}
+
+
+/* ── Directory popover (BIL_ID changelist) ─────────────────────────────────── */
+
+/* Allow absolutely-positioned popovers to escape table cell boundaries */
+#result_list,
+#result_list tbody,
+#result_list tr,
+#result_list td {
+    overflow: visible !important;
+}
+
+.bil-dir-details {
+    position: relative;
+    display: inline-block;
+}
+
+.bil-dir-summary {
+    cursor: pointer;
+    color: rgb(var(--color-primary-600));
+    font-size: 0.75rem;
+    list-style: none;
+    user-select: none;
+}
+
+.bil-dir-summary::-webkit-details-marker { display: none; }
+
+.bil-dir-summary:hover {
+    text-decoration: underline;
+}
+
+.bil-dir-popover {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 300;
+    background: #fff;
+    border: 1px solid rgb(var(--color-base-200));
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+    color: rgb(var(--color-base-800));
+    min-width: 200px;
+}
+
+.dark .bil-dir-popover {
+    background: rgb(var(--color-base-800));
+    border-color: rgb(var(--color-base-700));
+    color: rgb(var(--color-base-100));
+    box-shadow: 0 4px 16px rgb(0 0 0 / 0.35);
+}

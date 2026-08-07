@@ -14,7 +14,7 @@ click==8.3.3
 click-didyoumean==0.3.0
 click-plugins==1.1.1
 click-repl==0.2.0
-cryptography==48.0.1
+cryptography==50.0.0
 Django==5.2.16
 django-unfold==0.52.0
 django-autocomplete-light==3.11.0
