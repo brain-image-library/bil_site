@@ -348,7 +348,7 @@ class EventsLog(models.Model):
     notes = models.CharField(max_length=256)
     timestamp = models.DateTimeField()
     #Add field for embargo information
-    event_type = models.CharField(max_length=64, default="", choices=[('mail_tapes_to_bil', 'Mail Tapes To BIL'), ('tapes_received', 'Tapes Received'), ('tapes_ready_for_qc', 'Tapes Ready For QC'), ('move_to_collection', 'Move To Collection'), ('request_brainball', 'Request Brainball'), ('Mail_brainball_from_bil', 'Mail Brainball From BIL'), ('mail_brainball_to_bil', 'Mail Brainball To BIL'), ('received_brainball', 'Received Brainball'), ('collection_created', 'Collection Created'), ('metadata_uploaded', 'Metadata Uploaded'), ('request_validation', 'Request Validation'), ('request_submission', 'Request Submission'), ('request_embargo', 'Request Embargo'), ('collection_public', 'Collection Public'), ('request_withdrawal', 'Request Withdrawal'), ('data_curated', 'Data Curated'), ('collection_validated', 'Collected Validated'), ('user_action_required', 'User Action Required'),])
+    event_type = models.CharField(max_length=64, default="", choices=[('mail_tapes_to_bil', 'Mail Tapes To BIL'), ('tapes_received', 'Tapes Received'), ('tapes_ready_for_qc', 'Tapes Ready For QC'), ('move_to_collection', 'Move To Collection'), ('request_brainball', 'Request Brainball'), ('Mail_brainball_from_bil', 'Mail Brainball From BIL'), ('mail_brainball_to_bil', 'Mail Brainball To BIL'), ('received_brainball', 'Received Brainball'), ('collection_created', 'Collection Created'), ('metadata_uploaded', 'Metadata Uploaded'), ('request_validation', 'Request Validation'), ('request_submission', 'Request Submission'), ('request_embargo', 'Request Embargo'), ('collection_public', 'Collection Public'), ('request_withdrawal', 'Request Withdrawal'), ('data_curated', 'Data Curated'), ('collection_validated', 'Collected Validated'), ('user_action_required', 'User Action Required'), ('updated_to_v2', 'Updated to V2'),])
 
 class DatasetEventsLog(models.Model):
     dataset_id = models.ForeignKey(Dataset, on_delete=models.SET_NULL, null=True, blank=True)
@@ -555,13 +555,25 @@ class BIL_Specimen_ID(models.Model):
     def __str__(self):
         return self.bil_spc_id
 
+    class Meta:
+        verbose_name = 'BIL Specimen ID'
+        verbose_name_plural = 'BIL Specimen IDs'
+
 class BIL_Instrument_ID(models.Model):
     bil_ins_id = models.CharField(max_length=256, blank=True, null=True)
     instrument_id = models.ForeignKey(Instrument, on_delete=models.SET_NULL, null = True, blank=True)
 
+    class Meta:
+        verbose_name = 'BIL Instrument ID'
+        verbose_name_plural = 'BIL Instrument IDs'
+
 class BIL_Project_ID(models.Model):
     bil_prj_id = models.CharField(max_length=256, blank=True, null=True)
     project_id = models.ForeignKey(Project, on_delete=models.SET_NULL, null = True, blank=True)
+
+    class Meta:
+        verbose_name = 'BIL Project ID'
+        verbose_name_plural = 'BIL Project IDs'
 
 class SpecimenLinkage(models.Model):
     specimen_id = models.ForeignKey(BIL_Specimen_ID, on_delete=models.SET_NULL, null=True, blank=True)

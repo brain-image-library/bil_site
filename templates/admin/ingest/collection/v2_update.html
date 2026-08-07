@@ -1,0 +1,363 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block title %}V2 Update — {{ collection.name }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">{% trans "Home" %}</a> &rsaquo;
+  <a href="{% url 'admin:ingest_collection_changelist' %}">{% trans "Collections" %}</a> &rsaquo;
+  <a href="{% url 'admin:ingest_collection_change' collection.pk %}">{{ collection.name }}</a> &rsaquo;
+  {% trans "V2 Update" %}
+</div>
+{% endblock %}
+
+{% block content %}
+<style>
+  /* ── Page shell ── */
+  .v2u-meta { display:flex; gap:2em; margin:.25em 0 1.25em; font-size:.9em; color:#555; }
+  .v2u-meta strong { color:#222; }
+
+  /* ── Step progress bar ── */
+  .v2u-steps { display:flex; align-items:center; gap:0; margin-bottom:1.75em; }
+  .v2u-step {
+    display:flex; align-items:center; gap:.5em;
+    padding:.45em .9em; font-size:.82em; font-weight:600;
+    background:#f3f3f3; color:#888; border:1px solid #ddd;
+  }
+  .v2u-step:first-child { border-radius:4px 0 0 4px; }
+  .v2u-step:last-child  { border-radius:0 4px 4px 0; }
+  .v2u-step + .v2u-step { border-left:none; }
+  .v2u-step.active  { background:#1a73e8; color:#fff; border-color:#1a73e8; }
+  .v2u-step.done    { background:#e8f5e9; color:#2e7d32; border-color:#a5d6a7; }
+  .v2u-step .num    { display:inline-flex; align-items:center; justify-content:center;
+                      width:1.4em; height:1.4em; border-radius:50%; font-size:.85em;
+                      background:rgba(0,0,0,.12); color:inherit; }
+  .v2u-step.active .num { background:rgba(255,255,255,.25); }
+  .v2u-step.done   .num { background:#c8e6c9; color:#1b5e20; }
+  .v2u-arrow { width:0; height:0;
+    border-top:16px solid transparent; border-bottom:16px solid transparent;
+    border-left:10px solid #ddd; margin:0 -1px; z-index:1; }
+
+  /* ── Alert banners ── */
+  .v2u-alert { border-radius:4px; padding:.85em 1em; margin-bottom:1em; line-height:1.5; }
+  .v2u-alert.error   { background:#fdecea; border:1px solid #f5c6cb; color:#721c24; }
+  .v2u-alert.warning { background:#fff8e1; border:1px solid #ffe082; color:#5d4037; }
+  .v2u-alert.success { background:#e8f5e9; border:1px solid #a5d6a7; color:#1b5e20; }
+  .v2u-alert ul { margin:.5em 0 0 1.2em; padding:0; }
+  .v2u-alert li { margin:.2em 0; }
+
+  /* ── File picker (step 1) ── */
+  .v2u-file-table { width:100%; border-collapse:collapse; }
+  .v2u-file-table th {
+    padding:.6em .9em; text-align:left; font-size:.8em; text-transform:uppercase;
+    letter-spacing:.04em; color:#555; border-bottom:2px solid #ddd; background:#fafafa;
+  }
+  .v2u-file-table td { padding:.65em .9em; border-bottom:1px solid #eee; vertical-align:middle; }
+  .v2u-file-table tbody tr { cursor:pointer; transition:background .12s; }
+  .v2u-file-table tbody tr:hover { background:#f0f7ff; }
+  .v2u-file-table tbody tr.selected { background:#e3f0ff; }
+  .v2u-file-table .fname { font-weight:500; font-family:monospace; font-size:.9em; }
+  .v2u-file-table .mtime { color:#777; font-size:.85em; }
+  .v2u-radio { width:1.1em; height:1.1em; cursor:pointer; accent-color:#1a73e8; }
+
+  /* ── Form controls ── */
+  .v2u-field { margin:1em 0; }
+  .v2u-field label { display:block; font-weight:600; margin-bottom:.4em; font-size:.9em; }
+  .v2u-select {
+    padding:.5em .75em; border:1px solid #ccc; border-radius:4px;
+    font-size:.9em; background:#fff; min-width:340px;
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.06);
+    cursor:pointer;
+  }
+  .v2u-select:focus { outline:none; border-color:#1a73e8; box-shadow:0 0 0 2px rgba(26,115,232,.2); }
+  .v2u-input {
+    padding:.45em .65em; border:1px solid #ccc; border-radius:4px;
+    font-size:.85em; font-family:monospace; width:340px;
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.06);
+  }
+  .v2u-input:focus { outline:none; border-color:#1a73e8; box-shadow:0 0 0 2px rgba(26,115,232,.2); }
+
+  /* ── Fixup error table ── */
+  .v2u-fix-table { width:100%; border-collapse:collapse; margin-top:.75em; font-size:.9em; }
+  .v2u-fix-table th {
+    padding:.55em .85em; text-align:left; font-size:.78em; text-transform:uppercase;
+    letter-spacing:.04em; color:#555; background:#f5f5f5; border-bottom:2px solid #ddd;
+  }
+  .v2u-fix-table td { padding:.6em .85em; border-bottom:1px solid #eee; vertical-align:middle; }
+  .v2u-fix-table tbody tr:hover { background:#fafafa; }
+  .v2u-err-msg { color:#b71c1c; font-size:.82em; line-height:1.4; }
+  .v2u-cur-val { font-family:monospace; font-size:.82em; color:#555;
+                 background:#f5f5f5; padding:.2em .4em; border-radius:3px; }
+
+  /* ── Result tables ── */
+  .v2u-result-table { width:100%; border-collapse:collapse; margin-top:.5em; font-size:.9em; }
+  .v2u-result-table th {
+    padding:.55em .85em; text-align:left; background:#f5f5f5;
+    border-bottom:2px solid #ddd; font-size:.82em; text-transform:uppercase; letter-spacing:.04em;
+  }
+  .v2u-result-table td { padding:.6em .85em; border-bottom:1px solid #eee; }
+  .v2u-result-table tr:hover td { background:#fafafa; }
+  .v2u-match   { color:#2e7d32; font-weight:700; }
+  .v2u-nomatch { color:#b71c1c; font-weight:700; }
+
+  /* ── Action row ── */
+  .v2u-actions { display:flex; gap:.75em; align-items:center; margin-top:1.25em; }
+</style>
+
+<h1>V2 Update — {{ collection.name }}</h1>
+<div class="v2u-meta">
+  <span><strong>BIL UUID:</strong> {{ collection.bil_uuid }}</span>
+  <span><strong>Owner:</strong> {{ collection.user }}</span>
+</div>
+
+{% if preflight_errors %}
+  <div class="v2u-alert error">
+    <strong>Cannot proceed — pre-flight check failed:</strong>
+    <ul>{% for e in preflight_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  </div>
+  {% if collection_locked %}
+  <form method="post" style="margin-top:.75em;">
+    {% csrf_token %}
+    <input type="hidden" name="step" value="unlock">
+    <button type="submit" class="button default"
+            onclick="return confirm('Unlock collection {{ collection.name }} and proceed with V2 update?')">
+      Unlock &amp; Retry
+    </button>
+  </form>
+  {% endif %}
+
+{% else %}
+
+{% comment %}Step progress indicator{% endcomment %}
+<div class="v2u-steps">
+  <div class="v2u-step {% if step == '1' %}active{% elif step != '1' %}done{% endif %}">
+    <span class="num">{% if step != '1' %}✓{% else %}1{% endif %}</span> Select File
+  </div>
+  <div class="v2u-arrow"></div>
+  <div class="v2u-step {% if step == '2' %}active{% elif step in '3_fixup,3_failed,3_success' or step == '3_retry' %}done{% endif %}">
+    <span class="num">{% if step == '3_fixup' or step == '3_failed' or step == '3_success' %}✓{% else %}2{% endif %}</span> Validate
+  </div>
+  <div class="v2u-arrow"></div>
+  <div class="v2u-step {% if step == '3_fixup' %}active{% elif step == '3_failed' or step == '3_success' %}{% if step == '3_success' %}done{% else %}active{% endif %}{% endif %}">
+    <span class="num">3</span> Upload
+  </div>
+</div>
+
+{% if step == '1' %}
+  {% if drive_error %}
+    <div class="v2u-alert error"><strong>Configuration error:</strong> {{ drive_error }}</div>
+  {% elif not files %}
+    <div class="v2u-alert warning">
+      No spreadsheet files found matching UUID <strong>{{ collection.bil_uuid }}</strong>.
+      Proceed manually via the existing SOP.
+    </div>
+  {% else %}
+    <h2 style="font-size:1.05em; margin-bottom:.6em;">Select Spreadsheet</h2>
+    <form method="post" id="file-select-form">
+      {% csrf_token %}
+      <input type="hidden" name="step" value="2">
+      <input type="hidden" name="file_name" id="id_file_name">
+      <table class="v2u-file-table">
+        <thead>
+          <tr><th></th><th>Filename</th><th>Last Modified</th></tr>
+        </thead>
+        <tbody>
+          {% for f in files %}
+          <tr data-file-id="{{ f.id }}" data-file-name="{{ f.name }}"
+              onclick="selectFile(this)" class="{% if forloop.first %}selected{% endif %}">
+            <td><input class="v2u-radio" type="radio" name="file_id" value="{{ f.id }}"
+                       data-name="{{ f.name }}" required {% if forloop.first %}checked{% endif %}
+                       onclick="event.stopPropagation()"></td>
+            <td class="fname">{{ f.name }}</td>
+            <td class="mtime">{{ f.modified }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <div class="v2u-actions">
+        <button type="submit" class="button default">Download &amp; Validate →</button>
+      </div>
+    </form>
+    <script>
+    function selectFile(row) {
+      document.querySelectorAll('.v2u-file-table tbody tr').forEach(function(r) {
+        r.classList.remove('selected');
+      });
+      row.classList.add('selected');
+      row.querySelector('input[type=radio]').checked = true;
+    }
+    document.getElementById('file-select-form').addEventListener('submit', function(e) {
+      var checked = document.querySelector('input[name="file_id"]:checked');
+      if (checked) {
+        document.getElementById('id_file_name').value = checked.dataset.name;
+        if (!confirm('Proceed with file:\n\n' + checked.dataset.name + '\n\nfor collection {{ collection.bil_uuid }}?')) {
+          e.preventDefault();
+        }
+      }
+    });
+    </script>
+  {% endif %}
+
+{% elif step == '2' %}
+  <h2 style="font-size:1.05em; margin-bottom:.75em;">Validation — <code style="font-weight:400;">{{ file_name }}</code></h2>
+
+  {% if download_error %}
+    <div class="v2u-alert error"><strong>Download error:</strong> {{ download_error }}</div>
+  {% endif %}
+
+  {% if validation_errors %}
+    <div class="v2u-alert error">
+      <strong>Errors — must be fixed in the source spreadsheet before uploading:</strong>
+      <ul>{% for e in validation_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    </div>
+    <div class="v2u-actions">
+      <a href="{% url 'admin:ingest_collection_v2_update' collection.pk %}" class="button">← Back</a>
+    </div>
+  {% else %}
+    {% if validation_warnings %}
+      <div class="v2u-alert warning">
+        <strong>Warnings — review before proceeding:</strong>
+        <ul>{% for w in validation_warnings %}<li>{{ w }}</li>{% endfor %}</ul>
+      </div>
+    {% else %}
+      <div class="v2u-alert success">
+        <strong>Structural checks passed.</strong>
+        Confirmed: file is V2 format, required sheets (Dataset, Contributors) are present,
+        and contributor identifiers look complete. Field-level validation runs on upload.
+      </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <input type="hidden" name="step" value="3">
+      <input type="hidden" name="file_id" value="{{ file_id }}">
+      <div class="v2u-field">
+        <label for="id_ingest_method">Ingest Method</label>
+        <select name="ingest_method" id="id_ingest_method" class="v2u-select">
+          {% for value, label in ingest_method_choices %}
+            <option value="{{ value }}" {% if value == 'ingest_1' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="v2u-actions">
+        <button type="submit" class="button default">Proceed with Upload →</button>
+        <a href="{% url 'admin:ingest_collection_v2_update' collection.pk %}" class="button">← Start Over</a>
+      </div>
+    </form>
+  {% endif %}
+
+{% elif step == '3_fixup' %}
+  <h2 style="font-size:1.05em; margin-bottom:.4em;">Fix Validation Errors — <code style="font-weight:400;">{{ file_name }}</code></h2>
+  <p style="color:#555; font-size:.9em; margin-bottom:.75em;">
+    The spreadsheet has issues that must be corrected before it can be ingested.
+    Edit the values below and click <strong>Apply &amp; Retry</strong>.
+  </p>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="step" value="3_retry">
+    <input type="hidden" name="ingest_method" value="{{ ingest_method }}">
+
+    <table class="v2u-fix-table">
+      <thead>
+        <tr>
+          <th>Sheet</th><th>Row</th><th>Field</th>
+          <th>Issue</th><th>Current Value</th><th>Corrected Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for err in error_details %}
+        <tr>
+          <td>{{ err.sheet }}</td>
+          <td>{{ err.display_row }}</td>
+          <td><strong>{{ err.field_name }}</strong></td>
+          <td class="v2u-err-msg">
+            {% for m in err.messages %}{{ m }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+          </td>
+          <td><span class="v2u-cur-val">{{ err.current_value|default:"(empty)" }}</span></td>
+          <td>
+            {% if err.choices %}
+            <select name="{{ err.input_name }}" class="v2u-select" required style="min-width:200px;">
+              <option value="">— select —</option>
+              {% for c in err.choices %}
+              <option value="{{ c }}" {% if c == err.current_value %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select>
+            {% else %}
+            <input type="text" name="{{ err.input_name }}" value="{{ err.current_value }}"
+                   class="v2u-input">
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="v2u-actions">
+      <button type="submit" class="button default">Apply &amp; Retry Upload →</button>
+      <a href="{% url 'admin:ingest_collection_v2_update' collection.pk %}" class="button">← Start Over</a>
+    </div>
+  </form>
+
+{% elif step == '3_failed' %}
+  <div class="v2u-alert error">
+    <strong>Upload failed:</strong> {{ upload_error }}
+  </div>
+  <div class="v2u-actions">
+    <a href="{% url 'admin:ingest_collection_v2_update' collection.pk %}" class="button">← Start Over</a>
+  </div>
+
+{% elif step == '3_success' %}
+  <div class="v2u-alert success" style="font-size:1em;">
+    <strong>Upload successful.</strong> Event log entry created.
+  </div>
+
+  <h2 style="font-size:1.05em; margin:1.5em 0 .5em;">Directory Match Results</h2>
+  {% if match_results %}
+    <table class="v2u-result-table">
+      <thead>
+        <tr><th>BIL ID</th><th>Dataset Dir (V2)</th><th>Metadata Dir (V1)</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for r in match_results %}
+        <tr>
+          <td><code>{{ r.bil_id }}</code></td>
+          <td style="font-family:monospace; font-size:.82em;">{{ r.dataset_directory }}</td>
+          <td style="font-family:monospace; font-size:.82em;">{{ r.metadata_directory }}</td>
+          <td class="{% if r.status == 'MATCH' %}v2u-match{% else %}v2u-nomatch{% endif %}">
+            {{ r.status }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p style="color:#777;">No BIL ID records found for this collection.</p>
+  {% endif %}
+
+  <h2 style="font-size:1.05em; margin:1.5em 0 .5em;">BIL ID Summary</h2>
+  {% if bil_summary %}
+    <table class="v2u-result-table">
+      <thead><tr><th>Dataset ID</th><th>Title</th><th>BIL ID</th></tr></thead>
+      <tbody>
+        {% for row in bil_summary %}
+        <tr>
+          <td>{{ row.dataset_id }}</td>
+          <td>{{ row.dataset_title }}</td>
+          <td><code>{{ row.bil_id|default:"—" }}</code></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  <div class="v2u-actions" style="margin-top:1.5em;">
+    <a href="{% url 'admin:ingest_collection_change' collection.pk %}" class="button default">
+      ← Back to Collection
+    </a>
+  </div>
+{% endif %}
+
+{% endif %}
+{% endblock %}
