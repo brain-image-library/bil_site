@@ -1,0 +1,71 @@
+{% extends "admin/base.html" %}
+{% load i18n unfold %}
+
+{% block branding %}
+    {% include "unfold/helpers/site_branding.html" %}
+{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block title %}Dashboard | {{ site_title|default:_("Django site admin") }}{% endblock %}
+
+{% block content %}
+<div class="flex flex-col gap-6 mt-4">
+
+    {% comment %}Curator Queue — three columns, one per Asana section{% endcomment %}
+    {% if asana_error %}
+        {% component "unfold/components/card.html" with title="Curator Queue" %}
+            <p class="text-sm" style="color: #ef4444;">
+                Could not load Asana data: {{ asana_error }}
+            </p>
+        {% endcomponent %}
+    {% else %}
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {% for section_name, section_table in curator_sections %}
+                {% component "unfold/components/card.html" with title=section_name %}
+                    {% if not section_table.rows %}
+                        <p class="text-sm text-base-500">No collections.</p>
+                    {% else %}
+                        {% component "unfold/components/table.html" with table=section_table card_included=1 striped=1 height=400 %}{% endcomponent %}
+                    {% endif %}
+                {% endcomponent %}
+            {% empty %}
+                {% component "unfold/components/card.html" with title="Curator Queue" %}
+                    <p class="text-sm text-base-500">No sections configured.</p>
+                {% endcomponent %}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% comment %}Pipeline Counters{% endcomment %}
+    {% component "unfold/components/card.html" with title="Pipeline" %}
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+            {% for label, count in pipeline_counters %}
+                <div class="text-center py-2">
+                    <div class="text-3xl font-bold text-primary-600 dark:text-primary-400">{{ count }}</div>
+                    <div class="text-xs text-base-500 mt-1">{{ label }}</div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endcomponent %}
+
+    {% comment %}DOI Queue{% endcomment %}
+    {% component "unfold/components/card.html" with title="DOI Queue" %}
+        {% if not doi_table.rows %}
+            <p class="text-sm text-base-500">No datasets ready for DOI assignment.</p>
+        {% else %}
+            {% component "unfold/components/table.html" with table=doi_table card_included=1 striped=1 height=400 %}{% endcomponent %}
+        {% endif %}
+    {% endcomponent %}
+
+    {% comment %}Recent Events{% endcomment %}
+    {% component "unfold/components/card.html" with title="Recent Events" %}
+        {% if not event_table.rows %}
+            <p class="text-sm text-base-500">No recent events.</p>
+        {% else %}
+            {% component "unfold/components/table.html" with table=event_table card_included=1 striped=1 %}{% endcomponent %}
+        {% endif %}
+    {% endcomponent %}
+
+</div>
+{% endblock %}

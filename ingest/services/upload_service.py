@@ -8,6 +8,8 @@ import os
 import tempfile
 from datetime import datetime
 
+import xlrd
+
 from ingest.models import Dataset, DatasetEventsLog, Specimen
 from ingest.views import (
     check_all_sheets,
@@ -32,28 +34,6 @@ from ingest.views import (
     save_specimen_ids,
 )
 
-
-def _apply_xls_overrides(xls_path: str, overrides: dict) -> str:
-    """Write corrected cell values into xls_path in-place.
-
-    overrides: {(sheet_name, row_int, col_int): new_value_str}
-    xlrd reads the whole file eagerly so we can safely overwrite.
-    """
-    import xlrd
-    import xlwt
-
-    wb_in = xlrd.open_workbook(xls_path)
-    wb_out = xlwt.Workbook(encoding='utf-8')
-    for i in range(wb_in.nsheets):
-        ws_in = wb_in.sheet_by_index(i)
-        ws_out = wb_out.add_sheet(ws_in.name)
-        for row_idx in range(ws_in.nrows):
-            for col_idx in range(ws_in.ncols):
-                value = overrides.get((ws_in.name, row_idx, col_idx), ws_in.cell_value(row_idx, col_idx))
-                if value != '' and value is not None:
-                    ws_out.write(row_idx, col_idx, value)
-    wb_out.save(xls_path)
-    return xls_path
 
 
 def _convert_xlsx_to_xls(xlsx_path: str) -> str:

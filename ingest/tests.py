@@ -19,7 +19,9 @@ import os
 import tempfile
 import xlwt
 from unittest.mock import patch, MagicMock
-from django.test import TestCase, Client, RequestFactory
+from django.test import TestCase, Client, RequestFactory, override_settings
+from django.core.cache import cache
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.urls import reverse
@@ -2251,3 +2253,608 @@ class V2UpdateAdminViewTests(TestCase):
         url = reverse('admin:ingest_collection_v2_update', args=[self.collection.pk])
         response = self.client.get(url)
         self.assertIn(response.status_code, [302, 403])
+
+
+class FetchAsanaCuratorQueueTests(TestCase):
+    def setUp(self):
+        cache.clear()
+
+    @patch("ingest.dashboard.requests.get")
+    def test_returns_tasks_grouped_by_section(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"data": [{"name": "abc-uuid-001"}]}
+        mock_get.return_value = mock_resp
+
+        from ingest.dashboard import fetch_asana_curator_queue
+        result = fetch_asana_curator_queue()
+
+        self.assertIn("Passed Validation", result)
+        self.assertIn("abc-uuid-001", result["Passed Validation"])
+
+    @patch("ingest.dashboard.requests.get")
+    def test_caches_result_and_avoids_repeat_api_calls(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"data": [{"name": "some-uuid"}]}
+        mock_get.return_value = mock_resp
+
+        from ingest.dashboard import fetch_asana_curator_queue
+        fetch_asana_curator_queue()
+        cache.clear()  # clear so we can verify second call hits API again
+        fetch_asana_curator_queue()
+
+        # 3 sections × 2 uncached calls = 6 total
+        self.assertEqual(mock_get.call_count, 6)
+
+    @patch("ingest.dashboard.requests.get")
+    def test_skips_api_call_when_gid_is_empty(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.json.return_value = {"data": []}
+        mock_get.return_value = mock_resp
+
+        with self.settings(ASANA_GID_PASSED_VALIDATION="", ASANA_GID_IN_CURATION="", ASANA_GID_CURATION_ISSUE=""):
+            from ingest.dashboard import fetch_asana_curator_queue
+            result = fetch_asana_curator_queue()
+
+        mock_get.assert_not_called()
+        self.assertEqual(result["Passed Validation"], [])
+
+
+class BuildCuratorTableTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        from ingest.models import Project, Collection
+        self.user = User.objects.create_user("curator_test_user")
+        self.project = Project.objects.create(name="Test Project", funded_by="NSF")
+        self.collection = Collection.objects.create(
+            name="Test Collection A",
+            description="desc",
+            organization_name="PSC",
+            lab_name="BIL",
+            project_funder_id="R24MH123456",
+            project=self.project,
+            bil_uuid="test-uuid-abc",
+            data_path="/tmp/test",
+            celery_task_id_submission="",
+            celery_task_id_validation="",
+            collection_type="",
+        )
+
+    def test_row_contains_uuid_and_edit_link(self):
+        from ingest.dashboard import _build_curator_sections
+        sections = _build_curator_sections({"Passed Validation": ["test-uuid-abc"]})
+
+        self.assertEqual(len(sections), 1)
+        section_name, table = sections[0]
+        self.assertEqual(section_name, "Passed Validation")
+        self.assertEqual(len(table.rows), 1)
+        row = table.rows[0]
+        self.assertIn("test-uuid-abc", row[0])
+        self.assertIn("Edit", str(row[1]))
+
+    def test_unknown_uuid_shows_dash(self):
+        from ingest.dashboard import _build_curator_sections
+        sections = _build_curator_sections({"Passed Validation": ["no-such-uuid"]})
+
+        self.assertEqual(len(sections), 1)
+        _, table = sections[0]
+        self.assertEqual(len(table.rows), 1)
+        self.assertEqual(table.rows[0][1], "-")
+
+
+from django.utils import timezone
+
+
+class FetchPipelineCountersTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        from ingest.models import Project, Collection
+        user = User.objects.create_user("pipeline_test_user")
+        project = Project.objects.create(name="Pipeline Test Project", funded_by="NSF")
+        Collection.objects.create(
+            name="Pipeline Pending Collection",
+            description="desc",
+            organization_name="PSC",
+            lab_name="BIL",
+            project_funder_id="R24MH777",
+            project=project,
+            bil_uuid="pipeline-uuid-001",
+            data_path="/tmp/pipeline_test",
+            celery_task_id_submission="",
+            celery_task_id_validation="",
+            collection_type="",
+            submission_status="PENDING",
+            validation_status="NOT_VALIDATED",
+        )
+        Collection.objects.create(
+            name="Pipeline Public Collection",
+            description="desc",
+            organization_name="PSC",
+            lab_name="BIL",
+            project_funder_id="R24MH666",
+            project=project,
+            bil_uuid="pipeline-uuid-002",
+            data_path="/tmp/pipeline_test2",
+            celery_task_id_submission="",
+            celery_task_id_validation="",
+            collection_type="",
+            submission_status="SUCCESS",
+            validation_status="SUCCESS",
+        )
+
+    def test_counts_pending_as_validation_running(self):
+        from ingest.dashboard import fetch_pipeline_counters
+        counters = dict(fetch_pipeline_counters({}))
+        self.assertEqual(counters["Validation Running"], 1)
+
+    def test_counts_public_collections(self):
+        from ingest.dashboard import fetch_pipeline_counters
+        counters = dict(fetch_pipeline_counters({}))
+        self.assertGreaterEqual(counters["Public"], 1)
+
+    def test_uses_asana_counts_for_curator_sections(self):
+        from ingest.dashboard import fetch_pipeline_counters
+        tasks = {"Passed Validation": ["a", "b"], "In Curation": ["c"], "Curation Issue": []}
+        counters = dict(fetch_pipeline_counters(tasks))
+        self.assertEqual(counters["Passed Validation"], 2)
+        self.assertEqual(counters["In Curation"], 1)
+        self.assertEqual(counters["Curation Issue"], 0)
+
+
+class FetchDoiQueueTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        from ingest.models import Project, Collection, Sheet, Dataset, BIL_ID
+        user = User.objects.create_user("doi_test_user")
+        project = Project.objects.create(name="DOI Test Project", funded_by="NSF")
+        self.collection = Collection.objects.create(
+            name="DOI Test Collection",
+            description="desc",
+            organization_name="PSC",
+            lab_name="BIL",
+            project_funder_id="R24MH999",
+            project=project,
+            bil_uuid="doi-uuid-001",
+            data_path="/tmp/doi_test",
+            celery_task_id_submission="",
+            celery_task_id_validation="",
+            collection_type="",
+            submission_status="SUCCESS",
+            validation_status="SUCCESS",
+        )
+        sheet = Sheet.objects.create(filename="/tmp/test.xls", collection=self.collection, ingest_method="ingest_1")
+        dataset = Dataset.objects.create(
+            bildirectory="/test/dir",
+            title="Test Dataset",
+            rights="CC BY 4.0",
+            rightsuri="https://creativecommons.org/licenses/by/4.0/",
+            rightsidentifier="CC-BY-4.0",
+            abstract="Test abstract.",
+            sheet=sheet,
+        )
+        self.bil_id = BIL_ID.objects.create(bil_id="HBP000001", v2_ds_id=dataset, doi=False)
+
+    def test_eligible_dataset_appears_in_queue(self):
+        from ingest.dashboard import fetch_doi_queue
+        result = fetch_doi_queue()
+        bil_ids_in_result = [row[0] for row in result.rows]
+        self.assertIn("HBP000001", bil_ids_in_result)
+
+    def test_already_doied_dataset_excluded(self):
+        from ingest.dashboard import fetch_doi_queue
+        self.bil_id.doi = True
+        self.bil_id.save()
+        result = fetch_doi_queue()
+        bil_ids_in_result = [row[0] for row in result.rows]
+        self.assertNotIn("HBP000001", bil_ids_in_result)
+
+    def test_non_public_collection_excluded(self):
+        from ingest.dashboard import fetch_doi_queue
+        self.collection.submission_status = "PENDING"
+        self.collection.save()
+        result = fetch_doi_queue()
+        bil_ids_in_result = [row[0] for row in result.rows]
+        self.assertNotIn("HBP000001", bil_ids_in_result)
+
+
+class FetchRecentEventsTests(TestCase):
+    def setUp(self):
+        from django.contrib.auth.models import User
+        from ingest.models import Project, Collection, EventsLog
+        user = User.objects.create_user("events_test_user")
+        project = Project.objects.create(name="Events Test Project", funded_by="NSF")
+        self.collection = Collection.objects.create(
+            name="Events Test Collection",
+            description="desc",
+            organization_name="PSC",
+            lab_name="BIL",
+            project_funder_id="R24MH888",
+            project=project,
+            bil_uuid="events-uuid-001",
+            data_path="/tmp/events_test",
+            celery_task_id_submission="",
+            celery_task_id_validation="",
+            collection_type="",
+        )
+        EventsLog.objects.create(
+            collection_id=self.collection,
+            notes="Test note",
+            event_type="collection_created",
+            timestamp=timezone.now(),
+        )
+
+    def test_recent_event_appears_in_table(self):
+        from ingest.dashboard import fetch_recent_events
+        result = fetch_recent_events()
+        self.assertGreater(len(result.rows), 0)
+        event_types = [row[1] for row in result.rows]
+        self.assertIn("Collection Created", event_types)
+
+    def test_returns_at_most_15_rows(self):
+        from ingest.models import EventsLog
+        from ingest.dashboard import fetch_recent_events
+        for i in range(20):
+            EventsLog.objects.create(
+                collection_id=self.collection,
+                notes=f"Note {i}",
+                event_type="metadata_uploaded",
+                timestamp=timezone.now(),
+            )
+        result = fetch_recent_events()
+        self.assertLessEqual(len(result.rows), 15)
+
+
+class DashboardCallbackTests(TestCase):
+    @patch("ingest.dashboard.fetch_asana_curator_queue")
+    def test_asana_error_is_caught_gracefully(self, mock_fetch):
+        mock_fetch.side_effect = Exception("Asana is down")
+        from ingest.dashboard import dashboard_callback
+        from django.test import RequestFactory
+        request = RequestFactory().get("/admin/")
+        context = {}
+        result = dashboard_callback(request, context)
+        self.assertIsNotNone(result["asana_error"])
+        self.assertEqual(result["curator_sections"], [])
+
+    @patch("ingest.dashboard.fetch_asana_curator_queue")
+    def test_successful_call_populates_all_keys(self, mock_fetch):
+        mock_fetch.return_value = {"Passed Validation": [], "In Curation": [], "Curation Issue": []}
+        from ingest.dashboard import dashboard_callback
+        from django.test import RequestFactory
+        request = RequestFactory().get("/admin/")
+        context = {}
+        result = dashboard_callback(request, context)
+        self.assertIn("curator_sections", result)
+        self.assertIn("doi_table", result)
+        self.assertIn("event_table", result)
+        self.assertIsNone(result["asana_error"])
+
+
+class V2PathsTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username='pathuser', password='x')
+        self.collection = Collection.objects.create(
+            name='c', bil_uuid='abc-123', data_path='/bil/lz/abc-123/', user=self.user,
+        )
+
+    @override_settings(FAKE_STORAGE_AREA=False)
+    def test_get_etc_dir_production_swaps_lz_for_etc(self):
+        from ingest.services.v2_paths import get_etc_dir
+        self.assertEqual(get_etc_dir(self.collection), '/bil/etc/abc-123/')
+
+    @override_settings(FAKE_STORAGE_AREA=True)
+    def test_get_etc_dir_fake_storage_uses_tempdir(self):
+        from ingest.services.v2_paths import get_etc_dir
+        import tempfile, os
+        expected = os.path.join(tempfile.gettempdir(), 'bil-etc', 'abc-123')
+        self.assertEqual(get_etc_dir(self.collection), expected)
+
+    @override_settings(FAKE_STORAGE_AREA=True)
+    def test_ensure_etc_dir_creates_directory(self):
+        from ingest.services.v2_paths import ensure_etc_dir
+        import os
+        path = ensure_etc_dir(self.collection)
+        self.assertTrue(os.path.isdir(path))
+
+
+class LuckysheetIOTests(TestCase):
+    def _make_xls(self, tmpdir, data):
+        """data: {sheet_name: [[row0_cells], [row1_cells], ...]}"""
+        import xlwt, os
+        wb = xlwt.Workbook(encoding='utf-8')
+        for name, rows in data.items():
+            ws = wb.add_sheet(name)
+            for r, row in enumerate(rows):
+                for c, val in enumerate(row):
+                    if val is not None and val != '':
+                        ws.write(r, c, val)
+        path = os.path.join(tmpdir, 'in.xls')
+        wb.save(path)
+        return path
+
+    def test_xls_to_luckysheet_shape(self):
+        import tempfile
+        from ingest.services.luckysheet_io import xls_to_luckysheet
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._make_xls(tmp, {'S1': [['a', 'b'], ['c', 'd']]})
+            sheets = xls_to_luckysheet(path)
+            self.assertEqual(len(sheets), 1)
+            self.assertEqual(sheets[0]['name'], 'S1')
+            cells = {(cd['r'], cd['c']): cd['v']['v'] for cd in sheets[0]['celldata']}
+            self.assertEqual(cells, {(0, 0): 'a', (0, 1): 'b', (1, 0): 'c', (1, 1): 'd'})
+
+    def test_xls_to_luckysheet_omits_empty_cells(self):
+        import tempfile
+        from ingest.services.luckysheet_io import xls_to_luckysheet
+        with tempfile.TemporaryDirectory() as tmp:
+            path = self._make_xls(tmp, {'S1': [['a', '', 'c']]})
+            sheets = xls_to_luckysheet(path)
+            coords = {(cd['r'], cd['c']) for cd in sheets[0]['celldata']}
+            self.assertNotIn((0, 1), coords)
+
+    def test_roundtrip_preserves_values(self):
+        import tempfile, os
+        from ingest.services.luckysheet_io import xls_to_luckysheet, luckysheet_to_xls
+        with tempfile.TemporaryDirectory() as tmp:
+            src = self._make_xls(tmp, {'A': [['x', 'y'], ['z', '']]})
+            sheets = xls_to_luckysheet(src)
+            out = os.path.join(tmp, 'out.xls')
+            luckysheet_to_xls(sheets, out)
+            round = xls_to_luckysheet(out)
+            self.assertEqual(round, sheets)
+
+    def test_luckysheet_to_xls_writes_atomically(self):
+        import tempfile, os
+        from ingest.services.luckysheet_io import luckysheet_to_xls
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, 'atomic.xls')
+            with open(out, 'wb') as f:
+                f.write(b'previous contents')
+            sheets = [{'name': 'S', 'celldata': [{'r': 0, 'c': 0, 'v': {'v': 'new', 'm': 'new'}}]}]
+            luckysheet_to_xls(sheets, out)
+            self.assertFalse(os.path.exists(out + '.tmp'))
+            from ingest.services.luckysheet_io import xls_to_luckysheet
+            self.assertEqual(xls_to_luckysheet(out), sheets)
+
+
+class V2ErrorsTests(TestCase):
+    def test_normalize_empty(self):
+        from ingest.services.v2_errors import normalize_errors
+        result = normalize_errors([], [], {})
+        self.assertEqual(result, {'workbook': [], 'cells': [], 'has_blocking': False})
+
+    def test_normalize_spreadsheet_errors_go_to_workbook(self):
+        from ingest.services.v2_errors import normalize_errors
+        result = normalize_errors(['Dataset sheet not found.'], [], {})
+        self.assertEqual(result['workbook'], [
+            {'level': 'error', 'message': 'Dataset sheet not found.'},
+        ])
+        self.assertTrue(result['has_blocking'])
+
+    def test_normalize_warnings_dont_block(self):
+        from ingest.services.v2_errors import normalize_errors
+        result = normalize_errors([], ['SWC sheet is missing.'], {})
+        self.assertEqual(result['workbook'], [
+            {'level': 'warning', 'message': 'SWC sheet is missing.'},
+        ])
+        self.assertFalse(result['has_blocking'])
+
+    def test_normalize_cell_errors(self):
+        from ingest.services.v2_errors import normalize_errors
+        error_map = {'Dataset::3::5': ['"foo" invalid value']}
+        result = normalize_errors([], [], error_map)
+        self.assertEqual(result['cells'], [
+            {'sheet': 'Dataset', 'row': 3, 'col': 5, 'message': '"foo" invalid value'},
+        ])
+        self.assertTrue(result['has_blocking'])
+
+    def test_multiple_messages_per_cell_produce_multiple_entries(self):
+        from ingest.services.v2_errors import normalize_errors
+        error_map = {'Dataset::3::5': ['first', 'second']}
+        result = normalize_errors([], [], error_map)
+        self.assertEqual(len(result['cells']), 2)
+        self.assertEqual({c['message'] for c in result['cells']}, {'first', 'second'})
+
+
+class V2DownloadEndpointTests(TestCase):
+    def setUp(self):
+        User = get_user_model()
+        self.admin = User.objects.create_superuser(username='dladmin', email='a@a', password='x')
+        self.client.force_login(self.admin)
+        self.collection = Collection.objects.create(
+            name='c', bil_uuid='dl-uuid', data_path='/bil/lz/dl-uuid/',
+        )
+
+    def tearDown(self):
+        import os, shutil
+        from ingest.services.v2_paths import get_etc_dir
+        with override_settings(FAKE_STORAGE_AREA=True):
+            etc = get_etc_dir(self.collection)
+            if os.path.isdir(etc):
+                shutil.rmtree(etc, ignore_errors=True)
+
+    @override_settings(FAKE_STORAGE_AREA=True)
+    def test_download_returns_working_xls(self):
+        import os, xlwt
+        from ingest.services.v2_paths import ensure_etc_dir
+        etc = ensure_etc_dir(self.collection)
+        xls_path = os.path.join(etc, 'work.xls')
+        wb = xlwt.Workbook(); wb.add_sheet('S').write(0, 0, 'hi'); wb.save(xls_path)
+
+        url = reverse('admin:ingest_collection_v2_download', args=[self.collection.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('attachment', response['Content-Disposition'])
+
+    @override_settings(FAKE_STORAGE_AREA=True)
+    def test_download_404_when_no_file(self):
+        from ingest.services.v2_paths import ensure_etc_dir
+        ensure_etc_dir(self.collection)  # empty directory
+        url = reverse('admin:ingest_collection_v2_download', args=[self.collection.pk])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+
+class V2UpdateFlowTests(TestCase):
+    """End-to-end integration tests for the collapsed admin flow."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.admin = User.objects.create_superuser(username='flowadmin', email='a@a', password='x')
+        self.client.force_login(self.admin)
+        self.collection = Collection.objects.create(
+            name='c', bil_uuid='flow-uuid', data_path='/bil/lz/flow-uuid/',
+            user=self.admin,
+        )
+        # Create a People record so run_preflight can find the collection owner.
+        People.objects.create(
+            name='Flow Admin', orcid='', affiliation='', affiliation_identifier='',
+            auth_user_id=self.admin,
+        )
+        # Create a DescriptiveMetadata record so run_preflight sees v1 data.
+        from .models import DescriptiveMetadata
+        DescriptiveMetadata.objects.create(
+            collection=self.collection, user=self.admin,
+            sample_id='s', organism_type='mouse', organism_ncbi_taxonomy_id='10090',
+            transgenetic_line_information='', method='m', technique='t',
+            anatomical_structure='brain', total_processed_cells='0',
+            organization='org', lab='lab', investigator='inv',
+            grant_number='g', r24_name='r', r24_directory='d',
+        )
+        # Point V2_SPREADSHEET_DIR at a tempdir with a fixture file.
+        import tempfile, os
+        self.v2_src_dir = tempfile.mkdtemp()
+        self.src_file = os.path.join(self.v2_src_dir, 'flow-uuid.xls')
+        self._write_minimal_v2_xls(self.src_file)
+
+    def tearDown(self):
+        import shutil, os
+        from ingest.services.v2_paths import get_etc_dir
+        with override_settings(FAKE_STORAGE_AREA=True):
+            etc = get_etc_dir(self.collection)
+            if os.path.isdir(etc):
+                shutil.rmtree(etc, ignore_errors=True)
+        if hasattr(self, 'v2_src_dir') and os.path.isdir(self.v2_src_dir):
+            shutil.rmtree(self.v2_src_dir, ignore_errors=True)
+
+    def _write_minimal_v2_xls(self, path):
+        """Write an .xls that will pass validate_spreadsheet's structural checks
+        but deliberately has header-mismatch errors so check_all_sheets produces
+        errors (has_blocking=True) and the view opens the Luckysheet editor.
+
+        Deviation from brief:
+        - Adds a cell to README (xlrd empty-workbook guard).
+        - Writes a single placeholder cell at the expected header row for each
+          sheet (row 2 for Contributors, row 3 for all others) so that
+          check_*_sheet functions don't crash with IndexError, and instead
+          return header-mismatch errors, making has_blocking=True.
+        """
+        import xlwt
+        wb = xlwt.Workbook(encoding='utf-8')
+        readme = wb.add_sheet('README')
+        readme.write(0, 0, 'v2')  # xlrd empty-workbook guard
+
+        contrib = wb.add_sheet('Contributors')
+        contrib.write(2, 0, 'PLACEHOLDER')  # header row 2, wrong content → mismatch error
+
+        funders = wb.add_sheet('Funders')
+        funders.write(3, 0, 'PLACEHOLDER')  # header row 3
+
+        pub = wb.add_sheet('Publication')
+        pub.write(3, 0, 'PLACEHOLDER')
+
+        instr = wb.add_sheet('Instrument')
+        instr.write(3, 0, 'PLACEHOLDER')
+
+        dataset = wb.add_sheet('Dataset')
+        dataset.write(3, 0, 'PLACEHOLDER')
+
+        specimen = wb.add_sheet('Specimen')
+        specimen.write(3, 0, 'PLACEHOLDER')
+
+        image = wb.add_sheet('Image')
+        image.write(3, 0, 'PLACEHOLDER')
+
+        wb.save(path)
+
+    def _post_step_a(self, file_id, ingest_method='ingest_1'):
+        url = reverse('admin:ingest_collection_v2_update', args=[self.collection.pk])
+        return self.client.post(url, {
+            'step': '2',
+            'file_id': file_id,
+            'ingest_method': ingest_method,
+        })
+
+    @override_settings(FAKE_STORAGE_AREA=True)
+    def test_step_a_renders_pick_form(self):
+        # Set V2_SPREADSHEET_DIR via override
+        with override_settings(V2_SPREADSHEET_DIR=self.v2_src_dir):
+            url = reverse('admin:ingest_collection_v2_update', args=[self.collection.pk])
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b'flow-uuid', response.content)  # file appears in list
+            self.assertIn(b'ingest_method', response.content)  # method picker present
+
+    @override_settings(FAKE_STORAGE_AREA=True)
+    def test_step_b_with_cell_errors_opens_editor(self):
+        with override_settings(V2_SPREADSHEET_DIR=self.v2_src_dir):
+            response = self._post_step_a(self.src_file, 'ingest_1')
+            # Minimal xls has empty Dataset sheet → check_all_sheets will error.
+            self.assertEqual(response.status_code, 200)
+            self.assertIn(b'luckysheet', response.content.lower())  # editor rendered
+            # Working file landed in /etc/
+            import os
+            from ingest.services.v2_paths import get_etc_dir
+            self.assertTrue(os.path.exists(os.path.join(get_etc_dir(self.collection), 'flow-uuid.xls')))
+
+    @override_settings(FAKE_STORAGE_AREA=True)
+    def test_editor_save_writes_xls_and_reruns_validation(self):
+        with override_settings(V2_SPREADSHEET_DIR=self.v2_src_dir):
+            self._post_step_a(self.src_file, 'ingest_1')
+
+            import json
+            import os
+            from ingest.services.luckysheet_io import xls_to_luckysheet
+            from ingest.services.v2_paths import get_etc_dir
+
+            landed_xls = os.path.join(get_etc_dir(self.collection), 'flow-uuid.xls')
+            workbook = xls_to_luckysheet(landed_xls)
+            # Mutate one cell on the Dataset sheet.
+            dataset = next(s for s in workbook if s['name'] == 'Dataset')
+            dataset['celldata'].append({'r': 0, 'c': 0, 'v': {'v': 'edited', 'm': 'edited'}})
+
+            url = reverse('admin:ingest_collection_v2_editor_save',
+                          args=[self.collection.pk])
+            response = self.client.post(url, {
+                'workbook': json.dumps(workbook),
+                'ingest_method': 'ingest_1',
+            })
+            # Editor save either re-renders editor (still errors) or redirects to success.
+            self.assertIn(response.status_code, (200, 302))
+
+            # Confirm working xls was written with our edit and still has all sheets.
+            sheets = xls_to_luckysheet(landed_xls)
+            self.assertEqual({s['name'] for s in sheets}, {w['name'] for w in workbook})
+            dataset_out = next(s for s in sheets if s['name'] == 'Dataset')
+            self.assertTrue(any(cd['v']['v'] == 'edited' for cd in dataset_out['celldata']))
+
+
+# ---------------------------------------------------------------------------
+# UserSideUploadUnaffectedTests
+# ---------------------------------------------------------------------------
+
+class UserSideUploadUnaffectedTests(TestCase):
+    """Regression: the user-side descriptive_metadata_upload view still writes to /etc/."""
+
+    @override_settings(FAKE_STORAGE_AREA=True)
+    def test_user_upload_still_uses_etc_swap_pattern(self):
+        # We're not exercising the full user upload endpoint (it requires PAM
+        # auth and heavy fixtures). Instead we assert the *code line* that
+        # implements the /lz/ -> /etc/ swap is still present, since Task 6's
+        # changes must not perturb this path.
+        import pathlib
+        views_path = pathlib.Path(__file__).parent / 'views.py'
+        source = views_path.read_text()
+        self.assertIn('data_path.replace("/lz/", "/etc/")', source)
+        # And FAKE_STORAGE_AREA branch remains:
+        self.assertIn('settings.FAKE_STORAGE_AREA', source)

@@ -1,0 +1,7 @@
+<div class="v2-alert error">
+  <strong>Preflight errors — must be resolved before V2 update can proceed.</strong>
+  <div style="font-size:.9em; margin:.35em 0 .5em; color:#5d1614;">
+    These issues aren't fixable in the spreadsheet editor.
+  </div>
+  <ul>{% for e in preflight_errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>

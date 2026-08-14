@@ -96,7 +96,9 @@ def run_preflight(collection) -> list:
     if v2_count > 0:
         errors.append(
             f"V2 metadata (Sheet) already exists ({v2_count} record(s)). "
-            "Remove existing V2 metadata before running this workflow."
+            "This workflow is for V1→V2 migrations only — to replace an existing V2 "
+            "spreadsheet with an updated one, hijack the collection owner and use the "
+            "standard re-upload process instead."
         )
 
     return errors
