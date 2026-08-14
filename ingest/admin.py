@@ -222,47 +222,6 @@ def _v2_cleanup(tmp_dir):
         pass
 
 
-def _v2_parse_errors(xls_path, error_map):
-    """Return a list of dicts describing each validation error with editable metadata."""
-    import xlrd
-    wb = xlrd.open_workbook(xls_path)
-    details = []
-    for key in sorted(error_map.keys()):
-        messages = error_map[key]
-        sheet_name, row_str, col_str = key.split('::')
-        row, col = int(row_str), int(col_str)
-        try:
-            ws = wb.sheet_by_name(sheet_name)
-            current_value = str(ws.cell_value(row, col))
-        except Exception:
-            current_value = ''
-        msg = messages[0]
-        field_name = ''
-        choices = []
-        m = re.match(r'"([^"]+)" invalid value.*?must be one of: (.+)', msg)
-        if m:
-            field_name = m.group(1)
-            choices = [c.strip() for c in m.group(2).split(',')]
-        else:
-            m = re.match(r'"([^"]+)" is required', msg)
-            if m:
-                field_name = m.group(1)
-            else:
-                m = re.match(r'(\w+) must begin with', msg)
-                if m:
-                    field_name = m.group(1)
-        details.append({
-            'key': key,
-            'input_name': f'override__{sheet_name}__{row}__{col}',
-            'sheet': sheet_name,
-            'display_row': row + 1,
-            'field_name': field_name or f'{sheet_name} col {col + 1}',
-            'current_value': current_value,
-            'messages': messages,
-            'choices': choices,
-        })
-    return details
-
 
 def _v2_success_response(request, context, collection):
     from ingest.services.v2_verifier import check_directory_match, get_bil_id_summary
@@ -281,11 +240,10 @@ def _v2_success_response(request, context, collection):
         timestamp=timezone.now(),
     )
     context.update({
-        'step': '3_success',
         'match_results': match_results,
         'bil_summary': bil_summary,
     })
-    return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
+    return TemplateResponse(request, 'admin/ingest/collection/_v2_success.html', context)
 
 
 # ── Model Admins ──────────────────────────────────────────────────────────────
@@ -319,6 +277,7 @@ class CollectionAdmin(UnfoldModelAdmin):
         "view_datasets_link", "view_bil_ids_link",
         "view_descriptivemetadatas_link",
         "view_sheets_link", "view_eventslogs_link",
+        "view_linkages_link",
     )
     list_filter = [
         ("submission_status", ChoicesDropdownFilter),
@@ -390,6 +349,16 @@ class CollectionAdmin(UnfoldModelAdmin):
                 self.admin_site.admin_view(self.v2_update_view),
                 name='ingest_collection_v2_update',
             ),
+            path(
+                '<int:pk>/v2-update/download/',
+                self.admin_site.admin_view(self.v2_download_view),
+                name='ingest_collection_v2_download',
+            ),
+            path(
+                '<int:pk>/v2-update/editor/save/',
+                self.admin_site.admin_view(self.v2_editor_save),
+                name='ingest_collection_v2_editor_save',
+            ),
         ]
         return custom_urls + urls
 
@@ -417,11 +386,19 @@ class CollectionAdmin(UnfoldModelAdmin):
         return HttpResponseRedirect(reverse('admin:ingest_collection_change', args=[pk]))
 
     def v2_update_view(self, request, pk):
-        from ingest.services.v2_validator import run_preflight, validate_spreadsheet
-        from ingest.services.upload_service import execute_v2_upload
+        from ingest.services.v2_validator import run_preflight
+        from ingest.services.v2_paths import ensure_etc_dir, get_etc_dir
+        from ingest.services.drive_service import search_by_uuid
+        from ingest.services.upload_service import execute_v2_upload, _convert_xlsx_to_xls
+        from ingest.services.v2_errors import normalize_errors
+        from ingest.services.v2_validator import validate_spreadsheet
+        from ingest.services.luckysheet_io import xls_to_luckysheet
+        from ingest.views import check_all_sheets
+        import shutil
+        import json
 
         collection = get_object_or_404(Collection, pk=pk)
-        context = {
+        base_context = {
             **self.admin_site.each_context(request),
             'collection': collection,
             'title': f'V2 Update — {collection.name}',
@@ -436,177 +413,200 @@ class CollectionAdmin(UnfoldModelAdmin):
             collection.save()
             return HttpResponseRedirect(reverse('admin:ingest_collection_v2_update', args=[pk]))
 
-        if request.method == 'GET' or step == '1':
-            preflight_errors = run_preflight(collection)
-            if preflight_errors:
-                context['preflight_errors'] = preflight_errors
-                context['collection_locked'] = collection.locked
-                return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
+        # Preflight always runs.
+        preflight_errors = run_preflight(collection)
+        if preflight_errors:
+            return TemplateResponse(request, 'admin/ingest/collection/v2_pick.html', {
+                **base_context,
+                'preflight_errors': preflight_errors,
+                'collection_locked': collection.locked,
+            })
 
+        ingest_method_choices = [
+            ('ingest_1', 'Method 1 — Light Sheet / Confocal (with Image sheet)'),
+            ('ingest_2', 'Method 2 — Electron Microscopy (with Image sheet)'),
+            ('ingest_3', 'Method 3 — MRI / Other volume (no Image sheet)'),
+            ('ingest_4', 'Method 4 — Multimodal'),
+            ('ingest_5', 'Method 5 — SWC / Morphology (with SWC sheet, no Image sheet)'),
+            ('ingest_6', 'Method 6 — Spatial Transcriptomics'),
+        ]
+
+        # Step A — render pick form.
+        if step == '1' or request.method == 'GET':
             try:
-                from ingest.services.drive_service import search_by_uuid
                 files = search_by_uuid(collection.bil_uuid)
-                context['drive_error'] = None
+                drive_error = None
             except Exception as e:
                 files = []
-                context['drive_error'] = str(e)
-
-            context['files'] = files
-            context['step'] = '1'
-            return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
-
-        elif step == '2':
-            file_id = request.POST.get('file_id', '').strip()
-            file_name = request.POST.get('file_name', '').strip()
-            if not file_id:
-                return HttpResponseRedirect(
-                    reverse('admin:ingest_collection_v2_update', args=[pk])
-                )
-
-            tmp_dir = tempfile.mkdtemp()
-            tmp_ext = os.path.splitext(file_id)[1] or '.xls'
-            tmp_path = os.path.join(tmp_dir, f'{collection.bil_uuid}{tmp_ext}')
-            try:
-                from ingest.services.drive_service import download_file
-                download_file(file_id, tmp_path)
-                errors, warnings = validate_spreadsheet(tmp_path)
-            except Exception as e:
-                context['download_error'] = str(e)
-                context['step'] = '2'
-                return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
-            finally:
-                try:
-                    os.remove(tmp_path)
-                    os.rmdir(tmp_dir)
-                except Exception:
-                    pass
-
-            ingest_method_choices = [
-                ('ingest_1', 'Method 1 — Light Sheet / Confocal (with Image sheet)'),
-                ('ingest_2', 'Method 2 — Electron Microscopy (with Image sheet)'),
-                ('ingest_3', 'Method 3 — MRI / Other volume (no Image sheet)'),
-                ('ingest_4', 'Method 4 — Multimodal'),
-                ('ingest_5', 'Method 5 — SWC / Morphology (with SWC sheet, no Image sheet)'),
-                ('ingest_6', 'Method 6 — Spatial Transcriptomics'),
-            ]
-            context.update({
-                'step': '2',
-                'file_id': file_id,
-                'file_name': file_name,
-                'validation_errors': errors,
-                'validation_warnings': warnings,
+                drive_error = str(e)
+            return TemplateResponse(request, 'admin/ingest/collection/v2_pick.html', {
+                **base_context,
+                'collection_locked': collection.locked,
+                'files': files,
+                'drive_error': drive_error,
                 'ingest_method_choices': ingest_method_choices,
             })
-            return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
 
-        elif step == '3':
-            file_id = request.POST.get('file_id', '').strip()
+        # Step B — land, validate, upload or open editor.
+        if step == '2':
+            from django.conf import settings
+            source_path = request.POST.get('file_id', '').strip()
             ingest_method = request.POST.get('ingest_method', 'ingest_1')
+            source_path = os.path.realpath(source_path) if source_path else ''
+            if not source_path or not os.path.isfile(source_path):
+                return TemplateResponse(request, 'admin/ingest/collection/_v2_failed.html', {
+                    **base_context,
+                    'upload_error': 'Selected file not found on server.',
+                })
+            allowed_root = os.path.realpath(getattr(settings, 'V2_SPREADSHEET_DIR', '') or '')
+            if not allowed_root or os.path.commonpath([source_path, allowed_root]) != allowed_root:
+                return TemplateResponse(request, 'admin/ingest/collection/_v2_failed.html', {
+                    **base_context,
+                    'upload_error': 'Selected file is not in the allowed V2 spreadsheet directory.',
+                })
+            if not source_path.lower().endswith(('.xls', '.xlsx')):
+                return TemplateResponse(request, 'admin/ingest/collection/_v2_failed.html', {
+                    **base_context,
+                    'upload_error': 'Only .xls and .xlsx files are supported.',
+                })
 
-            tmp_dir = tempfile.mkdtemp()
-            tmp_ext = os.path.splitext(file_id)[1] or '.xls'
-            tmp_path = os.path.join(tmp_dir, f'{collection.bil_uuid}{tmp_ext}')
+            etc = ensure_etc_dir(collection)
+            landed = os.path.join(etc, os.path.basename(source_path))
+            shutil.copy2(source_path, landed)
 
-            try:
-                from ingest.services.drive_service import download_file
-                download_file(file_id, tmp_path)
-            except Exception as e:
-                _v2_cleanup(tmp_dir)
-                context.update({'upload_error': str(e), 'step': '3_failed'})
-                return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
-
-            if tmp_path.endswith('.xlsx'):
-                from ingest.services.upload_service import _convert_xlsx_to_xls
-                xls_path = _convert_xlsx_to_xls(tmp_path)
+            if landed.lower().endswith('.xlsx'):
+                xls_path = _convert_xlsx_to_xls(landed)  # writes .xls sibling
             else:
-                xls_path = tmp_path
+                xls_path = landed
 
-            from ingest.views import check_all_sheets
-            error_map = check_all_sheets(xls_path, ingest_method, collection_data_path=collection.data_path)
-            if error_map:
-                request.session['v2_fixup_tmp_dir'] = tmp_dir
-                request.session['v2_fixup_xls_path'] = xls_path
-                request.session['v2_fixup_file_id'] = file_id
-                context.update({
-                    'step': '3_fixup',
-                    'error_details': _v2_parse_errors(xls_path, error_map),
-                    'ingest_method': ingest_method,
-                    'file_name': os.path.basename(file_id),
-                })
-                return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
+            spreadsheet_errors, spreadsheet_warnings = validate_spreadsheet(xls_path)
+            cell_error_map = check_all_sheets(
+                xls_path, ingest_method, collection_data_path=collection.data_path
+            )
+            error_summary = normalize_errors(
+                spreadsheet_errors, spreadsheet_warnings, cell_error_map
+            )
 
-            try:
-                success, error_msg, _ = execute_v2_upload(
-                    xls_path, collection, collection.user, ingest_method
-                )
-            except Exception as e:
-                context.update({'upload_error': str(e), 'step': '3_failed'})
-                return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
-            finally:
-                _v2_cleanup(tmp_dir)
+            if not error_summary['has_blocking']:
+                try:
+                    success, error_msg, _ = execute_v2_upload(
+                        xls_path, collection, collection.user, ingest_method
+                    )
+                except Exception as e:
+                    return TemplateResponse(
+                        request, 'admin/ingest/collection/_v2_failed.html',
+                        {**base_context, 'upload_error': str(e)},
+                    )
+                if not success:
+                    return TemplateResponse(
+                        request, 'admin/ingest/collection/_v2_failed.html',
+                        {**base_context, 'upload_error': error_msg},
+                    )
+                return _v2_success_response(request, dict(base_context), collection)
 
-            if not success:
-                context.update({'upload_error': error_msg, 'step': '3_failed'})
-                return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
-
-            return _v2_success_response(request, context, collection)
-
-        elif step == '3_retry':
-            ingest_method = request.POST.get('ingest_method', 'ingest_1')
-            tmp_dir = request.session.get('v2_fixup_tmp_dir')
-            xls_path = request.session.get('v2_fixup_xls_path')
-            file_id = request.session.get('v2_fixup_file_id', '')
-
-            if not xls_path or not os.path.exists(xls_path):
-                context.update({'upload_error': 'Editing session expired — please start over.', 'step': '3_failed'})
-                return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
-
-            overrides = {}
-            for k, v in request.POST.items():
-                if k.startswith('override__'):
-                    parts = k.split('__')
-                    if len(parts) == 4:
-                        _, sheet_name, row_str, col_str = parts
-                        try:
-                            overrides[(sheet_name, int(row_str), int(col_str))] = v
-                        except ValueError:
-                            pass
-
-            if overrides:
-                from ingest.services.upload_service import _apply_xls_overrides
-                _apply_xls_overrides(xls_path, overrides)
-
-            from ingest.views import check_all_sheets
-            error_map = check_all_sheets(xls_path, ingest_method, collection_data_path=collection.data_path)
-            if error_map:
-                context.update({
-                    'step': '3_fixup',
-                    'error_details': _v2_parse_errors(xls_path, error_map),
-                    'ingest_method': ingest_method,
-                    'file_name': os.path.basename(file_id),
-                })
-                return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
-
-            try:
-                success, error_msg, _ = execute_v2_upload(
-                    xls_path, collection, collection.user, ingest_method
-                )
-            except Exception as e:
-                context.update({'upload_error': str(e), 'step': '3_failed'})
-                return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
-            finally:
-                if tmp_dir:
-                    _v2_cleanup(tmp_dir)
-                for k in ('v2_fixup_tmp_dir', 'v2_fixup_xls_path', 'v2_fixup_file_id'):
-                    request.session.pop(k, None)
-
-            if not success:
-                context.update({'upload_error': error_msg, 'step': '3_failed'})
-                return TemplateResponse(request, 'admin/ingest/collection/v2_update.html', context)
-
-            return _v2_success_response(request, context, collection)
+            # Errors present — open the editor.
+            workbook = xls_to_luckysheet(xls_path)
+            return TemplateResponse(request, 'admin/ingest/collection/v2_editor.html', {
+                **base_context,
+                'ingest_method': ingest_method,
+                'error_summary': error_summary,
+                'workbook_json': workbook,
+                'error_cells_json': error_summary['cells'],
+            })
 
         return HttpResponseRedirect(reverse('admin:ingest_collection_v2_update', args=[pk]))
+
+    def v2_editor_save(self, request, pk):
+        from ingest.services.v2_paths import get_etc_dir
+        from ingest.services.luckysheet_io import luckysheet_to_xls, xls_to_luckysheet
+        from ingest.services.v2_errors import normalize_errors
+        from ingest.services.v2_validator import validate_spreadsheet
+        from ingest.services.upload_service import execute_v2_upload
+        from ingest.views import check_all_sheets
+        import json
+
+        if request.method != 'POST':
+            return HttpResponseRedirect(reverse('admin:ingest_collection_v2_update', args=[pk]))
+
+        collection = get_object_or_404(Collection, pk=pk)
+        base_context = {
+            **self.admin_site.each_context(request),
+            'collection': collection,
+            'title': f'V2 Update — {collection.name}',
+            'opts': Collection._meta,
+            'has_view_permission': True,
+        }
+        ingest_method = request.POST.get('ingest_method', 'ingest_1')
+
+        try:
+            workbook = json.loads(request.POST.get('workbook', '[]'))
+        except json.JSONDecodeError:
+            return TemplateResponse(request, 'admin/ingest/collection/_v2_failed.html', {
+                **base_context,
+                'upload_error': 'Malformed workbook JSON.',
+            })
+
+        etc = get_etc_dir(collection)
+        xls_candidates = [f for f in os.listdir(etc) if f.lower().endswith('.xls')] if os.path.isdir(etc) else []
+        if not xls_candidates:
+            return TemplateResponse(request, 'admin/ingest/collection/_v2_failed.html', {
+                **base_context,
+                'upload_error': 'No working file found. Start over.',
+            })
+        xls_path = os.path.join(etc, xls_candidates[0])
+        luckysheet_to_xls(workbook, xls_path)
+
+        spreadsheet_errors, spreadsheet_warnings = validate_spreadsheet(xls_path)
+        cell_error_map = check_all_sheets(
+            xls_path, ingest_method, collection_data_path=collection.data_path
+        )
+        error_summary = normalize_errors(
+            spreadsheet_errors, spreadsheet_warnings, cell_error_map
+        )
+
+        if not error_summary['has_blocking']:
+            try:
+                success, error_msg, _ = execute_v2_upload(
+                    xls_path, collection, collection.user, ingest_method
+                )
+            except Exception as e:
+                return TemplateResponse(request, 'admin/ingest/collection/_v2_failed.html', {
+                    **base_context,
+                    'upload_error': str(e),
+                })
+            if not success:
+                return TemplateResponse(request, 'admin/ingest/collection/_v2_failed.html', {
+                    **base_context,
+                    'upload_error': error_msg,
+                })
+            return _v2_success_response(request, dict(base_context), collection)
+
+        reloaded = xls_to_luckysheet(xls_path)
+        return TemplateResponse(request, 'admin/ingest/collection/v2_editor.html', {
+            **base_context,
+            'ingest_method': ingest_method,
+            'error_summary': error_summary,
+            'workbook_json': reloaded,
+            'error_cells_json': error_summary['cells'],
+        })
+
+    def v2_download_view(self, request, pk):
+        from ingest.services.v2_paths import get_etc_dir
+        collection = get_object_or_404(Collection, pk=pk)
+        etc = get_etc_dir(collection)
+        candidates = []
+        if os.path.isdir(etc):
+            for name in sorted(os.listdir(etc)):
+                if name.lower().endswith('.xls'):
+                    candidates.insert(0, os.path.join(etc, name))  # prefer .xls
+                elif name.lower().endswith('.xlsx'):
+                    candidates.append(os.path.join(etc, name))
+        if not candidates:
+            raise Http404("No V2 working spreadsheet found.")
+        path = candidates[0]
+        response = FileResponse(open(path, 'rb'), content_type='application/octet-stream')
+        response['Content-Disposition'] = f'attachment; filename="{os.path.basename(path)}"'
+        return response
 
     @unfold_action(description="Mark as Validated/Public")
     def mark_as_public(self, request, object_id):
@@ -665,6 +665,12 @@ class CollectionAdmin(UnfoldModelAdmin):
         count = obj.eventslog_set.count()
         url = reverse("admin:ingest_eventslog_changelist") + "?" + urlencode({"collection_id": obj.id})
         return format_html('<a href="{}">{} Events</a>', url, count)
+
+    @admin.display(description="Linkages")
+    def view_linkages_link(self, obj):
+        count = DatasetLinkage.objects.filter(data_id_1_bil__v2_ds_id__sheet__collection=obj).count()
+        url = reverse("admin:ingest_datasetlinkage_changelist") + "?" + urlencode({"data_id_1_bil__v2_ds_id__sheet__collection__id": obj.id})
+        return format_html('<a href="{}">{} Linkage(s)</a>', url, count)
 
 
 @admin.register(ImageMetadata)
@@ -991,7 +997,7 @@ class DatasetLinkageAdmin(UnfoldModelAdmin):
     autocomplete_fields = ['data_id_1_bil']
 
     def lookup_allowed(self, lookup, value, request=None):
-        if lookup == 'data_id_1_bil__v2_ds_id__id':
+        if lookup in ('data_id_1_bil__v2_ds_id__id', 'data_id_1_bil__v2_ds_id__sheet__collection__id'):
             return True
         return super().lookup_allowed(lookup, value, request)
 

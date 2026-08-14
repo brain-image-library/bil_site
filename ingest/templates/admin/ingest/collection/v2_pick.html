@@ -1,0 +1,96 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+{% include "admin/ingest/collection/_v2_styles.html" %}
+
+<div class="v2-header">
+  <h1>V2 Update — {{ collection.name }}</h1>
+  <span class="sub">Select a spreadsheet and ingest method to begin</span>
+</div>
+<div class="v2-meta">
+  <span><strong>BIL UUID:</strong> {{ collection.bil_uuid }}</span>
+  <span><strong>Owner:</strong> {{ collection.user }}</span>
+</div>
+
+{% if collection_locked %}
+  <div class="v2-alert warning">
+    <strong>Collection is locked.</strong> You must unlock it before proceeding.
+    <form method="post" class="v2-locked-inline">
+      {% csrf_token %}
+      <input type="hidden" name="step" value="unlock">
+      <button type="submit" class="v2-btn primary"
+              onclick="return confirm('Unlock collection {{ collection.name }}?')">
+        Unlock to proceed
+      </button>
+    </form>
+  </div>
+{% endif %}
+
+{% if preflight_errors %}
+  {% include "admin/ingest/collection/_v2_preflight_errors.html" %}
+{% endif %}
+
+{% if not preflight_errors and not collection_locked %}
+  <form method="post" action="{% url 'admin:ingest_collection_v2_update' collection.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="step" value="2">
+
+    <div class="v2-panel">
+      <header>Available Spreadsheets</header>
+      <div class="body">
+        {% if files %}
+          <ul class="v2-choice-list">
+            {% for f in files %}
+              <li>
+                <label class="v2-choice">
+                  <input type="radio" name="file_id" value="{{ f.id }}" required
+                         {% if forloop.first %}checked{% endif %}>
+                  <span class="v2-choice-label mono">{{ f.name }}</span>
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p style="color:#555;">
+            No V2 spreadsheets found matching UUID
+            <code>{{ collection.bil_uuid }}</code>.
+          </p>
+          {% if drive_error %}
+            <div class="v2-alert error" style="margin-top:.5em;">
+              <strong>Lookup error:</strong> {{ drive_error }}
+            </div>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="v2-panel">
+      <header>Ingest Method</header>
+      <div class="body">
+        <ul class="v2-choice-list">
+          {% for value, label in ingest_method_choices %}
+            <li>
+              <label class="v2-choice">
+                <input type="radio" name="ingest_method" value="{{ value }}" required
+                       {% if forloop.first %}checked{% endif %}>
+                <span class="v2-choice-label">{{ label }}</span>
+              </label>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="v2-actions">
+      <button type="submit" class="v2-btn primary" {% if not files %}disabled{% endif %}>
+        Land file &amp; Validate →
+      </button>
+      <a href="{% url 'admin:ingest_collection_change' collection.pk %}" class="v2-btn secondary">
+        ← Back to Collection
+      </a>
+    </div>
+  </form>
+{% endif %}
+
+{% endblock %}

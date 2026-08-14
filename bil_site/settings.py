@@ -236,6 +236,9 @@ DATA_UPLOAD_MAX_NUMBER_FIELDS = None
 ASANA_PAT= config['Security']['ASANA_PAT']
 ASANA_PROJECT_ID = config['Security']['ASANA_PROJECT_ID']
 ASANA_GID = config['Security']['ASANA_GID']
+ASANA_GID_PASSED_VALIDATION = config['Security'].get('ASANA_GID_PASSED_VALIDATION', '')
+ASANA_GID_IN_CURATION = config['Security'].get('ASANA_GID_IN_CURATION', '')
+ASANA_GID_CURATION_ISSUE = config['Security'].get('ASANA_GID_CURATION_ISSUE', '')
 
 DATACITE_DOI_API_URL = "http://127.0.0.1:8094/draft"
 
@@ -267,6 +270,7 @@ UNFOLD = {
             "950": "8 47 73",
         },
     },
+    "DASHBOARD_CALLBACK": "ingest.dashboard.dashboard_callback",
     "STYLES": [
         lambda request: static("ingest/admin/admin_wide.css"),
     ],

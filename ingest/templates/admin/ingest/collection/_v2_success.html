@@ -1,0 +1,70 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+{% include "admin/ingest/collection/_v2_styles.html" %}
+
+<div class="v2-header">
+  <h1>V2 Update — {{ collection.name }}</h1>
+  <span class="sub">Migration complete</span>
+</div>
+
+<div class="v2-alert success">
+  <strong>V2 update successful.</strong> Collection <strong>{{ collection.name }}</strong> has been migrated.
+</div>
+
+<div class="v2-panel">
+  <header>Directory Match Results</header>
+  <div class="body">
+    {% if match_results %}
+      <table class="v2-table">
+        <thead>
+          <tr><th>BIL ID</th><th>Dataset Dir (V2)</th><th>Metadata Dir (V1)</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for r in match_results %}
+          <tr>
+            <td><code>{{ r.bil_id }}</code></td>
+            <td style="font-family:monospace; font-size:.82em;">{{ r.dataset_directory }}</td>
+            <td style="font-family:monospace; font-size:.82em;">{{ r.metadata_directory }}</td>
+            <td class="{% if r.status == 'MATCH' %}v2-status-match{% else %}v2-status-nomatch{% endif %}">
+              {{ r.status }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <pre style="margin:0; white-space:pre-wrap;">{{ match_results|linebreaksbr }}</pre>
+    {% endif %}
+  </div>
+</div>
+
+<div class="v2-panel">
+  <header>BIL ID Summary</header>
+  <div class="body">
+    {% if bil_summary %}
+      <table class="v2-table">
+        <thead><tr><th>Dataset ID</th><th>Title</th><th>BIL ID</th></tr></thead>
+        <tbody>
+          {% for row in bil_summary %}
+          <tr>
+            <td>{{ row.dataset_id }}</td>
+            <td>{{ row.dataset_title }}</td>
+            <td><code>{{ row.bil_id|default:"—" }}</code></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <pre style="margin:0; white-space:pre-wrap;">{{ bil_summary|linebreaksbr }}</pre>
+    {% endif %}
+  </div>
+</div>
+
+<div class="v2-actions">
+  <a href="{% url 'admin:ingest_collection_change' collection.pk %}" class="v2-btn primary">
+    ← Back to Collection
+  </a>
+</div>
+{% endblock %}
