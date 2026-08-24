@@ -240,13 +240,15 @@ ASANA_GID_PASSED_VALIDATION = config['Security'].get('ASANA_GID_PASSED_VALIDATIO
 ASANA_GID_IN_CURATION = config['Security'].get('ASANA_GID_IN_CURATION', '')
 ASANA_GID_CURATION_ISSUE = config['Security'].get('ASANA_GID_CURATION_ISSUE', '')
 
-DATACITE_DOI_API_URL = "http://127.0.0.1:8094/draft"
-
-MONGO_INGEST_API_URL = "http://127.0.0.1:8095/v1/doi-datasets"
-
-DOI_JWT_SECRET = "dev-secret-change-me"
-DOI_JWT_ISSUER = "django"
-DOI_JWT_AUDIENCE = "doi-ingest-api"
+# DOI integration settings — all sourced from site.cfg's [DOI] section.
+# DOI_JWT_SECRET is required (no fallback) so a missing/misconfigured
+# site.cfg fails loud instead of silently using an insecure default.
+DATACITE_PREFIX = config['DOI'].get('DATACITE_PREFIX', '10.80303')
+DATACITE_DOI_API_URL = config['DOI'].get('DATACITE_DOI_API_URL', 'http://127.0.0.1:8096/draft')
+MONGO_INGEST_API_URL = config['DOI'].get('MONGO_INGEST_API_URL', 'http://127.0.0.1:8095/v1/doi-datasets')
+DOI_JWT_SECRET = config['DOI']['DOI_JWT_SECRET']
+DOI_JWT_ISSUER = config['DOI'].get('DOI_JWT_ISSUER', 'django')
+DOI_JWT_AUDIENCE = config['DOI'].get('DOI_JWT_AUDIENCE', 'doi-ingest-api')
 
 # django-unfold admin theme
 UNFOLD = {

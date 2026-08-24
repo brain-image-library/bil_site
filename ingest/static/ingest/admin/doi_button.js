@@ -23,6 +23,9 @@ document.addEventListener("DOMContentLoaded", function () {
             .then(function ({ ok, data }) {
                 if (ok && data.success) {
                     btn.outerHTML = '<span style="color:green;font-weight:600;">✅ DOI Created</span>';
+                    if (data.doi_url) {
+                        window.open(data.doi_url, '_blank');
+                    }
                 } else {
                     alert("DOI creation failed:\n" + (data.error || JSON.stringify(data)));
                     btn.disabled = false;

@@ -3496,25 +3496,180 @@ def make_ingest_jwt(sub: str = "django") -> str:
 
 
 def build_canonical_record_from_bil(bil_record: BIL_ID, doi: str) -> dict:
-    """
-    Minimal CanonicalRecord that satisfies your FastAPI schema.
-    The ONLY hard requirement is Dataset.DOI (or Dataset.doi).
-    Fill the rest as you like (or leave empty) and iterate later.
+    """Build the full canonical record matching prod metadata.dataset schema.
+
+    doi is expected as the DOI URL: https://doi.org/{prefix}/{bil_id}
     """
     ds = bil_record.v2_ds_id
+    sheet = ds.sheet if ds else None
+    collection = sheet.collection if sheet else None
+    project = collection.project if collection else None
+    bil_id_lower = bil_record.bil_id.lower()
+
+    consortium_names = []
+    if project:
+        for pc in ProjectConsortium.objects.filter(project=project).select_related('consortium'):
+            if pc.consortium:
+                consortium_names.append(pc.consortium.long_name)
+    consortium = " | ".join(consortium_names)
+
+    submission = {
+        "sheet": str(sheet.id) if sheet else "",
+        "collection": str(collection.id) if collection else "",
+        "submission_uuid": collection.bil_uuid if collection else "",
+        "method": sheet.ingest_method if sheet else "",
+        "project": project.name if project else "",
+        "consortium": consortium,
+        "metadata": "2.0",
+        "bildate": sheet.date_uploaded.strftime("%Y-%m-%d") if sheet and sheet.date_uploaded else "",
+        "doi": doi,
+    }
+
+    contributors = [{
+        "contributorname": c.contributorname,
+        "creator": c.creator,
+        "contributortype": c.contributortype,
+        "nametype": c.nametype,
+        "nameidentifier": c.nameidentifier,
+        "nameidentifierscheme": c.nameidentifierscheme,
+        "affiliation": c.affiliation,
+        "affiliationidentifier": c.affiliationidentifier,
+        "affiliationidentifierscheme": c.affiliationidentifierscheme,
+    } for c in Contributor.objects.filter(sheet=sheet)] if sheet else []
+
+    funders = [{
+        "fundername": f.fundername,
+        "funding_reference_identifier": f.funding_reference_identifier,
+        "funding_reference_identifier_type": f.funding_reference_identifier_type,
+        "award_number": f.award_number,
+        "award_title": f.award_title,
+    } for f in Funder.objects.filter(sheet=sheet)] if sheet else []
+
+    publications = [{
+        "id": str(p.id),
+        "relatedidentifier": p.relatedidentifier,
+        "relatedidentifiertype": p.relatedidentifiertype,
+        "pmcid": p.pmcid,
+        "relationtype": p.relationtype,
+        "citation": p.citation,
+        "sheet_id": str(p.sheet_id) if p.sheet_id else "",
+        "data_set_id": str(p.data_set_id) if p.data_set_id else "None",
+    } for p in Publication.objects.filter(sheet=sheet)] if sheet else []
+
+    instruments = [{
+        "microscopetype": i.microscopetype,
+        "microscopemanufacturerandmodel": i.microscopemanufacturerandmodel,
+        "objectivename": i.objectivename,
+        "objectiveimmersion": i.objectiveimmersion,
+        "objectivena": i.objectivena,
+        "objectivemagnification": i.objectivemagnification,
+        "detectortype": i.detectortype,
+        "detectormodel": i.detectormodel,
+        "illuminationtypes": i.illuminationtypes,
+        "illuminationwavelength": i.illuminationwavelength,
+        "detectionwavelength": i.detectionwavelength,
+        "sampletemperature": i.sampletemperature,
+    } for i in Instrument.objects.filter(sheet=sheet)] if sheet else []
+
+    specimens = [{
+        "localid": s.localid,
+        "species": s.species,
+        "ncbitaxonomy": s.ncbitaxonomy,
+        "age": s.age,
+        "ageunit": s.ageunit,
+        "sex": s.sex,
+        "genotype": s.genotype,
+        "organlocalid": s.organlocalid,
+        "organname": s.organname,
+        "samplelocalid": s.samplelocalid,
+        "atlas": s.atlas,
+        "locations": s.locations,
+        "linkage": [],
+    } for s in Specimen.objects.filter(data_set=ds)] if ds else []
+
+    datasets = [{
+        "bildirectory": ds.bildirectory,
+        "title": ds.title,
+        "socialmedia": ds.socialmedia,
+        "subject": ds.subject,
+        "subjectscheme": ds.subjectscheme,
+        "rights": ds.rights,
+        "rightsuri": ds.rightsuri,
+        "rightsidentifier": ds.rightsidentifier,
+        "dataset_image": ds.dataset_image,
+        "generalmodality": ds.generalmodality,
+        "technique": ds.technique,
+        "other": ds.other,
+        "abstract": ds.abstract,
+        "methods": ds.methods,
+        "technicalinfo": ds.technicalinfo,
+        "doi": doi,
+        "dataset_size": ds.dataset_size or "0.0",
+        "number_of_files": str(ds.number_of_files) if ds.number_of_files is not None else "0",
+    }] if ds else []
+
+    tags = [{
+        "id": str(dt.tag.id),
+        "type": "BIL",
+        "tag": dt.tag.tag,
+    } for dt in DatasetTag.objects.filter(dataset=ds).select_related('tag')] if ds else []
+
+    assets = [{
+        "bildid": bil_id_lower,
+        "bildoi": doi,
+        "manifestfile": "",
+        "brainpiroot": "",
+        "brainpidata": [],
+    }]
+
+    images = [{
+        "xaxis": img.xaxis,
+        "obliquexdim1": img.obliquexdim1,
+        "obliquexdim2": img.obliquexdim2,
+        "obliquexdim3": img.obliquexdim3,
+        "yaxis": img.yaxis,
+        "obliqueydim1": img.obliqueydim1,
+        "obliqueydim2": img.obliqueydim2,
+        "obliqueydim3": img.obliqueydim3,
+        "zaxis": img.zaxis,
+        "obliquezdim1": img.obliquezdim1,
+        "obliquezdim2": img.obliquezdim2,
+        "obliquezdim3": img.obliquezdim3,
+        "landmarkname": img.landmarkname,
+        "landmarkx": img.landmarkx,
+        "landmarky": img.landmarky,
+        "landmarkz": img.landmarkz,
+        "number": img.number,
+        "displaycolor": img.displaycolor,
+        "representation": img.representation,
+        "flurophore": img.flurophore,
+        "stepsizex": img.stepsizex,
+        "stepsizey": img.stepsizey,
+        "stepsizez": img.stepsizez,
+        "stepsizet": img.stepsizet,
+        "channels": img.channels,
+        "slices": img.slices,
+        "z": img.z,
+        "xsize": img.xsize,
+        "ysize": img.ysize,
+        "zsize": img.zsize,
+        "gbytes": img.gbytes,
+        "files": img.files,
+        "dimensionorder": img.dimensionorder,
+    } for img in Image.objects.filter(data_set=ds)] if ds else []
 
     return {
-        "Metadata": {},
-        "Submission": {},
-        "Contributors": [],
-        "Funders": [],
-        "Specimen": {},
-        "Dataset": {
-            "DOI": doi,
-            "Title": getattr(ds, "title", "") if ds else "",
-            "Directory": getattr(ds, "bildirectory", "") if ds else "",
-        },
-        "Image": {},
+        "bildid": bil_id_lower,
+        "Submission": submission,
+        "Contributors": contributors,
+        "Funders": funders,
+        "Publication": publications,
+        "Instrument": instruments,
+        "Specimen": specimens,
+        "Dataset": datasets,
+        "Tags": tags,
+        "Assets": assets,
+        "Image": images,
     }
 
 @login_required
@@ -3534,7 +3689,50 @@ def doi_api(request):
 
     print(f"Got BIL_ID: {bil_id}")
 
-    # 1) Call DOI mint API (your existing doi-api service)
+    bil_record = get_object_or_404(BIL_ID, bil_id=bil_id)
+
+    # Construct the DOI URL so mongo has the correct DOI *before* DataCite is called.
+    # Production stores as full URL: https://doi.org/{prefix}/{bil_id_lower}
+    prefix = getattr(settings, "DATACITE_PREFIX", "10.80303")
+    prospective_doi = f"https://doi.org/{prefix}/{bil_id.lower()}"
+
+    # 1) Insert into MongoDB FIRST (via FastAPI mongo-ingest-api).
+    # If the DOI already exists, abort — do NOT call DataCite.
+    mongo_ingest_url = getattr(settings, "MONGO_INGEST_API_URL", "http://127.0.0.1:8095/v1/doi-datasets")
+    canonical_record = build_canonical_record_from_bil(bil_record, prospective_doi)
+    token = make_ingest_jwt(sub=request.user.get_username() or "django")
+    ingest_headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        print(f"Sending canonical record to Mongo ingest API: {mongo_ingest_url}")
+        ingest_resp = requests.post(
+            mongo_ingest_url, json=canonical_record, headers=ingest_headers, timeout=45
+        )
+        print(f"Mongo ingest response: {ingest_resp.status_code} - {ingest_resp.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"Mongo ingest request error: {e}")
+        return JsonResponse(
+            {"error": f"Mongo ingest unreachable: {e}", "stage": "mongo_ingest"},
+            status=502,
+        )
+
+    if ingest_resp.status_code >= 400:
+        return JsonResponse(
+            {
+                "error": "Mongo ingest failed — DOI was NOT minted.",
+                "stage": "mongo_ingest",
+                "ingest_status": ingest_resp.status_code,
+                "ingest_error": ingest_resp.text,
+            },
+            status=502,
+        )
+
+    ingest_json = ingest_resp.json() if ingest_resp.content else {}
+
+    # 2) Mint the DOI at DataCite (via doi-api Flask).
     datacite_url = getattr(settings, "DATACITE_DOI_API_URL", "http://127.0.0.1:8094/draft")
     payload = {"bildid": bil_id, "action": "draft"}
     headers = {"Content-Type": "application/json"}
@@ -3543,72 +3741,61 @@ def doi_api(request):
         print(f"Sending payload to DOI API: {json.dumps(payload, indent=2)}")
         response = requests.post(datacite_url, json=payload, headers=headers, timeout=45)
         print(f"DOI API Response: {response.status_code} - {response.text}")
-
-        if response.status_code != 201:
-            return JsonResponse({"error": response.text}, status=response.status_code)
-
-        # DOI minted successfully
-        bil_record = get_object_or_404(BIL_ID, bil_id=bil_id)
-
-        # Determine DOI string (best: parse from DOI API response if it returns it)
-        try:
-            mint_json = response.json()
-        except Exception:
-            mint_json = {}
-
-        # If your doi-api returns it, use it; else fallback to your known pattern
-        minted_doi = mint_json.get("doi") or f"10.80303/{bil_id}"
-
-        # Update local state (you currently store a boolean on BIL_ID; keep if you want)
-        bil_record.doi = True
-        bil_record.save(update_fields=["doi"])
-        print(f"Updated BIL_ID {bil_id} as DOI=True")
-
-        # Build DOI URL (test resolver example you used)
-        doi_url = mint_json.get("doi_url") or f"https://doi.test.datacite.org/dois/10.80303%2F{bil_id}"
-
-        # 2) Call your FastAPI Mongo ingest service
-        mongo_ingest_url = getattr(settings, "MONGO_INGEST_API_URL", "http://127.0.0.1:8000/v1/doi-datasets")
-        canonical_record = build_canonical_record_from_bil(bil_record, minted_doi)
-
-        token = make_ingest_jwt(sub=request.user.get_username() or "django")
-        ingest_headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        }
-
-        print(f"Sending canonical record to Mongo ingest API: {mongo_ingest_url}")
-        ingest_resp = requests.post(mongo_ingest_url, json=canonical_record, headers=ingest_headers, timeout=45)
-        print(f"Mongo ingest response: {ingest_resp.status_code} - {ingest_resp.text}")
-
-        if ingest_resp.status_code >= 400:
-            # Important: DOI is already minted; don't "undo" it.
-            # Return an error so you notice + can retry ingest later.
-            return JsonResponse(
-                {
-                    "error": "DOI minted, but Mongo ingest failed",
-                    "doi_url": doi_url,
-                    "doi": minted_doi,
-                    "ingest_status": "failed",
-                    "ingest_error": ingest_resp.text,
-                },
-                status=502,
-            )
-
-        ingest_json = ingest_resp.json() if ingest_resp.content else {}
+    except requests.exceptions.RequestException as e:
+        print(f"DataCite request error: {e}")
+        # Mongo already has a record for this DOI, but DataCite mint never happened.
+        # Requires manual cleanup of the mongo record before the button will work again.
         return JsonResponse(
             {
-                "success": True,
-                "doi_url": doi_url,
-                "doi": minted_doi,
-                "ingest": ingest_json,  # {"status": "inserted"|"noop_exists", "doi": ...}
+                "error": f"DataCite unreachable after mongo write: {e}",
+                "stage": "datacite",
+                "doi": prospective_doi,
+                "cleanup_required": "Delete mongo record for this DOI to allow retry.",
             },
-            status=201,
+            status=502,
         )
 
-    except requests.exceptions.RequestException as e:
-        print(f"Request Error: {str(e)}")
-        return JsonResponse({"error": f"Request failed: {str(e)}"}, status=500)
+    if response.status_code != 201:
+        return JsonResponse(
+            {
+                "error": "DataCite mint failed after mongo write.",
+                "stage": "datacite",
+                "doi": prospective_doi,
+                "datacite_status": response.status_code,
+                "datacite_error": response.text,
+                "cleanup_required": "Delete mongo record for this DOI to allow retry.",
+            },
+            status=502,
+        )
+
+    # 3) Both steps succeeded — mark local BIL_ID as having a DOI.
+    try:
+        mint_json = response.json()
+    except Exception:
+        mint_json = {}
+    minted_doi = mint_json.get("doi") or prospective_doi
+    doi_url = mint_json.get("doi_url") or f"https://doi.test.datacite.org/dois/{prefix}%2F{bil_id.lower()}"
+
+    bil_record.doi = True
+    bil_record.save(update_fields=["doi"])
+
+    # Store the DOI URL on the Dataset itself so the admin button hides it
+    # (send_to_doi_button checks Dataset.doi).
+    ds = bil_record.v2_ds_id
+    if ds:
+        ds.doi = prospective_doi
+        ds.save(update_fields=["doi"])
+    print(f"Updated BIL_ID {bil_id} as DOI=True, Dataset.doi={prospective_doi}")
+
+    return JsonResponse(
+        {
+            "success": True,
+            "doi_url": doi_url,
+            "doi": minted_doi,
+            "ingest": ingest_json,
+        },
+        status=201,
+    )
     
 @login_required
 def metadata_error_view(request, associated_collection):

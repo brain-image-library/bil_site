@@ -959,28 +959,43 @@ class BIL_IDAdmin(UnfoldModelAdmin):
     def send_to_doi_button(self, obj):
         ds = obj.v2_ds_id
         if not ds:
-            return format_html('<span style="color:#999;">(no v2 dataset)</span>')
+            return format_html('<span style="opacity:.6;">(no v2 dataset)</span>')
 
         if ds.doi:
-            return format_html('<span style="color: green; font-weight: 600;">✅ DOI Created</span>')
+            return format_html(
+                '<span style="display:inline-flex; align-items:center; gap:.35em; '
+                'padding:.4em .8em; border-radius:4px; background:#e8f5e9; '
+                'color:#1b5e20; font-weight:600; font-size:.85em; '
+                'border:1px solid #a5d6a7;">✓ DOI Created</span>'
+            )
+
+        base_btn_style = (
+            'display:inline-flex; align-items:center; justify-content:center; '
+            'padding:.45em .9em; border-radius:4px; font-size:.85em; '
+            'font-weight:600; border:1px solid; cursor:pointer; '
+            'transition:filter .12s, box-shadow .12s;'
+        )
 
         if not self._collection_ready_for_doi(ds):
             coll = ds.sheet.collection if ds.sheet else None
             sub = getattr(coll, "submission_status", "UNKNOWN")
             val = getattr(coll, "validation_status", "UNKNOWN")
             return format_html(
-                '<button type="button" class="button" disabled '
+                '<button type="button" disabled '
+                'style="{}background:#f5f5f5; color:#999; border-color:#ddd; cursor:not-allowed;" '
                 'title="DOI can only be created when submission_status and validation_status are SUCCESS '
                 '(currently: submission={}/validation={})">Create DOI</button>',
-                sub, val,
+                base_btn_style, sub, val,
             )
 
         doi_api_url = reverse("ingest:doi_api")
         return format_html(
-            '<button type="button" class="button bil-doi-btn" '
+            '<button type="button" class="bil-doi-btn" '
+            'style="{}background:#1a73e8; color:#fff; border-color:#1a73e8;" '
+            'onmouseover="this.style.filter=\'brightness(1.08)\';this.style.boxShadow=\'0 1px 3px rgba(0,0,0,.15)\'" '
+            'onmouseout="this.style.filter=\'\';this.style.boxShadow=\'\'" '
             'data-bil-id="{}" data-url="{}">Create DOI</button>',
-            obj.bil_id,
-            doi_api_url,
+            base_btn_style, obj.bil_id, doi_api_url,
         )
 
     class Media:
