@@ -1,0 +1,24 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+{% include "admin/ingest/collection/_v2_styles.html" %}
+
+<div class="v2-header">
+  <h1>V2 Update — {{ collection.name }}</h1>
+  <span class="sub">Upload failed</span>
+</div>
+
+<div class="v2-alert error">
+  <strong>Upload failed:</strong> {{ upload_error }}
+</div>
+
+<div class="v2-actions">
+  <a href="{% url 'admin:ingest_collection_v2_download' collection.pk %}" class="v2-btn secondary">
+    Download current file
+  </a>
+  <a href="{% url 'admin:ingest_collection_v2_update' collection.pk %}" class="v2-btn primary">
+    ← Start Over
+  </a>
+</div>
+{% endblock %}

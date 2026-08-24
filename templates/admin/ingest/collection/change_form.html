@@ -1,0 +1,113 @@
+{% extends "admin/change_form.html" %}
+{% load i18n static %}
+
+{% block object-tools-items %}
+  {{ block.super }}
+  {% if v2_update_url %}
+    <li>
+      <a href="{{ v2_update_url }}"
+         class="cursor-pointer flex items-center gap-2 px-3 py-2 text-left whitespace-nowrap text-primary-600 dark:text-primary-500 font-medium">
+        V2 Update
+      </a>
+    </li>
+  {% endif %}
+{% endblock %}
+
+{% block after_related_objects %}
+  {{ block.super }}
+
+  <section class="bil-dataset-editor" id="bil-dataset-section">
+    <h2 class="bil-dataset-editor__heading">{% trans "Datasets" %}</h2>
+    {% if dataset_formset %}
+      {{ dataset_formset.management_form }}
+      <div class="bil-dataset-table-wrapper">
+        <table class="bil-dataset-table">
+          <thead>
+            <tr>
+              <th class="col-bildirectory">{% trans "BIL Directory" %}</th>
+              <th class="col-title">{% trans "Title" %}</th>
+              <th class="col-doi">{% trans "DOI" %}</th>
+              <th class="col-modality">{% trans "Modality" %}</th>
+              <th class="col-technique">{% trans "Technique" %}</th>
+              <th class="col-abstract">{% trans "Abstract" %}</th>
+              <th class="col-methods">{% trans "Methods" %}</th>
+              <th class="col-rights">{% trans "Rights" %}</th>
+              <th class="col-rightsuri">{% trans "Rights URI" %}</th>
+              <th class="col-rightsid">{% trans "Rights ID" %}</th>
+              <th class="col-subject">{% trans "Subject" %}</th>
+              <th class="col-scheme">{% trans "Subject Scheme" %}</th>
+              <th class="col-size">{% trans "Size" %}</th>
+              <th class="col-filecount">{% trans "Files" %}</th>
+              <th class="col-bil-id">{% trans "BIL ID" %}</th>
+              <th class="col-edit"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for form in dataset_formset %}
+              <tr>
+                {{ form.id }}{{ form.sheet }}
+                <td class="col-bildirectory">{{ form.bildirectory }}</td>
+                <td class="col-title">{{ form.title }}</td>
+                <td class="col-doi">{{ form.doi }}</td>
+                <td class="col-modality">{{ form.generalmodality }}</td>
+                <td class="col-technique">{{ form.technique }}</td>
+                <td class="col-abstract">{{ form.abstract }}</td>
+                <td class="col-methods">{{ form.methods }}</td>
+                <td class="col-rights">{{ form.rights }}</td>
+                <td class="col-rightsuri">{{ form.rightsuri }}</td>
+                <td class="col-rightsid">{{ form.rightsidentifier }}</td>
+                <td class="col-subject">{{ form.subject }}</td>
+                <td class="col-scheme">{{ form.subjectscheme }}</td>
+                <td class="col-size">{{ form.dataset_size }}</td>
+                <td class="col-filecount">{{ form.number_of_files }}</td>
+                <td class="col-bil-id">
+                  {% for bil_id in form.instance.v2_ds_id.all %}
+                    <a href="{% url 'admin:ingest_bil_id_change' bil_id.pk %}" target="_blank" rel="noopener">{{ bil_id.bil_id }}</a>
+                  {% empty %}—{% endfor %}
+                </td>
+                <td class="col-edit">
+                  {% if form.instance.pk %}
+                    <a href="{% url 'admin:ingest_dataset_change' form.instance.pk %}" target="_blank" rel="noopener">{% trans "Edit ↗" %}</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="bil-dataset-editor__footer">
+        <button type="button" id="bil-save-datasets-btn" class="button">{% trans "Save Datasets" %}</button>
+      </div>
+      <script>
+      (function () {
+        document.getElementById('bil-save-datasets-btn').addEventListener('click', function () {
+          var section = document.getElementById('bil-dataset-section');
+          var form = document.createElement('form');
+          form.method = 'POST';
+          form.action = '{% url "admin:ingest_collection_save_datasets" original.pk %}';
+
+          var csrf = document.createElement('input');
+          csrf.type = 'hidden';
+          csrf.name = 'csrfmiddlewaretoken';
+          csrf.value = '{{ csrf_token }}';
+          form.appendChild(csrf);
+
+          section.querySelectorAll('input[name], textarea[name], select[name]').forEach(function (el) {
+            if ((el.type === 'checkbox' || el.type === 'radio') && !el.checked) return;
+            var hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = el.name;
+            hidden.value = el.value;
+            form.appendChild(hidden);
+          });
+
+          document.body.appendChild(form);
+          form.submit();
+        });
+      })();
+      </script>
+    {% else %}
+      <p>{% trans "No datasets found for this collection." %}</p>
+    {% endif %}
+  </section>
+{% endblock %}

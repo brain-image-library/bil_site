@@ -11,7 +11,7 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, DeleteView
 from django.core.cache import cache
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.mail import send_mail
 from django.http import HttpResponse, JsonResponse, Http404, HttpResponseRedirect
 
@@ -49,6 +49,23 @@ from django.db.models.functions import ExtractYear
 from pathlib import Path
 import tempfile
 import jwt, time
+
+
+def _assert_bil_admin(request):
+    try:
+        person = People.objects.get(auth_user_id_id=request.user.id)
+    except People.DoesNotExist:
+        raise PermissionDenied
+    if not person.is_bil_admin:
+        raise PermissionDenied
+
+
+def _assert_pi_of_project(request, project_pk):
+    try:
+        person = People.objects.get(auth_user_id_id=request.user.id)
+        ProjectPeople.objects.get(project_id_id=project_pk, people_id=person, is_pi=True)
+    except (People.DoesNotExist, ProjectPeople.DoesNotExist):
+        raise PermissionDenied
 
 
 def _get_public_dataset_stats():
@@ -259,29 +276,23 @@ def pi_index(request):
 # this function presents all users for changing of PI and PO
 @login_required
 def modify_user(request, pk):
-    current_user = request.user
-    people = People.objects.get(auth_user_id_id = current_user.id)
-    project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-    for attribute in project_person:
-        if attribute.is_pi:
-            pi = True
-        else:
-            pi = False
+    _assert_bil_admin(request)
     person = People.objects.get(auth_user_id_id = pk)
-    
-    all_project_people = ProjectPeople.objects.filter(people_id_id=person.id).all()   
+
+    all_project_people = ProjectPeople.objects.filter(people_id_id=person.id).all()
     for project_person in all_project_people:
         try:
             their_project = Project.objects.get(id=project_person.project_id_id)
         except Project.DoesNotExist:
             their_project = None
-            return render(request, 'ingest/no_projects.html', {'pi':pi})
+            return render(request, 'ingest/no_projects.html', {})
         project_person.their_project = their_project
     return render(request, 'ingest/modify_user.html', {'all_project_people':all_project_people, 'person':person})    
 
 # this function presents all users and gives a bil admin the option to add or remove bil admin privs to said users
 @login_required
 def modify_biladmin_privs(request, pk):
+    _assert_bil_admin(request)
     # use pk to find the user in the people table
     person = People.objects.get(auth_user_id_id = pk)
     return render(request, 'ingest/modify_biladmin_privs.html', {'person':person})
@@ -289,6 +300,7 @@ def modify_biladmin_privs(request, pk):
 # this function does the actual changing of bil admin privs
 @login_required
 def change_bil_admin_privs(request):
+    _assert_bil_admin(request)
     content = json.loads(request.body)
     items = []
     for item in content:
@@ -331,10 +343,11 @@ def userModify(request):
         project_id = item['project_id']
         
         project_person = ProjectPeople.objects.get(id=project_id)
+        _assert_pi_of_project(request, project_person.project_id_id)
         project_person.is_pi=is_pi
         project_person.is_po=is_po
         project_person.save()
-        
+
     return HttpResponse(json.dumps({'url': reverse('ingest:index')}))
 
 @login_required
@@ -576,10 +589,12 @@ def write_user_to_project_people(request):
         user_id = item['user_id']
         project_id = item['project_id']
 
-        project = Project.objects.get(id=project_id) 
+        _assert_pi_of_project(request, project_id)
+
+        project = Project.objects.get(id=project_id)
         person = People.objects.get(auth_user_id_id=user_id)
         project_person = ProjectPeople(project_id_id=project.id, people_id_id=person.id, is_pi=False, is_po=False, doi_role='')
-        
+
         try:
             check =  ProjectPeople.objects.get(project_id_id=project.id, people_id_id=person.id)
             user = User.objects.get(id=user_id)
@@ -612,6 +627,7 @@ def add_user_by_username(request):
     data = json.loads(request.body)
     username = data.get('username', '').strip()
     project_id = data.get('project_id')
+    _assert_pi_of_project(request, project_id)
     try:
         user = User.objects.get(username=username)
     except User.DoesNotExist:
@@ -1449,7 +1465,8 @@ class CollectionList(LoginRequiredMixin, SingleTableMixin, FilterView):
 def collection_data_path(request, pk):
     """ Info about the staging area for a user's collection. """
 
-    collection = Collection.objects.get(id=pk)
+    current_user = request.user
+    collection = get_object_or_404(Collection, id=pk, user=current_user)
     host_and_path = collection.data_path
     data_path = host_and_path.split(":")[1]
 
@@ -1761,16 +1778,9 @@ class CollectionUpdate(LoginRequiredMixin, UpdateView):
         'project_funder', 'project_funder_id'
     ]
     
-    def IsPi(request):
-        current_user = request.user
-        people = People.objects.get(auth_user_id_id = current_user.id)
-        project_person = ProjectPeople.objects.filter(people_id = people.id).all()
-        for attribute in project_person:
-            if attribute.is_pi:
-                pi = True
-            else:
-                pi = False
-        return render(request, {'pi':pi})
+    def get_queryset(self):
+        return Collection.objects.filter(user=self.request.user)
+
     template_name = 'ingest/collection_update.html'
     success_url = reverse_lazy('ingest:collection_list')
 
@@ -1786,7 +1796,7 @@ def collection_delete(request, pk):
             pi = False
     """ Delete a collection. """
 
-    collection = Collection.objects.get(pk=pk)
+    collection = get_object_or_404(Collection, pk=pk, user=current_user)
     if request.method == 'POST':
         if collection.submission_status != "SUCCESS":
             data_path = collection.data_path.__str__()
@@ -1975,7 +1985,7 @@ def check_dataset_sheet(filename, collection_data_path=None):
         cols = dataset_sheet.row_values(i)
         if cols[0] == "":
             errors.append({"row": i, "col": 0, "message": f'"{colheads[0]}" is required'})
-        elif required_prefix and not str(cols[0]).startswith(required_prefix):
+        elif required_prefix and not str(cols[0]).startswith(required_prefix) and not str(cols[0]).startswith('/bil/data/'):
             errors.append({"row": i, "col": 0, "message": (
                 f'BILDirectory must begin with "{required_prefix}" — '
                 f'found "{cols[0]}"'
@@ -3486,28 +3496,185 @@ def make_ingest_jwt(sub: str = "django") -> str:
 
 
 def build_canonical_record_from_bil(bil_record: BIL_ID, doi: str) -> dict:
-    """
-    Minimal CanonicalRecord that satisfies your FastAPI schema.
-    The ONLY hard requirement is Dataset.DOI (or Dataset.doi).
-    Fill the rest as you like (or leave empty) and iterate later.
+    """Build the full canonical record matching prod metadata.dataset schema.
+
+    doi is expected as the DOI URL: https://doi.org/{prefix}/{bil_id}
     """
     ds = bil_record.v2_ds_id
+    sheet = ds.sheet if ds else None
+    collection = sheet.collection if sheet else None
+    project = collection.project if collection else None
+    bil_id_lower = bil_record.bil_id.lower()
 
-    return {
-        "Metadata": {},
-        "Submission": {},
-        "Contributors": [],
-        "Funders": [],
-        "Specimen": {},
-        "Dataset": {
-            "DOI": doi,
-            "Title": getattr(ds, "title", "") if ds else "",
-            "Directory": getattr(ds, "bildirectory", "") if ds else "",
-        },
-        "Image": {},
+    consortium_names = []
+    if project:
+        for pc in ProjectConsortium.objects.filter(project=project).select_related('consortium'):
+            if pc.consortium:
+                consortium_names.append(pc.consortium.long_name)
+    consortium = " | ".join(consortium_names)
+
+    submission = {
+        "sheet": str(sheet.id) if sheet else "",
+        "collection": str(collection.id) if collection else "",
+        "submission_uuid": collection.bil_uuid if collection else "",
+        "method": sheet.ingest_method if sheet else "",
+        "project": project.name if project else "",
+        "consortium": consortium,
+        "metadata": "2.0",
+        "bildate": sheet.date_uploaded.strftime("%Y-%m-%d") if sheet and sheet.date_uploaded else "",
+        "doi": doi,
     }
 
+    contributors = [{
+        "contributorname": c.contributorname,
+        "creator": c.creator,
+        "contributortype": c.contributortype,
+        "nametype": c.nametype,
+        "nameidentifier": c.nameidentifier,
+        "nameidentifierscheme": c.nameidentifierscheme,
+        "affiliation": c.affiliation,
+        "affiliationidentifier": c.affiliationidentifier,
+        "affiliationidentifierscheme": c.affiliationidentifierscheme,
+    } for c in Contributor.objects.filter(sheet=sheet)] if sheet else []
+
+    funders = [{
+        "fundername": f.fundername,
+        "funding_reference_identifier": f.funding_reference_identifier,
+        "funding_reference_identifier_type": f.funding_reference_identifier_type,
+        "award_number": f.award_number,
+        "award_title": f.award_title,
+    } for f in Funder.objects.filter(sheet=sheet)] if sheet else []
+
+    publications = [{
+        "id": str(p.id),
+        "relatedidentifier": p.relatedidentifier,
+        "relatedidentifiertype": p.relatedidentifiertype,
+        "pmcid": p.pmcid,
+        "relationtype": p.relationtype,
+        "citation": p.citation,
+        "sheet_id": str(p.sheet_id) if p.sheet_id else "",
+        "data_set_id": str(p.data_set_id) if p.data_set_id else "None",
+    } for p in Publication.objects.filter(sheet=sheet)] if sheet else []
+
+    instruments = [{
+        "microscopetype": i.microscopetype,
+        "microscopemanufacturerandmodel": i.microscopemanufacturerandmodel,
+        "objectivename": i.objectivename,
+        "objectiveimmersion": i.objectiveimmersion,
+        "objectivena": i.objectivena,
+        "objectivemagnification": i.objectivemagnification,
+        "detectortype": i.detectortype,
+        "detectormodel": i.detectormodel,
+        "illuminationtypes": i.illuminationtypes,
+        "illuminationwavelength": i.illuminationwavelength,
+        "detectionwavelength": i.detectionwavelength,
+        "sampletemperature": i.sampletemperature,
+    } for i in Instrument.objects.filter(sheet=sheet)] if sheet else []
+
+    specimens = [{
+        "localid": s.localid,
+        "species": s.species,
+        "ncbitaxonomy": s.ncbitaxonomy,
+        "age": s.age,
+        "ageunit": s.ageunit,
+        "sex": s.sex,
+        "genotype": s.genotype,
+        "organlocalid": s.organlocalid,
+        "organname": s.organname,
+        "samplelocalid": s.samplelocalid,
+        "atlas": s.atlas,
+        "locations": s.locations,
+        "linkage": [],
+    } for s in Specimen.objects.filter(data_set=ds)] if ds else []
+
+    datasets = [{
+        "bildirectory": ds.bildirectory,
+        "title": ds.title,
+        "socialmedia": ds.socialmedia,
+        "subject": ds.subject,
+        "subjectscheme": ds.subjectscheme,
+        "rights": ds.rights,
+        "rightsuri": ds.rightsuri,
+        "rightsidentifier": ds.rightsidentifier,
+        "dataset_image": ds.dataset_image,
+        "generalmodality": ds.generalmodality,
+        "technique": ds.technique,
+        "other": ds.other,
+        "abstract": ds.abstract,
+        "methods": ds.methods,
+        "technicalinfo": ds.technicalinfo,
+        "doi": doi,
+        "dataset_size": ds.dataset_size or "0.0",
+        "number_of_files": str(ds.number_of_files) if ds.number_of_files is not None else "0",
+    }] if ds else []
+
+    tags = [{
+        "id": str(dt.tag.id),
+        "type": "BIL",
+        "tag": dt.tag.tag,
+    } for dt in DatasetTag.objects.filter(dataset=ds).select_related('tag')] if ds else []
+
+    assets = [{
+        "bildid": bil_id_lower,
+        "bildoi": doi,
+        "manifestfile": "",
+        "brainpiroot": "",
+        "brainpidata": [],
+    }]
+
+    images = [{
+        "xaxis": img.xaxis,
+        "obliquexdim1": img.obliquexdim1,
+        "obliquexdim2": img.obliquexdim2,
+        "obliquexdim3": img.obliquexdim3,
+        "yaxis": img.yaxis,
+        "obliqueydim1": img.obliqueydim1,
+        "obliqueydim2": img.obliqueydim2,
+        "obliqueydim3": img.obliqueydim3,
+        "zaxis": img.zaxis,
+        "obliquezdim1": img.obliquezdim1,
+        "obliquezdim2": img.obliquezdim2,
+        "obliquezdim3": img.obliquezdim3,
+        "landmarkname": img.landmarkname,
+        "landmarkx": img.landmarkx,
+        "landmarky": img.landmarky,
+        "landmarkz": img.landmarkz,
+        "number": img.number,
+        "displaycolor": img.displaycolor,
+        "representation": img.representation,
+        "flurophore": img.flurophore,
+        "stepsizex": img.stepsizex,
+        "stepsizey": img.stepsizey,
+        "stepsizez": img.stepsizez,
+        "stepsizet": img.stepsizet,
+        "channels": img.channels,
+        "slices": img.slices,
+        "z": img.z,
+        "xsize": img.xsize,
+        "ysize": img.ysize,
+        "zsize": img.zsize,
+        "gbytes": img.gbytes,
+        "files": img.files,
+        "dimensionorder": img.dimensionorder,
+    } for img in Image.objects.filter(data_set=ds)] if ds else []
+
+    return {
+        "bildid": bil_id_lower,
+        "Submission": submission,
+        "Contributors": contributors,
+        "Funders": funders,
+        "Publication": publications,
+        "Instrument": instruments,
+        "Specimen": specimens,
+        "Dataset": datasets,
+        "Tags": tags,
+        "Assets": assets,
+        "Image": images,
+    }
+
+@login_required
 def doi_api(request):
+    _assert_bil_admin(request)
     print(f"Received request: {request.method}")
 
     try:
@@ -3522,7 +3689,50 @@ def doi_api(request):
 
     print(f"Got BIL_ID: {bil_id}")
 
-    # 1) Call DOI mint API (your existing doi-api service)
+    bil_record = get_object_or_404(BIL_ID, bil_id=bil_id)
+
+    # Construct the DOI URL so mongo has the correct DOI *before* DataCite is called.
+    # Production stores as full URL: https://doi.org/{prefix}/{bil_id_lower}
+    prefix = getattr(settings, "DATACITE_PREFIX", "10.80303")
+    prospective_doi = f"https://doi.org/{prefix}/{bil_id.lower()}"
+
+    # 1) Insert into MongoDB FIRST (via FastAPI mongo-ingest-api).
+    # If the DOI already exists, abort — do NOT call DataCite.
+    mongo_ingest_url = getattr(settings, "MONGO_INGEST_API_URL", "http://127.0.0.1:8095/v1/doi-datasets")
+    canonical_record = build_canonical_record_from_bil(bil_record, prospective_doi)
+    token = make_ingest_jwt(sub=request.user.get_username() or "django")
+    ingest_headers = {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        print(f"Sending canonical record to Mongo ingest API: {mongo_ingest_url}")
+        ingest_resp = requests.post(
+            mongo_ingest_url, json=canonical_record, headers=ingest_headers, timeout=45
+        )
+        print(f"Mongo ingest response: {ingest_resp.status_code} - {ingest_resp.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"Mongo ingest request error: {e}")
+        return JsonResponse(
+            {"error": f"Mongo ingest unreachable: {e}", "stage": "mongo_ingest"},
+            status=502,
+        )
+
+    if ingest_resp.status_code >= 400:
+        return JsonResponse(
+            {
+                "error": "Mongo ingest failed — DOI was NOT minted.",
+                "stage": "mongo_ingest",
+                "ingest_status": ingest_resp.status_code,
+                "ingest_error": ingest_resp.text,
+            },
+            status=502,
+        )
+
+    ingest_json = ingest_resp.json() if ingest_resp.content else {}
+
+    # 2) Mint the DOI at DataCite (via doi-api Flask).
     datacite_url = getattr(settings, "DATACITE_DOI_API_URL", "http://127.0.0.1:8094/draft")
     payload = {"bildid": bil_id, "action": "draft"}
     headers = {"Content-Type": "application/json"}
@@ -3531,74 +3741,62 @@ def doi_api(request):
         print(f"Sending payload to DOI API: {json.dumps(payload, indent=2)}")
         response = requests.post(datacite_url, json=payload, headers=headers, timeout=45)
         print(f"DOI API Response: {response.status_code} - {response.text}")
-
-        if response.status_code != 201:
-            return JsonResponse({"error": response.text}, status=response.status_code)
-
-        # DOI minted successfully
-        bil_record = get_object_or_404(BIL_ID, bil_id=bil_id)
-
-        # Determine DOI string (best: parse from DOI API response if it returns it)
-        try:
-            mint_json = response.json()
-        except Exception:
-            mint_json = {}
-
-        # If your doi-api returns it, use it; else fallback to your known pattern
-        minted_doi = mint_json.get("doi") or f"10.80303/{bil_id}"
-
-        # Update local state (you currently store a boolean on BIL_ID; keep if you want)
-        bil_record.doi = True
-        bil_record.save(update_fields=["doi"])
-        print(f"Updated BIL_ID {bil_id} as DOI=True")
-
-        # Build DOI URL (test resolver example you used)
-        doi_url = mint_json.get("doi_url") or f"https://doi.test.datacite.org/dois/10.80303%2F{bil_id}"
-
-        # 2) Call your FastAPI Mongo ingest service
-        mongo_ingest_url = getattr(settings, "MONGO_INGEST_API_URL", "http://127.0.0.1:8000/v1/doi-datasets")
-        canonical_record = build_canonical_record_from_bil(bil_record, minted_doi)
-
-        token = make_ingest_jwt(sub=request.user.get_username() or "django")
-        ingest_headers = {
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
-        }
-
-        print(f"Sending canonical record to Mongo ingest API: {mongo_ingest_url}")
-        ingest_resp = requests.post(mongo_ingest_url, json=canonical_record, headers=ingest_headers, timeout=45)
-        print(f"Mongo ingest response: {ingest_resp.status_code} - {ingest_resp.text}")
-
-        if ingest_resp.status_code >= 400:
-            # Important: DOI is already minted; don't "undo" it.
-            # Return an error so you notice + can retry ingest later.
-            return JsonResponse(
-                {
-                    "error": "DOI minted, but Mongo ingest failed",
-                    "doi_url": doi_url,
-                    "doi": minted_doi,
-                    "ingest_status": "failed",
-                    "ingest_error": ingest_resp.text,
-                },
-                status=502,
-            )
-
-        ingest_json = ingest_resp.json() if ingest_resp.content else {}
+    except requests.exceptions.RequestException as e:
+        print(f"DataCite request error: {e}")
+        # Mongo already has a record for this DOI, but DataCite mint never happened.
+        # Requires manual cleanup of the mongo record before the button will work again.
         return JsonResponse(
             {
-                "success": True,
-                "doi_url": doi_url,
-                "doi": minted_doi,
-                "ingest": ingest_json,  # {"status": "inserted"|"noop_exists", "doi": ...}
+                "error": f"DataCite unreachable after mongo write: {e}",
+                "stage": "datacite",
+                "doi": prospective_doi,
+                "cleanup_required": "Delete mongo record for this DOI to allow retry.",
             },
-            status=201,
+            status=502,
         )
 
-    except requests.exceptions.RequestException as e:
-        print(f"Request Error: {str(e)}")
-        return JsonResponse({"error": f"Request failed: {str(e)}"}, status=500)
+    if response.status_code != 201:
+        return JsonResponse(
+            {
+                "error": "DataCite mint failed after mongo write.",
+                "stage": "datacite",
+                "doi": prospective_doi,
+                "datacite_status": response.status_code,
+                "datacite_error": response.text,
+                "cleanup_required": "Delete mongo record for this DOI to allow retry.",
+            },
+            status=502,
+        )
+
+    # 3) Both steps succeeded — mark local BIL_ID as having a DOI.
+    try:
+        mint_json = response.json()
+    except Exception:
+        mint_json = {}
+    minted_doi = mint_json.get("doi") or prospective_doi
+    doi_url = mint_json.get("doi_url") or f"https://doi.test.datacite.org/dois/{prefix}%2F{bil_id.lower()}"
+
+    bil_record.doi = True
+    bil_record.save(update_fields=["doi"])
+
+    # Store the DOI URL on the Dataset itself so the admin button hides it
+    # (send_to_doi_button checks Dataset.doi).
+    ds = bil_record.v2_ds_id
+    if ds:
+        ds.doi = prospective_doi
+        ds.save(update_fields=["doi"])
+    print(f"Updated BIL_ID {bil_id} as DOI=True, Dataset.doi={prospective_doi}")
+
+    return JsonResponse(
+        {
+            "success": True,
+            "doi_url": doi_url,
+            "doi": minted_doi,
+            "ingest": ingest_json,
+        },
+        status=201,
+    )
     
-@login_required
 @login_required
 def metadata_error_view(request, associated_collection):
     """Display spreadsheet validation errors with per-cell highlighting."""
@@ -3656,6 +3854,7 @@ def descriptive_metadata_upload(request, associated_collection):
             pi = True
         else:
             pi = False    
+    associated_collection_obj = get_object_or_404(Collection, id=associated_collection, user=current_user)
     """ Upload a spreadsheet containing image metadata information. """
     # The POST. A user has selected a file and associated collection to upload.
     if request.method == 'POST' and request.FILES['spreadsheet_file']:
@@ -3664,7 +3863,7 @@ def descriptive_metadata_upload(request, associated_collection):
         ingest_method = request.POST.get('ingest_method', False)
 	
         #if form.is_valid():
-        associated_collection = Collection.objects.get(id = associated_collection)
+        associated_collection = associated_collection_obj
 
         if settings.FAKE_STORAGE_AREA:
             datapath = tempfile.gettempdir()
@@ -3691,104 +3890,26 @@ def descriptive_metadata_upload(request, associated_collection):
         
         # using new metadata model
         elif version1 == False:
-            error_map = check_all_sheets(filename, ingest_method, collection_data_path=associated_collection.data_path)
-            if error_map:
-                request.session['metadata_errors'] = error_map
-                request.session['metadata_error_filename'] = filename
-                return redirect('ingest:metadata_error_view', associated_collection=associated_collection.id)
-
+            from ingest.services.upload_service import execute_v2_upload
+            success, error_msg, sheet_id = execute_v2_upload(
+                filename, associated_collection, request.user, ingest_method
+            )
+            if not success:
+                # Check if it was a check_all_sheets validation error (keep existing session error behavior)
+                error_map = None
+                if error_msg and error_msg.startswith('Validation errors:'):
+                    error_map = check_all_sheets(filename, ingest_method, collection_data_path=associated_collection.data_path)
+                if error_map:
+                    request.session['metadata_errors'] = error_map
+                    request.session['metadata_error_filename'] = filename
+                    return redirect('ingest:metadata_error_view', associated_collection=associated_collection.id)
+                messages.error(request, error_msg or 'Error uploading metadata.')
+                return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
+            messages.success(request, 'Descriptive Metadata successfully uploaded!!')
+            if ProjectConsortium.objects.filter(project=associated_collection.project, consortium__short_name='BICAN').exists():
+                return redirect('ingest:bican_id_upload', sheet_id=sheet_id)
             else:
-                saved = False
-                collection = Collection.objects.get(name=associated_collection.name)
-                contributors = ingest_contributors_sheet(filename)
-                funders = ingest_funders_sheet(filename)
-                publications = ingest_publication_sheet(filename)
-                instruments = ingest_instrument_sheet(filename)
-                datasets = ingest_dataset_sheet(filename)
-                specimen_set = ingest_specimen_sheet(filename)
-                images = ingest_image_sheet(filename)
-                swcs = ingest_swc_sheet(filename)
-                # Only ingest spatial if Spatial sheet exists AND ingest method is 1 or 2
-                if has_spatial and ingest_method in ('ingest_1', 'ingest_2'):
-                    spatials = ingest_spatial_sheet(filename)
-                else:
-                    spatials = []
-
-                # choose save method depending on ingest_method value from radio button
-                if ingest_method == 'ingest_1':
-                    sheet = save_sheet_row(ingest_method, filename, collection)
-                    saved = save_all_sheets_method_1(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                    if has_spatial:
-                        ingested_datasets = list(Dataset.objects.filter(sheet=sheet))
-                        save_spatial_sheet(spatials, sheet, ingested_datasets)
-                    ingested_datasets = Dataset.objects.filter(sheet=sheet)
-                    ingested_specimens = Specimen.objects.filter(sheet=sheet)
-                    bil_id_result = save_bil_ids(ingested_datasets, filename)
-                    if bil_id_result is not None:
-                        _report_bil_id_errors(request, bil_id_result)
-                        return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                    save_specimen_ids(ingested_specimens)
-                elif ingest_method == 'ingest_2':
-                    sheet = save_sheet_row(ingest_method, filename, collection)
-                    saved = save_all_sheets_method_2(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                    if has_spatial:
-                        ingested_datasets = list(Dataset.objects.filter(sheet=sheet))
-                        save_spatial_sheet(spatials, sheet, ingested_datasets)
-                    ingested_datasets = Dataset.objects.filter(sheet=sheet)
-                    ingested_specimens = Specimen.objects.filter(sheet=sheet)
-                    bil_id_result = save_bil_ids(ingested_datasets, filename)
-                    if bil_id_result is not None:
-                        _report_bil_id_errors(request, bil_id_result)
-                        return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                    save_specimen_ids(ingested_specimens)
-                elif ingest_method == 'ingest_3':
-                    sheet = save_sheet_row(ingest_method, filename, collection)
-                    saved = save_all_sheets_method_3(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                    ingested_datasets = Dataset.objects.filter(sheet=sheet)
-                    ingested_specimens = Specimen.objects.filter(sheet=sheet)
-                    bil_id_result = save_bil_ids(ingested_datasets, filename)
-                    if bil_id_result is not None:
-                        _report_bil_id_errors(request, bil_id_result)
-                        return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                    save_specimen_ids(ingested_specimens)
-                elif ingest_method == 'ingest_4':
-                    sheet = save_sheet_row(ingest_method, filename, collection)
-                    saved = save_all_sheets_method_4(instruments, specimen_set, images, datasets, sheet, contributors, funders, publications)
-                    ingested_datasets = Dataset.objects.filter(sheet=sheet)
-                    ingested_specimens = Specimen.objects.filter(sheet=sheet)
-                    bil_id_result = save_bil_ids(ingested_datasets, filename)
-                    if bil_id_result is not None:
-                        _report_bil_id_errors(request, bil_id_result)
-                        return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                    save_specimen_ids(ingested_specimens)
-                elif ingest_method == 'ingest_5':
-                    sheet = save_sheet_row(ingest_method, filename, collection)
-                    saved = save_all_sheets_method_5(instruments, specimen_set, datasets, sheet, contributors, funders, publications, swcs)
-                    ingested_datasets = Dataset.objects.filter(sheet=sheet)
-                    ingested_specimens = Specimen.objects.filter(sheet=sheet)
-                    bil_id_result = save_bil_ids(ingested_datasets, filename)
-                    if bil_id_result is not None:
-                        _report_bil_id_errors(request, bil_id_result)
-                        return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-                    save_specimen_ids(ingested_specimens)
-                else:
-                    messages.error(request, 'You must choose a value from "Step 2 of 3: What does your data look like?"')
-                    return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
-
-                if saved:
-                    saved_datasets = Dataset.objects.filter(sheet_id=sheet.id).all()
-                    for dataset in saved_datasets:
-                        time = datetime.now()
-                        event = DatasetEventsLog(dataset_id=dataset, collection_id=collection, project_id_id=collection.project_id, notes='', timestamp=time, event_type='uploaded')
-                        event.save()
-                    messages.success(request, 'Descriptive Metadata successfully uploaded!!')
-                    if ProjectConsortium.objects.filter(project=associated_collection.project, consortium__short_name='BICAN').exists():
-                        return redirect('ingest:bican_id_upload', sheet_id=sheet.id)
-                    else:
-                        return redirect('ingest:collection_detail', pk=associated_collection.id)
-                else:
-                    messages.error(request, f'There was an error saving your metadata. Please contact BIL Support with Error Code: {sheet.id}')
-                    return redirect('ingest:descriptive_metadata_upload', associated_collection=associated_collection.id)
+                return redirect('ingest:collection_detail', pk=associated_collection.id)
 
 
     # This is the GET (just show the metadata upload page)
