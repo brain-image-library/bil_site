@@ -75,7 +75,6 @@ class ImagesInline(UnfoldTabularInline):
     show_change_link = True
     extra = 0
     classes = ['collapse']
-    fields = ('number', 'channels', 'xsize', 'ysize', 'zsize', 'gbytes', 'data_set', 'specimen')
     autocomplete_fields = ('data_set', 'specimen')
 
 class SWCSInline(UnfoldTabularInline):
