@@ -2858,3 +2858,250 @@ class UserSideUploadUnaffectedTests(TestCase):
         self.assertIn('data_path.replace("/lz/", "/etc/")', source)
         # And FAKE_STORAGE_AREA branch remains:
         self.assertIn('settings.FAKE_STORAGE_AREA', source)
+
+
+class RunValidationPipelineTests(TestCase):
+    """Tests for the post-validation-request shell pipeline (ingest.tasks.run_validation_pipeline)."""
+
+    @patch('ingest.tasks.subprocess.run')
+    def test_happy_path_runs_all_five_commands_in_order(self, mock_run):
+        from ingest.tasks import run_validation_pipeline
+        run_validation_pipeline('alice', 'uuid-123')
+
+        expected_path = '/bil/lz/alice/uuid-123'
+        expected_argvs = [
+            ['sudo', '/bil/val/sbin/bil_lz_chown', expected_path],
+            ['/bil/val/bin/find_empty_files', expected_path],
+            ['/bil/val/bin/fix_dirname_chars', expected_path],
+            ['/bil/val/bin/fix_filename_chars', expected_path],
+            ['/bil/users/bil/generic/make_and_submit_job_array.sh', expected_path],
+        ]
+        self.assertEqual(mock_run.call_count, 5)
+        for i, expected_argv in enumerate(expected_argvs):
+            call = mock_run.call_args_list[i]
+            self.assertEqual(call.args[0], expected_argv,
+                             f"step {i} argv mismatch: got {call.args[0]!r}")
+            self.assertTrue(call.kwargs.get('check'),
+                            f"step {i} must pass check=True so failures raise")
+
+    @patch('ingest.tasks.send_mail')
+    @patch('ingest.tasks.subprocess.run')
+    def test_failure_at_step_3_halts_logs_and_emails(self, mock_run, mock_send_mail):
+        import subprocess as _sp
+        from ingest.tasks import run_validation_pipeline
+
+        User = get_user_model()
+        user = User.objects.create_user(username='bob', password='x')
+        coll = Collection.objects.create(
+            name='pipeline-fail-c', bil_uuid='uuid-fail', data_path='/bil/lz/bob/uuid-fail',
+            user=user,
+        )
+
+        # Step 3 (fix_dirname_chars) fails with non-zero exit; earlier calls succeed.
+        def side_effect(argv, *args, **kwargs):
+            if argv[0] == '/bil/val/bin/fix_dirname_chars':
+                raise _sp.CalledProcessError(
+                    returncode=2, cmd=argv, output='', stderr='boom: bad dirname chars script failed'
+                )
+            return MagicMock(returncode=0, stdout='', stderr='')
+        mock_run.side_effect = side_effect
+
+        # Task must NOT raise — failures are captured and reported.
+        run_validation_pipeline('bob', 'uuid-fail')
+
+        # Halted at step 3, so steps 4 and 5 never ran.
+        self.assertEqual(mock_run.call_count, 3)
+
+        # Failure event was logged against the collection.
+        failure_events = EventsLog.objects.filter(collection_id=coll)
+        self.assertEqual(failure_events.count(), 1)
+        evt = failure_events.first()
+        self.assertIn('fix_dirname_chars', evt.notes)
+        self.assertIn('boom', evt.notes)
+
+        # Admin got emailed.
+        self.assertEqual(mock_send_mail.call_count, 1)
+        subject_arg = mock_send_mail.call_args.args[0]
+        body_arg = mock_send_mail.call_args.args[1]
+        self.assertIn('uuid-fail', subject_arg)
+        self.assertIn('fix_dirname_chars', body_arg)
+        self.assertIn('bob', body_arg)
+
+    @patch('ingest.tasks.send_mail')
+    @patch('ingest.tasks.subprocess.run')
+    def test_failure_email_recipient_is_admin(self, mock_run, mock_send_mail):
+        import subprocess as _sp
+        from ingest.tasks import run_validation_pipeline
+
+        User = get_user_model()
+        user = User.objects.create_user(username='carol', password='x')
+        Collection.objects.create(
+            name='pipeline-fail-c2', bil_uuid='uuid-fail-2', data_path='/bil/lz/carol/uuid-fail-2',
+            user=user,
+        )
+        mock_run.side_effect = _sp.CalledProcessError(returncode=1, cmd=['sudo'], stderr='nope')
+
+        run_validation_pipeline('carol', 'uuid-fail-2')
+
+        recipient_arg = mock_send_mail.call_args.args[3]
+        self.assertEqual(recipient_arg, ['ltuite96@psc.edu'])
+
+
+class PipelineProgressTrackingTests(TestCase):
+    """Tests for the per-step JSON progress field on Collection."""
+
+    def setUp(self):
+        User = get_user_model()
+        self.user = User.objects.create_user(username='trackuser', password='x')
+        self.collection = Collection.objects.create(
+            name='track-c', bil_uuid='track-uuid',
+            data_path='/bil/lz/trackuser/track-uuid', user=self.user,
+        )
+
+    @patch('ingest.tasks.subprocess.run')
+    def test_successful_run_marks_all_steps_done_and_status_done(self, mock_run):
+        from ingest.tasks import run_validation_pipeline
+
+        run_validation_pipeline('trackuser', 'track-uuid')
+
+        self.collection.refresh_from_db()
+        progress = self.collection.pipeline_progress
+        self.assertEqual(progress.get('_status'), 'done')
+        for step in ('chown', 'find_empty_files', 'fix_dirname_chars',
+                     'fix_filename_chars', 'make_and_submit_job_array'):
+            self.assertEqual(progress.get(step, {}).get('status'), 'done',
+                             f"step {step} should be done, got {progress.get(step)!r}")
+
+    @patch('ingest.tasks.subprocess.run')
+    def test_step_is_running_while_subprocess_executes(self, mock_run):
+        """When subprocess.run is called for step N, the DB should show step N as 'running'."""
+        from ingest.tasks import run_validation_pipeline
+
+        step_to_argv0 = {
+            'chown': 'sudo',
+            'find_empty_files': '/bil/val/bin/find_empty_files',
+            'fix_dirname_chars': '/bil/val/bin/fix_dirname_chars',
+            'fix_filename_chars': '/bil/val/bin/fix_filename_chars',
+            'make_and_submit_job_array': '/bil/users/bil/generic/make_and_submit_job_array.sh',
+        }
+        argv0_to_step = {v: k for k, v in step_to_argv0.items()}
+        captured_states = {}
+
+        def spy(argv, *args, **kwargs):
+            step = argv0_to_step[argv[0]]
+            self.collection.refresh_from_db()
+            captured_states[step] = self.collection.pipeline_progress.get(step, {}).get('status')
+            return MagicMock(returncode=0, stdout='', stderr='')
+        mock_run.side_effect = spy
+
+        run_validation_pipeline('trackuser', 'track-uuid')
+
+        for step in step_to_argv0:
+            self.assertEqual(captured_states[step], 'running',
+                             f"during {step}, DB should show 'running', got {captured_states[step]!r}")
+
+    @patch('ingest.tasks.send_mail')
+    @patch('ingest.tasks.subprocess.run')
+    def test_failure_marks_failed_step_and_leaves_later_steps_pending(self, mock_run, mock_send_mail):
+        import subprocess as _sp
+        from ingest.tasks import run_validation_pipeline
+
+        def side_effect(argv, *args, **kwargs):
+            if argv[0] == '/bil/val/bin/fix_dirname_chars':
+                raise _sp.CalledProcessError(
+                    returncode=2, cmd=argv, output='', stderr='bad chars in path'
+                )
+            return MagicMock(returncode=0, stdout='', stderr='')
+        mock_run.side_effect = side_effect
+
+        run_validation_pipeline('trackuser', 'track-uuid')
+
+        self.collection.refresh_from_db()
+        progress = self.collection.pipeline_progress
+        self.assertEqual(progress.get('_status'), 'failed')
+        self.assertEqual(progress['chown']['status'], 'done')
+        self.assertEqual(progress['find_empty_files']['status'], 'done')
+        self.assertEqual(progress['fix_dirname_chars']['status'], 'failed')
+        self.assertIn('bad chars in path', progress['fix_dirname_chars']['error'])
+        # Later steps must remain pending (never started).
+        self.assertEqual(progress['fix_filename_chars']['status'], 'pending')
+        self.assertEqual(progress['make_and_submit_job_array']['status'], 'pending')
+
+
+class CollectionSendDispatchesPipelineTests(TestCase):
+    """The collection_send view fires run_validation_pipeline.delay for each successful submission."""
+
+    def setUp(self):
+        from .models import Sheet
+        User = get_user_model()
+        self.user = User.objects.create_user(username='dave', password='x', email='dave@example.com')
+        self.client = Client()
+        self.client.login(username='dave', password='x')
+        self.people = People.objects.create(
+            name='Dave', orcid='', affiliation='', affiliation_identifier='',
+            auth_user_id=self.user,
+        )
+        self.project = Project.objects.create(name='Proj', funded_by='NIH')
+        self.collection = Collection.objects.create(
+            name='dispatch-c', bil_uuid='dispatch-uuid', data_path='/bil/lz/dave/dispatch-uuid',
+            user=self.user, project=self.project,
+        )
+        Sheet.objects.create(filename='meta.xls', collection=self.collection, ingest_method='ingest_1')
+
+    def _post_send(self):
+        return self.client.post(
+            '/ingest/collection_send/',
+            data=json.dumps([{'bil_uuid': 'dispatch-uuid'}]),
+            content_type='application/json',
+        )
+
+    @override_settings(FAKE_STORAGE_AREA=True)
+    @patch('ingest.views._create_asana_tasks')
+    @patch('ingest.views.send_mail')
+    @patch('ingest.views.check_collection_directories')
+    @patch('ingest.tasks.run_validation_pipeline.delay')
+    def test_fake_storage_skips_pipeline_dispatch(
+        self, mock_delay, mock_check_dirs, mock_send_mail, mock_asana,
+    ):
+        mock_check_dirs.return_value = {'status': 'ok'}
+        response = self._post_send()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('dispatch-uuid', response.json()['sent'])
+        mock_delay.assert_not_called()
+
+    @override_settings(FAKE_STORAGE_AREA=False)
+    @patch('ingest.views._create_asana_tasks')
+    @patch('ingest.views.send_mail')
+    @patch('ingest.views.check_collection_directories')
+    @patch('ingest.tasks.run_validation_pipeline.delay')
+    def test_real_storage_dispatches_pipeline_once_per_submission(
+        self, mock_delay, mock_check_dirs, mock_send_mail, mock_asana,
+    ):
+        mock_check_dirs.return_value = {'status': 'ok'}
+        response = self._post_send()
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('dispatch-uuid', response.json()['sent'])
+        mock_delay.assert_called_once_with('dave', 'dispatch-uuid')
+
+    @override_settings(FAKE_STORAGE_AREA=False)
+    @patch('ingest.views._create_asana_tasks')
+    @patch('ingest.views.send_mail')
+    @patch('ingest.views.check_collection_directories')
+    @patch('ingest.tasks.run_validation_pipeline.delay')
+    def test_dispatch_initializes_pipeline_progress_before_delay(
+        self, mock_delay, mock_check_dirs, mock_send_mail, mock_asana,
+    ):
+        """Frontend should see 'running' immediately, before the Celery worker picks up the task."""
+        mock_check_dirs.return_value = {'status': 'ok'}
+        # Seed with stale data so we can verify it gets reset.
+        self.collection.pipeline_progress = {'_status': 'failed', 'chown': {'status': 'failed'}}
+        self.collection.save(update_fields=['pipeline_progress'])
+
+        self._post_send()
+
+        self.collection.refresh_from_db()
+        progress = self.collection.pipeline_progress
+        self.assertEqual(progress['_status'], 'running')
+        for step in ('chown', 'find_empty_files', 'fix_dirname_chars',
+                     'fix_filename_chars', 'make_and_submit_job_array'):
+            self.assertEqual(progress[step]['status'], 'pending')

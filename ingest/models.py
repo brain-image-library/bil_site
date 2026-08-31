@@ -107,6 +107,7 @@ class Collection(models.Model):
         choices=STATUS_CHOICES_VALIDATION,
         default=NOT_VALIDATED,
     )
+    pipeline_progress = models.JSONField(default=dict, blank=True)
     collection_type = models.CharField(
         max_length=256)
 

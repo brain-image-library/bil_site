@@ -19,7 +19,7 @@
                 <tbody {{ table.attrs.tbody.as_html }}>
                 {% for row in table.paginated_rows %}
                     {% block table.tbody.row %}
-                    <tr class="bil-table-row" {{ row.attrs.as_html }}>
+                    <tr class="bil-table-row" data-bil-uuid="{{ row.record.bil_uuid }}" {{ row.attrs.as_html }}>
                         {% for column, cell in row.items %}
                             <td {{ column.attrs.td.as_html }}>{% if column.localize == None %}{{ cell }}{% else %}{% if column.localize %}{{ cell|localize }}{% else %}{{ cell|unlocalize }}{% endif %}{% endif %}</td>
                         {% endfor %}
@@ -94,4 +94,268 @@
         {% endif %}
     {% endblock pagination %}
 </div>
+
+<style>
+    .pipeline-progress-cell { background-color: #f8f9fb; padding: 0.75rem 1.25rem; }
+    .pipeline-progress-panel { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .pipeline-step-pills { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    .pipeline-step-pill {
+        font-size: 0.85rem;
+        font-weight: 500;
+        padding: 0.5rem 0.9rem;
+        display: inline-flex;
+        align-items: center;
+    }
+    .pipeline-step-sep { color: #adb5bd; font-size: 0.8rem; }
+
+    .pipeline-progress-panel .alert .progress-bar-error-message {
+        font-family: var(--bs-font-monospace, monospace);
+        word-break: break-word;
+        display: block;
+        margin-top: 0.25rem;
+    }
+</style>
+
+<script>
+(function () {
+    if (window.__bilPipelineWired) { return; }
+    window.__bilPipelineWired = true;
+
+    // Display segments. A segment with `substeps` aggregates status across
+    // multiple backend steps (all must succeed for green; any failure = red).
+    // `tooltip` renders a BS5 hover tooltip on that pill.
+    // The last step (manual_curation) is synthesized server-side from the
+    // collection's submission/validation status — it isn't part of the
+    // automated pipeline. When it turns green, the data is public.
+    const STEPS = [
+        { key: 'chown',                     label: 'Prepare landing zone' },
+        { key: 'pre_ingest_preparation',    label: 'Pre-ingest preparation',
+          substeps: ['find_empty_files', 'fix_dirname_chars', 'fix_filename_chars'] },
+        { key: 'make_and_submit_job_array', label: 'Image format validation',
+          tooltip: 'Runs every file through Bio-Formats to verify it is a valid image. Depending on the amount of data, this step can take a while.' },
+        { key: 'manual_curation',           label: 'Manual data curation',
+          tooltip: 'BIL curators manually review and prepare the submission for publication. Turnaround depends on data volume and current queue and can take several days.' },
+    ];
+    // Backend step key -> human label (used in the failure message so it names
+    // the real script that failed, not the aggregate segment).
+    const BACKEND_STEP_LABELS = {
+        chown:                     'chown',
+        find_empty_files:          'find_empty_files',
+        fix_dirname_chars:         'fix_dirname_chars',
+        fix_filename_chars:        'fix_filename_chars',
+        make_and_submit_job_array: 'make_and_submit_job_array',
+    };
+
+    // Bootstrap 5 badge/icon per status. All icons are fa-solid so widths
+    // stay consistent (fa-regular is Pro-only in FontAwesome and won't render
+    // in the free set, which would collapse the icon-to-text gap).
+    const STATUS_STYLE = {
+        pending: {
+            badge: 'bg-body-secondary text-body-secondary border',
+            icon: 'fa-solid fa-clock',
+        },
+        running: {
+            badge: 'bg-warning text-dark',
+            icon: 'fa-solid fa-spinner fa-spin',
+        },
+        done: {
+            badge: 'bg-success text-white',
+            icon: 'fa-solid fa-circle-check',
+        },
+        failed: {
+            badge: 'bg-danger text-white',
+            icon: 'fa-solid fa-circle-xmark',
+        },
+    };
+
+    function buildPanel(uuid) {
+        const wrap = document.createElement('div');
+        wrap.className = 'pipeline-progress-panel';
+        wrap.dataset.bilUuid = uuid;
+
+        const pills = document.createElement('div');
+        pills.className = 'pipeline-step-pills';
+        STEPS.forEach((step, idx) => {
+            if (idx > 0) {
+                const sep = document.createElement('i');
+                sep.className = 'fa-solid fa-chevron-right pipeline-step-sep';
+                sep.setAttribute('aria-hidden', 'true');
+                pills.appendChild(sep);
+            }
+            const pill = document.createElement('span');
+            pill.className = 'badge rounded-pill pipeline-step-pill ' + STATUS_STYLE.pending.badge;
+            pill.dataset.step = step.key;
+            pill.dataset.status = 'pending';
+            pill.innerHTML =
+                '<i class="pipeline-step-icon me-2 ' + STATUS_STYLE.pending.icon + '" aria-hidden="true"></i>' +
+                '<span class="pipeline-step-label"></span>';
+            pill.querySelector('.pipeline-step-label').textContent = step.label;
+            if (step.tooltip) {
+                pill.setAttribute('data-bs-toggle', 'tooltip');
+                pill.setAttribute('data-bs-placement', 'top');
+                pill.setAttribute('title', step.tooltip);
+                pill.style.cursor = 'help';
+            }
+            pills.appendChild(pill);
+        });
+        wrap.appendChild(pills);
+
+        const err = document.createElement('div');
+        err.className = 'alert alert-danger py-2 px-3 mb-0';
+        err.setAttribute('role', 'alert');
+        err.hidden = true;
+        err.innerHTML =
+            '<strong class="progress-bar-error-step"></strong>' +
+            '<span class="progress-bar-error-message"></span>';
+        wrap.appendChild(err);
+
+        return wrap;
+    }
+
+    function aggregateStatus(step, payload) {
+        // For a leaf segment: just read its own step's status.
+        if (!step.substeps) {
+            return (payload[step.key] && payload[step.key].status) || 'pending';
+        }
+        // For an aggregate: fail-fast on any failed substep; done iff all done;
+        // running if any is running or done (mixed = in-progress); else pending.
+        const statuses = step.substeps.map(s =>
+            (payload[s] && payload[s].status) || 'pending'
+        );
+        if (statuses.some(s => s === 'failed')) { return 'failed'; }
+        if (statuses.every(s => s === 'done'))  { return 'done'; }
+        if (statuses.some(s => s === 'running' || s === 'done')) { return 'running'; }
+        return 'pending';
+    }
+
+    function findFailure(payload) {
+        // Walk the ordered backend steps to find the first failed one.
+        for (const step of STEPS) {
+            const substeps = step.substeps || [step.key];
+            for (const s of substeps) {
+                if (payload[s] && payload[s].status === 'failed') {
+                    return { step: s, error: payload[s].error || '' };
+                }
+            }
+        }
+        return null;
+    }
+
+    function renderProgress(uuid, payload) {
+        const panel = document.querySelector('.pipeline-progress-panel[data-bil-uuid="' + uuid + '"]');
+        if (!panel) { return null; }
+
+        STEPS.forEach(step => {
+            const pill = panel.querySelector('.pipeline-step-pill[data-step="' + step.key + '"]');
+            if (!pill) { return; }
+            const status = aggregateStatus(step, payload);
+            const style = STATUS_STYLE[status] || STATUS_STYLE.pending;
+            pill.dataset.status = status;
+            pill.className = 'badge rounded-pill pipeline-step-pill ' + style.badge;
+            const icon = pill.querySelector('.pipeline-step-icon');
+            if (icon) { icon.className = 'pipeline-step-icon me-2 ' + style.icon; }
+        });
+
+        const errBox = panel.querySelector('.alert');
+        const failure = findFailure(payload);
+        if (failure) {
+            const label = BACKEND_STEP_LABELS[failure.step] || failure.step;
+            errBox.querySelector('.progress-bar-error-step').textContent =
+                'Failed at "' + label + '":';
+            errBox.querySelector('.progress-bar-error-message').textContent = failure.error;
+            errBox.hidden = false;
+        } else {
+            errBox.hidden = true;
+        }
+
+        return payload._status;
+    }
+
+    function readProgress(btn) {
+        try {
+            return JSON.parse(btn.dataset.progress || '{}');
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function isDataTable(tableEl) {
+        return !!(window.jQuery && window.jQuery.fn && window.jQuery.fn.dataTable
+                  && window.jQuery.fn.dataTable.isDataTable(tableEl));
+    }
+
+    function initTooltipsIn(container) {
+        if (!(window.bootstrap && window.bootstrap.Tooltip)) { return; }
+        container.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+            window.bootstrap.Tooltip.getOrCreateInstance(el, { trigger: 'hover' });
+        });
+    }
+
+    function openPanel(uuid, tr, table) {
+        const panel = buildPanel(uuid);
+        if (isDataTable(table)) {
+            const dtRow = window.jQuery(table).DataTable().row(tr);
+            dtRow.child(panel).show();
+            const childTr = dtRow.child();
+            if (childTr && childTr.length) {
+                childTr.addClass('pipeline-progress-row');
+                childTr.find('> td').addClass('pipeline-progress-cell');
+            }
+        } else {
+            const newRow = document.createElement('tr');
+            newRow.className = 'pipeline-progress-row';
+            newRow.dataset.bilUuid = uuid;
+            const cell = document.createElement('td');
+            cell.className = 'pipeline-progress-cell';
+            cell.colSpan = tr.children.length;
+            cell.appendChild(panel);
+            newRow.appendChild(cell);
+            tr.parentNode.insertBefore(newRow, tr.nextSibling);
+        }
+        initTooltipsIn(panel);
+    }
+
+    function closePanel(uuid, tr, table) {
+        if (isDataTable(table)) {
+            window.jQuery(table).DataTable().row(tr).child.hide();
+        } else {
+            const next = tr.nextElementSibling;
+            if (next && next.classList.contains('pipeline-progress-row')
+                && next.dataset.bilUuid === uuid) {
+                next.remove();
+            }
+        }
+    }
+
+    function isPanelOpen(tr, table) {
+        if (isDataTable(table)) {
+            return window.jQuery(table).DataTable().row(tr).child.isShown();
+        }
+        const next = tr.nextElementSibling;
+        return !!(next && next.classList.contains('pipeline-progress-row'));
+    }
+
+    document.addEventListener('click', function (evt) {
+        const btn = evt.target.closest('.pipeline-progress-toggle');
+        if (!btn) { return; }
+        const uuid = btn.dataset.bilUuid;
+        const tr = btn.closest('tr');
+        const table = tr && tr.closest('table');
+        if (!tr || !table) { return; }
+        const open = isPanelOpen(tr, table);
+        const icon = btn.querySelector('i');
+        if (open) {
+            closePanel(uuid, tr, table);
+            btn.setAttribute('aria-expanded', 'false');
+            if (icon) { icon.classList.replace('fa-chevron-up', 'fa-chevron-down'); }
+        } else {
+            openPanel(uuid, tr, table);
+            btn.setAttribute('aria-expanded', 'true');
+            if (icon) { icon.classList.replace('fa-chevron-down', 'fa-chevron-up'); }
+            renderProgress(uuid, readProgress(btn));
+        }
+    });
+})();
+</script>
 {% endblock table-wrapper %}

@@ -1,3 +1,5 @@
+import json
+
 from django.utils.html import format_html
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -115,6 +117,49 @@ class CollectionTable(tables.Table):
         orderable=False,
         empty_values=(),
     )
+
+    pipeline_progress_button = tables.Column(
+        verbose_name="Progress",
+        accessor='pk',
+        orderable=False,
+        empty_values=(),
+        attrs={
+            'th': {'class': 'text-center text-nowrap'},
+            'td': {'class': 'text-center'},
+        },
+    )
+
+    def render_pipeline_progress_button(self, record):
+        if not record.pipeline_progress:
+            return ''
+        pipeline = dict(record.pipeline_progress)
+        pipeline_status = pipeline.get('_status', '')
+
+        # Synthesize a "manual_curation" step (not part of the automated pipeline).
+        # Curation begins once the pipeline completes and ends when the collection
+        # is fully public (both submission + validation SUCCESS).
+        if pipeline_status == 'done':
+            is_public = (
+                record.submission_status == Collection.SUCCESS
+                and record.validation_status == Collection.SUCCESS
+            )
+            pipeline['manual_curation'] = {'status': 'done' if is_public else 'running'}
+        else:
+            pipeline['manual_curation'] = {'status': 'pending'}
+
+        # Colour hint on the button reflects the pipeline (not the curation step).
+        variant = {
+            'running': 'warning',
+            'done': 'success',
+            'failed': 'danger',
+        }.get(pipeline_status, 'secondary')
+        return format_html(
+            '<button type="button" class="btn btn-sm btn-outline-{variant} pipeline-progress-toggle" '
+            'data-bil-uuid="{uuid}" data-progress="{progress}" aria-expanded="false">'
+            '<i class="fa-solid fa-chevron-down me-1"></i>Show Progress</button>',
+            variant=variant, uuid=record.bil_uuid,
+            progress=json.dumps(pipeline),
+        )
 
     def render_bican_ids_button(self, record):
         most_recent_sheet = Sheet.objects.filter(collection_id=record.id).last()
@@ -271,11 +316,13 @@ class CollectionTable(tables.Table):
             'celery_task_id_submission', 'celery_task_id_validation', 'user',
             'modality', 'collection_type',
             'organization_name', 'project_funder_id', 'project_funder', 'bil_uuid',
+            'pipeline_progress',
         ]
         template_name = 'ingest/collection_table.html'
         sequence = [
             'id', 'name', 'description', 'submission_status', 'validation_status',
             'locked', 'lab_name', 'data_path', 'project', 'bican_ids_button',
+            'pipeline_progress_button',
         ]
         attrs = {'class': 'table table-sm table-hover table-col-constrain'}
 

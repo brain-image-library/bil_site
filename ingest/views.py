@@ -942,9 +942,13 @@ def collection_send(request):
 
         coll.submission_status = Collection.PENDING
         coll.validation_status = Collection.PENDING
-        coll.save(update_fields=['submission_status', 'validation_status'])
+        coll.pipeline_progress = tasks.initial_pipeline_progress()
+        coll.save(update_fields=['submission_status', 'validation_status', 'pipeline_progress'])
 
         sent.append(coll.bil_uuid)
+
+        if not settings.FAKE_STORAGE_AREA:
+            tasks.run_validation_pipeline.delay(user.username, coll.bil_uuid)
 
     # --- Send email & Asana task only for successfully sent ones ---
     if sent:
