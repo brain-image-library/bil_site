@@ -3733,8 +3733,8 @@ def doi_api(request):
     ingest_json = ingest_resp.json() if ingest_resp.content else {}
 
     # 2) Mint the DOI at DataCite (via doi-api Flask).
-    datacite_url = getattr(settings, "DATACITE_DOI_API_URL", "http://127.0.0.1:8094/draft")
-    payload = {"bildid": bil_id, "action": "draft"}
+    datacite_url = settings.DATACITE_DOI_API_URL
+    payload = {"bildid": bil_id, "action": "publish"}
     headers = {"Content-Type": "application/json"}
 
     try:
@@ -3774,7 +3774,9 @@ def doi_api(request):
     except Exception:
         mint_json = {}
     minted_doi = mint_json.get("doi") or prospective_doi
-    doi_url = mint_json.get("doi_url") or f"https://doi.test.datacite.org/dois/{prefix}%2F{bil_id.lower()}"
+    # Route the resolver URL by prefix — prod (10.35077) vs test (10.80303 etc).
+    resolver_host = "doi.datacite.org" if prefix == "10.35077" else "doi.test.datacite.org"
+    doi_url = mint_json.get("doi_url") or f"https://{resolver_host}/dois/{prefix}%2F{bil_id.lower()}"
 
     bil_record.doi = True
     bil_record.save(update_fields=["doi"])
